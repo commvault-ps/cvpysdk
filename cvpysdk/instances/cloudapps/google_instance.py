@@ -392,6 +392,8 @@ class GoogleInstance(CloudAppsInstance):
 
                 include_deleted_items (bool)    --  If True, Deleted items are also included in restore
 
+                destination_label (str)         --  Label where restore has to be performed in mailbox
+
             Returns:
                 request_json (dict) - request json for restore job
 
@@ -410,6 +412,7 @@ class GoogleInstance(CloudAppsInstance):
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
         include_deleted_items = kwargs.get('include_deleted_items', False)
+        destination_label = kwargs.get('destination_label', "")
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
@@ -478,8 +481,8 @@ class GoogleInstance(CloudAppsInstance):
                     "destinationType": 0 if kwargs.get("destination_type") == 'USER' else 1,
                     "userDisplayName": kwargs.get('accountInfo', {}).get('userDisplayName', ''),
                     "userGUID": kwargs.get('accountInfo', {}).get('userGUID', ''),
-                    "folderPath": "",
-                    "folderId": ""
+                    "folderPath": destination_label,
+                    "folderId": destination_label
                 }
             }
         }
@@ -517,13 +520,13 @@ class GoogleInstance(CloudAppsInstance):
                     "selectedItems": [
                         {
                             "itemName": source_item_list[0],
-                            "itemType": "Mailbox" if self.ca_instance_type == "Gmail" else "User"
+                            "itemType": "Mailbox" if self.ca_instance_type == "GMAIL" else "User"
                         }
                     ],
                     "jobOptionItems": [
                         {
                             "option": "Restore destination",
-                            "value": "Gmail" if self.ca_instance_type == "Gmail" else "Google Drive"
+                            "value": "Gmail" if self.ca_instance_type == "GMAIL" else "Google Drive"
                         },
                         {
                             "option": "Source",
@@ -551,7 +554,11 @@ class GoogleInstance(CloudAppsInstance):
         }
 
         joboptionitems = options['commonOpts']['jobMetadata'][0]['jobOptionItems']
-        
+
+        if self.ca_instance_type == "GMAIL":
+            joboptionitems.extend([{"option": "Restore mail","value": "Enabled"},{"option": "Restore contacts","value": "Enabled"},{"option": "Restore calendars","value": "Enabled"}])
+            cloudAppsRestoreOptions['googleRestoreOptions']['gmailOperations']={"isMailSelected": True,"isContactsSelected": True,"isCalendarSelected": True}
+
         if include_deleted_items:
             for filter in cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter']['filters']:
                 if filter['field']=='CISTATE':

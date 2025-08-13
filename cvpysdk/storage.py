@@ -259,9 +259,7 @@ class MediaAgents(object):
 
     def __repr__(self):
         """Representation string for the instance of the MediaAgents class."""
-        return "MediaAgents class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "MediaAgents class instance for Commcell"
 
     def _get_media_agents(self):
         """Gets all the media agents associated to the commcell specified by commcell object.
@@ -1180,9 +1178,7 @@ class DiskLibraries(Libraries):
 
     def __repr__(self):
         """Representation string for the instance of the DiskLibraries class."""
-        return "DiskLibraries class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "DiskLibraries class instance for Commcell"
 
     @property
     def all_disk_libraries(self):
@@ -2629,9 +2625,7 @@ class TapeLibraries(Libraries):
 
     def __repr__(self):
         """Representation string for the instance of the TapeLibraries class."""
-        return "TapeLibraries class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "TapeLibraries class instance for Commcell"
 
 
 

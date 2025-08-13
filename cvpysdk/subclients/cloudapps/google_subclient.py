@@ -83,6 +83,11 @@ GoogleSubclient:
 
     get_user_level_stats()              --  Returns the user level stats
 
+    browse_folders()                    --  Browse folders of the user in the browse
+
+    browse_mails()                      --  Browse mails of the user in the browse
+
+    browse_files()                      --  Browse files of the user in the browse
 """
 
 from __future__ import unicode_literals
@@ -91,7 +96,7 @@ import time
 from ..casubclient import CloudAppsSubclient
 from ...constants import AppIDAType
 from . import google_constants as constants
-
+import copy
 
 class GoogleSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient,
@@ -179,6 +184,56 @@ class GoogleSubclient(CloudAppsSubclient):
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
         self._set_subclient_properties("_content", content)
+
+    def __do_submit_browse_request(self, req_payload):
+        """
+            Submits the browse request and response
+        """
+        for params in req_payload["searchProcessingInfo"]["queryParams"]:
+            if params["param"] == "RESPONSE_FIELD_LIST":
+                values_in_response = constants.GMAIL_BROWSE_FIELD_RESPONSE_FIELD_PARAMS if (
+                        self._instance_object.ca_instance_type == "GMAIL") \
+                    else constants.GDRIVE_BROWSE_FIELD_RESPONSE_FIELD_PARAMS
+                params.update({"value":values_in_response})
+        _search_api = self._services["DO_WEB_SEARCH"]
+        flag, response = self._cvpysdk_object.make_request("POST", _search_api, req_payload)
+        if flag:
+            try:
+                resp_json = response.json()
+            except ValueError:
+                raise SDKException("Response",'102', 'Invalid or empty response JSON')
+            if not resp_json:
+                raise SDKException('Response', '102', 'Empty response json')
+            if resp_json and 'errorCode' in resp_json:
+                error_code = resp_json.get('errorCode')
+                if error_code != 0:
+                    error_message = resp_json.get('errorMessage')
+                    raise SDKException('Subclient', '102', error_message)
+            else:
+                count = int(resp_json.get("proccessingInfo", {}).get("totalHits", 0))
+                req_payload["searchProcessingInfo"]["pageSize"] = count
+                flag, response = self._cvpysdk_object.make_request("POST", _search_api, req_payload)
+                if flag:
+                    try:
+                        resp_json = response.json()
+                    except ValueError:
+                        raise SDKException("Response", '102', 'Invalid or empty response JSON')
+                    if not resp_json:
+                        raise SDKException('Response', '102', 'Empty response json')
+                    if resp_json and 'errorCode' in resp_json:
+                        error_code = resp_json.get('errorCode')
+                        if error_code != 0:
+                            error_message = resp_json.get('errorMessage')
+                            raise SDKException('Subclient', '102', error_message)
+                    else:
+                        return count, resp_json
+                else:
+                    raise SDKException('Response', '102',
+                                       self._update_response_(response.text))
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
 
     def restore_out_of_place(
             self,
@@ -1056,6 +1111,7 @@ class GoogleSubclient(CloudAppsSubclient):
                     skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
                     destination_type (str) : type of destination for OOP Restore
                     end_time (int) : The job end time for Point In Time restore (default: None)
+                    destination_label (str) : Label where restore has to be performed in mailbox
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1069,6 +1125,7 @@ class GoogleSubclient(CloudAppsSubclient):
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
         end_time = kwargs.get('end_time', None)
+        destination_label = kwargs.get('destination_label', "")
 
         if overwrite and restore_as_copy:
             raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
@@ -1077,7 +1134,7 @@ class GoogleSubclient(CloudAppsSubclient):
         source_user_list = self._get_user_guids(users)
         accountInfo = {}
         destination_type = kwargs.get("destination_type")
-        if  destination_type == 'USER':
+        if  destination_type == 'USER' or destination_type == 'MAILBOX':
             destination_user_info = self.search_for_user(destination_path)
             accountInfo['userDisplayName'] = destination_user_info.get('displayName', '')
             accountInfo['userGUID'] = destination_user_info.get('user').get('userGUID', '')
@@ -1095,6 +1152,7 @@ class GoogleSubclient(CloudAppsSubclient):
             'accountInfo': accountInfo,
             'destination_type': destination_type,
             'destination_path': destination_path,
+            'destination_label': destination_label
         }
         restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         if end_time:
@@ -1380,3 +1438,92 @@ class GoogleSubclient(CloudAppsSubclient):
                                self._update_response_(response.text))
 
         return response.json()
+
+    def browse_folders(self, folder_id):
+        """
+        Browse folders of the user in the browse
+
+        Args:
+            folder_id (str) -- Id of the folder present in the solr response
+
+            For
+            GMAIL Agents -- id attribute can be OwnerId (of the mailbox) or GMAIL_LABELV2_ID (id of a specific folder)
+            GDRIVE Agents -- id attribute can be OwnerId of the user or Folder Id of a specific folder
+        """
+        req_payload = copy.deepcopy(constants.WEB_SEARCH_PAYLOAD)
+        filters=req_payload.get("advSearchGrp").get("emailFilter")[0].get("filter").get("filters")
+        for filter in filters:
+            if filter.get("field") == "DATA_TYPE":
+                filter["fieldValues"]["values"] = [str(constants.GMAIL_FOLDER_DOCUMENT_TYPE)
+                                                       if self._instance_object.ca_instance_type=='GMAIL'
+                                                       else str(constants.GDRIVE_FOLDER_DOCUMENT_TYPE)]
+                break
+        filter_field = constants.BROWSE_FIELD_FILTER_PAYLOAD
+        filter_field["field"] = "PARENT_GUID"
+        filter_field["fieldValues"]["values"] = [str(folder_id)]
+        filters.append(filter_field)
+        req_payload["advSearchGrp"]["emailFilter"][0]["filter"]["filters"] = filters
+        req_payload["advSearchGrp"]["galaxyFilter"][0]["appIdList"]=[int(self.subclient_id)]
+        return self.__do_submit_browse_request(req_payload=req_payload)
+
+    def browse_mails(self, label_id=None, client_level_browse=False, facet_filters = None):
+        """
+        Browse mails of the user in the browse
+
+        Args:
+            label_id (str) -- Id of the folder present in the solr response
+            client_level_browse(bool) -- Supply True to browse at client_level browse
+            facet_filters(dict) -- dictionary of filters
+
+        Returns:
+            all the mails present inside that label_id folder
+        """
+        req_payload = copy.deepcopy(constants.WEB_SEARCH_PAYLOAD)
+        filters = req_payload.get("advSearchGrp").get("emailFilter")[0].get("filter").get("filters")
+        for filter in filters:
+            if filter.get("field") == "DATA_TYPE":
+                filter["fieldValues"]["values"]= [str(constants.GMAIL_MAIL_DOCUMENT_TYPE)]
+                break
+        if label_id:
+            filter_field = constants.BROWSE_FIELD_FILTER_PAYLOAD
+            filter_field["field"] = "GMAILV2_LABEL_ID"
+            filter_field["fieldValues"]["values"]= [str(label_id)]
+            filters.append(filter_field)
+        elif facet_filters and client_level_browse:
+            filters.append(facet_filters)
+        else:
+            raise SDKException("Subclient", "102","Filters are needed to be supplied for client level browse")
+        req_payload["advSearchGrp"]["emailFilter"][0]["filter"]["filters"] = filters
+        req_payload["advSearchGrp"]["galaxyFilter"][0]["appIdList"].append(int(self.subclient_id))
+        return self.__do_submit_browse_request(req_payload=req_payload)
+
+    def browse_files(self, client_level_browse=False, search_keyword='*', facet_filters=None):
+        """
+                Browse files of the user in the browse
+
+                Args:
+                    client_level_browse(bool) -- Supply True to browse at client_level browse
+                    search_keyword(str) -- keyword to search in browse
+                    facet_filters(dict) -- dictionary of filters
+
+                Returns:
+                    all the files present inside that user
+        """
+        req_payload = copy.deepcopy(constants.GDRIVE_WEB_SEARCH_PAYLOAD)
+        file_filters = [{
+            "field": "FILE_NAME",
+            "fieldValues": {
+                "values": [
+                    "",
+                    search_keyword
+                ]
+            },
+            "intraFieldOp": 0
+        }]
+
+        req_payload['advSearchGrp']['fileFilter'] = file_filters
+        req_payload["advSearchGrp"]["galaxyFilter"][0]["appIdList"].append(int(self.subclient_id))
+
+        if facet_filters:
+            req_payload["facetRequests"]["facetRequest"] = facet_filters
+        return self.__do_submit_browse_request(req_payload=req_payload)

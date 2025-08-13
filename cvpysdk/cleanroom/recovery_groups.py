@@ -29,6 +29,10 @@ from enum import Enum
 from cvpysdk.exception import SDKException
 from json.decoder import JSONDecodeError
 
+from cvpysdk.cleanroom.target import CleanroomTarget
+
+from .recovery_entities import RecoveryEntities
+
 
 class RecoveryGroups:
     """Class representing all the cleanroom recovery groups"""
@@ -174,7 +178,20 @@ class RecoveryStatus(Enum):
     RECOVERED_WITH_ERRORS = 5
     IN_PROGRESS = 6
     CLEANED_UP = 7
+    MARK_AS_FAILED = 8
+    CLEANUP_FAILED = 9
 
+class RecoveryStatusNotReadyCategory(Enum):
+    NONE = 0
+    INVALID_VM_NAME = 1
+    INVALID_COPY = 2
+    MARK_AS_FAILED = 4
+    V1_INDEXING_NOT_SUPPORTED = 16
+    INVALID_SMART_FOLDER = 8
+    LAST_BACKUP_OUTDATED = 32
+    LAST_BACKUP_NOT_READY = 64
+    MANAGED_IDENTITY_ENABLED = 128
+    AUTOSCALING_DISABLED = 256
 
 class RecoveryGroup:
     """Class to perform actions on a recovery group"""
@@ -192,20 +209,26 @@ class RecoveryGroup:
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
-
+        self.recovery_group_name = recovery_group_name
         if recovery_group_id is not None:
             self._recovery_group_id = str(recovery_group_id)
         else:
             # get id from RecoveryGroups class
             self._recovery_group_id = RecoveryGroups(commcell_object).all_groups[recovery_group_name]
-
         self._RECOVERY_GROUP_URL = commcell_object._services['RECOVERY_GROUP'] % self._recovery_group_id
         self._RECOVER_URL = commcell_object._services['RECOVERY_GROUP_RECOVER'] % self._recovery_group_id
+        self._RECOVERY_GROUP_THREATS_COUNT = commcell_object._services['RECOVERY_GROUP_THREATS_COUNT'] % self._recovery_group_id
 
         # will be set when refresh is called
-        self._properties = {}
-
+        self._properties = None
         self.refresh()
+        self._recovery_entities = RecoveryEntities(self, self._commcell_object)
+        self._recovery_target = CleanroomTarget(self._commcell_object, self.target_name)
+
+    @property
+    def recovery_entities(self):
+        """Returns RecoveryEntity Manager object using which RecoveryEnity object can be created further"""
+        return self._recovery_entities
 
     @property
     def id(self):
@@ -213,16 +236,85 @@ class RecoveryGroup:
         return int(self._recovery_group_id)
 
     @property
+    def name(self):
+        return self.recovery_group_name
+
+    @property
+    def target_name(self):
+        return self.entities[0]['target']['name']
+
+    @property
     def entities(self):
-        """list of entities in recovery group"""
+        """All entities properties in recovery group"""
         return self._properties['entities']
 
-    def _recover_entities(self, entity_ids):
+    @property
+    def entities_list(self):
+        """List if all the entities in a recovery group"""
+        entity_list = []
+        for entity in self.entities:
+            entity_list.append(entity['name'])
+        return entity_list
+
+    @property
+    def entities_id(self):
+        """List of entities' id in the recovery group"""
+        entity_list_id = []
+        for entity in self.entities:
+            entity_list_id.append(entity['id'])
+        return entity_list_id
+
+    @property
+    def security_group(self):
+        """Returns: (str) Azure: the security group name"""
+        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['overrideReplicationOptions']['securityGroup']['id']
+
+    @property
+    def virtual_network(self):
+        """Returns: (str) Azure: the virtual network name"""
+        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['overrideReplicationOptions'][
+            'virtualNetwork']['networkName']
+
+    @property
+    def resource_group(self):
+        """Returns: (str) Azure: the resource group name"""
+        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['resourceGroup']
+
+    @property
+    def storage_account(self):
+        """Returns: (str) Azure: the storage account name used to deploy the VM's storage"""
+        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['storageAccount']
+
+    @property
+    def get_new_target_name(self):
+        """Returns the created target name for the recovery group created via custom config"""
+        return f'{self.recovery_group_name}-Target'
+
+    @property
+    def get_new_hypervisor_name(self):
+        """Returns the created hypervisor name for the recovery group created via custom config"""
+        return f'{self.get_new_target_name}-Hypervisor'
+
+    @property
+    def is_threatscan_enabled(self):
+        """Returns boolean value of threat scan property set at recovery group level"""
+        return self._properties['recoveryGroup']['threatScan']['enableThreatScan']
+
+    @property
+    def is_windefender_enabled(self):
+        """Returns boolean value of windows defender property set at recovery group level"""
+        return self._properties['recoveryGroup']['threatScan']['enableWindowsDefenderScan']
+
+    def _recover_entities(self, entity_ids, threat_scan=False, win_defender_scan=False):
         """
         Sends request to recover all entities with specified ids
 
         Args:
-            entity_ids: iterable of entity ids
+            entity_ids         (list)    --  iterable of entity ids
+            threat_scan       (bool)    --  run security scan on restored VM
+                                            default: False
+            win_defender_scan (bool)    --  run security scan on restored VM
+                                            default: False
 
         Returns:
             job_id: job id of recovery
@@ -238,7 +330,11 @@ class RecoveryGroup:
             'recoveryGroup': {
                 'id': self.id
             },
-            'entities': [{'id': e_id} for e_id in entity_ids]
+            'entities': [{'id': e_id} for e_id in entity_ids],
+            'threatScan': {
+                'enableThreatScan': threat_scan if not self.is_threatscan_enabled else self.is_threatscan_enabled,
+                'enableWindowsDefenderScan': win_defender_scan if not self.is_windefender_enabled else self.is_windefender_enabled
+            }
         })
 
         if flag:
@@ -249,12 +345,12 @@ class RecoveryGroup:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def recover_all(self):
+    def get_threats_count(self):
         """
-        Sends request to recover all entities
+        Sends request to get overall threats count of recovery group
 
         Returns:
-            job_id: job id of recovery
+            (int) threatCount: threats count of recovery group
 
         Raises:
             SDKException:
@@ -263,10 +359,36 @@ class RecoveryGroup:
                 if response is not success
 
         """
+        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUP_THREATS_COUNT)
+
+        if flag:
+            try:
+                return response.json()['KPI'][0]["threatCount"]
+            except (JSONDecodeError, KeyError):
+                raise SDKException('Response', '102', 'Threat count not found in response')
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def recover_all(self,threat_scan=False, win_defender_scan=False):
+        """
+        Sends request to recover all entities
+
+        Returns:
+            job_id: job id of recovery
+
+        Raises:
+            SDKException:
+            if response is empty
+
+            if response is not success
+
+        """
         eligible_entities = [entity['id'] for entity in self.entities if
                              entity['recoveryStatus'] not in [RecoveryStatus.NOT_READY.value,
-                                                              RecoveryStatus.IN_PROGRESS.value]]
-        return self._recover_entities(eligible_entities)
+                                                              RecoveryStatus.IN_PROGRESS.value] and
+                     (not win_defender_scan or (win_defender_scan and entity['osType'] == 0))]
+
+        return self._recover_entities(eligible_entities, threat_scan, win_defender_scan)
 
     def refresh(self):
         """Refresh the recovery group"""
@@ -315,3 +437,36 @@ class RecoveryGroup:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def get_entity_status(self):
+        """
+        Returns the recovery status and readiness category for entities.
+
+        Returns:
+            dict: A mapping of entity names to their recovery status and not-ready category.
+        """
+        status_map = {}
+        for entity in self.entities:
+            if 'name' not in entity:
+                continue  # Skip entities without a name
+
+            status_map[entity['name']] = {
+                'recoveryStatus': entity.get('recoveryStatus', None),
+                'recoveryStatusNotReadyCategory': entity.get('recoveryStatusNotReadyCategory', None)
+            }
+        return status_map
+
+    def validate_new_recovery_target_exists(self):
+        """Verifies if the created new recovery target via custom config exists with correct name."""
+        observed_target = self.target_name
+        expected_target = self.get_new_target_name
+
+        return observed_target == expected_target
+
+    def validate_new_hypervisor_exists(self):
+        """Verifies if the created new hypervisor via custom config exists with correct name."""
+        observed_hypervisor = self._recovery_target.destination_hypervisor
+        expected_hypervisor = self.get_new_hypervisor_name
+
+        return observed_hypervisor == expected_hypervisor
+

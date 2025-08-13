@@ -1055,9 +1055,7 @@ class KeyManagementServers(KeyManagementServerConstants):
         Returns:
                 str - string representation of this class
         """
-        return "KeyManagementServers class instance for Commcell: '{0}'".format(
-            self._commcell.commserv_name
-        )
+        return "KeyManagementServers class instance for Commcell"
 
 class KeyManagementServer(object):
     """Class for representing a single KMS in the commcell."""

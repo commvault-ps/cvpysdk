@@ -141,6 +141,7 @@ class Download(object):
 
         # To set the default value if option is none
         version = self.commcell_object.commserv_version
+        direct_download = version >= 36 and not schedule_pattern
         if options is None:
             options = 'latest service pack'
 
@@ -188,20 +189,20 @@ class Download(object):
                                       "id": self.commcell_object.clients.get(cache).client_id
                                       }) if version >= 36 else client_groups.append({"clientName": cache})
         elif sync_cache and not sync_cache_list:
-            if version < 36:
-                client_groups = [{"_type_": 2}]
-            else:
+            if direct_download:
                 flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['CREATE_RC'])
                 cache_list = []
-                for obj in response_1.json()['softwareCacheDetailList']:
+                for obj in response_1.json().get('softwareCacheDetailList',[]):
                     if obj['cache']['id'] != 2:
                         cache_list.append(obj['cache']['name'])
                 for client in cache_list:
                     client_groups.append({"type": "CLIENT_ENTITY",
                                           "clientName": client,
                                           "id": int(self.commcell_object.clients.all_clients[client]['id'])})
+            else:
+                client_groups = [{"_type_": 2}]
 
-        if version >= 36:
+        if direct_download:
             win_os_list = []
             unix_os_list = []
             temp_win = ['WINDOWS_X64', 'WINDOWS_X32', 'WINDOWS_ARM64']
@@ -297,8 +298,8 @@ class Download(object):
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-        method = 'PUT' if version >= 36 else 'POST'
-        url = self._services['DOWNLOAD_SOFTWARE'] if version >= 36 else self._services['CREATE_TASK']
+        method = 'PUT' if direct_download else 'POST'
+        url = self._services['DOWNLOAD_SOFTWARE'] if direct_download else self._services['CREATE_TASK']
 
         flag, response = self._cvpysdkcommcell_object.make_request(
             method, url, request_json

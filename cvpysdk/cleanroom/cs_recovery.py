@@ -57,18 +57,20 @@ class CommServeRecovery:
                 cs_guid           (str)                --  CS GUID
 
         """
-        self._commcell_object = commcell_object
-        self._cvpysdk_object = commcell_object._cvpysdk_object
-        self._services = commcell_object._services
-        self.cs_guid = cs_guid
-        self._CS_RECOVERY_API = self._services['COMMSERVE_RECOVERY']
-        self._CS_RECOVERY_LICENSE_API = self._services['GET_COMMSERVE_RECOVERY_LICENSE_DETAILS'] % self.cs_guid
-        self._CS_RECOVERY_RETENTION_API = self._services['GET_COMMSERVE_RECOVERY_RETENTION_DETAILS'] % self.cs_guid
-        self._BACKUPSET_API = self._services['GET_BACKUPSET_INFO'] % self.cs_guid
-        self._cleanup_lock_time = None
-        self._is_licensed_commcell = self._quota_details().get('is_licensed')
-
-        self._manual_retention_details()
+        try:
+            self._commcell_object = commcell_object
+            self._cvpysdk_object = commcell_object._cvpysdk_object
+            self._services = commcell_object._services
+            self.cs_guid = cs_guid
+            self._CS_RECOVERY_API = self._services['COMMSERVE_RECOVERY']
+            self._CS_RECOVERY_LICENSE_API = self._services['GET_COMMSERVE_RECOVERY_LICENSE_DETAILS'] % self.cs_guid
+            self._CS_RECOVERY_RETENTION_API = self._services['GET_COMMSERVE_RECOVERY_RETENTION_DETAILS'] % self.cs_guid
+            self._BACKUPSET_API = self._services['GET_BACKUPSET_INFO'] % self.cs_guid
+            self._cleanup_lock_time = None
+            self._is_licensed_commcell = self._quota_details().get('is_licensed')
+            self._manual_retention_details()
+        except Exception as e:
+            raise SDKException('CommserveRecovery', '105', "Failed to initialize CommServeRecovery") from e
 
     def _get_backupsets(self):
         """Returns details of uploaded backupsets"""
@@ -96,7 +98,7 @@ class CommServeRecovery:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def _create_cs_recovery_request(self, set_name: str):
+    def _create_cs_recovery_request(self, set_name: str, address_prefixes, remember_address):
         """submits a new commserve recovery request and returns the request id to track"""
         try:
             set_id, set_size = self.backupsets[set_name]['set_id'], self.backupsets[set_name]['size']
@@ -106,7 +108,9 @@ class CommServeRecovery:
             "commcellGUID": self.cs_guid,
             "setId": set_id,
             "setName": set_name,
-            "setSize": set_size
+            "setSize": set_size,
+            "addressPrefixes": address_prefixes,
+            "rememberAddress": remember_address
         }
         flag, response = self._cvpysdk_object.make_request('POST', self._CS_RECOVERY_API, payload)
 
@@ -116,9 +120,9 @@ class CommServeRecovery:
                     raise SDKException('Response', '101', 'request creation not successful')
                 return response.json()['requestId']
             except (JSONDecodeError, KeyError):
-                raise SDKException('Responcsse', '102', 'Job id not found in response')
+                raise SDKException('Response', '102', 'Job id not found in response')
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException('CommserveRecovery', '105', "Failed to create recovery request")
 
     def _extend_recovery_request(self, request_id: int):
         """Returns True if the request is submitted successfully, otherwise, False"""
@@ -135,7 +139,24 @@ class CommServeRecovery:
             else:
                 raise SDKException('Response', '102', 'request did not submit successfully')
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException('CommserveRecovery', '105', "Failed to extend recovery request")
+
+    def _close_recovery_request(self, request_id: int):
+        """Returns True if the request is submitted successfully, otherwise, False"""
+        payload = {
+            "csGuid": self.cs_guid,
+            "requestId": request_id,
+            "operation": 3
+        }
+        flag, response = self._cvpysdk_object.make_request('PUT', self._CS_RECOVERY_API, payload)
+
+        if flag:
+            if response.json()['errorCode'] == 0:
+                return True
+            else:
+                raise SDKException('Response', '102', 'request did not submit successfully')
+        else:
+            raise SDKException('CommserveRecovery', '105', "Failed to close recovery request")
 
     def _get_active_recovery_requests(self):
 
@@ -193,7 +214,6 @@ class CommServeRecovery:
         Returns CS Recovery license quota details in a dictionary
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._CS_RECOVERY_LICENSE_API)
-
         if flag:
             response = response.json()
             return {
@@ -262,16 +282,22 @@ class CommServeRecovery:
         """
         return self._manual_retention_details()
 
-    def start_recovery(self, backupset_name: str):
+    def start_recovery(self, backupset_name: str, address_prefixes: str = "*", remember_address: bool = True):
         """
-        Submits commserve recovery request for the given backupset
+        Submits a CommServe recovery request for the given backupset.
+
         Args:
-            backupset_name (str) : name of the backup set to recover.
-                                    Ex: SET_45
+            backupset_name (str): Name of the backup set to recover.
+                                  Ex: SET_45
+            address_prefixes (str): Address prefixes to be used for the recovery.
+                                    Default is "*".
+            remember_address (bool): Whether to remember the address for future use.
+                                     Default is True.
+
         Returns:
-            Request id of the submitted request as an integer
+            int: Request ID of the submitted recovery request.
         """
-        return self._create_cs_recovery_request(backupset_name)
+        return self._create_cs_recovery_request(backupset_name, address_prefixes, remember_address)
 
     def extend_reservation(self, request_id: int):
         """
@@ -282,6 +308,16 @@ class CommServeRecovery:
             True is the request is submitted successfully, otherwise, False
         """
         return self._extend_recovery_request(request_id)
+
+    def close_reservation(self, request_id: int):
+        """
+        Closes the current recovery request and releases the VM created for it.
+        Args:
+            request_id (int) : commserve recovery request id
+        Returns:
+            True is the request is submitted successfully, otherwise, False
+        """
+        return self._close_recovery_request(request_id)
 
     def get_vm_details(self, request_id: int):
         """

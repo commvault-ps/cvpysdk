@@ -252,9 +252,7 @@ class IndexServers(object):
 
     def __repr__(self):
         """Representation string for the instance of the IndexServers class."""
-        return "IndexServers class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "IndexServers class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the index servers associated with the commcell"""

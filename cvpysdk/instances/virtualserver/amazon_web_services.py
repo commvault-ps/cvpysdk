@@ -53,8 +53,11 @@ class AmazonInstance(VirtualServerInstance):
         self._server_name = []
         self._initialize_tenant_instance_properties()
         if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
-                ["associatedClients"]["memberServers"]
+            if self._properties["virtualServerInstance"]["associatedClients"].get("memberServers"):
+                _member_servers = self._properties["virtualServerInstance"] \
+                    ["associatedClients"]["memberServers"]
+            else:
+                _member_servers = []
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():

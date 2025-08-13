@@ -63,7 +63,7 @@ class ProxmoxVEInstance(VirtualServerInstance):
         super(ProxmoxVEInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 23 
         self._server_name = [self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('clientName')]
-        self._server_host_name = [self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('hostName')]
+        self._server_host_name = [self._virtualserverinstance['vmwareVendor']['virtualCenter']['domainName']]
 
 
     def _get_instance_properties(self):

@@ -348,8 +348,8 @@ class ExchangeSubclient(Subclient):
         new_link = value.get('new_recall_link', None)
 
         base = {
-            JobOptionKeys.STUB_REHYDRATION.value: True,
-            JobOptionKeys.STUB_REHYDRATION_OPTION.value: stub_rehydration_option
+            JobOptionKeys.EXCH_STUB_REHYDRATION.value: True,
+            JobOptionKeys.EXCH_STUB_REHYDRATION_OPTION.value: stub_rehydration_option
         }
 
         additional_options = {}
@@ -376,7 +376,7 @@ class ExchangeSubclient(Subclient):
             JobOptionKeys.IS_JOURNAL_REPORT.value: value.get("journal_report", False),
             JobOptionKeys.PST_FILE_PATH.value: "",
             JobOptionKeys.TARGET_MAILBOX.value: value.get("target_mailbox", None),
-            JobOptionKeys.STUB_REHYDRATION.value: base
+            JobOptionKeys.STUB_REHYDRATION_SMALL.value: base
         }
 
         return self._json_exchange_options

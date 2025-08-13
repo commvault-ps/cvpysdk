@@ -63,6 +63,8 @@ StoragePools
 
     add_air_gap_protect()       --  Adds a new air gap protect storage pool to commcell
 
+    add_data_domain_boost_storage() -- Adds a new Data Domain Boost storage pool to commcell
+
 Attributes
 ----------
 
@@ -185,9 +187,7 @@ class StoragePools:
 
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
-        return "StoragePools class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "StoragePools class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the storage pools added to the Commcell."""
@@ -587,6 +587,42 @@ class StoragePools:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+        
+    def add_data_domain_boost_storage(self, type, storage_pool_name, media_agent, data_domain_host, storage_unit, credential_name, ddb_ma = None):
+        """Adds a new Data Domain Boost storage pool to commcell
+
+        Args:
+            type (int) -- type of data domain boost storage pool to be added ('access' or 'client')
+
+            storage_pool_name (str) -- name of the new storage pool to add
+
+            media_agent (str/object) -- name or instance of media agent
+
+            data_domain_host (str) -- hostname or IP address of the Data Domain server
+
+            storage_unit (str) -- name of the storage unit on the Data Domain server
+
+            credential_name (str) -- name of the saved credential to access the Data Domain server
+
+            ddb_ma (list<str/object>/str/object) -- list of (name of name or instance)
+                                                    or name or instance of dedupe media agent
+        Returns:
+            StoragePool object if creation is successful
+        Raises:
+            SDKException if creation is unsuccessful
+        """
+        dedup_path = None
+        if type == 'access':
+            cloud_server_type = 300
+            dedup_path = ''
+        elif type == 'client':
+            cloud_server_type = 58
+            if ddb_ma is not None:
+                raise SDKException('Storage', '101', 'DDB media agents are not supported for client type storage pool')
+        else:
+            raise SDKException('Storage', '101', 'Invalid type provided. Valid types are "access" or "client".')
+        username = data_domain_host+"//__CVCRED__"
+        return self.add(storage_pool_name=storage_pool_name, mountpath=storage_unit, media_agent=media_agent,ddb_ma =ddb_ma, dedup_path= dedup_path, cloud_server_type = cloud_server_type, credential_name=credential_name, username=username, library_name=storage_unit)
 
     def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         """
@@ -641,7 +677,7 @@ class StoragePools:
         display_vendor_id = kwargs.get('display_vendor_id', None)
         region_id = kwargs.get('region_id', None)
 
-        if library_name:
+        if library_name and (cloud_server_type is None or cloud_server_type not in (300, 58)):
             library_object = self._commcell_object.disk_libraries.get(library_name)
             library_type = library_object.library_properties.get('libraryType', None)
             tape_storage = True if library_type == 1 else tape_storage
@@ -666,7 +702,7 @@ class StoragePools:
             if len(ddb_ma) != len(dedup_path):
                 raise SDKException('Storage', '101')
 
-        if library_name is not None and mountpath != '':
+        if library_name is not None and mountpath != '' and (cloud_server_type is None or cloud_server_type not in (300, 58)):
             raise SDKException('Storage', '101')
 
         if ddb_ma is not None and (len(ddb_ma) > 6 or len(dedup_path) > 6):
@@ -747,7 +783,7 @@ class StoragePools:
         if credential_name is not None:
             request_json["storage"][0]["savedCredential"] = {"credentialName": credential_name}
 
-        if library_name is not None:
+        if library_name is not None and (cloud_server_type is None or cloud_server_type not in (300, 58)):
             request_json["storage"] = []
             request_json["storagePolicyCopyInfo"]["library"]["libraryName"] = library_name
 
@@ -823,6 +859,11 @@ class StoragePools:
                 "vendorId": vendor_id
             }
             request_json["storage"][0]["metallicStorageInfo"] = metallic_Storage
+        
+        #data domain boost storage
+        if cloud_server_type in (300, 58):
+            request_json["storagePolicyCopyInfo"]["library"]["libraryName"] = library_name
+            request_json["clientGroup"] = {"clientGroupId": 0}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._add_storage_pool_api, request_json

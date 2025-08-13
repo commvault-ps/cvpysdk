@@ -508,6 +508,14 @@ ENTITY_TYPE_MAP = {
     52: "o365 sharepoint sites app",
 }
 
+class UserRole(Enum):
+    MSP_ADMIN = 0
+    TENANT_ADMIN = 1
+    TENANT_USER = 2
+    MSP_USER = 3
+    RESTRICTED_USER = 4
+    NIL = 5
+
 
 class HypervisorType(Enum):
     """Class to maintain all the hypervisor related constants."""
@@ -816,3 +824,33 @@ class VsInstanceType:
         1501: "kubernetes",
         1600: "proxmox_ve"
     }
+
+
+def convert_bytes_to_tb(size_in_bytes):
+    """
+            Convert bytes to TB
+            Args:
+                size_in_bytes(int)  -- Size in Bytes
+            Returns:
+                (int)               -- Size in TB
+            """
+    return float(size_in_bytes) / (1024 ** 4) if size_in_bytes else 0
+
+
+cost_assessment_config = {
+            "standardRetention":  30,
+            "annualGrowthRate": 10,
+            "dailyChangeRateVM": 1.6,
+            "utilizationFactorVM": 50,
+            "dailyChangeRateDB": 2.8,
+            "dailyChangeRateFO": 1.6,
+            "storageReplicationTarget": 50
+        }
+
+workload_mapping = {
+            "VM": "Virtual machine",
+            "FILE_STORAGE": "File & Object",
+            "DB": "Database"
+        }
+
+

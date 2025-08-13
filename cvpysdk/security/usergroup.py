@@ -132,6 +132,7 @@ UserGroup:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from .security_association import SecurityAssociation
+from ..additional_settings import AdditionalSettings
 
 from ..exception import SDKException
 
@@ -173,10 +174,8 @@ class UserGroups(object):
 
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
-        return "UserGroups class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
-
+        return "UserGroups class instance for Commcell"
+        
     def _get_user_groups(self, system_created=True, full_response: bool = False):
         """Gets all the user groups associated with the commcell
 
@@ -757,14 +756,15 @@ class UserGroup(object):
         self._company_id = None
         self._company_name = None
         self._allow_multiple_company_members = False
+        self._additional_settings = None
         self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = 'User Group instance for UserGroup: "{0}", of Commcell: "{1}"'
+        representation_string = 'User Group instance for UserGroup: "{0}"'
 
         return representation_string.format(
-            self.user_group_name, self._commcell_object.commserv_name
+            self.user_group_name
         )
 
     def _get_usergroup_id(self):
@@ -840,6 +840,17 @@ class UserGroup(object):
         """Returns the UserGroup display name"""
         return self._properties['userGroupEntity']['userGroupName']
 
+    @name.setter
+    def name(self, new_name):
+        """Sets the user group name on this commcell"""
+        if not isinstance(new_name, str):
+            raise SDKException('UserGroup', '101')
+        if not new_name.strip():
+            raise SDKException('UserGroup', '102', 'User group name cannot be empty')
+
+        request_json = {"newName": new_name}
+        self._v4_update_usergroup_props(request_json)
+
     @property
     def user_group_id(self):
         """Treats the usergroup id as a read-only attribute."""
@@ -876,6 +887,7 @@ class UserGroup(object):
 
     def refresh(self):
         """Refresh the properties of the UserGroup."""
+        self._additional_settings = None
         self._get_usergroup_properties()
 
     @property
@@ -1281,3 +1293,9 @@ class UserGroup(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def additional_settings(self):
+        if self._additional_settings is None:
+            self._additional_settings = AdditionalSettings(self)
+        return self._additional_settings

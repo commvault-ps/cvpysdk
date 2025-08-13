@@ -257,7 +257,7 @@ class _PayloadGeneratorPlanV4:
         # validate the input
         if 'storageTemplateTags' not in copy_details and 'storage_name' not in copy_details:
             raise SDKException('Plan', '102', 'Storage details is required for copy configuration.')
-        
+
         temp_dict = copy_details.copy() # make a copy of the input to avoid modifying the original input
 
         payload = {
@@ -323,20 +323,21 @@ class _PayloadGeneratorPlanV4:
 
         return backup_destinations
 
-    def get_schedule_payload(self, schedule_details: Dict) -> Dict:
+    def get_schedule_payload(self, schedule_details: dict) -> dict:
         """
         Method to get the payload for a single schedule based on the provided configuration.
 
         Args:
-            - backupType (str): Type of backup schedule
-            - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
-            - forDatabasesOnly (bool): Indicates if the schedule is for databases only (Default: False)
+            schedule_details (dict): Configuration for the schedule.
+            - Should contain the following
+                - backupType (str): Type of backup schedule
+                - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
 
-            For scheduleOperation = MODIFY / DELETE:
-            - scheduleId (int): ID of the schedule
-            - policyId (int): ID of the policy
+            - For scheduleOperation = MODIFY / DELETE:
+                - scheduleId (int): ID of the schedule
+                - policyId (int): ID of the policy
 
-            Note: Additional properties can be sent in the input to update the payload with the same exact key names. Get the path and key names from the API documentation or Command Center equivalent API.
+            - Note: Additional properties can be sent in the input to update the payload with the same exact key names. Get the path and key names from the API documentation or Command Center equivalent API.
 
         Returns:
             dict: Schedule details as a dictionary.
@@ -350,12 +351,11 @@ class _PayloadGeneratorPlanV4:
             if 'scheduleId' not in schedule_details or 'policyId' not in schedule_details:
                 raise SDKException('Plan', '102', 'scheduleId and policyId are required for MODIFY / DELETE operations.')
 
-        payload = {}
+        payload = dict()
         backup_type = schedule_details['backupType']
-        is_transaction_log = backup_type == "TRANSACTIONLOG"
 
         # Set default values for the payload
-        if is_transaction_log:
+        if backup_type == "TRANSACTIONLOG":
             payload['schedulePattern'] = {
                 "scheduleFrequencyType": "AUTOMATIC",
                 "maxBackupIntervalInMins": 240
@@ -367,13 +367,22 @@ class _PayloadGeneratorPlanV4:
                 "logFilesThreshold": 50
             }
             payload['forDatabasesOnly'] = True
-        else:
+        elif backup_type == "INCREMENTAL":
             payload['schedulePattern'] = {
                 "scheduleFrequencyType": "DAILY",
                 "startTime": 75600,
                 "frequency": 1
             }
             payload['forDatabasesOnly'] = False
+        elif backup_type == "SYNTHETICFULL":
+            payload['schedulePattern'] = {
+                "scheduleFrequencyType": "AUTOMATIC",
+                "startTime": 75600,
+                "frequency": 90,
+                "daysBetweenSyntheticFulls": 90
+            }
+            payload['forDatabasesOnly'] = False
+            payload['scheduleName'] = "Synthetic Fulls"
 
         payload['scheduleOperation'] = operation_type
 
@@ -381,19 +390,20 @@ class _PayloadGeneratorPlanV4:
         # This will override the default values
         # This will also set advanced properties for schedule if provided in the input
         payload = self.update_payload(original_payload=payload, update_info_dict=schedule_details)
-        
+
         return payload
 
-    def get_rpo_payload(self, schedules: List[dict]) -> dict:
+    def get_rpo_payload(self, schedules: list[dict]) -> dict:
         """
             Method to get the payload for multiple schedules based on the provided configuration
 
             Args:
-                - backupType (str): Type of backup
-                - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
-                - forDatabasesOnly (bool): Indicates if the schedule is for databases only (Default: False)
+                schedules (list): List of dictionaries representing schedule configurations.
+                - Each dictionary should contain the following
+                    - backupType (str): Type of backup
+                    - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
 
-                Note: Additional properties can be sent in the input to update the payload with the same exact key names.
+                - Note: Additional properties can be sent in the input to update the payload with the same exact key names.
 
             Returns:
                 dict: Full schedule payload as a dictionary.
@@ -449,7 +459,7 @@ class _PayloadGeneratorPlanV4:
 
         return plan_payload
 
-    def update_payload(self, original_payload, update_info_dict) -> Dict:
+    def update_payload(self, original_payload: dict, update_info_dict: dict) -> dict:
         """
         Recursively update the original dictionary with the values from the update dictionary.
 
@@ -463,10 +473,10 @@ class _PayloadGeneratorPlanV4:
             dict: The updated dictionary.
 
         Example:
-            >>> original = {'a': 1, 'b': {'c': 2, 'd': 3}}
-            >>> update = {'b': {'d': 4}, 'e': 5}
-            >>> updated = update_payload(original, update)
-            >>> print(updated)
+            original = {'a': 1, 'b': {'c': 2, 'd': 3}}
+            update = {'b': {'d': 4}, 'e': 5}
+            updated = update_payload(original, update)
+            print(updated)
             {'a': 1, 'b': {'c': 2, 'd': 4}, 'e': 5}
         """
         for key, value in update_info_dict.items():
@@ -521,9 +531,7 @@ class Plans(object):
 
     def __repr__(self):
         """Representation string for the instance of the Plans class."""
-        return "Plans class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Plans class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the plans added to the Commcell."""
@@ -903,19 +911,19 @@ class Plans(object):
         """
         if not isinstance(plan_type, str):
             raise SDKException('Plan', '101')
-        
+
         plan_type_lower = plan_type.lower()
-        
-        if plan_type_lower not in ["dlo", "server", "laptop", "database", "fsserver", "fsibmivtl", "snap", 
-                                    "vsaserver", "vsareplication", "exchangeuser", "exchangejournal", 
-                                    "office365", "dynamics365", "dataclassification", "archiver"]:
+
+        if plan_type_lower not in ["dlo", "server", "laptop", "database", "fsserver", "fsibmivtl", "snap",
+                                   "vsaserver", "vsareplication", "exchangeuser", "exchangejournal",
+                                   "office365", "dynamics365", "dataclassification", "archiver"]:
             raise SDKException('Plan', '102', 'Invalid Plan Type Passed as Parameter')
 
         params = f"fq=plans.subtype%3Ain%3A{plan_type}&fl=plans.plan.planId%2Cplans.plan.planName%2Cplans.subtype%2Cplans.type"
 
         if company_name:
             company_id = (
-                self._commcell_object.organizations.get(company_name).organization_id 
+                self._commcell_object.organizations.get(company_name).organization_id
                 if company_name != 'Commcell' else 0
             )
             params += f"&fq=companyId%3Aeq%3A{company_id}"
@@ -1075,7 +1083,10 @@ class Plans(object):
                         include_folder_filter               (list)  -- Include folder filter
                         enable_message_rules                (bool)  -- Enable message rules
                         truncate_body                       (bool)  -- Truncate body
-                        truncate_body_to_size               (int)   -- Size to which body should be truncated (default: 1024)
+                        truncate_body_to_size               (int)   -- Size to which body should be truncated
+                                                                       (default: 1024)
+                        num_days_backup_version             (int)   -- Number of days to retain backup versions
+                                                                       (default:365)
 
             Returns:
                 Plan object of the created plan
@@ -1096,7 +1107,9 @@ class Plans(object):
         request_json = self._get_plan_template(plan_sub_type)
         request_json['plan']['summary']['plan']['planName'] = plan_name
         exch_retention = request_json['plan']['exchange']['mbRetention']['detail']['emailPolicy']['retentionPolicy']
-        exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_received_time', -1)
+        exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_deletion_time', -1)
+        exch_retention['type'] = 1
+        exch_retention['numOfDaysForMediaPruningForDeletedMb'] = -1
         if plan_sub_type == 'ExchangeUser':
             exch_arch = request_json['plan']['exchange']['mbArchiving']['detail']['emailPolicy']['archivePolicy']
             exch_cleanup = request_json['plan']['exchange']['mbCleanup']['detail']['emailPolicy']['cleanupPolicy']
@@ -1138,9 +1151,11 @@ class Plans(object):
             exch_arch['includeMsgsOlderThan'] = kwargs.get('include_msgs_older_than', 0)
             exch_arch['includeMsgsLargerThan'] = kwargs.get('include_msgs_larger_than', 0)
             exch_arch['archiveMailbox'] = kwargs.get('enable_archive_on_archive_mailbox', False)
-            if 'retain_msgs_deletion_time' in kwargs and kwargs.get('retain_msgs_deletion_time') > 0:
-                exch_retention['type'] = 1
-                exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_deletion_time', 0)
+            exch_retention['numOfDaysForRetainingBackupVersions'] = kwargs.get('num_days_backup_version', 365)
+
+            if 'retain_msgs_received_time' in kwargs and kwargs.get('retain_msgs_received_time') > 0:
+                exch_retention['type'] = 0
+                exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_received_time')
         else:
             exch_arch = request_json['plan']['exchange']['mbJournal']['detail']['emailPolicy']['journalPolicy']
         exch_arch['contentIndexProps']['enableContentIndex'] = kwargs.get('enable_content_search', False)
@@ -1367,7 +1382,7 @@ class Plans(object):
                                                       f'with error: {error_message}')
                 if error_code != 0:
                     raise SDKException('Plan', '102', f'Failed to create new V4 Server Plan\nError: "{error_message}"')
-                
+
                 plan_name = response_value['plan']['name']
 
                 self.refresh()
@@ -1462,7 +1477,7 @@ class Plans(object):
         request_json = self._get_plan_template(plan_sub_type, "MSP")
         if plan_sub_type == "Laptop":
             del request_json['plan']['laptop']['accessPolicies']
-            
+
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
@@ -1508,7 +1523,7 @@ class Plans(object):
                 'useGlobalPolicy'] = {
                     "storagePolicyId": int(storage_pool_obj.storage_pool_id)
                 }
-            
+
             # From SP36, snap copy wont be created by default during plan creation or present in the template
             if len(request_json['plan']['storage']['copy']) > 1:
                 request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
@@ -1655,12 +1670,12 @@ class Plans(object):
 
         if not flag:
             raise SDKException('Response', '101', self._update_response_(response.text))
-        
+
         if response.json() and 'id' in response.json():
             return {solution['name']: solution['id'] for solution in response.json()['id']}
         else:
             raise SDKException('Response', '102')
-        
+
     def refresh(self, **kwargs):
         """
         Refresh the list of plans on this commcell.
@@ -2081,6 +2096,7 @@ class Plan(object):
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
         self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
+        self._PLAN_RPO_RUN = self._services['SERVER_PLAN_RPO_RUN'] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
         self._API_SECURITY = self._services['SECURITY_ASSOCIATION']
         self._API_SECURITY_ENTITY = self._services['ENTITY_SECURITY_ASSOCIATION']
@@ -2215,7 +2231,7 @@ class Plan(object):
                                         copy['retentionRules']['extendedRetentionRuleOne']['rule'],
                                         copy['retentionRules']['extendedRetentionRuleOne']['endDays'],
                                         copy['retentionRules']['extendedRetentionRuleOne']['graceDays']
-                                    ) 
+                                    )
                             if copy['isDefault'] == 1:
                                 self._storage_copies[
                                     copy['StoragePolicyCopy']['copyName']]['isDefault'] = True
@@ -2655,7 +2671,7 @@ class Plan(object):
                 raise IndexError('Full backup schedule not enabled')
         else:
             schedule_id = list(filter(
-                lambda st: st['subTask']['flags'] == 65536, self.schedule_policies['data']._subtasks
+                lambda st: st['subTask']['subTaskName'] != 'Synthetic Fulls', self.schedule_policies['data']._subtasks
             ))[0]['subTask']['subTaskId']
         self.schedule_policies['data'].modify_schedule(
             schedule_json,
@@ -2690,7 +2706,7 @@ class Plan(object):
                     if custom_error_message:
                         error_message = custom_error_message + '\nError: "{0}"'.format(error_message)
                     raise SDKException('Plan', '102', error_message)
-                
+
                 self.refresh()
 
             else:
@@ -2733,9 +2749,9 @@ class Plan(object):
 
         if len(backup_destinations) > 1:
             raise SDKException('Plan', '102', f'Multiple copies found with name: [{copy_name}] and region: [{region_name}]')
-        
+
         copy_details = next(iter(backup_destinations), None)
-        
+
         return copy.deepcopy(copy_details) # return a deep copy to avoid modifying the original properties
 
     def get_storage_copy_id(self, copy_name: str, region_name: str = None) -> int:
@@ -2939,7 +2955,7 @@ class Plan(object):
 
         if not filtered_schedules:
             raise SDKException('Plan', '102', f'No schedule found with the provided filter: {schedule_filter} for plan: [{self.plan_name}]')
-        
+
         if len(filtered_schedules) > 1:
             raise SDKException('Plan', '102', f'Multiple schedules found with the provided filter: {schedule_filter} for plan: [{self.plan_name}]')
 
@@ -2985,7 +3001,7 @@ class Plan(object):
                 - if failed to add the schedule to the plan
         """
         schedule_payload = self.plan_v4_helper.get_schedule_payload(schedule_options)
-        
+
         payload = {
             "backupFrequency": {
                 "schedules": [schedule_payload]
@@ -2993,7 +3009,7 @@ class Plan(object):
         }
         flag, response = self._cvpysdk_object.make_request('PUT', self._PLAN_RPO, payload)
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to add new schedule to the plan: [{self.plan_name}]')    
+        self.__handle_response(flag, response, custom_error_message=f'Failed to add new schedule to the plan: [{self.plan_name}]')
 
     def edit_schedule(self, schedule_options: dict, schedule_filter: dict) -> None:
         """
@@ -3191,6 +3207,24 @@ class Plan(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def run_plan_schedule(self, schedule_id: int, policy_id: int):
+        """ Method to run a schedule for all the subclients associated with this plan.
+        Args:
+            schedule_id (int)   --  schedule id of the plan
+            policy_id   (int)   --  policy id of the plan
+
+        Raises:
+                SDKException
+                    if no associated sublicent found to run the schedule
+        """
+        request_json = {
+            "scheduleId": int(schedule_id),
+            "policyId": int(policy_id)
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', self._PLAN_RPO_RUN, request_json)
+
+        self.__handle_response(flag, response, custom_error_message=f'Failed to run schedule for the plan: [{self.plan_name}]')
 
     def _update_plan_props(self, props):
         """Updates the properties of the plan
@@ -3650,7 +3684,7 @@ class Plan(object):
         if not isinstance(associations_list, list):
             raise SDKException('Plan', '102')
 
-        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list,
                                         is_user, request_type, external_group)
 
     @property
@@ -4179,9 +4213,9 @@ class Plan(object):
                     raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
             else:
                 raise SDKException('Plan', 102, response.text)
-            
+
         return result
-    
+
     def __update_content_policy(self, content):
         """
         Args:
@@ -4206,7 +4240,7 @@ class Plan(object):
             For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
 
         """
-        
+
         request_json = {
             'backupContent' : content
         }
@@ -4261,7 +4295,7 @@ class Plan(object):
                 result['backupSystemStateOnlyWithFullBackup'] = data.get('backupSystemStateOnlyWithFullBackup', False)
 
         return result
-    
+
     def update_backup_content(self, content, request_type = 'OVERWRITE'):
         """
         Args:
@@ -4300,13 +4334,13 @@ class Plan(object):
 
             For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
-        
+
         update_request_type = {
             "OVERWRITE": 1,
             "UPDATE": 2,
             "DELETE": 3
         }
-        
+
         subclients = self.policy_subclient_ids()
 
         if not subclients:
@@ -4314,7 +4348,7 @@ class Plan(object):
                 content = self.__map_content_to_new_format(content)
             self.__update_content_policy(content)
             return
-        
+
         for os, value in content.items():
             request_json = {
                 "subClientProperties": {
@@ -4322,9 +4356,9 @@ class Plan(object):
                     "fsContentOperationType" : update_request_type.get(request_type, 1)
                 }
             }
-            
+
             request_url = self._commcell_object._services['SUBCLIENT'] % subclients[os]
-            
+
             contents = list()
             for key, val in value.items():
                 if key.lower() == 'content':
@@ -4333,12 +4367,12 @@ class Plan(object):
                     for path in val: contents.append({"excludePath" : path})
                 if os == 'Windows' and key == 'Backup System State':
                     request_json['subClientProperties']['fsSubClientProp'] = {'backupSystemState' : val}
-                    
+
             if contents:
                 request_json['subClientProperties']['content'] = contents
-            
+
             flag, response = self._commcell_object._cvpysdk_object.make_request('POST', request_url, request_json)
-                
+
             if flag:
                 if response.json() and 'response' in response.json():
                     errorCode = response.json()['response'][0].get('errorCode')
@@ -4400,19 +4434,19 @@ class Plan(object):
             
         """
         request_url  = self._commcell_object._services['APPLICABLE_SOLNS_ENABLE' if solutions else 'APPLICABLE_SOLNS_DISABLE'] % self.plan_id
-        
+
         if solutions:
             supported_solutions =  self._commcell_object.plans.get_supported_solutions()
             request_json = {"solutions": [{"id": supported_solutions[soln_name], "name": soln_name} for soln_name in solutions]}
         else:
             request_json = None
-                    
+
         flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
-        
+
         if not flag:
             raise SDKException('Response', '101', self._update_response_(response.text))
-        
+
         if not response.json() or response.json()['errorCode']:
             raise SDKException('Plan', 102, 'Failed to update Applicable Solutions for Plan')
-                
+
         self.refresh()

@@ -16,44 +16,46 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""Main file for getting DR orchestration/sync job details and phases
+"""Main file for getting Recovery job details and phases
 
-DRJob: Class for representing all the DR jobs
+RecoveryJob: Class for representing all the Recovery jobs
 
-DRJob(Job):
+RecoveryJob(Job):
     __init__(commcell_object,
-            job_id)                 -- Initialise object of DRJob
-    _get_replication_job_stats()    -- Gets the DR job statistics
-    get_phases()                    -- Gets the phases of the DR job
-    get_vm_list()                   -- Gets the list of all VMs and their properties
+            job_id)                 -- Initialise object of RecoveryJob
+    _get_recovery_job_stats()       -- Gets the Recovery job statistics
+    get_phases()                    -- Gets the phases of the Recovery job
 """
 
-from cvpysdk.exception import SDKException
+import time
 from cvpysdk.job import Job
+from cvpysdk.exception import SDKException
 from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJobPhaseToText
 
 
-class DRJob(Job):
-    """Class for performing DR orchestration operations on ReplicationMonitor."""
+
+class RecoveryJob(Job):
+    """Class for performing Recovery Job operation"""
 
     def __init__(self, commcell_object, job_id):
-        """Initialise the DR job"""
-        self._replication_job_stats = None
+        """Initialise the Recovery job"""
+        self._recovery_job_stats = None
 
         service_url = commcell_object._services['DRORCHESTRATION_JOB_STATS']
-        self._REPLICATION_STATS = service_url % job_id
+        self._RECOVERY_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
 
     def __repr__(self):
-        representation_string = 'DRJob class instance for job id: "{0}"'
+        representation_string = 'RecoveryJob class instance for job id: "{0}"'
         return representation_string.format(self.job_id)
 
-    def _get_replication_job_stats(self):
-        """Gets the statistics for the DR Job
+    def _get_recovery_job_stats(self):
+        """Gets the statistics for the Recovery Job
         Returns:
                 [{
                     'jobId': 123,
+                    'recoveryEntityId': 1
                     'replicationId': 1,
                     'phase': [{
                             'phase': 1,
@@ -95,7 +97,7 @@ class DRJob(Job):
                 }]
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._REPLICATION_STATS)
+            'GET', self._RECOVERY_STATS)
 
         if flag:
             if response.json() and 'job' in response.json():
@@ -118,20 +120,13 @@ class DRJob(Job):
             raise SDKException('Response', '101', response_string)
 
     def _initialize_job_properties(self):
-        """Initialises the job properties and then initialises the DR job details"""
+        """Initialises the job properties and then initialises the Recovery job details"""
         Job._initialize_job_properties(self)
-        self._replication_job_stats = self._get_replication_job_stats()
-
-    def blobs_retained(self):
-        """Returns True if blobs to be retained chosen in failover job for Azure destination"""
-        task_details_json = self.task_details
-        dr_opts = task_details_json['subTasks'][0]['options']['adminOpts'].get('drOrchestrationOption')
-        blobs_retained = dr_opts.get('retainIntegritySnapshot') if dr_opts else None
-        return blobs_retained
+        self._recovery_job_stats = self._get_recovery_job_stats()
 
     def get_phases(self):
         """
-        Gets the DR phases of the job
+        Gets the phases of the recovery job
         Returns: dictionaries of phases for each source and destination VM pair
             {"source_vm_1": [{
                 'phase_name': enum - Enum of phase short name and full name mapping,
@@ -144,12 +139,13 @@ class DRJob(Job):
             }
         """
         job_stats = {}
-        if not self._replication_job_stats:
+        if not self._recovery_job_stats:
             return job_stats
-        for pair_stats in self._replication_job_stats:
+        for pair_stats in self._recovery_job_stats:
             phases = []
             for phase in pair_stats.get('phase', []):
                 phases.append({
+                    # We use common enum for job phases
                     'phase_name': DRJobPhaseToText[DRJobPhases(phase.get('phase', '')).name]
                     if phase.get('phase', '') else '',
                     'phase_status': phase.get('status', 1),
@@ -163,23 +159,32 @@ class DRJob(Job):
             job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
         return job_stats
 
-    def get_storagepolicy_restore_vm(self, source):
+    def get_restore_vm_from_recovery_job(self, entity, max_retries=30, check_frequency=10):
         """
-        Fetches storage policy details for RESTORE_VM phases.
+        Retrieves the restore job ID for a specific VM entity during a recovery job.
+
+        Retries for up to `max_retries` times, checking every `check_frequency` seconds.
+
+        Args:
+            entity (str): Name of the VM entity.
+            max_retries (int): Number of attempts to check for the restore phase.
+            check_frequency (int): Time in seconds between attempts.
+
+        Returns:
+            int: Job ID of the restore VM job.
+
+        Raises:
+            Exception: If the RESTORE_VM phase is not found after retries.
         """
+        for attempt in range(max_retries):
+            recovery_job_obj = RecoveryJob(self._commcell_object, self.job_id)
+            phases = recovery_job_obj.get_phases().get(entity, [])
 
-        fetched_value = {}
-        phases = self.get_phases().get(source, [])
-        for phase in phases:
-            if phase.get('phase_name').name == "RESTORE_VM":
-                values = DRJob(self._commcell_object, phase.get('job_id')).task_details
-                fetched_value = {
-                    'copyId': str(
-                        values.get('subTasks', [])[0].get('options', {}).get('restoreOptions', {}).get(
-                            'storagePolicy', {}).get('copyId')),
-                    'copyName': str(
-                        values.get('subTasks', [])[0].get('options', {}).get('restoreOptions', {}).get(
-                            'storagePolicy', {}).get('copyName'))
-                }
+            for phase in phases:
+                if phase.get('phase_name').name == "RESTORE_VM":
+                    restore_job_id = phase.get('job_id')
+                    return restore_job_id
 
-        return fetched_value
+            time.sleep(check_frequency)
+
+        raise Exception(f"Failed to locate RESTORE_VM phase for VM '{entity}' in job {self.job_id}")

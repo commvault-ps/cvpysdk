@@ -117,9 +117,7 @@ class Domains(object):
 
     def __repr__(self):
         """Representation string for the instance of the Domains class."""
-        return "Domains class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Domains class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the domains associated to the Commcell."""

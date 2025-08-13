@@ -276,6 +276,9 @@ class JobOptionKeys(Enum):
     IS_JOURNAL_REPORT = "isJournalReport"
     PST_FILE_PATH = "pstFilePath"
     TARGET_MAILBOX = "stubRehydration"
+    STUB_REHYDRATION_SMALL = "stubRehydration"
+    EXCH_STUB_REHYDRATION = "exchangeStubRehydrate"
+    EXCH_STUB_REHYDRATION_OPTION = "exchangeStubRehydrationOption"
 
 class JobOptionValues(Enum):
     """Enum to specify job option values"""
@@ -295,5 +298,4 @@ class JobOptionIntegers(Enum):
     RECOVER_STUBS = 0
     STUB_REPORTING = 1
     UPDATE_RECALL_LINK = 2
-
 

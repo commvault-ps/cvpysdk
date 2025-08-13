@@ -151,7 +151,11 @@ ActivateEntities:
 
     delete()                            --  deletes the regex entity in the commcell for given entity name
 
-    _process_entity_containers()        -- returns the container details for the entity
+    _process_entity_containers()        --  returns the container details for the entity
+
+    get_entity_by_sensitivity()         --  Retrieve entities categorized by their sensitivity type from the API.
+
+    _get_entities_by_sensitivity()      --  Categorize entities by their sensitivity type, handling all possible cases and input errors.
 
 ActivateEntity:
 
@@ -324,6 +328,7 @@ class ActivateEntities(object):
         self._api_get_containers = self._services['ACTIVATE_ENTITY_CONTAINER']
         self._api_create_regex_entity = self._api_get_all_regex_entities
         self._api_delete_regex_entity = self._services['ACTIVATE_ENTITY']
+        self._api_entity_sensitivity = self._services['ENTITY_BY_SENSITIVITY']
         self.refresh()
 
     def add(self, entity_name, entity_regex, entity_keywords, entity_flag, is_derived=False, parent_entity=None):
@@ -457,6 +462,23 @@ class ActivateEntities(object):
         """
         return self._regex_entities[entity_name]
 
+    def get_entity_by_sensitivity(self):
+        """
+        Retrieve entities categorized by their sensitivity type from the API.
+
+        Returns:
+            tuple: Three lists containing entities of critical, high, and moderate sensitivity, respectively.
+
+        Raises:
+            SDKException: If the API response does not contain the expected data.
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._api_entity_sensitivity)
+        if flag:
+            if response.json() and 'sensitiveEntities' in response.json():
+                return self._get_entities_by_sensitivity(response.json())
+            raise SDKException('ActivateEntity', '108')
+        self._response_not_success(response)
+
     def _get_all_activate_entities(self):
         """Gets the list of all regex entities associated with this commcell.
 
@@ -557,6 +579,81 @@ class ActivateEntities(object):
                         output['container'] = country['container']
                         return output
         return output
+
+    def _get_entities_by_sensitivity(self, entities_response):
+        """
+        Categorize entities by their sensitivity type, handling all possible cases and input errors.
+
+        Args:
+            entities_response (dict): A dictionary expected to contain a "sensitiveEntities" key,
+                which should be a list of dicts. Each dict should have:
+                    - "sensitivityType" (int): 1 (critical), 2 (high), or 3 (moderate)
+                    - "entities" (str): Comma-separated entity names
+
+        Returns:
+            tuple: Three lists containing entities of critical, high, and moderate sensitivity, respectively.
+                (critical_entities, high_entities, moderate_entities)
+
+        Raises:
+            SDKException:
+                If entities_response is not a dict, or if "sensitiveEntities" is not a list,
+                or if any item is not a dict, or if "entities" is not a string.
+                If "sensitiveEntities" is missing, or if required keys are missing in any item.
+                If "entities" cannot be parsed as a comma-separated string.
+
+        """
+        entity_critical = []
+        entity_high = []
+        entity_moderate = []
+
+        # Defensive: Check input type
+        if not isinstance(entities_response, dict):
+            raise SDKException('ActivateEntity', '101',
+                               "entities_response must be a dict")
+
+        sensitive_entities = entities_response.get("sensitiveEntities")
+        if sensitive_entities is None:
+            raise SDKException('ActivateEntity', '102',
+                               "'sensitiveEntities' key missing in entities_response")
+        if not isinstance(sensitive_entities, list):
+            raise SDKException('ActivateEntity', '101',
+                               "'sensitiveEntities' must be a list")
+
+        for idx, item in enumerate(sensitive_entities):
+            if not isinstance(item, dict):
+                raise SDKException('ActivateEntity', '101',
+                                   f"Item at index {idx} in 'sensitiveEntities' is not a dict")
+
+            if "sensitivityType" not in item:
+                raise SDKException('ActivateEntity', '102',
+                             f"'sensitivityType' key missing in item at index {idx}")
+            if "entities" not in item:
+                raise SDKException('ActivateEntity', '102',
+                             f"'entities' key missing in item at index {idx}")
+
+            sensitivity_type = item["sensitivityType"]
+            entities_str = item["entities"]
+
+            if not isinstance(entities_str, str):
+                raise SDKException('ActivateEntity', '101',
+                                   f"'entities' value at index {idx} must be a string")
+            try:
+                entities = [e.strip() for e in entities_str.split(",") if e.strip()]
+            except Exception as e:
+                raise SDKException('ActivateEntity', '102',
+                                   f"Error parsing 'entities' at index {idx}: {e}")
+
+            if sensitivity_type == 1:
+                entity_critical.extend(entities)
+            elif sensitivity_type == 2:
+                entity_high.extend(entities)
+            elif sensitivity_type == 3:
+                entity_moderate.extend(entities)
+            else:
+                # Unknown sensitivity type, do nothing
+                continue
+
+        return entity_critical, entity_high, entity_moderate
 
     def _get_regex_entity_from_collections(self, collections):
         """Extracts all the regex entities, and their details from the list of collections given,

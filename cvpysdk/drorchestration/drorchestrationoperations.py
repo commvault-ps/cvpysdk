@@ -119,9 +119,7 @@ class DROrchestrationOperations(object):
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = '"DROrchestrationOperations: instance for commcell: "{1}"'
-        return representation_string.format(
-            self._commcell_object.commserv_name)
+        return 'DROrchestrationOperations instance for Commcell'
 
     @property
     def dr_orchestration_job_phase(self):
@@ -854,9 +852,7 @@ class DROrchestrationOperations(object):
                 replicationId, str):
             raise SDKException('DROrchestrationOperations', '101')
 
-        _DR_JOB_STATS = (self._services['FAILOVER_GROUP_JOB_STATS']
-                         if self._commcell_object.commserv_version > 30
-                         else self._services['DR_GROUP_JOB_STATS']) % (jobId, self.dr_group_id, replicationId)
+        _DR_JOB_STATS = self._services['FAILOVER_GROUP_JOB_STATS'] % (jobId, self.dr_group_id, replicationId)
 
         # passing the built json to get DR orchestration job phases
         (flag, response) = self._commcell_object._cvpysdk_object.make_request(

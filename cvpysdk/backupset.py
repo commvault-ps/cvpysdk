@@ -1128,7 +1128,6 @@ class Backupset(object):
             'vm_disk_browse': False,
             'filters': [],
             'job_id': 0,
-            'commcell_id': self._commcell_object.commcell_id,
             'include_aged_data': False,
             'include_meta_data':False,
             'include_hidden': False,
@@ -1515,7 +1514,6 @@ class Backupset(object):
         if options['job_id'] != 0:
             request_json['advOptions']['advConfig'] = {
                 'browseAdvancedConfigBrowseByJob': {
-                    'commcellId': options['commcell_id'],
                     'jobId': options['job_id']
                 }
             }

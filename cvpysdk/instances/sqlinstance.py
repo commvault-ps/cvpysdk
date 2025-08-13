@@ -448,7 +448,7 @@ class SQLServerInstance(Instance):
                 to_time_type = "toTime"
             to_time_dict = {
                 "timeRange": {
-                    "toTimeValue": to_time
+                    to_time_type: to_time
                 }
             }
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption'].update(to_time_dict)

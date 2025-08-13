@@ -45,18 +45,24 @@ Credentials:
 
     get_security_associations() --  Returns the security association dictionary for a given user or user group
 
+    add_database_creds()        --  Creates database credential on this commcell for a given DATABASE type
+
     add_db2_database_creds      --  Creates DB2 credential on this commcell
 
     add_postgres_database_creds --  Creates PostgreSQL credential on this commcell
+
+    add_informix_database_creds --  Creates Informix credential on this commcell
 
     add_mysql_database_creds    --  Creates MySQL credential on this commcell
 
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
 
-    add_azure_cosmosdb_creds()  --  Creates credential for azure cosmos db using azure application
+    add_azure_app_registration_creds()  --  Creates credential for azure using azure application
 	                                id and application secret key 
 
     add_aws_s3_creds()          --  Creates aws s3 credential
+
+    add_aws_creds()  -- Creates AWS credentials on this commcell based on the credential type
 
 Credential:
     __init__()                  --  initiaizes the credential class object
@@ -128,9 +134,7 @@ class Credentials(object):
 
     def __repr__(self):
         """Representation string for the instance of the Credentials class."""
-        return "Credentials class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Credentials class instance for Commcell"
 
     def _get_credentials(self):
         """Returns the Credentials configured on this commcell
@@ -367,13 +371,13 @@ class Credentials(object):
         }
         return security_association
 
-    def add_db2_database_creds(self, credential_name, username, password, description=None):
-        """Creates db2 credential on this commcell
+    def add_storage_array_creds(self, credential_name, username, password, description=None):
+        """Creates storage array credential on this commcell
             Args:
 
                 credential_name (str)   --  name to be given to credential account
 
-                username  (str)         --  name of the db2 credential
+                username  (str)         --  name of the storage array credential
 
                 password   (str)        --  password for the credential
 
@@ -390,10 +394,64 @@ class Credentials(object):
                 'Credential', '102', "Credential {0} already exists on this commcell.".format(
                     credential_name)
             )
+        encoded_password = b64encode(password.encode()).decode()
+        create_credential = {
+            "accountType": "STORAGE_ARRAY_ACCOUNT",
+            "name": credential_name,
+            "userAccount": username,
+            "password": encoded_password,
+            "description": description
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, credential_name, id)
+
+    def add_database_creds(self, database_type, credential_name, username, password, description=None):
+        """Creates database credential on this commcell for a given DATABASE type
+            Args:
+                database_type   (str)   --  type of database credential to be created
+
+                Accepted values for database_type: MYSQL / INFORMIX / POSTGRESQL / DB2
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  MySQL username
+
+                password   (str)        --  MySQL password
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        if database_type not in ["MYSQL", "INFORMIX", "POSTGRESQL", "DB2"]:
+            raise SDKException(
+                'Credential', '102', "Invalid database Type provided."
+            )
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    credential_name)
+            )
         password = b64encode(password.encode()).decode()
         create_credential = {
             "accountType": "DATABASE_ACCOUNT",
-            "databaseCredentialType": "DB2",
+            "databaseCredentialType": database_type,
             "name": credential_name,
             "username": username,
             "password": password,
@@ -414,6 +472,26 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
+
+    def add_db2_database_creds(self, credential_name, username, password, description=None):
+        """Creates db2 credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  name of the db2 credential
+
+                password   (str)        --  password for the credential
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        self.add_database_creds("DB2", credential_name, username, password, description)
 
     def add_postgres_database_creds(self, credential_name, username, password, description=None):
         """Creates PostgreSQL credential on this commcell
@@ -433,35 +511,28 @@ class Credentials(object):
 
                     if response is not successful
         """
-        if self.has_credential(credential_name):
-            raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
-            )
-        password = b64encode(password.encode()).decode()
-        create_credential = {
-            "accountType": "DATABASE_ACCOUNT",
-            "databaseCredentialType": "POSTGRESQL",
-            "name": credential_name,
-            "username": username,
-            "password": password,
-            "description": description
-        }
+        self.add_database_creds("POSTGRESQL", credential_name, username, password, description)
 
-        request = self._services['ADD_CREDENTIALS']
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
-        )
-        if flag:
-            if response.json():
-                id = response.json()['id']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-        self.refresh()
-        return Credential(self._commcell_object, credential_name, id)
+    def add_informix_database_creds(self, credential_name, username, password, description=None):
+        """Creates Informix credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  Informix username and domain name
+                    Example: "domain\\username"
+
+                password   (str)        --  Informix password
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        self.add_database_creds("INFORMIX", credential_name, username, password, description)
 
     def add_mysql_database_creds(self, credential_name, username, password, description=None):
         """Creates MySQL credential on this commcell
@@ -481,35 +552,7 @@ class Credentials(object):
 
                     if response is not successful
         """
-        if self.has_credential(credential_name):
-            raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
-            )
-        password = b64encode(password.encode()).decode()
-        create_credential = {
-            "accountType": "DATABASE_ACCOUNT",
-            "databaseCredentialType": "MYSQL",
-            "name": credential_name,
-            "username": username,
-            "password": password,
-            "description": description
-        }
-
-        request = self._services['ADD_CREDENTIALS']
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
-        )
-        if flag:
-            if response.json():
-                id = response.json()['id']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-        self.refresh()
-        return Credential(self._commcell_object, credential_name, id)
+        self.add_database_creds("MYSQL", credential_name, username, password, description)
 
     def add_azure_cloud_creds(self, credential_name, account_name, access_key_id, **kwargs):
         """Creates azure access key based credential on this commcell
@@ -597,7 +640,7 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def add_azure_cosmosdb_creds(
+    def add_azure_app_registration_creds(
             self,
             credential_name,
             tenant_id,
@@ -774,6 +817,86 @@ class Credentials(object):
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def add_aws_creds(self, credential_name, creds_type, **kwargs):
+        """Creates AWS credentials on this commcell based on the credential type.
+
+        Args:
+            credential_name (str): Name to be given to the credential account.
+            creds_type (str): Type of the credential ('AWS_ACCESS_KEY' or 'AWS_STS_IAM_ROLE').
+            **kwargs (dict): Additional parameters required for the specific credential type.
+
+        Supported `creds_type` values and required kwargs:
+            - 'AWS_ACCESS_KEY': access_key, secret, description (optional)
+            - 'AWS_STS_IAM_ROLE': role_arn, external_id (optional), description (optional)
+
+        Raises:
+            SDKException: If arguments are invalid, credential already exists, or response is unsuccessful.
+        """
+        if not isinstance(credential_name, str) or not isinstance(creds_type, str):
+            raise SDKException("Credential", "101", "Invalid argument types provided.")
+
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', f"Credential {credential_name} already exists on this commcell."
+            )
+
+        if creds_type == 'AWS_ACCESS_KEY':
+            access_key = kwargs.get('access_key')
+            secret = kwargs.get('secret')
+            description = kwargs.get('description', "")
+            if not access_key or not secret or not (isinstance(access_key, str) and isinstance(secret, str)):
+                raise SDKException("Credential", "102", "Invalid AWS access key or secret.")
+            encoded_secret = b64encode(secret.encode('utf-8')).decode('utf-8')
+            create_credential_account = {
+                "accountType": "CLOUD_ACCOUNT",
+                "vendorType": "AMAZON",
+                "authType": "AMAZON_S3",
+                "name": credential_name,
+                "accessKeyId": access_key,
+                "secretAccessKey": encoded_secret,
+                "description": description
+            }
+
+        elif creds_type == 'AWS_STS_IAM_ROLE':
+            role_arn = kwargs.get('role_arn')
+            external_id = kwargs.get('external_id', "")
+            description = kwargs.get('description', "")
+            if not role_arn or not isinstance(role_arn, str):
+                raise SDKException("Credential", "102", "Invalid IAM role ARN.")
+            create_credential_account = {
+                "accountType": "CLOUD_ACCOUNT",
+                "vendorType": "AMAZON",
+                "authType": "AMAZON_STS_IAM_ROLE",
+                "name": credential_name,
+                "externalId": external_id,
+                "roleArn": role_arn,
+                "description": description,
+                "password": ""
+            }
+
+        else:
+            raise SDKException("Credential", "102", f"Unsupported credential type: {creds_type}")
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential_account
+        )
+
+        if flag:
+            if response.json():
+                response_json = response.json().get('error', {})
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if error_code != 0:
+                    raise SDKException('Response', '102', error_message)
+            else:
+                raise SDKException('Response', '102', "Empty response received.")
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
         self.refresh()
 
 

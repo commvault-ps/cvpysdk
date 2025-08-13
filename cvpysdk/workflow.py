@@ -247,9 +247,7 @@ class WorkFlows(object):
 
     def __repr__(self):
         """Representation string for the instance of the WorkFlow class."""
-        return "WorkFlow class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "WorkFlow class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the workflows associated to the Commcell."""

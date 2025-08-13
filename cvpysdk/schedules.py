@@ -1041,8 +1041,7 @@ class Schedules:
                     class_object.commserv_name)
             elif not operation_type:
                 self._SCHEDULES = class_object._services['COMMCELL_SCHEDULES']
-                self._repr_str = "Schedules in Commcell: {0}".format(
-                    class_object.commserv_name)
+                self._repr_str = "Schedules in Commcell"
             else:
                 raise SDKException('Schedules', '103')
         elif isinstance(class_object, FsoServer):

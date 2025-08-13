@@ -136,6 +136,9 @@ Clients
     delete(client_name)                   --  deletes the client specified by the client name from
     the commcell
 
+    retire(client_name)                     --  retires the client specified by the client name from
+    the commcell
+
     filter_clients_return_displaynames()  --  filter clients based on criteria
 
     refresh()                             --  refresh the clients associated with the commcell
@@ -419,6 +422,7 @@ from base64 import b64encode
 
 import requests
 
+from .additional_settings import AdditionalSettings
 from .job import Job
 from .agent import Agents
 from .schedules import Schedules
@@ -465,6 +469,8 @@ class Clients(object):
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
         self._GET_VIRTUALIZATION_ACCESS_NODES = self._services['GET_VIRTUALIZATION_ACCESS_NODES']
         self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
+        self._LAPTOP_CLIENTS = self._services['GET_LAPTOP_CLIENTS']
+        self._VIRTUAL_MACHINES = self._services['GET_VIRTUAL_MACHINES']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._ADD_GOOGLE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -483,6 +489,8 @@ class Clients(object):
         self._dynamics365_clients = None
         self._salesforce_clients = None
         self._file_server_clients = None
+        self._laptop_clients = None
+        self._virtual_machines = None
         self._client_cache = None
         self._all_clients_props = None
         self.filter_query_count = 0
@@ -504,9 +512,7 @@ class Clients(object):
 
     def __repr__(self):
         """Representation string for the instance of the Clients class."""
-        return "Clients class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Clients class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the clients associated to the Commcell."""
@@ -988,6 +994,119 @@ class Clients(object):
             return fs_clients
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_laptop_clients(self):
+        """
+        REST API call to get all laptop clients in the commcell
+
+        Returns:
+            dict    -   consists of all laptop clients in the commcell
+
+                {
+                    "client1_name": {
+
+                        "id": client1_id,
+
+                        "displayName": client1_displayname
+                    },
+
+                    "client2_name": {
+
+                        "id": client2_id,
+
+                        "displayName": client2_displayname
+                    }
+                }
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        request_url = f'{self._LAPTOP_CLIENTS}?fl=clientsFileSystem'
+        flag, response = self._cvpysdk_object.make_request('GET', request_url)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if not response:
+            raise SDKException('Response','102')
+
+        devices = {}
+        if 'clientsFileSystem' in response.json():
+            for device in response.json()['clientsFileSystem']:
+                client_info = device.get('client', {})
+                client_name = client_info.get('clientName')
+                if not client_name:
+                    continue  # Skip clients without a name
+
+                devices[client_name] = {
+                    'id': client_info.get('clientId'),
+                    'displayName': client_name
+                }
+        return devices
+
+    def _get_virtual_machines(self):
+        """
+        REST API call to get all virtual machine clients in the commcell
+
+        Returns:
+            dict    -   consists of all virtual machine clients in the commcell
+
+                {
+                    "vm1_name": {
+
+                        "hypervisor": hypervisor1,
+                        "vendor": vendor_name
+                        "displayName": vm1_displayname
+                    },
+
+                    "client2_name": {
+
+                        "hypervisor": hypervisor2,
+                        "vendor": vendor_name
+                        "displayName": vm2_displayname
+                    }
+                }
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._VIRTUAL_MACHINES)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if not response:
+            raise SDKException('Response','102')
+
+        vms = {}
+        if 'virtualMachines' in response.json():
+            name_count = {} # to handle duplicate names
+
+            for vm in response.json().get('virtualMachines', []):
+                original_name = vm.get('name')
+
+                if not original_name:
+                    continue  # Skip VMs without a name
+                # Check and update name for duplicates
+                if original_name in name_count:
+                    name_count[original_name] += 1
+                    unique_name = f"{original_name}_{name_count[original_name]}"
+                else:
+                    name_count[original_name] = 0
+                    unique_name = original_name
+
+                vms[unique_name] = {
+                    'hypervisor': vm.get('hypervisor', {}).get('name'),
+                    'vendor': vm.get('vendor'),
+                    'displayName': vm.get('displayName')
+                }
+        return vms
 
     @staticmethod
     def _get_client_dict(client_object):
@@ -1596,6 +1715,59 @@ class Clients(object):
         if self._file_server_clients is None:
             self._file_server_clients = self._get_fileserver_clients()
         return self._file_server_clients
+
+    @property
+    def laptop_clients(self):
+        """
+        Returns the dictionary consisting of the laptop clients and their info.
+
+        dict - consists of all laptop clients in the commcell
+                {
+                    "client1_name": {
+
+                        "id": client1_id,
+
+                        "displayName": client1_displayname
+                    },
+
+                    "client2_name": {
+
+                        "id": client2_id,
+
+                        "displayName": client2_displayname
+                    }
+                }
+        """
+        if not self._laptop_clients:
+            self._laptop_clients = self._get_laptop_clients()
+        return self._laptop_clients
+
+    @property
+    def virtual_machines(self):
+        """
+        Returns the dictionary consisting of the virtual machines clients and their info.
+
+        dict    -   consists of all virtual machine clients in the commcell
+
+            {
+                "vm1_name": {
+
+                    "hypervisor": hypervisor1,
+                    "vendor": vendor_name
+                    "displayName": vm1_displayname
+                },
+
+                "client2_name": {
+
+                    "hypervisor": hypervisor2,
+                    "vendor": vendor_name
+                    "displayName": vm2_displayname
+                }
+            }
+        """
+        if not self._virtual_machines:
+            self._virtual_machines = self._get_virtual_machines()
+        return self._virtual_machines
 
     def has_client(self, client_name):
         """Checks if a client exists in the commcell with the given client name / hostname.
@@ -5147,6 +5319,59 @@ class Clients(object):
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
+    def retire(self,client_name):
+        """Retires the Client.
+
+        Returns:
+            Job - job object of the uninstall job
+
+        Raises:
+
+            SDKException:
+
+                if failed to retire client
+
+                if response is empty
+
+                if response code is not as expected
+        """
+        client_name = client_name.lower()
+        if self.has_client(client_name):
+            if client_name in self.all_clients:
+                client_id = self.all_clients[client_name]['id']
+            else:
+                client_id = self.hidden_clients[client_name]['id']
+
+            request_json = {
+                "client": {
+                    "clientId": int(client_id),
+                    "clientName": client_name
+                }
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                'DELETE', self._services['RETIRE'] % client_id, request_json
+            )
+
+            if flag:
+                if response.json() and 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+                    error_string = response.json()['response'].get('errorString', '')
+
+                    if error_code == 0:
+                        if 'jobId' in response.json():
+                            return Job(self._commcell_object, (response.json()['jobId']))
+                    else:
+                        o_str = 'Failed to Retire Client. Error: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        else:
+            raise SDKException(
+                'Client', '102', 'No client exists with name: {0}'.format(client_name)
+            )
+
     def refresh(self, **kwargs):
         """
         Refresh the clients associated with the Commcell.
@@ -5163,6 +5388,8 @@ class Clients(object):
         self._office_365_clients = None
         self._file_server_clients = None
         self._salesforce_clients = None
+        self._laptop_clients = None
+        self._virtual_machines = None
 
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
@@ -5292,6 +5519,7 @@ class Client(object):
         self._is_infrastructure = None
         self._network_status = None
         self._update_status = None
+        self._additional_settings = None
         self.refresh()
 
     def __repr__(self):
@@ -5901,7 +6129,10 @@ class Client(object):
         }
 
         request_json['clientProperties'].update(properties_dict)
-        request_json['clientProperties']['clientProps'].pop("CVS3BucketName")
+        if "CVS3BucketName" in request_json.get("clientProperties", {}).get("clientProps", {})\
+            and request_json.get("clientProperties", {}).get("clientProps", {}).get("CVS3BucketName") == "":
+            request_json['clientProperties']['clientProps'].pop("CVS3BucketName")
+
         self._process_update_request(request_json)
 
     @property
@@ -7483,7 +7714,7 @@ class Client(object):
     def refresh(self):
         """Refreshes the properties of the Client."""
         self._get_client_properties()
-
+        self._additional_settings = None
         if self._client_type_id == 0:
             self._agents = None
             self._schedules = None
@@ -8538,6 +8769,11 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    @property
+    def additional_settings(self):
+        if self._additional_settings is None:
+            self._additional_settings = AdditionalSettings(self)
+        return self._additional_settings
 
 class _Readiness:
     """ Class for checking the connection details of a client """

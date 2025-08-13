@@ -326,6 +326,7 @@ SERVICES_DICT_TEMPLATE = {
     'EDISCOVERY_REQUEST_DOCUMENT_MARKER': '{0}EDiscoveryClients/Tasks/%s/Documents',
     'EDISCOVERY_CONFIGURE_TASK': '{0}EDiscoveryClient/ConfigureTask',
     'EDICOVERY_TASK_WORKFLOW': '{0}EDiscoveryClients/Tasks/%s/Workflows',
+    'ENTITY_BY_SENSITIVITY': '{0}dcube/entitiesbysensitivity',
     'GET_RESOURCE_POOLS': '{0}V4/ResourcePool',
     'GET_RESOURCE_POOL_DETAILS': '{0}ResourcePool/%s',
     'DELETE_RESOURCE_POOL': '{0}ResourcePool/%s',
@@ -358,6 +359,10 @@ SERVICES_DICT_TEMPLATE = {
     'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
     'SERVER_PLAN_REGIONS': '{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true',
     'SERVER_PLAN_RPO': '{0}V4/ServerPlan/%s/RPO',
+    'SERVER_PLAN_RPO_RUN': '{0}V4/ServerPlan/%s/RPO/Run',
+
+    # API Documentation: Manage > Plan Operations
+    'V4_JOB_OPERATIONS_ON_STORAGE_COPY': '{0}V4/Plan/BackupDestination/JobOperations',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -391,6 +396,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERS': '{0}User',
     'V4_USERS': '{0}v4/user?additionalProperties=true',
     'USER': '{0}User/%s?Level=50',
+    'V4_USER': '{0}v4/user/%s',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
 
@@ -549,6 +555,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_CLIENT_PRIVACY': '{0}/V3/Client/%s/Unlock',
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
+    'LOCAL_APP': '{0}ThirdParty/App/Local',
 
     'SET_GLOBAL_PARAM': '{0}/setGlobalParam',
     'GET_GLOBAL_PARAM': '{0}/CommServ/GlobalParams',
@@ -574,19 +581,20 @@ SERVICES_DICT_TEMPLATE = {
     'REGISTRATION': '{0}/RegFrgnCell',
     'UNREGISTRATION': '{0}/UnRegisterCommCell',
     'SERVICE_REGISTER': '{0}/ServiceCommcells/Register',
+    'SERVICE_REREGISTER': '{0}/ServiceCommcells/Reregister?CommcellId=%s',
     'SERVICE_PROPS': '{0}/ServiceCommcell/Properties',
     'GET_REGISTERED_COMMCELLS': '{0}/CommCell/registered',
-    'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/ServiceCommcells',
-    'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
+    'SERVICE_COMMCELLS': '{0}/ServiceCommcells',
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
     'POLL_MAIL_SERVICE': '{0}/ServiceCommcell/IsUserPresent?email=%s',
-    'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
+    'REDIRECT_LIST': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
     'MULTI_COMMCELL_SWITCHER': '{0}/CommcellRedirect/MultiCommcell',
-    'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
+    'MCC_FOR_USER': '{0}/MultiCommcellsForUser',
     'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
-    'SYNC_SERVICE_COMMCELL': '{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s',
+    'SYNC_SERVICE_COMMCELL': '{0}/RouterCommcell/SyncUserSpace?commcellId=%s',
 
     'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
+    'DASHBOARD_ENVIRONMENT_TILE_USERS': '{0}/v4/user/aggregate?func=count&fq=users.isExtendedUser%3Aeq%3Afalse',
     'DASHBOARD_NEEDS_ATTENTION_TILE': '{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14',
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
@@ -659,7 +667,11 @@ SERVICES_DICT_TEMPLATE = {
     'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
     'CLEANUP_RECOVERY_GROUP': '{0}RecoveryGroup/CleanupRecovery',
-
+    'CREATE_CLEANROOM_RUNBOOK': '{0}Cleanroom/Runbook',
+    'CREATE_RUNBOOK_TARGET': '{0}Cleanroom/Target',    
+    'RECOVERY_ENTITY': '{0}RecoveryEntity/%s',
+    'RECOVERY_GROUP_RECOVERY_ENTITY': '{0}RecoveryGroup/%s/entity/%s',
+    'RECOVERY_GROUP_THREATS_COUNT': '{0}RecoveryGroup/%s/KPI',
 
     'ADCOMPAREID': '{0}/ActiveDirectory/Subclient/%s/Comparison',
 
@@ -711,7 +723,29 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ACCESS_TOKENS': '{0}/V4/AccessToken/?userId=%s',
 
-    'RENEW_TOKEN': '{0}/V4/AccessToken/Renew'
+    'RENEW_TOKEN': '{0}/V4/AccessToken/Renew',
+
+    'ASSESSMENT_DETAILS': '{0}/V4/TCO/AssessmentDetails?assessmentId=%s',
+
+    'ASSESSMENT_DISCOVERY_CRITERIA': '{0}/V4/TCO/AssessmentDiscoveryCriteria?credentialId=%s&authType=1'
+                                     '&cloudConnector=%s',
+
+    'RUN_ASSESSMENT': '{0}/V4/TCO/Assessment',
+
+    'SNMP': '{0}/V4/Snmp',
+
+    'SNMP_CONFIG': '{0}CommServ/SNMPV3Configuration',
+
+    'GET_LAPTOP_CLIENTS': '{0}/Device',
+
+    'GET_VIRTUAL_MACHINES': '{0}/v4/VirtualMachines',
+
+    'GET_ADDITIONAL_SETTINGS': '{0}AdditionalSettings/%s/%s',
+
+    'SET_ADDITIONAL_SETTINGS': '{0}v4/workload/AdditionalSettings',
+
+    'GLOBAL_MONGODB_STATUS': '{0}/v4/globalmongodb/status',
+
 }
 
 

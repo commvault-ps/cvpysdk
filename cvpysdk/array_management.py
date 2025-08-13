@@ -281,8 +281,7 @@ class ArrayManagement(object):
     def add_array(self,
                   vendor_name,
                   array_name,
-                  username,
-                  password,
+                  credential_vault_name,
                   vendor_id,
                   config_data,
                   control_host=None,
@@ -294,9 +293,7 @@ class ArrayManagement(object):
 
                     array_name          (str)               -- name of the array
 
-                    username            (str)               -- username of the array
-
-                    password            (str)               -- password to access array
+                    credential_vault_name     (str)         -- credential vault name of the array
 
                     vendor_id           (int)               -- vendor id of the array
 
@@ -353,9 +350,6 @@ class ArrayManagement(object):
                 }
                 selectedMAs.append(node_dict)
 
-        if password is not None:
-            password = base64.encodebytes(password.encode()).decode()
-
         request_json = {
             "clientId": 0,
             "flags": 0,
@@ -402,9 +396,7 @@ class ArrayManagement(object):
                     "processHiddenPermission": 0
                 },
                 "userPswd": {
-                    "userName": username,
-                    "password": password,
-
+                    "userName": ""
                 },
                 "arraySecurity": {},
                 "arrayName": {
@@ -418,6 +410,9 @@ class ArrayManagement(object):
                 "client": {
                     "name": "",
                     "id": 0
+                },
+                "savedCredential": {
+                    "credentialName": credential_vault_name
                 }
             }
         }

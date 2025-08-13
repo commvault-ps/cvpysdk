@@ -462,6 +462,7 @@ class Install(object):
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
+            commserv_name (str) - Name of the CommServe (if user doesn't have view permission on CommServe)
             install_flags (dict) - dictionary of install flag values
             Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
 
@@ -560,6 +561,23 @@ class Install(object):
                     not both
 
         """
+        commcell_name = kwargs.get('commserv_name')
+        if not commcell_name:
+            try:
+                commcell_name = self.commcell_object.commserv_name
+            except SDKException as err:
+                raise SDKException(
+                    'Install',
+                    '101',
+                    (
+                        'Please ensure user has VIEW permission on the CommServe or provide the commserv_name parameter explicitly. '
+                        f'Original error: {err}'
+                    )
+                ) from err
+        elif not isinstance(commcell_name, str) or not commcell_name.strip():
+            raise SDKException(
+                'Install', '101', 'Invalid CommServe name provided. CommServe name cannot be empty.')
+
         db2_install = False
         ma_install = False
         if windows_features:
@@ -584,8 +602,6 @@ class Install(object):
             raise SDKException('Install', '105')
 
         if client_computers:
-            commcell_name = self.commcell_object.commserv_name
-
             client_details = []
             for client_name in client_computers:
                 client_details.append(
@@ -642,8 +658,7 @@ class Install(object):
                                     "installerOption": {
                                         "requestType": 0,
                                         "Operationtype": 0,
-                                        "CommServeHostName":
-                                            self.commcell_object.commserv_name,
+                                        "CommServeHostName": commcell_name,
                                         "RemoteClient": False,
                                         "installFlags": {
                                             "allowMultipleInstances": kwargs.get('allowMultipleInstances', False),

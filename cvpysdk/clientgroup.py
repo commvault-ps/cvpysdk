@@ -187,6 +187,7 @@ from __future__ import unicode_literals
 import time
 import copy
 
+from .additional_settings import AdditionalSettings
 from .exception import SDKException
 from .network import Network
 from .network_throttle import NetworkThrottle
@@ -234,9 +235,7 @@ class ClientGroups(object):
             Returns:
                 str - string of all the client groups associated with the commcell
         """
-        return "ClientGroups class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "ClientGroups class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the client groups associated to the Commcell."""
@@ -1162,6 +1161,7 @@ class ClientGroup(object):
         self._is_data_aging_enabled = None
         self._is_smart_client_group = None
         self._company_name = None
+        self._additional_settings = None
 
         self.refresh()
 
@@ -2265,6 +2265,7 @@ class ClientGroup(object):
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
         self._network_throttle = None
+        self._additional_settings = None
 
     def refresh_clients(self):
         """Refreshes the clients of a client group"""
@@ -2329,3 +2330,9 @@ class ClientGroup(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    @property
+    def additional_settings(self):
+        if self._additional_settings is None:
+            self._additional_settings = AdditionalSettings(self)
+        return self._additional_settings

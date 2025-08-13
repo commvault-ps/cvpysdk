@@ -340,9 +340,7 @@ class JobController(object):
 
     def __repr__(self):
         """Representation string for the instance of the JobController class."""
-        return "JobController class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "JobController class instance for Commcell"
 
     def _get_jobs_request_json(self, **options):
         """Returns the request json for the jobs request

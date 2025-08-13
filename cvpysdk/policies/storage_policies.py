@@ -24,6 +24,11 @@ StoragePolicies:  Class for representing all the Storage Policies associated to 
 
 StoragePolicy:    Class for representing a single Storage Policy associated to the commcell.
 
+JobOperationsOnStorageCopy:     Enum for different job operations on Storage Copy.
+    DELETE                      --  Performs delete operation on the jobs on a Storage Copy
+    PREVENT_COPY                --  Performs prevent copy operation on the jobs on a Storage Copy
+    ALLOW_COPY                  --  Performs allow copy operation on the jobs on a Storage Copy
+    RECOPY                      --  Performs recopy operation on the jobs on a Storage Copy
 
 StoragePolicies:
     __init__(commcell_object)    --  initialize the StoragePolicies instance for the commcell
@@ -175,6 +180,8 @@ StoragePolicyCopy:
 
     get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
 
+    _run_job_operations_on_storage_copy()    -- Run different job operations for a Storage Copy
+
     delete_job()                            --  delete a job from storage policy copy node
 
     _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
@@ -247,14 +254,20 @@ Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from base64 import b64encode
-
 from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules, SchedulePattern
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
+
+
+class JobOperationsOnStorageCopy:
+    """Enum for different job operations on Storage Copy."""
+    DELETE = 'DELETE'
+    PREVENT_COPY = 'DISALLOW_COPY'
+    ALLOW_COPY = 'ALLOW_COPY'
+    RECOPY = 'RECOPY'
 
 
 class StoragePolicies(object):
@@ -291,9 +304,7 @@ class StoragePolicies(object):
 
     def __repr__(self):
         """Representation string for the instance of the Clients class."""
-        return "StoragePolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "StoragePolicies class instance for Commcell"
 
     def _get_policies(self):
         """Gets all the storage policies associated to the commcell specified by commcell object.
@@ -2400,10 +2411,10 @@ class StoragePolicy(object):
 
         if storage_policy_copy_name is not None:
             all_copies = False
-            if not media_agent:
-                media_agent = "&lt;ANY MEDIAAGENT&gt;"
-            if not (isinstance(storage_policy_copy_name, str) and
-                    isinstance(media_agent, str)):
+
+            if not isinstance(storage_policy_copy_name, str):
+                raise SDKException('Storage', '101')
+            if media_agent and not isinstance(media_agent, str):
                 raise SDKException('Storage', '101')
         else:
             if all_copies is False:
@@ -2447,10 +2458,7 @@ class StoragePolicy(object):
                                         "useScallableResourceManagement": use_scale,
                                         "totalJobsToProcess": total_jobs_to_process,
                                         "ignoreDataVerificationFailedJobs": ignore_dv_failed_jobs,
-                                        "allCopies": all_copies,
-                                        "mediaAgent": {
-                                            "mediaAgentName": media_agent
-                                        }
+                                        "allCopies": all_copies
                                     }
                                 }
                             },
@@ -2462,7 +2470,10 @@ class StoragePolicy(object):
                 ]
             }
         }
-
+        if media_agent:
+            request_json['taskInfo']['subTasks'][0]['options']['backupOpts']['mediaOpt']['auxcopyJobOption']['mediaAgent'] ={
+                "mediaAgentName": media_agent
+            }
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
@@ -3663,8 +3674,10 @@ class StoragePolicyCopy(object):
 
                         **int** -   value to specify jobs
 
+                        **bool** -  True, to set infinite retention (retainBackupDataForDays)
+
                     e.g. :
-                         storage_policy_copy.copy_retention = (30, 15, 1, 8)
+                         storage_policy_copy.copy_retention = (30, 15, 1, 8, True)
 
             Raises:
                 SDKException:
@@ -3683,6 +3696,8 @@ class StoragePolicyCopy(object):
                 self._retention_rules['retentionFlags']['jobBasedRetention'] = 1
             else:
                 self._retention_rules['retentionFlags']['jobBasedRetention'] = 0
+        if len(retention_values) > 4 and retention_values[4]:
+                self._retention_rules['retainBackupDataForDays'] = -1
 
         self._set_copy_properties()
 
@@ -4102,6 +4117,77 @@ class StoragePolicyCopy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _run_job_operations_on_storage_copy(self, job_id, operation):
+        """Run different job operations for a Storage Copy
+
+        Args:
+            job_id          (int or str or list): Job Id(s) that needs to be marked
+            operation       (str)               : Operation to be performed on the job(s)
+
+        Valid operation types:
+            JobOperationsOnStorageCopy.DELETE
+            JobOperationsOnStorageCopy.PREVENT_COPY
+            JobOperationsOnStorageCopy.ALLOW_COPY
+            JobOperationsOnStorageCopy.RECOPY
+
+        Raises:
+            SDKException:   if the job_id is not of type int, str or list of int/str
+                            if the operation is not a valid operation type
+                            if the response is empty or not successful
+                            if the error code in response is not 0
+        """
+        payload_template = {
+            "opType": operation,
+            "jobIds": [],
+            "commcellId": 2,
+            "copyId": int(self.copy_id),
+            "storagePolicyId": int(self.storage_policy_id),
+            "loadDependentJobs": False,
+            "loadArchiverJobs": False,
+        }
+        url = self._services['V4_JOB_OPERATIONS_ON_STORAGE_COPY']
+
+        # Checking if job_id is a comma separated string
+        if isinstance(job_id, str) and ',' in job_id:
+            job_id = [j.strip() for j in job_id.split(',')]
+
+        if isinstance(job_id, (int, str)):
+            job_id = [int(job_id)]
+        elif isinstance(job_id, list):
+            job_id = [int(j) for j in job_id if j.isdigit()]
+        else:
+            raise SDKException('Storage', '101', 'job_id should be an int, str or a list of int/str')
+
+        if operation not in [
+            JobOperationsOnStorageCopy.DELETE,
+            JobOperationsOnStorageCopy.PREVENT_COPY,
+            JobOperationsOnStorageCopy.ALLOW_COPY,
+            JobOperationsOnStorageCopy.RECOPY,
+        ]:
+            raise SDKException('Storage', '101', f'Invalid operation type: {operation}')
+
+        payload = payload_template.copy()
+        payload.update({
+            "jobIds": job_id
+        })
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            method='POST',
+            url=url,
+            payload=payload
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                    if error_code != 0:
+                        error_message = response.json().get('errorMessage', '')
+                        raise SDKException('Storage', '102', error_message)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def delete_job(self, job_id):
         """
         Deletes a job on Storage Policy
@@ -4112,16 +4198,10 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string
         """
-        if not isinstance(job_id, str):
-            raise SDKException('Storage', '101')
-
-        request_xml = """
-        <App_JobOperationCopyReq operationType="2">
-        <jobList appType="" commCellId="2" jobId="{0}"><copyInfo copyName="{1}" storagePolicyName="{2}"/></jobList>
-        <commCellInfo commCellId="2"/></App_JobOperationCopyReq>
-        """.format(job_id, self._copy_name, self._storage_policy_name)
-
-        self._commcell_object._qoperation_execute(request_xml)
+        self._run_job_operations_on_storage_copy(
+            job_id=job_id,
+            operation=JobOperationsOnStorageCopy.DELETE
+        )
 
     def _mark_jobs_on_copy(self, job_id, operation):
         """Marks job(s) for given operation on a secondary copy
@@ -4174,7 +4254,10 @@ class StoragePolicyCopy(object):
         Args:
             job_id      (int or str or list): Job Id(s) that needs to be marked
         """
-        self._mark_jobs_on_copy(job_id, 'allowcopy')
+        self._run_job_operations_on_storage_copy(
+            job_id=job_id,
+            operation=JobOperationsOnStorageCopy.ALLOW_COPY
+        )
 
     def recopy_jobs(self, job_id):
         """Marks job(s) to be picked for ReCopying to a secondary copy
@@ -4182,7 +4265,10 @@ class StoragePolicyCopy(object):
         Args:
             job_id      (int or str or list): Job Id(s) that needs to be marked
         """
-        self._mark_jobs_on_copy(job_id, 'recopy')
+        self._run_job_operations_on_storage_copy(
+            job_id=job_id,
+            operation=JobOperationsOnStorageCopy.RECOPY
+        )
 
     def do_not_copy_jobs(self, job_id):
         """Marks job(s) as Do Not Copy to a secondary copy
@@ -4190,7 +4276,10 @@ class StoragePolicyCopy(object):
         Args:
             job_id      (int or str or list):   Job Id(s) that needs to be marked
         """
-        self._mark_jobs_on_copy(job_id, 'donotcopy')
+        self._run_job_operations_on_storage_copy(
+            job_id=job_id,
+            operation=JobOperationsOnStorageCopy.PREVENT_COPY
+        )
 
     def pick_jobs_for_data_verification(self, job_id):
         """Marks job(s) on a copy to be Picked for Data Verification

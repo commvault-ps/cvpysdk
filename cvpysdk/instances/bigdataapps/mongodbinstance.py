@@ -87,6 +87,7 @@ class MongoDBInstance(BigDataAppsInstance):
                             restore_dict["backupPortNumber"] = self.port
                             restore_dict["restoreDataDir"] = self.bkp_dir_path
                             restore_dict["primaryPort"] = self.port
+                            restore_dict["clusterConfig"] = self.clusterdata
                         }
             Returns:
                 object - instance of the Job class for this restore job
@@ -109,30 +110,9 @@ class MongoDBInstance(BigDataAppsInstance):
 
         client_object_source = self._commcell_object.clients.get(restore_options['clientName'])
         client_object_destination = self._commcell_object.clients.get(restore_options['destclientName'])
+
         distributed_restore_json["mongoDBRestoreOptions"] = {
                 "destShardList": [
-                    {
-                        "srcShardName":  restore_options.get("source_shard_name", False),
-                        "destShardName": restore_options.get("destination_shard_name", False),
-                        "target": {
-                            "hostName": restore_options.get("hostname", False),
-                            "clientName": restore_options.get("clientName", False),
-                            "clientId": int(client_object_source.client_id)
-                        },
-                        "destHostName": restore_options.get("desthostName", False),
-                        "destPortNumber": restore_options.get("destPortNumber", False),
-                        "destDataDir":  restore_options.get("restoreDataDir", False),
-                        "bkpSecondary": {
-                            "clientName": restore_options.get("clientName", False),
-                            "hostName": restore_options.get("hostname", False),
-                            "clientId": int(client_object_source.client_id)
-                        },
-                        "bkpHostName": restore_options.get("hostname", False),
-                        "bkpPortNumber": restore_options.get("backupPortNumber", False),
-                        "bkpDataDir": restore_options.get("bkpDataDir", False),
-                        "useDestAsSecondary": False,
-                        "primaryPortNumber":restore_options.get("primaryPort", False),
-                    }
                 ],
                 "restoreFilesOnly": False,
                 "recover": True,
@@ -143,6 +123,40 @@ class MongoDBInstance(BigDataAppsInstance):
                 "autoDBShutDown": True,
                 "isInplaceRestore": True
             }
+
+        if restore_options.get("clusterConfig"):
+            for host_info in restore_options.get("clusterConfig"):
+                shard_name = host_info.get("replSet", "")
+                hostname = host_info.get("host", "")
+                port = int(host_info.get("port", ""))
+                clientname = host_info.get("clientname", "")
+                clientid = int(host_info.get("clientid", ""))
+                dbpath =  host_info.get("dbpath", "")
+
+                shard_entry = {
+                    "srcShardName": shard_name,
+                    "destShardName": shard_name,
+                    "target": {
+                        "hostName": hostname,
+                        "clientName": clientname,
+                        "clientId": clientid
+                    },
+                    "destHostName": hostname,
+                    "destPortNumber": port,
+                    "destDataDir": dbpath,
+                    "bkpSecondary": {
+                        "clientName": clientname,
+                        "hostName": hostname,
+                        "clientId": clientid
+                    },
+                    "bkpHostName": hostname,
+                    "bkpPortNumber": port,
+                    "bkpDataDir": dbpath,
+                    "useDestAsSecondary": False,
+                    "primaryPortNumber": port
+                }
+
+                distributed_restore_json["mongoDBRestoreOptions"]["destShardList"].append(shard_entry)
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
                 "distributedAppsRestoreOptions"] = distributed_restore_json

@@ -453,7 +453,8 @@ class Instances(object):
                             'onconfig_file': "",
                             'sql_host_file': "",
                             'informix_dir': "",
-                            'user_name': "",
+                            'user_name': "" (for unix),
+                            'credential_name: "" (for windows),
                             'domain_name': "",
                             'password': "",
                             'storage_policy': "",
@@ -493,6 +494,23 @@ class Instances(object):
             )
         password = b64encode(informix_options["password"].encode()).decode()
 
+        if informix_options.get('credential_name'):
+            creds = {
+                "savedCredential": {
+                    "credentialName": informix_options.get('credential_name')
+                }
+            }
+        elif informix_options.get('user_name'):
+            creds = {
+                "userName": informix_options["user_name"]
+            }
+        else:
+            raise SDKException(
+                'Instance',
+                '102',
+                'Please provide either user name (linux) or credential name (windows) for Informix instance creation'
+            )
+
         request_json = {
             "instanceProperties": {
                 "description": informix_options['description'],
@@ -505,11 +523,7 @@ class Instances(object):
                     "onConfigFile": informix_options["onconfig_file"],
                     "sqlHostfile": informix_options["sql_host_file"],
                     "informixDir": informix_options["informix_dir"],
-                    "informixUser": {
-                        "password": password,
-                        "domainName": informix_options["domain_name"],
-                        "userName": informix_options["user_name"]
-                    },
+                    "informixUser": creds,
                     "informixStorageDevice": {
                         "dataBackupStoragePolicy": {
                             "storagePolicyName": informix_options["storage_policy"]

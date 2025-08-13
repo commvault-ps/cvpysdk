@@ -56,6 +56,8 @@ InformixInstance instance Attributes
 
     **informix_user**               --  returns the informix username
 
+    **credentials**                 --  returns instance credentials
+
     **on_config_file**              --  returns the on config file name of informix server
 
     **sql_host_file**               --  returns the sql host file path of informix server
@@ -108,7 +110,21 @@ class InformixInstance(Instance):
     @property
     def informix_user(self):
         """ Returns the informix username """
+        ### windows instance will have credentials associated with it, linux will just have username in instance prop
+        if self.credentials:
+            return self._commcell_object.credentials.get(self.credentials).credential_user_name
         return self._properties['informixInstance']['informixUser'].get('userName', None)
+
+    @property
+    def credentials(self):
+        """Getter for the instance credentials
+
+            Returns:
+                str - name of the credential associated with the instance
+
+        """
+        return self._properties[
+            'informixInstance']['informixUser'].get('savedCredential', {}).get('credentialName', None)
 
     @property
     def on_config_file(self):

@@ -2007,6 +2007,13 @@ class FileSystemSubclient(Subclient):
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
+        # restore to use default 10 streams
+        if fs_options is None:
+            fs_options = {}
+            fs_options['no_of_streams'] = 10
+        elif 'no_of_streams' not in fs_options:
+            fs_options['no_of_streams'] = 10
+
             # check to find whether file level Restore/ Volume level restore for blocklevel.
 
         if fs_options is not None and fs_options.get('is_vlr_restore', False):

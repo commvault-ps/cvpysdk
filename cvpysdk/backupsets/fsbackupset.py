@@ -389,7 +389,7 @@ class FSBackupset(Backupset):
                                         {
                                             "platformCfgBlob": "", "win_passPhrase": "",
                                             "win_licenceKey": "", "type": 1,
-                                            "goToMiniSetUp": 0, "Win_DomainCreds":
+                                            "goToMiniSetUp": 1, "Win_DomainCreds":
                                             {
                                                 "isClientInDomain": True, "DomainCreds":
                                                 {
@@ -659,6 +659,8 @@ class FSBackupset(Backupset):
         instances_list = virtual_agent_object.instances._instances
         instance_id = int(list(instances_list.values())[0])
         instance_name = list(instances_list.keys())[0]
+
+        restore_json_system_state["vmProvisioningOption"]["virtualMachineOption"][0]["oneTouchResponse"]["clients"][0]["backupSet"] = response_json["taskInfo"]["associations"][0]
 
         response_json['taskInfo']['subTasks'][0]['options'][
             'adminOpts'] = restore_json_system_state

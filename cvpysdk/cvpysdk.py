@@ -130,7 +130,8 @@ class CVPySDK(object):
             response = self._request(
                 method='GET',
                 url=self._commcell_object._web_service,
-                timeout=10
+                timeout=10,
+                headers=self._commcell_object._headers
             )
 
             # Valid service if the status code is 200 and response is True
@@ -177,7 +178,7 @@ class CVPySDK(object):
                     "username": self._commcell_object._user,
                     "password": self._commcell_object._password,
                     "deviceId": self._commcell_object.device_id,
-                    "clientType": 30,
+                    "clientType": 30
                 }
 
             flag, response = self.make_request(
@@ -236,8 +237,11 @@ class CVPySDK(object):
 
         """
         try:
-            if self._commcell_object._is_saml_login and not self._commcell_object.is_service_commcell:
-                raise SDKException('CVPySDK', '106')
+            if self._commcell_object._is_saml_login:
+                if not self._commcell_object.master_commcell:
+                    raise SDKException('CVPySDK', '106')
+                else:
+                    return self._commcell_object.master_commcell.get_saml_token()
 
             token_renew_request = {
                 "sessionId": self._commcell_object._headers['Authtoken'],
@@ -254,13 +258,13 @@ class CVPySDK(object):
                         return response.json()['token']
                     else:
                         error_message = response.json()['error']['errLogMessage']
-                        err_msg = 'Error: "{0}"'.format(error_message)
+                        err_msg = f'Error: "{error_message}"'
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('CVPySDK', '108', response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 

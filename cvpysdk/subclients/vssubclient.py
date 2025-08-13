@@ -2856,7 +2856,7 @@ class VirtualServerSubclient(Subclient):
             Args:
                 backup_level            (str)   --  level of backup the user wish to run
                                                     Full / Incremental / Differential /
-                                                    Synthetic_full
+                                                    Synthetic_full / Snapshot
 
                 incremental_backup      (bool)  --  run incremental backup
                                                     only applicable in case of Synthetic_full backup
@@ -2895,8 +2895,18 @@ class VirtualServerSubclient(Subclient):
 
         backup_level = backup_level.lower()
         if backup_level not in ['full', 'incremental',
-                                'differential', 'synthetic_full']:
+                                'differential', 'synthetic_full', 'snapshot']:
             raise SDKException('Subclient', '103')
+
+        if backup_level == 'snapshot':
+            vm_backup_service = self._commcell_object._services['SUBCLIENT_BACKUP'] % (self._subclient_id, 'FULL')
+
+            vm_backup_service += '&runSnapShotBackup=true'
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', vm_backup_service
+            )
+
+            return self._process_backup_response(flag, response)
 
         if advanced_options or schedule_pattern:
             request_json = self._backup_json(

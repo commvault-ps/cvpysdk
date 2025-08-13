@@ -549,7 +549,7 @@ class EdiscoveryClientOperations():
         self._API_CONFIGURE_TASK = self._services['EDISCOVERY_CONFIGURE_TASK']
         self._API_TASK_WORKFLOW = self._services['EDICOVERY_TASK_WORKFLOW']
         from .file_storage_optimization import FsoServer, FsoServerGroup
-        from .sensitive_data_governance import Project
+        from .sensitive_data_governance import Project, Projects
         from .request_manager import Request
 
         if isinstance(class_object, FsoServer):
@@ -589,6 +589,10 @@ class EdiscoveryClientOperations():
             self._app_type = 2  # for sharing, app type param
             self._search_entity_type = 188
             self._search_entity_id = class_object.project_id
+        elif isinstance(class_object, Projects):
+            self._client_id = 0
+            self._search_entity_type = 188
+            self._search_entity_id = "all"
         elif isinstance(class_object, Request):
             self._client_id = class_object.request_id
             self._request_type = class_object.request_type

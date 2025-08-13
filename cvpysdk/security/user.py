@@ -132,6 +132,7 @@ User
 
 from base64 import b64encode
 from .security_association import SecurityAssociation
+from ..additional_settings import AdditionalSettings
 from ..exception import SDKException
 
 
@@ -171,9 +172,7 @@ class Users(object):
 
     def __repr__(self):
         """Representation string for the instance of the Users class."""
-        return "Users class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Users class instance for Commcell"
 
     def _get_users(self, full_response: bool = False):
         """Returns the list of users configured on this commcell
@@ -340,6 +339,10 @@ class Users(object):
             search_parameter,
             fq_parameters
         ]
+
+        # adding required additional param for comet layer
+        if self._commcell_object.is_global_scope():
+            params.append("&fq=users.isExtendedUser%3Aeq%3Afalse")
 
         request_url = f"{self._commcell_object._services['USERS']}?" + "".join(params)
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
@@ -841,8 +844,8 @@ class User(object):
         self._tfa_status = None
         self._upn = None
         self._num_devices = None
+        self._additional_settings = None
         self._get_user_properties()
-        self._get_tfa_status()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -1212,8 +1215,8 @@ class User(object):
 
     def refresh(self):
         """Refresh the properties of the User."""
+        self._additional_settings = None
         self._get_user_properties()
-        self._get_tfa_status()
 
     def update_security_associations(self, entity_dictionary, request_type):
         """handles three way associations (role-user-entities)
@@ -1339,6 +1342,7 @@ class User(object):
 
         bool    --  tfa status
         """
+        self._get_tfa_status()
         return self._tfa_status
 
     @property
@@ -1643,4 +1647,8 @@ class User(object):
 
         return response.json()
 
-
+    @property
+    def additional_settings(self):
+        if self._additional_settings is None:
+            self._additional_settings = AdditionalSettings(self)
+        return self._additional_settings

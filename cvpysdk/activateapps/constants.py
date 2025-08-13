@@ -87,6 +87,32 @@ class RequestConstants:
                                                               "value": "{\"_ConsentFor_<rsidparam>_b_Reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:*\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Not reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"contentid:* AND -(ConsentFor_<rsidparam>_b:*)\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Accepted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:true\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Declined\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:false\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:true\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Not redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:false\",\"facet\":{}},\"FileExtension\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_FileExtension\",\"tag_exclude_FileExtension\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"FileExtension\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"ReadAccessUserName\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_ReadAccessUserName\",\"tag_exclude_ReadAccessUserName\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"ReadAccessUserName\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"data_source_name\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_data_source_name\",\"tag_exclude_data_source_name\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"data_source_name\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}}}"},
                                                              {"key": "useDCubeReq",
                                                               "value": "true"}]}
+    REQUEST_ZERO_ROWS = {"rows": 0}
+    REQUEST_TOP_ENTITIES_FACET = {"rows":0, "facet":"true",
+                                  "json.facet":
+                                      "{'entities_extracted':{"
+                                            "'type':'terms',"
+                                            "'mincount':1,"
+                                            "'field':'entities_extracted',"
+                                            "'limit':%d,"
+                                            "'sort':{"
+                                                "'count':'desc'"
+                                            "}"
+                                        "}"
+                                      "}"
+                                  }
+
+    REQUEST_ENTITY_DISTRIBUTION_FACET = {"rows":0, "facet":"true",
+                                         "json.facet":
+                                             "{'AppType_sums':{"
+                                                "'type':'terms',"
+                                                "'field': 'AppType', "
+                                                "'facet':{"
+                                                    "'total_entities':'sum(count_entity_total_entities_extracted)'"
+                                                    "}"
+                                                "}"
+                                             "}"
+                                         }
 
     FIELD_DOC_COUNT = "TotalDocuments"
     FIELD_REVIEWED = "ReviewedDocuments"
@@ -516,8 +542,26 @@ class EdiscoveryConstants:
     FIELD_IS_FILE = 'IsFile:1'
     DYNAMIC_FEDERATED_SEARCH_PARAMS = {"searchParams": []}
 
-    CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"
+    APP_TYPE_ONEDRIVE = 200118
+    APP_TYPE_EXCHANGE = 137
+    APP_TYPE_ALL = 0
+    DOCUMENT_TYPE_FILES = 1
+    DOCUMENT_TYPE_EMAIL = 2
 
+    CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"
+    CRITERIA_ALL_DOCS = (f"DocumentType: ({DOCUMENT_TYPE_FILES} OR {DOCUMENT_TYPE_EMAIL}) "
+                         f"AND AppType:({APP_TYPE_ONEDRIVE} OR {APP_TYPE_EXCHANGE})")
+    CRITERIA_ONEDRIVE_DOCS = f"DocumentType: {DOCUMENT_TYPE_FILES} AND AppType:{APP_TYPE_ONEDRIVE}"
+    CRITERIA_EXCHANGE_DOCS = f"DocumentType: {DOCUMENT_TYPE_EMAIL} AND AppType:{APP_TYPE_EXCHANGE}"
+    CRITERIA_OD_SENSITIVE = f"{CRITERIA_EXTRACTED_DOCS} AND {CRITERIA_ONEDRIVE_DOCS}"
+    CRITERIA_EXCH_SENSITIVE = f"{CRITERIA_EXTRACTED_DOCS} AND {CRITERIA_EXCHANGE_DOCS}"
+    APP_TYPE_TOTAL_DICT = {APP_TYPE_ALL:CRITERIA_ALL_DOCS,
+                           APP_TYPE_ONEDRIVE:CRITERIA_ONEDRIVE_DOCS,
+                           APP_TYPE_EXCHANGE: CRITERIA_EXCHANGE_DOCS}
+
+    APP_TYPE_SENSITIVE_DICT = {APP_TYPE_ALL:CRITERIA_EXTRACTED_DOCS,
+                               APP_TYPE_ONEDRIVE:CRITERIA_OD_SENSITIVE,
+                               APP_TYPE_EXCHANGE: CRITERIA_EXCH_SENSITIVE}
     TAGGING_ITEMS_REQUEST = {
         "entityType": "SEA_DATASOURCE_ENTITY",
         "entityIds": [],

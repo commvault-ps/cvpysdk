@@ -127,9 +127,7 @@ class Roles(object):
 
     def __repr__(self):
         """Representation string for the instance of the Roles class."""
-        return "Roles class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Roles class instance for Commcell"
 
     def _get_roles(self, full_response: bool = False):
         """
@@ -308,14 +306,18 @@ class Roles(object):
             self.filter_query_count = response.json().get('filterQueryCount',0)
             for role in response.json()['roleProperties']:
                 name = role.get('role', {}).get('roleName')
+                company = role.get('role', {}).get('entityInfo', {}).get('companyName')
+                unique_name = name
+                if name in roles_cache:
+                    unique_name = f"{name}_{company}"
                 roles_config = {
                     'roleName': name,
                     'roleId': role.get('role', {}).get('roleId'),
-                    'description': role.get('description',''),
+                    'description': role.get('description', ''),
                     'status': role.get('role', {}).get('flags', {}).get('disabled'),
-                    'company': role.get('role', {}).get('entityInfo', {}).get('companyName')
+                    'company': company
                 }
-                roles_cache[name] = roles_config
+                roles_cache[unique_name] = roles_config
 
             return roles_cache
         else:

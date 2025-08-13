@@ -2954,6 +2954,13 @@ c
         if fs_options and 'proxy_client' in fs_options:
             proxy_client = fs_options['proxy_client']
 
+        # restore to use default 10 streams
+        if fs_options is None:
+            fs_options = {}
+            fs_options['no_of_streams'] = 10
+        elif 'no_of_streams' not in fs_options:
+            fs_options['no_of_streams'] = 10
+
         return self._instance_object._restore_out_of_place(
             client=client,
             destination_path=destination_path,

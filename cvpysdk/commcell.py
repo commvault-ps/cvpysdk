@@ -97,21 +97,9 @@ Commcell:
 
     add_associations_to_saml_app()  --  Adds the given user under associations of the SAML app
 
-    _get_registered_service_commcells() -- gets the list of registered service commcells
-
     register_commcell()             -- registers a commcell
 
-    sync_service_commcell()         --  Sync a service commcell
-
-    unregister_commcell()           -- unregisters a commcell
-
-    update_service_commcell_properties()    --  updates properties of registered service commcells
-
     is_commcell_registered()       -- checks if the commcell is registered
-
-    _get_redirect_rules_service_commcell()    -- gets the redirect rules of service commcell
-
-    get_eligible_service_commcells()             -- gets the eligible service commcells to redirect
 
     get_default_plan()                  -- Get the default plans associed with the commcell
 
@@ -126,12 +114,6 @@ Commcell:
     get_commcell_properties()           -- Get the general, privacy and other properties of commcell
 
     get_commcell_organization_properties()     -- Get the organization properties of commcell
-
-    add_service_commcell_associations()    -- adds an association for an entity on a service commcell
-
-    get_service_commcell_associations()     --  gets the association details for entity on commcell
-
-    remove_service_commcell_association()   --  removes association for an entity on all service commcells
 
     enable_tfa()                           --   Enables two factor authentication on this commcell
 
@@ -325,6 +307,9 @@ Commcell instance Attributes
     **grc**      --  returns the instance of the 'GlobalRepositoryCell' class,
     to interact with the registered commcells and setup/modify GRC schedules
 
+    **service_commcells**       --  returns the instance of the `ServiceCommcells` class, to
+    perform service commcell related operations
+
     **backup_network_pairs**    --  returns the instance of 'BackupNetworkPairs' class to
     perform backup network pairs operations on the commcell class
 
@@ -362,19 +347,15 @@ Commcell instance Attributes
 
     **key_management_servers**      -- Returns the instance of `KeyManagementServers` class
 
-    **all_rules_of_service**        -- Returns dict with all rules of service operating in this commcell
-
     **is_passkey_enabled**          -- Returns True if Passkey is enabled on commcell
-
-    **commcells_for_user**          -- Returns list of commcell regions available for current user
-
-    **commcells_for_switching**     -- Returns info regarding all commcells available for all users
 
     **databases**                    -- Returns the list of databases on the commcell
 
     **database_instances**           -- Returns the list of database instances on the commcell
 
     **database_instant_clones**      -- Returns the list of database instant clone jobs active on the commcell
+
+    **cost_assessment**             -- Returns the instance of the CostAssessment class
 
 """
 
@@ -397,11 +378,14 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from .activate import Activate
 from .activateapps.compliance_utils import ExportSets
+from .constants import UserRole
+from .activateapps.tco import CostAssessment
 from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
 from .monitoringapps.threat_indicators import TAServers
 from .alert import Alerts
+from .snmp_configs import SNMPConfigurations
 from .storage import MediaAgents
 from .storage import DiskLibraries
 from .storage import TapeLibraries
@@ -423,7 +407,7 @@ from .security.two_factor_authentication import TwoFactorAuthentication
 from .credential_manager import Credentials
 from .download_center import DownloadCenter
 from .resource_pool import ResourcePools
-from .organization import Organizations, Organization, RemoteOrganization
+from .organization import Organizations, Organization
 from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
 from .policy import Policies
@@ -458,6 +442,7 @@ from .deduplication_engines import DeduplicationEngines
 from .metallic import Metallic
 from .key_management_server import KeyManagementServers
 from .regions import Regions
+from .service_commcells import ServiceCommcells
 from urllib.parse import urlparse
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
@@ -551,6 +536,13 @@ class Commcell(object):
                 **kwargs:
                     web_service_url      (str)   --  url of webservice for the api requests
 
+                    user_agent           (str)   --  user agent header to set for the requests
+
+                    master_commcell  (Commcell)  --  instance of the master commcell's object
+
+                    master_hostname       (str)  --  hostname of the master commcell where to authenticate
+                                                     if master_commcell object is not provided
+
             Returns:
                 object  -   instance of this class
 
@@ -588,18 +580,35 @@ class Commcell(object):
 
         self._password = None
 
+        self._user_agent = kwargs.get('user_agent')
+
         self._headers = {
             'Host': webconsole_hostname,
             'Accept': 'application/json',
             'Content-type': 'application/json',
             'Authtoken': None
         }
+        if self._user_agent:
+            self._headers['User-Agent'] = self._user_agent
         
         if web_service_url:
             parsed_web_service_url = urlparse(web_service_url)
             self._headers['Host'] = f"{parsed_web_service_url.netloc}"
 
         self._device_id = socket.getfqdn()
+
+        if idp_hostname := kwargs.get("master_hostname"):
+            self._master_commcell = Commcell(
+                idp_hostname, commcell_username, commcell_password, authtoken,
+                force_https, certificate_path, False, verify_ssl
+            )
+        else:
+            self._master_commcell = kwargs.get("master_commcell")
+
+        if self._master_commcell:
+            is_service_commcell = True
+            authtoken = self._master_commcell.get_saml_token()
+
         self._is_service_commcell = is_service_commcell
 
         # Checks if the service is running or not
@@ -674,6 +683,9 @@ class Commcell(object):
         self._is_linux_commserv = None
         self._commserv_metadata = None
         self._commserv_oem_id = None
+        self._user_mappings = None
+        self._user_role = None
+        self._user_org = None
 
         self._id = None
         self._clients = None
@@ -717,9 +729,6 @@ class Commcell(object):
         self._commcell_migration = None
         self._grc = None
         self._registered_commcells = None
-        self._registered_routing_commcells = None
-        self._switcher_commcells = None
-        self._all_rules_service = None
         self._backup_network_pairs = None
         self._reports = None
         self._replication_groups = None
@@ -735,18 +744,22 @@ class Commcell(object):
         self._nw_topo = None
         self._index_pools = None
         self._deduplication_engines = None
-        self._redirect_cc_idp = None
         self._tfa = None
         self._metallic = None
         self._kms = None
         self._privacy = None
         self._commcell_properties = None
         self._regions = None
+        self._snmp_configurations = None
         self._tags = None
         self._additional_settings = None
+        self._service_commcells = None
         self._databases = None
         self._database_instances = None
         self._database_instant_clones = None
+        self._cost_assessment = None
+        self._commserv_details_loaded = False
+        self._commserv_details_set = False
         self.refresh()
 
         del self._password
@@ -758,8 +771,14 @@ class Commcell(object):
                 str - string about the details of the Commcell class instance
 
         """
-        representation_string = 'Commcell class instance of Commcell: "{0}", for User: "{1}"'
-        return representation_string.format(self.commserv_name, self._user)
+        rep =  (f'Commcell class instance '
+                f'of Commcell: [{self.webconsole_hostname}] '
+                f'for User: [{self.commcell_username}]')
+        if self.is_global_scope():
+            rep += ' in Global Scope'
+        if self.operating_company:
+            rep += f' operating on Company: [{self.operating_company}]'
+        return rep
 
     def __enter__(self):
         """Returns the current instance.
@@ -857,6 +876,28 @@ class Commcell(object):
         del self._kms
         del self._tags
         del self
+
+    def _set_commserv_details(self, commcell_info):
+        """Sets the CommServ details for the Commcell class instance.
+
+            Args:
+                commcell_info    (object)    --  commcell information object
+
+            Returns:
+                None
+
+        """
+        self._commserv_guid = commcell_info.commserv_guid
+        self._commserv_hostname = commcell_info.commserv_hostname
+        self._commserv_name = commcell_info.commserv_name
+        self._commserv_timezone = commcell_info.commserv_timezone
+        self._commserv_timezone_name = commcell_info.commserv_timezone_name
+        self._commserv_version = commcell_info.commserv_version
+        self._version_info = commcell_info.version
+        self._id = commcell_info.commserv_id
+        self._release_name = commcell_info.release_name
+        self._commserv_details_loaded = True
+        self._commserv_details_set = True
 
     def _get_commserv_details(self):
         """Gets the details of the CommServ, the Commcell class instance is initialized for,
@@ -1007,6 +1048,8 @@ class Commcell(object):
     @property
     def commcell_id(self):
         """Returns the ID of the CommCell."""
+        if self._id is None:
+            self._get_commserv_details()
         return self._id
 
     def _qoperation_execscript(self, arguments):
@@ -1255,6 +1298,49 @@ class Commcell(object):
     def commcell_username(self):
         """Returns the logged in user name"""
         return self._user
+
+    @property
+    def user_mappings(self) -> dict:
+        """Returns the user mappings for the currently logged in user."""
+        if self._user_mappings is None:
+            self._user_mappings = self.wrap_request('GET', 'USER_MAPPINGS')
+        return self._user_mappings
+
+    @property
+    def user_role(self) -> UserRole:
+        """
+        Returns the user role enum for the currently logged in user.
+
+        Example: UserRole.MSP_ADMIN, UserRole.MSP_USER, etc ...
+        """
+        if self._user_role is None:
+            self._user_role = UserRole(self.user_mappings.get('userRole', 5))
+        return self._user_role
+
+    @property
+    def is_tenant(self) -> bool:
+        """Returns True if the logged-in user is a company user"""
+        return self.user_role in [UserRole.TENANT_USER, UserRole.TENANT_ADMIN]
+
+    @property
+    def is_tenant_level(self) -> bool:
+        """Returns True if the logged-in user is at company level"""
+        return bool(self.is_tenant or self.operating_company)
+
+    @property
+    def user_org(self) -> Organization | None:
+        """
+        Returns the organization object, the currently logged in user belongs to.
+
+        Note: update operations might fail depending on the user role and permissions.
+        """
+        if 'providerId' not in self.user_mappings:
+            return None
+        if self._user_org is None:
+            self._user_org = Organization(self, organization_id=self.user_mappings['providerId'])
+            # need to directly use Organization class here, as /Organizations API may be restricted
+            # but GET /Organization/{org_id} API response is always provided to all users
+        return self._user_org
 
     @property
     def device_id(self):
@@ -1726,8 +1812,11 @@ class Commcell(object):
     @property
     def commserv_client(self):
         """Returns the instance of the Client class for the CommServ client."""
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
+
         if self._commserv_client is None:
-            self._commserv_client = self.clients.get(self._id)
+            self._commserv_client = self.clients.get(self.commcell_id)
         return self._commserv_client
 
     @property
@@ -1753,30 +1842,11 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def registered_routing_commcells(self):
-        """Returns the dictionary consisting of all registered commcells and
-        their info
-
-        dict - consists of all registered routing commcells
-            {
-                "commcell_name1:{
-                    details related to commcell_name1
-                },
-                "commcell_name2:{
-                    details related to commcell_name2
-                }
-            }
-        """
-        if self._registered_routing_commcells is None:
-            self._registered_routing_commcells = self._get_registered_service_commcells()
-        return self._registered_routing_commcells
-
-    @property
     def registered_commcells(self):
-        """Returns the dictionary consisting of all registered commcells and
-        their info
+        """
+        Returns the dictionary consisting of all registered commcells and their info
 
-        dict - consists of all registered routing commcells
+        dict - consists of all registered commcells
             {
                 "commcell_name1:{
                     details related to commcell_name1
@@ -1787,26 +1857,8 @@ class Commcell(object):
             }
         """
         if self._registered_commcells is None:
-            self._registered_commcells = (self._get_registered_service_commcells(True) |
-                                          self._get_registered_service_commcells())
+            self._registered_commcells = self._get_registered_commcells()
         return self._registered_commcells
-
-    @property
-    def all_rules_of_service(self):
-        """
-        Returns a dict of all rules from service commcell
-
-        dict    -   consists of domains, rules, authcodes to be synced
-        {
-                'authcodes': [...],
-                'domains': [...],
-                'rules': [...],
-                'users': [...]
-        }
-        """
-        if self._all_rules_service is None:
-            self._all_rules_service = self._get_all_rules_service_commcell()
-        return self._all_rules_service
 
     @property
     def replication_groups(self):
@@ -1911,40 +1963,6 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def commcells_for_user(self):
-        """returns the list of accessible commcells to logged in user
-
-        list - consists list of dicts with info about accessible commcells
-
-            [
-                {'redirectUrl': '', 'commcellName': '', 'commcellType': ''},
-                {...},
-                ...
-            ]
-        """
-        if self._redirect_cc_idp is None:
-            self._redirect_cc_idp = self._commcells_for_user()
-        return self._redirect_cc_idp
-
-    @property
-    def commcells_for_switching(self):
-        """
-        returns dict with information on commcells available in commcell switcher
-
-        dict    -   contains dict with details of switchable commcells
-                    example: {
-                        'IDPCommCell': {...},
-                        'serviceCommcells': [
-                            {'commcellName': ..., 'webconsoleUrl': ...},
-                            {...}
-                        ]
-                    }
-        """
-        if self._switcher_commcells is None:
-            self._switcher_commcells = self._commcells_for_switching()
-        return self._switcher_commcells
-
-    @property
     def commserv_metadata(self):
         """Returns the metadata of the commserv."""
         if self._commserv_metadata is None:
@@ -2005,6 +2023,26 @@ class Commcell(object):
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
+    @property
+    def snmp_configurations(self):
+        """Returns the instance of the SNMPConfigurations class."""
+        try:
+            if self._snmp_configurations is None:
+                self._snmp_configurations = SNMPConfigurations(self)
+            return self._snmp_configurations
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def service_commcells(self):
+        """Returns the instance of the ServiceCommcells class."""
+        try:
+            if self._service_commcells is None:
+                self._service_commcells = ServiceCommcells(self)
+            return self._service_commcells
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -2062,6 +2100,151 @@ class Commcell(object):
         )
 
         return response
+
+    def wrap_request(
+            self, method: str, service_key: str, fill_params: tuple = None,
+            req_kwargs: dict = None, **wrap_kwargs
+        ):
+        """
+        Wraps the request to the Commcell in a standard format for most API calls
+
+        Args:
+            method (str)        --  HTTP method to use for the request (e.g., 'GET', 'POST')
+
+            service_key (str)   --  Key to access the request URL from services.py dict
+
+            fill_params (tuple) --  Tuple of parameters to fill in the service URL, if it has any %s formatting
+
+            req_kwargs (dict)   --  kwargs dict to pass to the request
+                                    Example:
+                                    {
+                                        'payload': dict | str,
+                                        'attempts': int,
+                                        'headers': dict,
+                                        'stream': bool,
+                                        'files': dict[str, File],
+                                        'remove_processing_info': bool,
+                                    }
+
+            wrap_kwargs:
+                return_resp (bool)          --  If True, returns the response object directly
+                                                else, returns response.json()
+                                                default: False
+
+                ignore_flag (bool)          --  If True, ignores the flag in the response
+                                                default: False
+
+                empty_check (bool)          --  If True, checks if the response is empty and raises an exception
+                                                default: True
+
+                error_check (bool)          --  If True, handles error in response dict and raises an sdk exception
+                                                default: False for 'GET' requests, True for others
+                                                         as GET responses usually don't have error messages
+
+                error_read (callable)       --  How to read error code and message from response dict
+                                                A Callable that returns error code, message from resp dict as arg
+                                                default:
+                                                    checks for ['error', 'errorCode', 'errorMessage', 'errorString',
+                                                                'resultCode', 'resultMessage'] in resp_dict
+
+                error_callback (callable)   --  What to do when error code is not 0
+                                                A Callable that takes the error code and message as arguments and
+                                                raises an SDKException if needed
+                                                default:
+                                                    raises SDKException(<default module>, <default code>, error_message)
+
+                sdk_exception (tuple)       --  The Module and Error Code for default_error_callback
+                                                default: ('Response', '101')
+
+        """
+        req_kwargs = req_kwargs or {}
+        exc_module, exc_code = wrap_kwargs.get('sdk_exception', ('Response', '101'))
+
+        def default_error_read(resp_dict) -> tuple[int, str]:
+            """Default error reading function"""
+            error_node = resp_dict
+            if 'error' in resp_dict:
+                error_node = resp_dict['error']
+            code = error_node.get('errorCode', error_node.get('resultCode', -1))
+            msg = error_node.get('errorMessage',
+                error_node.get('errorString',
+                    error_node.get('resultMessage', 'No error message in response')
+                )
+            )
+            return code, msg
+
+        def default_error_callback(error_code: int, error_msg: str):
+            """Default error callback function"""
+            raise SDKException(exc_module, exc_code, f'[{error_code}: {error_msg}]')
+
+        ignore_flag = wrap_kwargs.get('ignore_flag', False)
+        return_resp = wrap_kwargs.get('return_resp', False)
+        empty_check = wrap_kwargs.get('empty_check', True)
+        error_check = wrap_kwargs.get('error_check', method!='GET')
+        error_read = wrap_kwargs.get('error_read', default_error_read)
+        error_callback = wrap_kwargs.get('error_callback', default_error_callback)
+
+        def error_handling(res):
+            erc, erm = error_read(res.json())
+            if erc != 0:
+                error_callback(erc, erm)
+
+        api_url = self._services[service_key]
+        if fill_params:
+            api_url = api_url % fill_params
+        flag, response = self._cvpysdk_object.make_request(method, api_url, **req_kwargs)
+        if (not flag) and (not ignore_flag):
+            try:
+                error_handling(response)
+            except:
+                raise SDKException('Response', '101', response.content)
+
+        if return_resp and not error_check:
+            return response
+
+        try:
+            response.json()
+        except:
+            raise SDKException('Response', '103', f'Received: {response.content}')
+
+        if empty_check and not response.json():
+            raise SDKException('Response', '102')
+
+        if error_check:
+            error_handling(response)
+
+        return response if return_resp else response.json()
+
+    @contextmanager
+    def wrapped_request(self, method: str, service_key: str, fill_params: tuple = None, **wrap_kwargs):
+        """
+        Context manager to wrap the API response handling code after request
+
+        Args:
+            method (str)        --  HTTP method to use for the request (e.g., 'GET', 'POST')
+
+            service_key (str)   --  Key to access the request URL from services.py dict
+
+            fill_params (tuple) --  Tuple of parameters to fill in the service URL, if it has any %s formatting
+
+            wrap_kwargs:
+                req_kwargs (dict)   --  kwargs dict to pass to .make_request(...)
+
+                See wrap_request() signature
+
+        Yields:
+            response object or response.json() based on wrap_kwargs['return_resp']
+
+        Raises:
+            SDKException with response.content / response json for debugging
+            if any error raised inside the with block
+        """
+        resp = self.wrap_request(method, service_key, fill_params, **wrap_kwargs)
+        try:
+            yield resp
+        except Exception as exp:
+            debug_msg = resp if isinstance(resp, dict) else resp.content
+            raise SDKException('Response', '104', f'Got response: {debug_msg}') from exp
 
     def send_mail(self, receivers, subject, body=None, copy_sender=False, is_html_content=True, **kwargs):
         """Sends a mail to the specified email address from the email asscoiated to this user
@@ -2126,6 +2309,9 @@ class Commcell(object):
 
     def refresh(self):
         """Refresh the properties of the Commcell."""
+        
+        if not self._commserv_details_set:
+            self._commserv_details_loaded = False
         self._clients = None
         self._commserv_cache = None
         self._remote_cache = None
@@ -2165,11 +2351,7 @@ class Commcell(object):
         self._identity_management = None
         self._commcell_migration = None
         self._grc = None
-        self._commserv_details_loaded = False
         self._registered_commcells = None
-        self._registered_routing_commcells = None
-        self._switcher_commcells = None
-        self._all_rules_service = None
         self._index_servers = None
         self._hac_clusters = None
         self._nw_topo = None
@@ -2178,6 +2360,11 @@ class Commcell(object):
         self._tfa = None
         self._tags = None
         self._additional_settings = None
+        self._snmp_configurations = None
+        self._service_commcells = None
+        self._user_mappings = None
+        self._user_role = None
+        self._user_org = None
 
     def get_remote_cache(self, client_name):
         """Returns the instance of the RemoteCache  class."""
@@ -2314,7 +2501,7 @@ class Commcell(object):
                     error_code = response['errList'][0]['errorCode']
 
                     if 'relogin required' in error_message.lower():
-                        self._headers['Authtoken'] = self._cvpysdk_object._renew_login_token()
+                        self._headers['Authtoken'] = self._cvpysdk_object._renew_login_token(5)
                         return self.get_saml_token(validity)
 
                     raise SDKException(
@@ -2756,6 +2943,7 @@ class Commcell(object):
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
+            commserv_name (str) - Name of the CommServe (if user doesn't have view permission on CommServe)
             install_flags (dict)            -- dictionary of install flag values
 
                 default : None
@@ -3485,35 +3673,28 @@ class Commcell(object):
             .format(str(saml_app_key), saml_app_name, props, user_to_be_added)
         self._qoperation_execute(xml_execute_command)
 
-    def _get_registered_service_commcells(self, non_router=False):
-        """Gets the registered routing commcells
-            Args:
-                non_router  (bool)  :   will include non_router commcells also if True
-
-            Returns:
-                dict - consists of all registered routing commcells
-                    {
-                        "commcell_name1": {
-                            related information of commcell1
-                        },
-                        "commcell_name2:: {
-                            related information of commcell2
-                        }
-                    }
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+    def _get_registered_commcells(self):
         """
-        api_endpoint = self._services['GET_REGISTERED_ROUTER_COMMCELLS']
-        if non_router:
-            api_endpoint = self._services['GET_REGISTERED_COMMCELLS']
+        Gets the registered commcells
+        (Not to be confused with service commcells, use commcell.service_commcells class for that)
+        
+        Returns:
+            dict - consists of all registered routing commcells
+                {
+                    "commcell_name1": {
+                        related information of commcell1
+                    },
+                    "commcell_name2:: {
+                        related information of commcell2
+                    }
+                }
+        Raises:
+            SDKException:
+                if response is empty
 
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', api_endpoint
-        )
-
+                if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_REGISTERED_COMMCELLS'])
         if flag:
             if response.json() and 'commcellsList' in response.json():
                 register_commcells_dict = {}
@@ -3523,94 +3704,24 @@ class Commcell(object):
                 return register_commcells_dict
             else:
                 return {}
-
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_all_rules_service_commcell(self):
-        """gets all the rules from service commcell
-
-        Returns:
-            dict - consisting of all rules, domains, authcodes and userspace associated with service commcell
-            {
-                'authcodes': [...],
-                'domains': [...],
-                'rules': [...],
-                'userspace': [...]
-            }
-
-        Raises:
-            SDKException:
-                if response is empty
-
-                if response is not success
+    def register_commcell(self, commcell_name, admin_username, admin_password, **kwargs):
         """
-
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_USERSPACE_SERVICE']
-        )
-
-        if flag:
-            if resp := response.json():
-                return {
-                    'authcodes': resp.get('redirectRules', {}).get('authCodes', []),
-                    'domains': resp.get('redirectRules', {}).get('domains', []),
-                    'rules': resp.get('redirectRules', {}).get('rules', []),
-                    'userspace': [user.get('userEntity', {}).get('userName') for user in resp.get('users', [])]
-                }
-            else:
-                raise SDKException('Response', '102')
-
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def is_commcell_registered(self, commcell_name, for_routing=False):
-        """checks if a commcell is registered in the commcell
-                    with the provided name
-            Args:
-                commcell_name (str) -- name of the commcell
-                for_routing (bool)  -- if True, will check for routing commcells only
-
-            Returns:
-                bool - boolean output whether the commcell is registered or not
-
-            Raises:
-                SDKException:
-                    if type of the commcell_name is not string
-        """
-        if not isinstance(commcell_name, str):
-            raise SDKException('CommcellRegistration', '104')
-
-        return commcell_name in (self.registered_routing_commcells if for_routing else self.registered_commcells)
-
-    def register_commcell(
-            self,
-            commcell_name,
-            registered_for_routing=False,
-            admin_username=None,
-            admin_password=None, 
-            **kwargs):
-        """Registers a commcell
+        Registers a commcell
+        (for service commcell registration, use service_commcells.add)
 
         Args:
 
             commcell_name   (str)           --  commandcenter hostname of the commcell or
                                                 the complete commandcenter URL
 
-            registered_for_routing (bool)   --  True - if we want to register for Routing
-                                                False - if we dont want to register for Routing
-
             admin_username   (str)          --  username of the user who has administrative
                                                 rights on a commcell
 
             admin_password  (str)           --  password of the user specified
-
-            kwargs:
-                commcell_displayname    (str)   --  displayname of the commcell to register
-
-                custom_payload   (dict)         --  dict with other payload parameters to pass
 
         Raises:
 
@@ -3634,181 +3745,31 @@ class Commcell(object):
             "password": b64encode(admin_password.encode()).decode()
         } | kwargs.get('custom_payload', {})
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['SERVICE_REGISTER'], payload
+        self.wrap_request(
+            'POST', 'REGISTRATION',
+            req_kwargs={'payload': payload},
+            sdk_exception=('CommcellRegistration', '101')
         )
+        self._registered_commcells = None
 
-        if flag:
-            if response.json():
-                error_code = response.json().get('errorCode', -1)
-                if error_code != 0:
-                    error_string = response.json().get('errorMessage', 'No error message in response')
-                    raise SDKException('CommcellRegistration', '101', error_string)
-                self.refresh()
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def service_commcell_sync(self, service_commcell):
-        """ Sync a service commcell
+    def get_redirect_list(self, login: str = None):
+        """
+        Gets the list of redirects available for user based on login_name or email provided
 
         Args:
-
-        service_commcell    (object)    : Service commcell object
+            login      (str)   --   Login name or email of the user
 
         Raises:
-
-            if sync fails
-            if the response is empty
-            if there is no response
-
-        """
-        if not isinstance(service_commcell, Commcell):
-            raise SDKException('CommcellRegistration', '104')
-
-        guid = service_commcell.commserv_guid
-        payload = {
-            'commcellGUID': guid
-        }
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['SYNC_SERVICE_COMMCELL'] % guid, payload
-        )
-
-        if flag:
-            if response.json():
-                error_code = response.json()['errorCode']
-
-                if error_code != 0:
-                    error_string = response.json()['errorMessage']
-                    raise SDKException(
-                        'CommcellRegistration',
-                        '102',
-                        'Sync operation failed\n Error: "{0}"'.format(
-                            error_string
-                        )
-                    )
-                self.refresh()
-
-                service_commcell.refresh()
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def unregister_commcell(self, commcell_name, force=False):
-        """Unregisters a commcell
-
-        Args:
-
-            commcell_name       (str) - Name of the service commcell that has to be unregistered
-
-            force   (bool)  -   if True, will perform forced unregistration
-
-        Raises:
-
-            if Unregistration fails
-            if the response is empty
-            if there is no response
-
-        """
-        if not isinstance(commcell_name, str):
-            raise SDKException('CommcellRegistration', '104')
-        else:
-            if self.is_commcell_registered(commcell_name):
-                payload = {
-                  "commcell": {
-                    "commCell": {
-                      "commCellId": self.registered_commcells[commcell_name]['commCell']['commCellId'],
-                      "csGUID": self.registered_commcells[commcell_name]['commCell']['csGUID'],
-                    },
-                    "ccClientId": self.registered_commcells[commcell_name]['ccClientId'],
-                    "ccClientName": self.registered_commcells[commcell_name]['ccClientName'],
-                    "interfaceName": self.registered_commcells[commcell_name]['interfaceName']
-                  },
-                  "forceUnregister": force
-                }
-
-                flag, response = self._cvpysdk_object.make_request(
-                    'POST', self._services['UNREGISTRATION'], payload
-                )
-
-                if flag:
-                    if response.json():
-                        error_code = response.json()['resultCode']
-                        if error_code != 0:
-                            error_string = response.json()['resultMessage']
-                            raise SDKException('CommcellRegistration', '103', error_string)
-                        self._registered_commcells = None
-                        self._registered_routing_commcells = None
-                    else:
-                        raise SDKException('Response', '102')
-                else:
-                    response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
-
-    def update_service_commcell_properties(self, commcell_guid, properties):
-        """
-        Updates the properties of the service commcell
-
-        Args:
-            commcell_guid   (str)   --  GUID of the service commcell
-
-            properties      (dict)  --  dict with properties to be updated
-                example: {'displayName': '...', 'webconsoleUrl': '...'}
-
-        Returns:
-            dict - comet-response header indicating which commcell failed, if any, else None
-        """
-        payload = {
-            "properties": {'csGUID': commcell_guid.upper()} | properties
-        }
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['SERVICE_PROPS'], payload
-        )
-        if flag:
-            if response.json():
-                error_code = response.json()['errorCode']
-                if error_code != 0:
-                    error_string = response.json().get('errorMessage') or response.json().get('errorString')
-                    raise SDKException('CommcellRegistration', '105', error_string)
-                self.refresh()
-                return response.headers.get("comet-response")
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def get_eligible_service_commcells(self, login_name_or_email=None):
-        """Gets the redirect service commcells based on login_name or email provided
-
-        Args:
-
-            login_name_or_email      (str)   -- Login name or email of the user
-
-                default: current logged in user
-
-        Raises:
-
             if the response is empty
             if there is no response
 
         Returns:
-
             list_of_service_commcells   (list)  -- list of service commcells
 
         """
-        if not login_name_or_email:
-            login_name_or_email = self.commcell_username
-
-        login_name_or_email = login_name_or_email.lower()
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['POLL_REQUEST_ROUTER'] %
-            login_name_or_email
-        )
+        login = login or self.commcell_username
+        login = login.lower()
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['REDIRECT_LIST'] % login)
         if flag:
             if response.json() and 'AvailableRedirects' in response.json():
                 service_commcell_list = []
@@ -3824,361 +3785,20 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _commcells_for_user(self):
-        """returns the list of accessible commcells to logged in user
-
-        Returns:
-            list - consists list of dicts with info about accessible commcells
-
-                [
-                    {'redirectUrl': '', 'commcellName': '', 'commcellType': ''},
-                    {...},
-                    ...
-                ]
-        Raises:
-            SDKException:
-                if response is empty
-
-                if response is not success
-        """
-
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['MULTI_COMMCELL_DROP_DOWN']
-        )
-        if flag:
-            if response.json() and 'AvailableRedirects' in response.json():
-                return response.json()['AvailableRedirects']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def _commcells_for_switching(self):
-        """
-        returns the commcell details for all switchable commcells
-
-        Returns:
-            dict - dict with details on accessible commcells
-
-        Raises:
-            SDKException:
-                if response is empty
-
-                if response is not success
-        """
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['MULTI_COMMCELL_SWITCHER']
-        )
-        if flag:
-            if response.json():
-                return response.json()
-            else:
-                raise SDKException('Response', '102')
-
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def _service_commcells_association(self):
-        """returns the associated entities to a service commcell
-
-        Returns:
-
-                        dict of associated entities to a service commcell
-
-        Raises:
-
-            SDKException:
-                if response is empty
-
-                if response is not success
-        """
-
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['SERVICE_COMMCELL_ASSOC']
-        )
-
-        if flag:
-            if response.json() and 'associations' in response.json():
-                return response.json()
-            else:
-                raise SDKException('Response', '102')
-
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def _prepare_entity_association_json(self, entity_name):
-        """
-        prepares the entity json for adding commcell associations
-
-        Args:
-            entity_name (object)    --  object of User, UserGroup, Domain or Organization class
-
-        Returns:
-            dict - entity json for adding commcell associations
-        """
-        entity_json = {
-            "userOrGroup": {},
-            "properties": {
-                "role": {
-                    "_type_": 120,
-                    "roleId": 3,
-                    "roleName": "View"
-                }
-            }
-        }
-
-        if isinstance(entity_name, User):
-            entity_json['userOrGroup']['userId'] = int(entity_name.user_id)
-            entity_json['userOrGroup']['userName'] = entity_name.user_name
-            entity_json['userOrGroup']['_type_'] = 13
-
-        if isinstance(entity_name, UserGroup):
-            entity_json['userOrGroup']['userGroupId'] = int(entity_name.user_group_id)
-            entity_json['userOrGroup']['userGroupName'] = entity_name.user_group_name
-            entity_json['userOrGroup']['_type_'] = 15
-
-        if isinstance(entity_name, Organization) or isinstance(entity_name, RemoteOrganization):
-            entity_json['providerType'] = 5
-            entity_json['userOrGroup']['providerId'] = int(entity_name.organization_id)
-            entity_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
-            entity_json['userOrGroup']['_type_'] = 61
-            with self.global_scope():
-                org_det = self.get_user_suggestions(
-                    entity_name.domain_name, {
-                        'getOrganizationUsers': False,
-                        'getOrganizationGroups': False,
-                        'returnDomain': True,
-                    }
-                )
-            if len(org_det) > 0:
-                entity_json['userOrGroup']['GUID'] = org_det[0].get('umGuid', '')
-                entity_json['userOrGroup']['entityInfo'] = org_det[0].get('company',{}).get('entityInfo', '')
-
-        if isinstance(entity_name, Domain):
-            entity_json['providerType'] = 2
-            entity_json['userOrGroup']['providerId'] = int(entity_name.domain_id)
-            entity_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
-            entity_json['userOrGroup']['_type_'] = 61
-
-        return entity_json
-
-    def add_service_commcell_associations(self, entity_name, service_commcell, **kwargs):
-        """
-        adds an association for an entity on a service commcell
-
-        Args:
-
-            entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
-                                         or a list of the above entities
-
-            service_commcell (str/list)   --  name of the service commcell to which above entities can be associated
-                                              or list of service commcells
-
-            kwargs:
-                include_warning (bool)    --  includes warning responses also as errors and raises SDKException
-
-        Raises:
-            SDKException:
-                if response is empty
-
-                if add association fails
-
-                if response is not success
-        """
-        if not isinstance(entity_name, list):
-            entity_name = [entity_name]
-        if isinstance(service_commcell, str):
-            service_commcell = [service_commcell]
-
-
-        assocs_json = self._service_commcells_association()
-
-        for each_entity in entity_name:
-            entity_json = self._prepare_entity_association_json(each_entity)
-            for sc in service_commcell:
-                commcell_entity_json = {
-                    "entity": {
-                        "entityType": 194,
-                        "entityName": self.registered_routing_commcells[sc]['commCell']['commCellName'],
-                        "_type_": 150,
-                        "entityId": self.registered_routing_commcells[sc]['commCell']['commCellId'],
-                        "flags": {
-                            "includeAll": False
-                        }
-                    }
-                }
-                commcell_entity_json.update(entity_json)
-                assocs_json['associations'].append(commcell_entity_json)
-
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['SERVICE_COMMCELL_ASSOC'], assocs_json
-        )
-        if flag:
-            if response.json():
-                response_json = response.json().get('response', response.json())
-                error_code = response_json.get('errorCode', 1)
-                if kwargs.get('include_warning'):
-                    warning_code = response_json.get('warningCode', 0)
-                    if warning_code != 0:
-                        error_string = response_json.get('warningMessage')
-                        raise SDKException(
-                            'CommcellRegistration',
-                            '102',
-                            'Service Commcell Association Failed\n Error: "{0}"'.format(
-                                error_string
-                            )
-                        )
-                if error_code != 0:
-                    error_string = response_json.get('errorString')
-                    raise SDKException(
-                        'CommcellRegistration',
-                        '102',
-                        'Service Commcell Association Failed\n Error: "{0}"'.format(
-                            error_string
-                        )
-                    )
-                self.refresh()
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def get_service_commcell_associations(self, entity_name):
-        """Gets an entity's association details for every commcell it is associated to
-
-        Args:
-            entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
-                                         or a string of the entity name
-                                         or a list of the above
-
-        Returns:
-            list - list of dicts, each dict containing details of the entity's association with a service commcell
-
-            Example:
-                [
-                    {
-                        "userOrGroup": {
-                            "userId": ,
-                            "GUID": ,
-                            "userName": ,
-                            "_type_": ,
-                        },
-                        "entity": {
-                            "entityType": ,
-                            "entityName": ,
-                            "entityId": ,
-                            "_type_": ,
-                            "flags": ,
-                        },
-                        "properties": ,
-                    },
-                    {
-                        "userOrGroup": {...},
-                        "entity": {...},
-                        "properties": {...},
-                    },
-                    {
-                        "userOrGroup": {...},
-                        "entity": {...},
-                        "properties": {...},
-                    }
-                ]
-
-        """
-        res_json = self._service_commcells_association()
-        if not isinstance(entity_name, list):
-            entity_name = [entity_name]
-        
-        entity_associations = []
-        for association in res_json['associations']:
-            for each_entity in entity_name:
-                if isinstance(each_entity, User) and \
-                    association['userOrGroup'].get('userName', '').lower() == each_entity.user_name.lower() and \
-                    association['userOrGroup'].get('_type_') == 13:
-                    entity_associations.append(association)
-                elif isinstance(each_entity, UserGroup) and \
-                    association['userOrGroup'].get('userGroupName', '').lower() == each_entity.user_group_name.lower() and \
-                    association['userOrGroup'].get('_type_') == 15:
-                    entity_associations.append(association)
-                elif isinstance(each_entity, Organization) and \
-                    association.get('providerType') in [5, 15] and \
-                    association['userOrGroup'].get('providerDomainName', '').lower() == each_entity.domain_name.lower():
-                    entity_associations.append(association)
-                elif isinstance(each_entity, Domain) and \
-                    association.get('providerType') == 2 and \
-                    association['userOrGroup'].get('providerDomainName', '').lower() == each_entity.domain_name.lower():
-                    entity_associations.append(association)
-                elif isinstance(each_entity, str):
-                    names = [
-                        association['userOrGroup'].get('userName', '').lower(),
-                        association['userOrGroup'].get('userGroupName', '').lower(),
-                        association['userOrGroup'].get('providerDomainName', '').lower()
-                    ]
-                    if each_entity.lower() in names:
-                        entity_associations.append(association)
-        return entity_associations
-
-    def remove_service_commcell_associations(self, entity_name):
-        """removes an entity's associations to every commcell
-
-        Args:
-
-            entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
-                                         or just string of the entity name
-                                         or a list of the above
-
-        Raises:
-            SDKException:
-                if response is empty
-
-                if remove association fails
-
-                if response is not success
-        """
-
-        res_json = self._service_commcells_association()
-
-        for association in self.get_service_commcell_associations(entity_name):
-            res_json['associations'].remove(association)
-
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['SERVICE_COMMCELL_ASSOC'], res_json
-        )
-        if flag:
-            if response.json():
-                response_json = response.json().get('response', response.json())
-                error_code = response_json.get('errorCode', 1)
-                if error_code != 0:
-                    error_string = response_json.get('errorString', 'no error string in response')
-                    raise SDKException(
-                        'CommcellRegistration',
-                        '102',
-                        'Service Commcell Association Failed\n Error: "{0}"'.format(
-                            error_string
-                        )
-                    )
-                self.refresh()
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
     @property
     def is_service_commcell(self):
         """Returns the is_service_commcell property."""
-
         return self._is_service_commcell
 
     @property
     def master_saml_token(self):
         """Returns the saml token of master commcell."""
-
         return self._master_saml_token
+
+    @property
+    def master_commcell(self):
+        """Returns the master commcell object."""
+        return self._master_commcell
 
     @property
     def two_factor_authentication(self):
@@ -4224,7 +3844,7 @@ class Commcell(object):
         **Note** To determine CommServ OS type logged in user
         should have access on CommServ client
         """
-        if self._is_linux_commserv is None and self.clients.has_client(self._commserv_name):
+        if self._is_linux_commserv is None and self.clients.has_client(self.commserv_name):
             self._is_linux_commserv = 'unix' in self.commserv_client.os_info.lower()
         return self._is_linux_commserv
 
@@ -4361,31 +3981,66 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def switch_to_company(self, company_name):
+    @property
+    def operator_companies(self) -> dict[str, int]:
+        """
+        Returns a mapping of operator companies name: id,
+        available for current logged in user to operate on
+        """
+        return {
+            opc['providerDomainName'].lower(): opc['providerId']
+            for opc in self.user_mappings.get('operatorCompanies', [])
+        }
+
+    def switch_to_company(self, company_name: str):
         """Switching to Company as Operator"""
-        if self.organizations.has_organization(company_name):
-            self._headers['operatorCompanyId'] = str(self.organizations.get(company_name).organization_id)
+        if company_id := self.operator_companies.get(company_name.lower()):
+            self._headers['operatorCompanyId'] = str(company_id)
+            self._user_org = Organization(self, organization_id=company_id)
         else:
-            raise SDKException('Organization', 103)
+            self._user_mappings = None # refreshing once
+            if not self.operator_companies.get(company_name.lower()):
+                raise SDKException(
+                    'Commcell', 108, f'Company {company_name} is not available/allowed '
+                                     f'to operate on by this user {self.commcell_username}.'
+                                     f'Choose from list: {list(self.operator_companies)}'
+                )
+            else:
+                self.switch_to_company(company_name)
+
+    @property
+    def operating_company(self) -> str | None:
+        """
+        Returns the currently operating company's name, if operating any
+        """
+        if operating_company_id := self._headers.get('operatorCompanyId'):
+            for company_name, company_id in self.operator_companies.items():
+                if str(company_id) == str(operating_company_id):
+                    return company_name
+            raise SDKException('Commcell', 108, f'Operating unknown company. id: {operating_company_id}')
+        return None
 
     def reset_company(self):
         """Resets company to Commcell"""
         if 'operatorCompanyId' in self._headers:
             self._headers.pop('operatorCompanyId')
+        self._user_org = None
 
     @contextmanager
     def as_operator_of(self, company_name):
         """
-        Context manager for switching to Company as Operator and returning to Commcell level
+        Context manager for switching to Company as Operator and returning to previous level
 
         Args:
             company_name (str)  -   company name to switch to
         """
+        old_headers = self._headers.copy()
         self.switch_to_company(company_name)
         try:
             yield
         finally:
-            self.reset_company()
+            self._user_org = None
+            self._headers = old_headers
 
     def switch_to_global(self, target_commcell=None, comet_header=False):
         """
@@ -4393,13 +4048,12 @@ class Commcell(object):
 
         Args:
             target_commcell (str)   -   target commcell name if _cn header is needed
-            comet_header    (bool)  -   if Comet-Commcells header also needed for target commcell
+            comet_header    (bool)  -   if Comet-Commcells header is used instead of _cn
         """
-        self._headers['CVContext'] = 'comet'
+        self._headers['Cvcontext'] = 'Comet'
+        target_header = '_cn' if not comet_header else 'Comet-Commcells'
         if target_commcell:
-            self._headers['_cn'] = target_commcell
-        if comet_header:
-            self._headers['Comet-Commcells'] = target_commcell
+            self._headers[target_header] = target_commcell
 
     def is_global_scope(self):
         """
@@ -4419,17 +4073,18 @@ class Commcell(object):
     @contextmanager
     def global_scope(self, target_commcell=None, comet_header=False):
         """
-        Context manager for switching to Global scope and returning to local scope
+        Context manager for switching to Global scope and returning to previous scope
 
         Args:
             target_commcell (str)   -   target commcell name if _cn header is needed
-            comet_header    (bool)  -   if Comet-Commcells header also needed for target commcell
+            comet_header    (bool)  -   if Comet-Commcells header is needed instead of _cn
         """
+        old_headers = self._headers.copy()
         self.switch_to_global(target_commcell, comet_header)
         try:
             yield
         finally:
-            self.reset_to_local()
+            self._headers = old_headers
 
     @contextmanager
     def custom_headers(self, **headers):
@@ -4847,3 +4502,124 @@ class Commcell(object):
         else:
             response_string = self._update_response_(response.content)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def cost_assessment(self):
+        """Returns the instance of Cost assessment class."""
+        try:
+            if self._cost_assessment is None:
+                self._cost_assessment = CostAssessment(self)
+
+            return self._cost_assessment
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    def get_environment_tile_details(self, comet_flag: bool = False) -> dict[str, dict[str, int]]:
+        """
+        Retrieves environment tile details like counts of file servers, VMs, laptops, and users
+        for the Commcell.
+
+        Args:
+            comet_flag (bool): If True, fetches details for each service Commcell.
+
+        Returns:
+            dict: A dictionary containing the environment tile details.
+
+            Example (when comet_flag is True):
+            {
+                'commcell1': {
+                    'fileServerCount': 5,
+                    'laptopCount': 1,
+                    'vmCount': 9,
+                    'usersCount': 48
+                },
+                'commcell2': {
+                    'fileServerCount': 3,
+                    'laptopCount': 0,
+                    'vmCount': 2,
+                    'usersCount': 382
+                },
+                ...
+                'totalCount': {
+                    'fileServerCount': 56,
+                    'laptopCount': 2,
+                    'vmCount': 453,
+                    'usersCount': 2415
+                }
+            }
+
+            Example (when comet_flag is False):
+            {
+                'fileServerCount': 56,
+                'laptopCount': 2,
+                'vmCount': 453,
+                'usersCount': 2415
+            }
+        """
+        if comet_flag:
+            self.switch_to_global()
+
+        # Fetch environment tile counts - fileserver,vm,laptop
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['DASHBOARD_ENVIRONMENT_TILE']
+        )
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        resp_json = response.json()
+        if not resp_json:
+            raise SDKException('Response', '102')
+
+        # Fetch environment tile counts - users
+        flag_1, response_1 = self._cvpysdk_object.make_request(
+            'GET', self._services['DASHBOARD_ENVIRONMENT_TILE_USERS']
+        )
+        if not flag_1:
+            raise SDKException('Response', '101', self._update_response_(response_1.text))
+
+        resp_json_1 = response_1.json()
+        if not resp_json_1:
+            raise SDKException('Response', '102')
+
+        environment_tile_dict = {}
+        main_keys = ['fileServerCount', 'laptopCount', 'vmCount']
+
+        if comet_flag:
+            commcell_data = {}
+
+            # Populate fileServerCount, laptopCount, vmCount
+            for tile in resp_json.get('cometClientCount', []):
+                commcell_name = tile.get('commcell',{}).get('commCellName','')
+                if not commcell_name:
+                    continue
+                commcell_data.setdefault(commcell_name, {})
+                for key in main_keys:
+                    commcell_data[commcell_name][key] = tile.get(key, 0)
+
+            # Populate usersCount
+            for item in resp_json_1.get('commcellWiseAggregation', []):
+                commcell_name = item.get('commcellName', '')
+                if not commcell_name:
+                    continue
+                func_value = item.get('aggregation', [{}])[0].get('funcValue', 0)
+                commcell_data.setdefault(commcell_name, {})
+                commcell_data[commcell_name]['usersCount'] = int(func_value)
+
+            # Add totalCount as a separate key
+            commcell_data['totalCount'] = {
+                key: resp_json.get('totalCount', {}).get(key, 0) if key != 'usersCount' else
+                     int(resp_json_1.get('aggregation', [{}])[0].get('funcValue', 0))
+                for key in ['fileServerCount', 'laptopCount', 'vmCount', 'usersCount']
+            }
+
+            environment_tile_dict = commcell_data
+        else:
+            for key in main_keys:
+                environment_tile_dict[key] = resp_json.get(key, 0)
+
+            environment_tile_dict['usersCount'] = int(
+                resp_json_1.get('aggregation', [{}])[0].get('funcValue', 0)
+            )
+        if comet_flag:
+            self.reset_to_local()
+        return environment_tile_dict

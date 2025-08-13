@@ -85,6 +85,8 @@ EXCEPTION_DICT = {
     'Response': {
         '101': 'Response was not success',
         '102': 'Response received is empty',
+        '103': 'Unable to parse response json',
+        '104': 'Unexpected response not handled properly',
         '500': 'Unable to perform the requested method'
     },
     'Commcell': {
@@ -104,7 +106,8 @@ EXCEPTION_DICT = {
         '104': 'This session has expired. Please login again',
         '105': 'Script Type is not valid',
         '106': 'The token has expired. Please login again',
-        '107': 'No mapping exists for the given token for any user'
+        '107': 'No mapping exists for the given token for any user',
+        '108': 'Failed to refresh the user token',
     },
     'DisasterRecovery': {
         '101': 'Data type of the input(s) is not valid',
@@ -275,7 +278,8 @@ EXCEPTION_DICT = {
         '104': 'Unable to create regex entity in the commcell',
         '105': 'Unable to delete regex entity in the commcell',
         '106': 'Unable to modify regex entity in the commcell',
-        '107': 'Failed to get entity container details from commcell'
+        '107': 'Failed to get entity container details from commcell',
+        '108': 'Failed to get entity sensitivity details from commcell'
     },
     'Classifier': {
         '101': 'Data type of the input(s) is not valid',
@@ -472,19 +476,6 @@ EXCEPTION_DICT = {
         '114': 'Input is not provided in expected manner',
         '115': 'Failed to extend organization'
     },
-    'RemoteOrganization': {
-        '101': 'Failed to update organization operators remotely',
-        '102': 'Failed to activate organization remotely',
-        '103': 'Failed to deactivate organization remotely',
-        '104': 'Failed to update organization tags remotely',
-        '105': 'Data type of the input(s) is not valid',
-        '106': '',
-        '107': 'Email address is not valid',
-        '108': 'Organization already exists',
-        '109': 'Failed to add organization remotely',
-        '110': 'No organization exists with the given name in workloads or idp',
-        '111': 'Failed to extend organization remotely'
-    },
     'StoragePool': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
@@ -590,7 +581,8 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to unregister commcell',
         '104': 'Datatype of the input is not valid',
-        '105': 'Failed to set commcell properties'
+        '105': 'Failed to set commcell properties',
+        '106': 'Failed to re-register commcell',
     },
     'LiveSync': {
         '101': 'Data type of the input(s) is not valid',
@@ -645,13 +637,41 @@ EXCEPTION_DICT = {
     },
     'RecoveryGroup': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': 'Entity does not exist'
+    },
+    'RecoveryTarget': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'Entity does not exist'
     },
     'CommserveRecovery': {
         '101': 'User is not authorized',
         '102': 'Given commcell does not have an active license',
         '103': 'Given request id is not in active requests',
-        '104': 'Requested backupset is not available for recovery'
+        '104': 'Requested backupset is not available for recovery',
+        '105': 'Failed to initialize CommserveRecovery properties',
+    },
+    'CostAssessment': {
+        '101': 'The response does not contain the discovery criteria.Please verify the credentials',
+        '102': 'Assessment execution failed. Please verify the credentials',
+        '103': 'Vendor type is not supported'
+    },
+
+    'AdditionalSettings': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
+    'ServiceCommcells': {
+        '101': '',
+        '102': 'Failed to add service commcell',
+        '103': 'Failed to delete service commcell',
+        '104': 'Failed to get service commcells list',
+        '105': 'Failed to fetch service commcell details',
+        '106': 'Failed to update service commcell properties',
+        '107': 'Failed to reregister service commcell',
+        '108': 'Failed to sync service commcell properties',
+        '109': 'Failed to get service commcell associations',
+        '110': 'Failed to add service commcell association',
+        '111': 'Failed to delete service commcell association',
     }
 }
 

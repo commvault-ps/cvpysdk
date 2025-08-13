@@ -439,7 +439,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                 _error_code = discover_content.get('resp', {}).get('errorCode', 0)
                 if _error_code == 469762468 or _error_code == 469762470:
                     # if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
-                    time.sleep(10)  # the results might take some time depending on domains
+                    time.sleep(60)  # the results might take some time depending on domains
                     if retry_attempts > 10:
                         raise SDKException('Subclient', '102', 'Failed to perform discovery.')
 
