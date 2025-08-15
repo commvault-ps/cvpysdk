@@ -187,7 +187,8 @@ EXCEPTION_DICT = {
         '105': 'Failed to get the Job Details',
         '106': 'Unexpected response received from server',
         '107': 'Job Info Type not passed from AdvancedJobDetailType enum',
-        '108': 'Data type of input(s) is not valid'
+        '108': 'Data type of input(s) is not valid',
+        '109': 'Failed to fetch active jobs summary'
     },
     'Storage': {
         '101': 'Data type of the input(s) is not valid',

@@ -272,9 +272,9 @@ class TAServers():
 
                 anomaly_types    (list)         --  list of anomaly to analyze on client
 
-                index_server_name   (str)       --  Index server name to be used for scan
+                index_server_name   (str)       --  Index server name to be used for scan [Applicable for all OEM's except Metallic]
 
-                storage_pool        (str)       --  Storage pool name to be used for scan
+                storage_pool        (str)       --  Storage pool name to be used for scan [Applicable only for metallic OEM]
 
                 from_time           (int)       --  epoch timestamp from when scan will analyze in backup
 
@@ -299,6 +299,8 @@ class TAServers():
             raise SDKException('ThreatIndicators', '101')
         if not self._commcell_object.clients.has_client(server_name):
             raise SDKException('ThreatIndicators', '102', 'Given server is not found in CS')
+        if storage_pool and index_server_name:
+            raise SDKException('ThreatIndicators', '102', 'Cannot specify both storage_pool and index_server_name input')
         req_json = copy.deepcopy(RequestConstants.RUN_SCAN_JSON)
         req_json['client']['clientId'] = int(self._commcell_object.clients.get(server_name).client_id)
         ta_flag = 0
@@ -317,10 +319,7 @@ class TAServers():
         else:
             req_json['timeRange']['toTime'] = to_time
             req_json['timeRange']['fromTime'] = from_time
-
-        if int(self._commcell_object.commserv_oem_id) == 119:
-            if not storage_pool:
-                raise SDKException('ThreatIndicators', '107')
+        if storage_pool:
             req_json.pop('indexServer')
             spool_obj = self._commcell_object.storage_pools.get(storage_pool)
             req_json['backupDetails'][0]['copyId'] = int(spool_obj.copy_id)

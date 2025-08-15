@@ -1290,11 +1290,6 @@ class WorkFlow(object):
         if workflow_inputs is None:
             workflow_vals = self._workflows[workflow_name]
             if 'inputs' in workflow_vals:
-                o_str = 'Workflow Name: \t\t"{0}"\n'.format(workflow_name)
-                o_str += 'Workflow Description: \t"{0}"\n'.format(workflow_vals.get('description', ''))
-
-                print(o_str)
-
                 for a_input in workflow_vals['inputs']:
                     execute_workflow_json[a_input['input_name']] = self._read_inputs(a_input)
         else:

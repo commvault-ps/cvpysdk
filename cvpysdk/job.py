@@ -47,6 +47,8 @@ JobController
                                 --  executes a request on the server to suspend/resume/kill all
                                         the jobs on the commserver.
 
+    get_active_job_summary()    --  Returns a dict with summary of active jobs
+
     all_jobs()                  --  returns all the jobs on this commcell
 
     active_jobs()               --  returns the dict of active jobs and their details
@@ -290,12 +292,14 @@ import copy
 
 from .exception import SDKException
 from .constants import AdvancedJobDetailType, ApplicationGroup
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
 
 class JobController(object):
     """Class for controlling all the jobs associated with the commcell."""
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object:'Commcell'):
         """Initialize instance of the JobController class to get the details of Commcell Jobs.
 
             Args:
@@ -449,6 +453,29 @@ class JobController(object):
             request_json['jobFilter']['entity'] = options.get("entity")
 
         return request_json
+
+    def get_active_job_summary(self):
+        """
+        Returns a dict with summary of active jobs
+
+            Ex:
+                    {
+                        "interruptPendingJobs": 0,
+                        "anomalousJobs": 1,
+                        "suspendedJobs": 368,
+                        "killPendingJobs": 0,
+                        "waitingJobs": 3,
+                        "killedJobs": 0,
+                        "suspendPendingJobs": 0,
+                        "runningJobs": 0,
+                        "queuedJobs": 0,
+                    }
+        """
+        return self._commcell_object.wrap_request(
+            'POST', 'ACTIVE_JOBS_SUMMARY',
+            req_kwargs={"payload": {}},
+            sdk_exception=('Job', '109')
+        )
 
     def _get_jobs_list(self, **options):
         """Executes a request on the server to get the list of jobs.
