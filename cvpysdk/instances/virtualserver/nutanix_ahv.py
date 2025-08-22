@@ -79,9 +79,6 @@ class nutanixinstance(VirtualServerInstance):
             self._nutanix_cluster = self._virtualserverinstance['vmwareVendor'][
                 'virtualCenter']['domainName']
 
-            self._username = self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['userName']
-
         if 'virtualServerInstance' in self._properties:
             _member_servers = self._properties["virtualServerInstance"] \
                 ["associatedClients"]["memberServers"]

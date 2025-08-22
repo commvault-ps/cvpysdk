@@ -2844,6 +2844,21 @@ class Job(object):
         else:
             return None
 
+    def get_logs(self):
+        """
+        Returns the logs for the given job id
+        """
+        service = self._services['GET_LOGS'] % (self.job_id)
+        flag, response = self._cvpysdk_object.make_request(method='GET', url=service)
+
+        if flag:
+            if response.text:
+                return response.text.split('\n')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '102')
+
 
 class _ErrorRule:
     """Class for enabling, disabling, adding, getting and deleting error rules."""

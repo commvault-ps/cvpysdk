@@ -81,7 +81,8 @@ class ArrayManagement(object):
                         reconcile=False,
                         user_credentials=None,
                         server_name=None,
-                        instance_details=None):
+                        instance_details=None,
+                        **kwargs):
         """ Common Method for Snap Operations
 
             Args :
@@ -117,6 +118,8 @@ class ArrayManagement(object):
                 "instanceId": 7,
                 "instanceName": "VMWare"
                 }
+            kwargs :
+                in case of VSA: destclientid (str)  -- destination hypervisor client id
 
             Return :
 
@@ -138,6 +141,11 @@ class ArrayManagement(object):
             instance_details = {}
         else:
             server_type = 1
+
+        if kwargs.get('destclientid'):
+            destClientId = int(kwargs.get('destclientid'))
+        else:
+            destClientId = 0
 
         if reconcile:
             request_json = {
@@ -163,7 +171,8 @@ class ArrayManagement(object):
                 "operation": operation,
                 "userCredentials": {},
                 "volumes": [],
-                "appId": instance_details
+                "appId": instance_details,
+                "destClientId": destClientId
             }
             for i in range(len(volume_id)):
                 if i == 0:
@@ -197,7 +206,7 @@ class ArrayManagement(object):
             raise SDKException('Snap', '102')
 
     def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
-              user_credentials=None, server_name=None, instance_details=None):
+              user_credentials=None, server_name=None, instance_details=None, **kwargs):
         """ Mounts Snap of the given volume id
 
             Args:
@@ -215,6 +224,9 @@ class ArrayManagement(object):
                 server_name   (str)       -- vcenter name for mount operation
 
                 instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
+
+            kwargs :
+                in case of VSA: destclientid (str)  -- destination hypervisor client id
         """
         return self._snap_operation(0, volume_id,
                                     client_name,
@@ -222,7 +234,7 @@ class ArrayManagement(object):
                                     do_vssprotection,
                                     user_credentials=user_credentials,
                                     server_name=server_name,
-                                    instance_details=instance_details)
+                                    instance_details=instance_details, **kwargs)
 
     def unmount(self, volume_id):
         """ UnMounts Snap of the given volume id

@@ -537,6 +537,7 @@ class HypervisorType(Enum):
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
     OPENSHIFT = "Red Hat OpenShift"
     PROXMOX = "Proxmox ve"
+    MORPHEUS = "HPE Morpheus VM Essentials"
 
 
 class AppIDAType(Enum):
@@ -822,7 +823,8 @@ class VsInstanceType:
         1401: "alibaba_cloud",
         1503: "vcloud_director",
         1501: "kubernetes",
-        1600: "proxmox_ve"
+        1600: "proxmox_ve",
+        1700: "morpheus_data"
     }
 
 

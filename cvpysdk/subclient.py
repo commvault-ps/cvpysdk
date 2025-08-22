@@ -2837,6 +2837,12 @@ c
         """
         self._instance_object._restore_association = self._subClientEntity
 
+        if fs_options is None or not fs_options:
+            fs_options = {}
+            fs_options['no_of_streams'] = 10
+        elif 'no_of_streams' not in fs_options:
+            fs_options['no_of_streams'] = 10
+
         return self._instance_object._restore_in_place(
             paths=paths,
             overwrite=overwrite,
@@ -2955,7 +2961,7 @@ c
             proxy_client = fs_options['proxy_client']
 
         # restore to use default 10 streams
-        if fs_options is None:
+        if fs_options is None or not fs_options:
             fs_options = {}
             fs_options['no_of_streams'] = 10
         elif 'no_of_streams' not in fs_options:

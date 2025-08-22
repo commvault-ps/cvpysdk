@@ -310,8 +310,10 @@ class Domains(object):
     def add(self,
             domain_name,
             netbios_name,
-            user_name,
-            password,
+            user_name=None,
+            password=None,
+            credential_id=None,
+            use_local_system_account=None,
             company_id="",
             ad_proxy_list=None,
             enable_sso=True,
@@ -324,10 +326,14 @@ class Domains(object):
 
                 netbios_name    (str)   --  netbios name of the domain
 
-                user_name       (str)   --  user name of the domain
+                user_name       (str)   --  username of the domain
 
                 password        (str)   --  password of the domain
 
+                credential_id        (int)   --  credential id of the credential
+
+                use_local_system_account (bool)   --  username of the domain is LocalSystemAccount
+                
                 company_id      (int)   --  company id for which the domain needs to be added for
 
                 ad_proxy_list     (list)  --  list of client objects to be used as proxy.
@@ -382,8 +388,12 @@ class Domains(object):
             raise SDKException('Domain', "102", "please pass valid server type")
         if not (isinstance(domain_name, str) and
                 isinstance(netbios_name, str) and
-                isinstance(user_name, str) and
-                isinstance(password, str)):
+                (
+                        isinstance(use_local_system_account, bool) or
+                        isinstance(credential_id, int) or
+                        (isinstance(user_name, str) and isinstance(password, str))
+                )
+                ):
             raise SDKException('Domain', '101')
         else:
             domain_name = domain_name.lower()
@@ -405,13 +415,10 @@ class Domains(object):
             "operation": 1,
             "provider": {
                 "serviceType": service_type,
-                "flags": 1,
-                "bPassword": b64encode(password.encode()).decode(),
-                "login": user_name,
+                "flags": 1 if enable_sso else 0,
                 "enabled": 1,
                 "useSecureLdap": 0,
                 "connectName": domain_name,
-                "bLogin": user_name,
                 "ownerCompanyId": company_id,
                 "tppm": {
                     "enable": True if ad_proxy_list else False,
@@ -424,6 +431,16 @@ class Domains(object):
             }
         }
 
+        if user_name and password:
+            domain_create_request["provider"]['login'] = user_name
+            domain_create_request["provider"]['bLogin'] = user_name
+            domain_create_request["provider"]['bPassword'] = b64encode(password.encode()).decode()
+        elif use_local_system_account:
+            domain_create_request["provider"]['login'] = 'LocalSystemAccount'
+            domain_create_request["provider"]['bLogin'] = 'LocalSystemAccount'
+        else:
+            domain_create_request["provider"]['domainCredInfo'] = {"credentialId": credential_id}
+            
         if kwargs:
             custom_provider = {
                 "providerTypeId": 0,

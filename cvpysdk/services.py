@@ -114,6 +114,7 @@ SERVICES_DICT_TEMPLATE = {
     'ACTIVE_JOBS_SUMMARY': '{0}JobsSummary',
     'JOB_EVENTS': '{0}Events?jobId=%s',
     'JOB_MANAGEMENT_SETTINGS': '{0}CommServ/JobManagementSetting',
+    'GET_LOGS': '{0}Stream/Job/%s/Logs',
 
     'ENABLE_SHARED_LAPTOP': '{0}Commcell/Properties/SharedLaptopUsage/Action/Enable',
     'DISABLE_SHARED_LAPTOP': '{0}Commcell/Properties/SharedLaptopUsage/Action/Disable',

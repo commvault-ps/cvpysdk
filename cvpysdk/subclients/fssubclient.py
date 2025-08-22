@@ -1855,6 +1855,12 @@ class FileSystemSubclient(Subclient):
         """
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
+        if fs_options is None or not fs_options:
+            fs_options = {}
+            fs_options['no_of_streams'] = 10
+        elif 'no_of_streams' not in fs_options:
+            fs_options['no_of_streams'] = 10
+
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
             fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
@@ -2002,17 +2008,17 @@ class FileSystemSubclient(Subclient):
         if isinstance(client, str):
             client = Client(self._commcell_object, client)
 
-        if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps', 0))))))
-            if not fs_options['destination_appTypeId']:
-                del fs_options['destination_appTypeId']
-
         # restore to use default 10 streams
-        if fs_options is None:
+        if fs_options is None or not fs_options:
             fs_options = {}
             fs_options['no_of_streams'] = 10
         elif 'no_of_streams' not in fs_options:
             fs_options['no_of_streams'] = 10
+
+        if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
+            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps', 0))))))
+            if not fs_options['destination_appTypeId']:
+                del fs_options['destination_appTypeId']
 
             # check to find whether file level Restore/ Volume level restore for blocklevel.
 
