@@ -827,24 +827,24 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('DisasterRecovery', '101')
 
-    def set_network_dr_path(self, path, username, password):
+    def set_network_dr_path(self, path, credential_name):
         """
         Sets network DR path
 
             Args:
                  path       (str)       --      UNC path.
 
-                 username   (str)       --      username with admin privileges of the remote machine.
-
-                 password   (str)       --      password.
-
+                 credential_name (str)   --      name of the credential to be used for the UNC path.
             Returns:
                 None
         """
-        if isinstance(path, str) and isinstance(username, str) and isinstance(password, str):
+        if isinstance(path, str) and isinstance(credential_name, str):
             self._export_settings['backupMetadataFolder'] = path
-            self._export_settings['networkUserAccount']['userName'] = username
-            self._export_settings['networkUserAccount']['password'] = b64encode(password.encode()).decode()
+            dr_backup_credential = {
+                "credentialId": self._commcell.credentials.get(credential_name).credential_id,
+                "credentialName": credential_name
+            }
+            self._export_settings['drBackupCredential'] = dr_backup_credential
             self._set_dr_properties()
         else:
             raise SDKException('DisasterRecovery', '101')
@@ -868,12 +868,16 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloud'] = flag
             if flag:
+                if region and isinstance(region, str):
+                    self._export_settings['region'] = region
+                else:
+                    raise SDKException('DisasterRecovery', '101')
                 if isinstance(username, str) and isinstance(password, str):
                     self._export_settings['cloudCredentials']['userName'] = username
                     self._export_settings['cloudCredentials']['password'] = b64encode(password.encode()).decode()
                 else:
                     raise SDKException('DisasterRecovery', '101')
-            self._set_commvault_cloud_upload(flag)
+            self._set_dr_properties()
         else:
             raise SDKException('DisasterRecovery', '101')
 

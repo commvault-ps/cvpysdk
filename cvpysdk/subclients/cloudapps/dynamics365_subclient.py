@@ -75,6 +75,7 @@ MSDynamics365Subclient:
 import copy
 import json
 from ...exception import SDKException
+import time
 
 from ..o365apps_subclient import O365AppsSubclient
 from ..casubclient import CloudAppsSubclient
@@ -175,7 +176,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             self.discover_tables()
         return self._discovered_tables
 
-    def _get_associated_content(self, is_environment=False):
+    def _get_associated_content(self, is_environment=False, max_retries=3, retry_delay=5):
         """
             Method to get the content associated with a Dynamics 365 CRM subclient
 
@@ -184,6 +185,8 @@ class MSDynamics365Subclient(O365AppsSubclient):
                     Default Value:
                         False
                             Returns the associated tables
+                max_retries (int): Maximum number of retries if content_list is empty.
+                retry_delay (int): Delay in seconds between retries.
 
             Returns:
                 associated_content_list     (list)--    List of content associated with the client
@@ -206,45 +209,53 @@ class MSDynamics365Subclient(O365AppsSubclient):
                 }
             }
         }
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', _GET_ASSOCIATED_CONTENT, request_json
-        )
-        if flag:
-            if response and response.json():
-                no_of_records = int()
-                if 'associations' in response.json():
-                    no_of_records = response.json().get('associations', [])[0].get('pagingInfo', {}). \
-                        get('totalRecords', -1)
 
-                    associations = response.json().get('associations', [])
-                    content_list = list()
-                    if discover_by_type == 5:
-                        for environment in associations:
-                            environment_name = environment.get("groups", {}).get("name")
-                            env_dict = {
-                                "name": environment_name,
-                                "id": environment.get("groups", {}).get("id"),
-                                "userAccountInfo": environment.get("userAccountInfo", {}),
-                                "plan": environment.get("plan", {}),
-                                "is_environment": True
-                            }
-                            content_list.append(env_dict)
+        for attempt in range(max_retries):
+            flag, response = self._cvpysdk_object.make_request('POST', _GET_ASSOCIATED_CONTENT, request_json)
 
-                    elif discover_by_type == 14:
-                        for table in associations:
-                            table_name = table.get("userAccountInfo", {}).get("displayName")
-                            table_dict = {
-                                "name": table_name,
-                                "environment_name": table.get("userAccountInfo", {}).get("ParentWebGuid", ""),
-                                "userAccountInfo": table.get("userAccountInfo", {}),
-                                "plan": table.get("plan", {}),
-                                "is_environment": False
-                            }
-                            content_list.append(table_dict)
-                    return content_list
-                    # return content_list, no_of_records
-            return {}, 0
-        raise SDKException('Response', '101', self._update_response_(response.text))
+            if flag:
+                try:
+                    if response and response.json():
+                        associations = response.json().get('associations', [])
+                        content_list = []
+
+                        if discover_by_type == 5:  # Environments
+                            for environment in associations:
+                                environment_name = environment.get("groups", {}).get("name")
+                                env_dict = {
+                                    "name": environment_name,
+                                    "id": environment.get("groups", {}).get("id"),
+                                    "userAccountInfo": environment.get("userAccountInfo", {}),
+                                    "plan": environment.get("plan", {}),
+                                    "is_environment": True
+                                }
+                                content_list.append(env_dict)
+
+                        elif discover_by_type == 14:  # Tables
+                            for table in associations:
+                                table_name = table.get("userAccountInfo", {}).get("displayName")
+                                table_dict = {
+                                    "name": table_name,
+                                    "environment_name": table.get("userAccountInfo", {}).get("ParentWebGuid", ""),
+                                    "userAccountInfo": table.get("userAccountInfo", {}),
+                                    "plan": table.get("plan", {}),
+                                    "is_environment": False
+                                }
+                                content_list.append(table_dict)
+
+                        if content_list:
+                            return content_list
+
+                        time.sleep(retry_delay)
+                    else:
+                        time.sleep(retry_delay)
+                except ValueError as e:
+                    raise SDKException('Response', '102', f"Invalid JSON response: {str(e)}")
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        return []
 
     def get_associated_tables(self, refresh: bool = False):
         """

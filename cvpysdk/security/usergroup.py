@@ -138,17 +138,29 @@ from ..exception import SDKException
 
 
 class UserGroups(object):
-    """Class for getting all the usergroups associated with a commcell."""
+    """Class for getting all the usergroups associated with a commcell.
 
-    def __init__(self, commcell_object):
+    Attributes:
+        _all_usergroups_prop (dict): All user groups properties.
+        _commcell_object (Commcell): Instance of the Commcell class.
+        _user_group (str): API service endpoint for user groups.
+        _user_groups_cache (dict): Cached user groups data.
+        _user_groups (dict): User groups dictionary.
+        filter_query_count (int): Count of filter queries.
+
+    Usage:
+        # Initialize UserGroups object
+        user_groups = UserGroups(commcell_object)
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize object of the UserGroups class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (Commcell): Instance of the Commcell class.
 
-            Returns:
-                object - instance of the UserGroups class
-
+        Raises:
+            Exception: If initialization fails.
         """
         self._all_usergroups_prop = None
         self._commcell_object = commcell_object
@@ -158,11 +170,11 @@ class UserGroups(object):
         self.filter_query_count = 0
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Representation string consisting of all usergroups of the Commcell.
 
-            Returns:
-                str - string of all the usergroups for a commcell
+        Returns:
+            str: String of all the usergroups for a commcell.
         """
         representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'User Group')
 
@@ -172,29 +184,33 @@ class UserGroups(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representation string for the instance of the UserGroups class."""
         return "UserGroups class instance for Commcell"
-        
-    def _get_user_groups(self, system_created=True, full_response: bool = False):
+
+    def _get_user_groups(self, system_created: bool = True, full_response: bool = False) -> dict:
         """Gets all the user groups associated with the commcell
 
-            Args:
-                system_created  (bool) --   flag to include system created user groups
-                full_response   (bool) --  flag to return complete response
+        Args:
+            system_created (bool): Flag to include system created user groups. Defaults to True.
+            full_response (bool): Flag to return complete response. Defaults to False.
 
-            Returns:
-                dict - consists of all user group in the commcell
-                    {
-                         "user_group1_name": user_group1_id,
-                         "user_group2_name": user_group2_id
-                    }
+        Returns:
+            dict: Consists of all user group in the commcell
+                {
+                     "user_group1_name": user_group1_id,
+                     "user_group2_name": user_group2_id
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            user_groups = self._get_user_groups()
+            user_groups = self._get_user_groups(system_created=False, full_response=True)
         """
         request_url = f'{self._user_group % str(system_created).lower()}&level=10'
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -225,10 +241,16 @@ class UserGroups(object):
         Returns the fl parameters to be passed in the mongodb caching api call
 
         Args:
-            fl    (list)  --   list of columns to be passed in API request
+            fl (list): List of columns to be passed in API request. Defaults to None.
 
         Returns:
-            fl_parameters(str) -- fl parameter string
+            str: fl parameter string
+
+        Raises:
+            SDKException: If an invalid column name is passed.
+
+        Usage:
+            fl_params = self._get_fl_parameters(fl=['groupName', 'status'])
         """
         self.valid_columns = {
             'groupName': 'userGroups.userGroupEntity.userGroupName',
@@ -254,12 +276,18 @@ class UserGroups(object):
         Returns the sort parameters to be passed in the mongodb caching api call
 
         Args:
-            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
-                                valid sor type -- 1 for ascending and -1 for descending
-                                e.g. sort = ['connectName','1']
+            sort (list): Contains the name of the column on which sorting will be performed and type of sort.
+                         Valid sort type -- 1 for ascending and -1 for descending
+                         e.g. sort = ['connectName','1']
 
         Returns:
-            sort_parameters(str) -- sort parameter string
+            str: sort parameter string
+
+        Raises:
+            SDKException: If an invalid column name is passed.
+
+        Usage:
+            sort_params = self._get_sort_parameters(sort=['groupName', '1'])
         """
         sort_type = str(sort[1])
         col = sort[0]
@@ -273,11 +301,17 @@ class UserGroups(object):
         """
         Returns the fq parameters based on the fq list passed
         Args:
-             fq     (list) --   contains the columnName, condition and value
+             fq (list): Contains the columnName, condition and value
                     e.g. fq = [['groupName','contains', test']['status','eq','Enabled']]
 
         Returns:
-            fq_parameters(str) -- fq parameter string
+            str: fq parameter string
+
+        Raises:
+            SDKException: If an invalid column name or condition is passed.
+
+        Usage:
+            fq_params = self._get_fq_parameters(fq=[['groupName', 'contains', 'test'], ['status', 'eq', 'Enabled']])
         """
         conditions = {"contains", "notContain", "eq", "neq"}
         params = []
@@ -300,21 +334,28 @@ class UserGroups(object):
         Gets all the user groups present in CommcellEntityCache DB.
 
         Args:
-            hard  (bool)          --   Flag to perform hard refresh on user groups cache.
+            hard (bool): Flag to perform hard refresh on user groups cache. Defaults to False.
             **kwargs (dict):
-                fl (list)         --   List of columns to return in response (default: None).
-                sort (list)       --   Contains the name of the column on which sorting will be performed and type of sort.
-                                            Valid sort type: 1 for ascending and -1 for descending
-                                            e.g. sort = ['columnName', '1'] (default: None).
-                limit (list)      --   Contains the start and limit parameter value.
-                                            Default ['0', '100'].
-                search (str)      --   Contains the string to search in the commcell entity cache (default: None).
-                fq (list)         --   Contains the columnName, condition and value.
-                                            e.g. fq = [['groupName', 'contains', 'test'],
-                                            ['status', 'eq', 'Enabled']] (default: None).
+                fl (list): List of columns to return in response (default: None).
+                sort (list): Contains the name of the column on which sorting will be performed and type of sort.
+                             Valid sort type: 1 for ascending and -1 for descending
+                             e.g. sort = ['columnName', '1'] (default: None).
+                limit (list): Contains the start and limit parameter value.
+                              Default ['0', '100'].
+                search (str): Contains the string to search in the commcell entity cache (default: None).
+                fq (list): Contains the columnName, condition and value.
+                             e.g. fq = [['groupName', 'contains', 'test'],
+                             ['status', 'eq', 'Enabled']] (default: None).
 
         Returns:
             dict: Dictionary of all the properties present in response.
+
+        Raises:
+            SDKException: If the API request fails.
+
+        Usage:
+            user_groups_cache = self.get_user_groups_cache()
+            user_groups_cache = self.get_user_groups_cache(hard=True, fl=['groupName', 'status'], sort=['groupName', '1'], limit=['0', '50'], search='test', fq=[['groupName', 'contains', 'test'], ['status', 'eq', 'Enabled']])
         """
         # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
@@ -325,7 +366,7 @@ class UserGroups(object):
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
 
         # Search operation can only be performed on limited columns, so filtering out the columns on which search works
-        searchable_columns = ["groupName","description","company"]
+        searchable_columns = ["groupName", "description", "company"]
         search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
                             f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
 
@@ -345,18 +386,18 @@ class UserGroups(object):
 
         user_groups_cache = {}
         if response.json() and 'userGroups' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount',0)
+            self.filter_query_count = response.json().get('filterQueryCount', 0)
             for group in response.json()['userGroups']:
                 name = group.get('userGroupEntity', {}).get('userGroupName')
                 user_groups_config = {
-                    'groupName':name,
+                    'groupName': name,
                     'groupId': group.get('userGroupEntity', {}).get('userGroupId'),
                     'description': group.get('description', ''),
                     'status': group.get('enabled'),
                     'company': group.get('userGroupEntity', {}).get('entityInfo', {}).get('companyName')
                 }
                 if self._commcell_object.is_global_scope():
-                    user_groups_config['commcell'] = group.get('userGroupEntity', {}).get('entityInfo', {}).get('multiCommcellName','')
+                    user_groups_config['commcell'] = group.get('userGroupEntity', {}).get('entityInfo', {}).get('multiCommcellName', '')
 
                     # Handle duplicate names for different commcells
                     unique_name = name
@@ -380,59 +421,69 @@ class UserGroups(object):
     def all_user_groups_cache(self) -> dict:
         """Returns dict of all the user groups and their info present in CommcellEntityCache in mongoDB
 
-            dict - consists of all user groups of the in the CommcellEntityCache
-                    {
-                         "userGroup1_name": {
-                                'id': userGroup1_id ,
-                                'description': userGroup1_description,
-                                'status': userGroup1_status,
-                                'company': userGroup1_company
-                                },
-                         "userGroup2_name": {
-                                'id': userGroup2_id ,
-                                'description': userGroup2_description,
-                                'status': userGroup2_status,
-                                'company': userGroup2_company
-                                }
-                    }
+        Returns:
+            dict: Consists of all user groups of the in the CommcellEntityCache
+                {
+                     "userGroup1_name": {
+                            'id': userGroup1_id ,
+                            'description': userGroup1_description,
+                            'status': userGroup1_status,
+                            'company': userGroup1_company
+                            },
+                     "userGroup2_name": {
+                            'id': userGroup2_id ,
+                            'description': userGroup2_description,
+                            'status': userGroup2_status,
+                            'company': userGroup2_company
+                            }
+                }
+
+        Usage:
+            all_user_groups = self.all_user_groups_cache
         """
         if not self._user_groups_cache:
             self._user_groups_cache = self.get_user_groups_cache()
         return self._user_groups_cache
 
-    def has_user_group(self, user_group_name):
+    def has_user_group(self, user_group_name: str) -> bool:
         """Checks if a user group exists in the commcell with the input user group name.
 
-            Args:
-                user_group_name (str)  --  name of the user group
+        Args:
+            user_group_name (str): Name of the user group.
 
-            Returns:
-                bool - boolean output whether the user group exists in the commcell
-                       or not
+        Returns:
+            bool: Boolean output whether the user group exists in the commcell
+                   or not.
 
-            Raises:
-                SDKException:
-                    if type of the user group name argument is not string
+        Raises:
+            SDKException:
+                if type of the user group name argument is not string
+
+        Usage:
+            has_group = self.has_user_group('test_group')
         """
         if not isinstance(user_group_name, str):
             raise SDKException('UserGroup', '101')
 
         return self._user_groups and user_group_name.lower() in self._user_groups
 
-    def get(self, user_group_name):
+    def get(self, user_group_name: str) -> 'UserGroup':
         """Returns a user group object of the specified user group name.
 
-            Args:
-                user_group_name (str)  --  name of the user group
+        Args:
+            user_group_name (str): Name of the user group.
 
-            Returns:
-                object - instance of the UserGroup class for the given user group name
+        Returns:
+            UserGroup: Instance of the UserGroup class for the given user group name.
 
-            Raises:
-                SDKException:
-                    if type of the user group name argument is not string
+        Raises:
+            SDKException:
+                if type of the user group name argument is not string
 
-                    if no user group exists with the given name
+                if no user group exists with the given name
+
+        Usage:
+            user_group = self.get('test_group')
         """
         if not isinstance(user_group_name, str):
             raise SDKException('UserGroup', '101')
@@ -449,25 +500,19 @@ class UserGroups(object):
             )
 
     def add(self,
-            usergroup_name,
-            domain=None,
-            users_list=None,
-            entity_dictionary=None,
-            external_usergroup=None,
-            local_usergroup=None):
+            usergroup_name: str,
+            domain: str = None,
+            users_list: list = None,
+            entity_dictionary: dict = None,
+            external_usergroup: list = None,
+            local_usergroup: list = None) -> 'UserGroup':
         """Adds local/external user group on this commcell based domain parameter provided
 
-            Args:
-                usergroup_name (str)        --  name of the user group
-
-                domain  (str)               --  name of the domain to which user group
-                                                belongs to
-
-                users_list	(list)			--  list which contains users who will be
-                                                members of this group
-
-                entity_dictionary(dict)     --  combination of entity_type, entity
-                                                names and role
+        Args:
+            usergroup_name (str): Name of the user group.
+            domain (str): Name of the domain to which user group belongs to. Defaults to None.
+            users_list (list): List which contains users who will be members of this group. Defaults to None.
+            entity_dictionary (dict): Combination of entity_type, entity names and role. Defaults to None.
                 e.g.: security_dict={
                                 'assoc1':
                                     {
@@ -489,10 +534,9 @@ class UserGroups(object):
                                         'role': ['Alert Owner']
                                         }
                                     },
-                entity_type         --      key for the entity present in dictionary
-                                            on which user will have access
-                entity_name         --      Value of the key
-                role                --      key for role name you specify
+                entity_type: Key for the entity present in dictionary on which user will have access.
+                entity_name: Value of the key.
+                role: Key for role name you specify.
                 e.g:   e.g.: {"clientName":"Linux1"}
                 Entity Types are:   clientName, mediaAgentName, libraryName, userName,
                                     userGroupName, storagePolicyName, clientGroupName,
@@ -500,22 +544,21 @@ class UserGroups(object):
                                     alertName, workflowName, policyName, roleName
 
                 entity_name = "Linux1", "ClientMachine1"
+            external_usergroup (list): List of domain user group which could be added as members to this group. Defaults to None.
+            local_usergroup (list): List of commcell usergroup which could be added as members to this group. Defaults to None.
 
-                external_usergroup(list)    --  list of domain user group which could
-                                                be added as members to this group
+        Returns:
+            UserGroup: UserGroup class instance for the specified user group name.
 
-                local_usergroup (list)      --  list of commcell usergroup which could
-                                                be added as members to this group
+        Raises:
+            SDKException:
+                if usergroup with specified name already exists
 
-            Returns:
-                (object)    -   UserGroup class instance for the specified user group name
+                if failed to add usergroup to commcell
 
-            Raises:
-                SDKException:
-
-                    if usergroup with specified name already exists
-
-                    if failed to add usergroup to commcell
+        Usage:
+            user_group = self.add(usergroup_name='test_group')
+            user_group = self.add(usergroup_name='test_group', domain='test_domain', users_list=['user1', 'user2'], entity_dictionary={'clientName': ['Linux1']}, external_usergroup=['ext_group1'], local_usergroup=['local_group1'])
         """
         if domain:
             group_name = "{0}\\{1}".format(domain, usergroup_name)
@@ -585,35 +628,37 @@ class UserGroups(object):
         self.refresh()
         return self.get(group_name)
 
-    def delete(self, user_group, new_user=None, new_usergroup=None):
+    def delete(self, user_group: str, new_user: str = None, new_usergroup: str = None) -> None:
         """Deletes the specified user from the existing commcell users
 
-            Args:
-                user_group          (str)   --  name of the usergroup which has to be deleted
+        Args:
+            user_group    (str):  name of the usergroup which has to be deleted
+            new_user      (str):  name of the target user, whom the ownership
+                                    of entities should be transferred
+            new_usergroup (str):  name of the user group, whom the ownership
+                                    of entities should be transferred
 
-                new_user            (str)   --  name of the target user, whom the ownership
-                                                of entities should be transferred
+        Raises:
+            SDKException:
+                if usergroup doesn't exist
+                if new user and new usergroup any of these is passed and these doesn't
+                exist on commcell
+                if both user and usergroup is passed for ownership transfer
+                if both user and usergroup is not passed for ownership transfer
+                if response is not success
 
-                new_usergroup       (str)   --  name of the user group, whom the ownership
-                                                of entities should be transferred
+        Usage:
+            # Delete a user group
+            user_groups.delete(user_group='test_usergroup')
 
-            Note: either user or usergroup  should be provided for ownership
-                transfer not both.
+            # Delete a user group and transfer ownership to a new user
+            user_groups.delete(user_group='test_usergroup', new_user='test_user')
 
-            Raises:
-                SDKException:
+            # Delete a user group and transfer ownership to a new user group
+            user_groups.delete(user_group='test_usergroup', new_usergroup='test_usergroup2')
 
-                    if usergroup doesn't exist
-
-                    if new user and new usergroup any of these is passed and these doesn't
-                    exist on commcell
-
-                    if both user and usergroup is passed for ownership transfer
-
-                    if both user and usergroup is not passed for ownership transfer
-
-                    if response is not success
-
+        Note: either user or usergroup  should be provided for ownership
+            transfer not both.
         """
         if not self.has_user_group(user_group):
             raise SDKException(
@@ -670,14 +715,25 @@ class UserGroups(object):
 
         self._user_groups = self._get_user_groups()
 
-    def refresh(self, **kwargs):
+
+    def refresh(self, **kwargs: dict) -> None:
         """
         Refresh the list of user groups on this commcell.
 
-            Args:
-                **kwargs (dict):
-                    mongodb (bool)  -- Flag to fetch user groups cache from MongoDB (default: False).
-                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
+        Args:
+            **kwargs (dict):
+                mongodb (bool): Flag to fetch user groups cache from MongoDB (default: False).
+                hard    (bool): Flag to hard refresh MongoDB cache for this entity (default: False).
+
+        Usage:
+            # Refresh the list of user groups
+            user_groups.refresh()
+
+            # Refresh the list of user groups from MongoDB
+            user_groups.refresh(mongodb=True)
+
+            # Hard refresh the list of user groups from MongoDB
+            user_groups.refresh(mongodb=True, hard=True)
         """
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
@@ -686,44 +742,79 @@ class UserGroups(object):
         if mongodb:
             self._user_groups_cache = self.get_user_groups_cache(hard=hard)
 
+
     @property
-    def all_user_groups(self):
+    def all_user_groups(self) -> dict:
         """Returns dict of all the user groups associated with this commcell
 
-        dict - consists of all user group in the commcell
+        Returns:
+            dict: consists of all user group in the commcell
                  {
                    "user_group1_name": user_group1_id,
                    "user_group2_name": user_group2_id
                   }
 
+        Usage:
+            all_groups = user_groups.all_user_groups
         """
         return self._user_groups
 
-    def non_system_usergroups(self):
+
+    def non_system_usergroups(self) -> dict:
         """Returns dict of all the user groups associated with this commcell
 
-        dict - consists of all user group in the commcell
+        Returns:
+            dict: consists of all user group in the commcell
                  {
                    "user_group1_name": user_group1_id,
                    "user_group2_name": user_group2_id
                   }
 
+        Usage:
+            non_system_groups = user_groups.non_system_usergroups()
         """
         return self._get_user_groups(system_created=False)
 
+
     @property
-    def all_usergroups_prop(self)->list[dict]:
+    def all_usergroups_prop(self) -> list[dict]:
         """
         Returns complete GET API response
+
+        Returns:
+            list[dict]: A list of dictionaries containing all user group properties.
+
+        Usage:
+            all_props = user_groups.all_usergroups_prop
         """
         self._all_usergroups_prop = self._get_user_groups(full_response=True).get("userGroups",[])
         return self._all_usergroups_prop
 
-
 class UserGroup(object):
-    """Class for performing operations for a specific User Group."""
+    """Class for performing operations for a specific User Group.
 
-    def __init__(self, commcell_object, user_group_name, user_group_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _user_group_name (str): Name of the user group (lowercase).
+        _user_group_id (str): ID of the user group.
+        _usergroup (str): API endpoint for the user group.
+        _description (str): Description of the user group.
+        _properties (dict): Properties of the user group.
+        _email (str): Email associated with the user group.
+        _users (list): List of users in the user group.
+        _usergroups (list): List of user groups associated with this user group.
+        _usergroup_status (bool): Status of the user group (enabled/disabled).
+        _company_id (str): ID of the company associated with the user group.
+        _company_name (str): Name of the company associated with the user group.
+        _allow_multiple_company_members (bool): Flag indicating if multiple company members are allowed.
+        _additional_settings (dict): Additional settings for the user group.
+
+    Usage:
+        >>> # Initialize a UserGroup object
+        >>> user_group = UserGroup(commcell_object, 'MyUserGroup')
+    """
+
+    def __init__(self, commcell_object: object, user_group_name: str, user_group_id: str = None) -> None:
         """Initialise the UserGroup class instance.
 
             Args:
@@ -759,7 +850,7 @@ class UserGroup(object):
         self._additional_settings = None
         self.refresh()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """String representation of the instance of this class."""
         representation_string = 'User Group instance for UserGroup: "{0}"'
 
@@ -767,7 +858,7 @@ class UserGroup(object):
             self.user_group_name
         )
 
-    def _get_usergroup_id(self):
+    def _get_usergroup_id(self) -> str:
         """Gets the user group id associated with this user group.
 
             Returns:
@@ -776,7 +867,7 @@ class UserGroup(object):
         user_groups = UserGroups(self._commcell_object)
         return user_groups.get(self.user_group_name).user_group_id
 
-    def _get_usergroup_properties(self):
+    def _get_usergroup_properties(self) -> None:
         """Gets the user group properties of this user group.
 
             Returns:
@@ -818,7 +909,7 @@ class UserGroup(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _has_usergroup(self, usergroup_list):
+    def _has_usergroup(self, usergroup_list: list) -> None:
         """checks whether these users are present on this commcell
 
             Args:
@@ -832,16 +923,16 @@ class UserGroup(object):
             for usergroup in usergroup_list:
                 if not self._commcell_object.user_groups.has_user_group(usergroup):
                     raise SDKException(
-                        'UserGroup', '102', "UserGroup {0} doesn'texists on this commcell.".format(
+                        'UserGroup', '102', "UserGroup {0} doesn't exists on this commcell.".format(
                             usergroup))
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Returns the UserGroup display name"""
         return self._properties['userGroupEntity']['userGroupName']
 
     @name.setter
-    def name(self, new_name):
+    def name(self, new_name: str) -> None:
         """Sets the user group name on this commcell"""
         if not isinstance(new_name, str):
             raise SDKException('UserGroup', '101')
@@ -852,32 +943,32 @@ class UserGroup(object):
         self._v4_update_usergroup_props(request_json)
 
     @property
-    def user_group_id(self):
+    def user_group_id(self) -> str:
         """Treats the usergroup id as a read-only attribute."""
         return self._user_group_id
 
     @property
-    def user_group_name(self):
+    def user_group_name(self) -> str:
         """Treats the usergroup name as a read-only attribute."""
         return self._user_group_name
 
     @property
-    def description(self):
+    def description(self) -> str:
         """Treats the usergroup description as a read-only attribute."""
         return self._description
 
     @property
-    def email(self):
+    def email(self) -> str:
         """Treats the usergroup email as a read-only attribute."""
         return self._email
 
     @property
-    def company_id(self):
+    def company_id(self) -> str:
         """Treats the usergroup company id as a read-only attribute."""
         return self._company_id
 
     @property
-    def company_name(self):
+    def company_name(self) -> str:
         """
         Returns:
             str  -  company name to which user group belongs to.
@@ -885,18 +976,18 @@ class UserGroup(object):
         """
         return self._company_name
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh the properties of the UserGroup."""
         self._additional_settings = None
         self._get_usergroup_properties()
 
     @property
-    def status(self):
+    def status(self) -> bool:
         """Returns the status of user group on this commcell"""
         return self._usergroup_status
 
     @status.setter
-    def status(self, value):
+    def status(self, value: bool) -> None:
         """Sets the status for this commcell user group"""
 
         request_json = {
@@ -907,7 +998,7 @@ class UserGroup(object):
         self._update_usergroup_props(request_json)
 
     @property
-    def allow_multiple_company_members(self):
+    def allow_multiple_company_members(self) -> bool:
         """
         Returns the status of user group on this commcell
         Returns:
@@ -917,7 +1008,7 @@ class UserGroup(object):
         return self._allow_multiple_company_members
 
     @allow_multiple_company_members.setter
-    def allow_multiple_company_members(self, flag=True):
+    def allow_multiple_company_members(self, flag: bool = True) -> None:
         """
         Allows Multiple Company Members to be part of this commcell user group
         Args:
@@ -930,7 +1021,7 @@ class UserGroup(object):
         self._v4_update_usergroup_props(request_json)
 
     @property
-    def users(self):
+    def users(self) -> list:
         """Returns the list of associated users with this usergroup"""
         users = []
         if 'users' in self._properties:
@@ -940,7 +1031,7 @@ class UserGroup(object):
         return users
 
     @property
-    def usergroups(self):
+    def usergroups(self) -> list:
         """Returns the list of associated external usergroups with this usergroup"""
         user_groups = []
         if 'externalUserGroups' in self._properties:
@@ -950,16 +1041,16 @@ class UserGroup(object):
         return user_groups
 
     @property
-    def associations(self):
+    def associations(self) -> list:
         """Returns security associations present on th usergroup"""
         return self._security_associations
 
     @property
-    def is_tfa_enabled(self):
+    def is_tfa_enabled(self) -> bool:
         """Returns two factor authentication status (True/False)"""
         return self._properties.get('enableTwoFactorAuthentication') == 1
 
-    def enable_tfa(self):
+    def enable_tfa(self) -> None:
         """
         enables two factor authentication on this group
 
@@ -975,7 +1066,7 @@ class UserGroup(object):
         }
         self._update_usergroup_props(request_json)
 
-    def disable_tfa(self):
+    def disable_tfa(self) -> None:
         """
         disables two factor authentication for this group
 
@@ -989,7 +1080,7 @@ class UserGroup(object):
         }
         self._update_usergroup_props(request_json)
 
-    def update_security_associations(self, entity_dictionary, request_type):
+    def update_security_associations(self, entity_dictionary: dict, request_type: str) -> None:
         """handles three way associations (role-usergroup-entities)
 
             Args:
@@ -1044,10 +1135,10 @@ class UserGroup(object):
 
     def update_usergroup_members(
             self,
-            request_type,
-            users_list=None,
-            external_usergroups=None,
-            local_usergroups=None):
+            request_type: str,
+            users_list: list = None,
+            external_usergroups: list = None,
+            local_usergroups: list = None) -> None:
         """updates users and usergroups to local usergroup members tab
             Args:
                 request_type (str)              --      decides whether to UPDATE, DELETE or
@@ -1104,7 +1195,7 @@ class UserGroup(object):
         self._send_request(request_type=request_type, users_blob=userlist_json,
                            external_group_blob=usergroup_json, local_group_blob=local_groups_json)
 
-    def update_navigation_preferences(self, include_navigation_list):
+    def update_navigation_preferences(self, include_navigation_list: list) -> None:
         """Updates the user group's include navigation preferences with the the list provided
 
             Args:
@@ -1134,8 +1225,8 @@ class UserGroup(object):
         }
         self._update_usergroup_props(request_json)
 
-    def _send_request(self, request_type, association_blob=None, users_blob=None,
-                      external_group_blob=None, local_group_blob=None):
+    def _send_request(self, request_type: str, association_blob: dict = None, users_blob: dict = None,
+                      external_group_blob: dict = None, local_group_blob: list = None) -> None:
         """forms complete json request for user groups
 
             Args:
@@ -1201,7 +1292,7 @@ class UserGroup(object):
 
         self._update_usergroup_props(request_json)
 
-    def _v4_update_usergroup_props(self, properties_dict):
+    def _v4_update_usergroup_props(self, properties_dict: dict) -> None:
         """Updates the properties of this usergroup
 
             Args:
@@ -1231,17 +1322,47 @@ class UserGroup(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def _update_usergroup_props(self, properties_dict):
+    def _update_usergroup_props(self, request_json: dict) -> None:
         """Updates the properties of this usergroup
 
             Args:
-                properties_dict (dict)  --  user property dict which is to be updated
+                request_json (dict)  --  user property dict which is to be updated
 
             Raises:
                 SDKException:
-                    if failed update usergroup properties
-
+                    if arguments passed are of incorrect types
+                    if failed to update user group properties
+                    if response is empty
                     if response is not success
+        """
+        if not isinstance(request_json, dict):
+            raise SDKException('UserGroup', '101')
+        usergroup_request = self._commcell_object._services['USERGROUP'] % (self._user_group_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', usergroup_request, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+                self.refresh()
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def _update_usergroup_props(self, properties_dict: dict) -> None:
+        """Updates the properties of this usergroup
+
+        Args:
+            properties_dict (dict): user property dict which is to be updated
+
+        Raises:
+            SDKException:
+                if failed update usergroup properties
+
+                if response is not success
         """
         usergroup_request = self._commcell_object._services['USERGROUP'] % (self._user_group_id)
 
@@ -1265,10 +1386,11 @@ class UserGroup(object):
 
         self.refresh()
 
-    def available_users_for_group(self):
+    def available_users_for_group(self) -> dict:
         """Returns the dict of all the users on the commcell, that can be added to this group
 
-        dict of all the users available for adding to group
+        Returns:
+            dict: dict of all the users available for adding to group
                    {
                         "user1": {
                             "id": ...,
@@ -1277,6 +1399,9 @@ class UserGroup(object):
                             ..
                         }
                    }
+
+        Raises:
+            SDKException: if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._commcell_object._services['V4_USERS'] + f'&groupContext={self.user_group_id}'
@@ -1296,6 +1421,14 @@ class UserGroup(object):
 
     @property
     def additional_settings(self):
+        """Returns the additional settings object for this user group.
+
+        Returns:
+            AdditionalSettings: The additional settings object.
+
+        Usage:
+            settings = user_group.additional_settings
+        """
         if self._additional_settings is None:
             self._additional_settings = AdditionalSettings(self)
         return self._additional_settings

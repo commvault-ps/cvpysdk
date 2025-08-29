@@ -93,13 +93,24 @@ Role
 from ..exception import SDKException
 
 class Roles(object):
-    """Class for maintaining all the configured role on this commcell"""
+    """Class for maintaining all the configured role on this commcell.
 
-    def __init__(self, commcell_object):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _roles (dict): Dictionary of roles on the commcell.
+        _roles_cache (dict): Cached dictionary of roles.
+        _all_roles_prop (list): List of all role properties.
+        filter_query_count (int): Count of filter queries.
+
+    Usage:
+        >>> roles = Roles(commcell_object)
+    """
+
+    def __init__(self, commcell_object: object) -> None:
         """Initializes the roles class object for this commcell
 
             Args:
-                commcell_object (object)  --  instance of the Commcell class
+                commcell_object (object): instance of the Commcell class
 
             Returns:
                 object - instance of the Clients class
@@ -111,7 +122,7 @@ class Roles(object):
         self.filter_query_count = 0
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Representation string consisting of all roles of the commcell.
 
             Returns:
@@ -125,16 +136,26 @@ class Roles(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representation string for the instance of the Roles class."""
         return "Roles class instance for Commcell"
 
-    def _get_roles(self, full_response: bool = False):
+    def _get_roles(self, full_response: bool = False) -> dict:
         """
         Returns the list of roles configured on this commcell
 
             Args:
-                full_response(bool) --  flag to return complete response
+                full_response(bool): flag to return complete response
+
+        Returns:
+            dict: Dictionary of roles with role names as keys and role IDs as values.
+
+        Raises:
+            SDKException: if response is not successful.
+
+        Usage:
+            >>> roles = self._get_roles()
+            >>> roles = self._get_roles(full_response=True)
         """
         get_all_roles_service = self._commcell_object._services['GET_SECURITY_ROLES']
 
@@ -183,10 +204,16 @@ class Roles(object):
         Returns the fl parameters to be passed in the mongodb caching api call
 
         Args:
-            fl    (list)  --   list of columns to be passed in API request
+            fl (list): list of columns to be passed in API request
 
         Returns:
-            fl_parameters(str) -- fl parameter string
+            str: fl parameter string
+
+        Raises:
+            SDKException: if invalid column name is passed.
+
+        Usage:
+            >>> fl_params = self._get_fl_parameters(fl=['roleName', 'status'])
         """
         self.valid_columns = {
             'roleName': 'roleProperties.role.roleName',
@@ -212,12 +239,18 @@ class Roles(object):
         Returns the sort parameters to be passed in the mongodb caching api call
 
         Args:
-            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
-                                valid sor type -- 1 for ascending and -1 for descending
-                                e.g. sort = ['connectName','1']
+            sort (list): contains the name of the column on which sorting will be performed and type of sort
+                         valid sor type -- 1 for ascending and -1 for descending
+                         e.g. sort = ['connectName','1']
 
         Returns:
-            sort_parameters(str) -- sort parameter string
+            str: sort parameter string
+
+        Raises:
+            SDKException: if invalid column name is passed.
+
+        Usage:
+            >>> sort_params = self._get_sort_parameters(sort=['roleName', '1'])
         """
         sort_type = str(sort[1])
         col = sort[0]
@@ -231,11 +264,17 @@ class Roles(object):
         """
         Returns the fq parameters based on the fq list passed
         Args:
-             fq     (list) --   contains the columnName, condition and value
+             fq (list): contains the columnName, condition and value
                     e.g. fq = [['roleName','contains', test'],['status','eq', 'Enabled']]
 
         Returns:
-            fq_parameters(str) -- fq parameter string
+            str: fq parameter string
+
+        Raises:
+            SDKException: if invalid column name or condition is passed.
+
+        Usage:
+            >>> fq_params = self._get_fq_parameters(fq=[['roleName', 'contains', 'test']])
         """
         conditions = {"contains", "notContain", "eq", "neq"}
         params = []
@@ -258,20 +297,27 @@ class Roles(object):
         Gets all the roles present in CommcellEntityCache DB.
 
         Args:
-            hard  (bool)  --   Flag to perform hard refresh on roles cache.
+            hard (bool): Flag to perform hard refresh on roles cache.
             **kwargs:
-                fl (list)   -- List of columns to return in response.
-                sort (list) -- Contains the name of the column on which sorting will be performed and type of sort.
-                                Valid sort type: 1 for ascending and -1 for descending
-                                e.g. sort = ['columnName', '1']
-                limit (list)-- Contains the start and limit parameter value.
-                                Default ['0', '100']
-                search (str)-- Contains the string to search in the commcell entity cache.
-                fq (list)   -- Contains the columnName, condition and value.
-                                e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]
+                fl (list): List of columns to return in response.
+                sort (list): Contains the name of the column on which sorting will be performed and type of sort.
+                             Valid sort type: 1 for ascending and -1 for descending
+                             e.g. sort = ['columnName', '1']
+                limit (list): Contains the start and limit parameter value.
+                              Default ['0', '100']
+                search (str): Contains the string to search in the commcell entity cache.
+                fq (list): Contains the columnName, condition and value.
+                           e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]
 
         Returns:
             dict: Dictionary of all the properties present in response.
+
+        Raises:
+            SDKException: if response is not successful.
+
+        Usage:
+            >>> roles_cache = self.get_roles_cache()
+            >>> roles_cache = self.get_roles_cache(hard=True, fl=['roleName', 'status'], sort=['roleName', '1'], limit=['0', '50'], search='admin', fq=[['status', 'eq', 'Enabled']])
         """
         # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl'))
@@ -345,31 +391,32 @@ class Roles(object):
             self._roles_cache = self.get_roles_cache()
         return self._roles_cache
 
-    def has_role(self, role_name):
+    def has_role(self, role_name: str) -> bool:
         """Checks if any role with specified name exists on this commcell
 
             Args:
-                role_name         (str)     --      name of the role which has to be
-                                                    checked if exists
+                role_name (str): name of the role which has to be checked if exists
 
             Retruns:
-                Bool- True if specified role is presnt on th ecommcell else false
+                Bool: True if specified role is presnt on th ecommcell else false
 
             Raises:
-                SDKException:
-                    if data type of input is invalid
+                SDKException: if data type of input is invalid
+
+        Usage:
+            >>> has_role = self.has_role('Admin')
         """
         if not isinstance(role_name, str):
             raise SDKException('Role', '101')
 
         return self._roles and role_name.lower() in self._roles
 
-    def add(self, rolename, permission_list="", categoryname_list=""):
+    def add(self, rolename: str, permission_list: list = None, categoryname_list: list = None) -> dict:
         """creates new role
 
              Args:
-                 role Name          --  Name of the role to be created
-                 category Name list --  role will be created with all the permissions
+                 role Name (str): Name of the role to be created
+                 category Name list (str): role will be created with all the permissions
                                     associated with this category
                     e.g.: category Name=Client :role will have all permisisons from
                                         this category.
@@ -387,8 +434,11 @@ class Roles(object):
 
                     if role already exists on the commcell
 
-         """
-        if permission_list == "" and categoryname_list == "":
+        Usage:
+            >>> role = self.add(rolename='NewRole', permission_list=['View', 'Browse'])
+            >>> role = self.add(rolename='NewRole', categoryname_list=['Client', 'CommCell'])
+        """
+        if permission_list is None and categoryname_list is None:
             raise SDKException('Role', '102', "empty role can not be created!!  "
                                               "either permission_list or categoryname_list "
                                               "should have some value! ")
@@ -440,16 +490,18 @@ class Roles(object):
         self.refresh()
         return self.get(rolename)
 
-    def get(self, role_name):
+    def get(self, role_name: str) -> 'Role':
         """Returns the role object for the specified role name
 
             Args:
-                role_name  (str)    --  name of the role for which the object has to
+                role_name (str): name of the role for which the object has to
                                         be created
 
             Raises:
-                SDKException:
-                    if role doesn't exist with specified name
+                SDKException: if role doesn't exist with specified name
+
+        Usage:
+            >>> role = self.get('Admin')
         """
         if not self.has_role(role_name):
             raise SDKException(
@@ -458,11 +510,11 @@ class Roles(object):
 
         return Role(self._commcell_object, role_name, self._roles[role_name.lower()])
 
-    def delete(self, role_name):
+    def delete(self, role_name: str) -> None:
         """Deletes the role object for specified role name
 
             Args:
-                role_name (str) --  name of the role for which the object has to be
+                role_name (str): name of the role for which the object has to be
                                     deleted
 
             Raises:
@@ -473,6 +525,8 @@ class Roles(object):
 
                     if response is not success
 
+        Usage:
+            >>> self.delete('NewRole')
         """
         if not self.has_role(role_name):
             raise SDKException(
@@ -502,14 +556,18 @@ class Roles(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def refresh(self, **kwargs):
+    def refresh(self, **kwargs) -> None:
         """
         Refresh the list of Roles on this commcell.
 
             Args:
                 **kwargs (dict):
-                    mongodb (bool)  -- Flag to fetch roles cache from MongoDB (default: False).
-                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
+                    mongodb (bool): Flag to fetch roles cache from MongoDB (default: False).
+                    hard (bool): Flag to hard refresh MongoDB cache for this entity (default: False).
+
+        Usage:
+            >>> self.refresh()
+            >>> self.refresh(mongodb=True, hard=True)
         """
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
@@ -519,9 +577,12 @@ class Roles(object):
             self._roles_cache = self.get_roles_cache(hard=hard)
 
     @property
-    def all_roles(self):
+    def all_roles(self) -> dict:
         """
         Returns all the roles present in the commcell
+
+        Usage:
+            >>> all_roles = self.all_roles
         """
         return self._get_roles()
 
@@ -529,24 +590,38 @@ class Roles(object):
     def all_roles_prop(self) -> list[dict]:
         """
         Returns complete GET API response
+
+        Usage:
+            >>> all_roles_prop = self.all_roles_prop
         """
         self._all_roles_prop = self._get_roles(full_response=True).get("roleProperties",[])
         return self._all_roles_prop
 
-
 class Role(object):
-    """"Class for representing a particular role configured on this commcell"""
+    """Class for representing a particular role configured on this commcell.
 
-    def __init__(self, commcell_object, role_name, role_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _role_name (str): Name of the role (lowercase).
+        _role_id (str): ID of the role.
+        _request_role (str): API endpoint for the role.
+        _role_description (str): Description of the role.
+        _role_status (bool): Status of the role (True if enabled, False if disabled).
+        _security_associations (dict): Security associations for the role.
+        _role_permissions (dict): Permissions associated with the role.
+        _company_name (str): Company name associated with the role.
+
+    Usage:
+        role = Role(commcell_object, 'MyRole')
+    """
+
+    def __init__(self, commcell_object: object, role_name: str, role_id: str = None) -> None:
         """Initialize the Role class object for specified role
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
-
-                role_name         (str)     --  name of the role
-
-                role_id           (str)     --  id of the role
-                    default: None
+        Args:
+            commcell_object (object): Instance of the Commcell class.
+            role_name (str): Name of the role.
+            role_id (str): ID of the role. Defaults to None.
 
         """
         self._commcell_object = commcell_object
@@ -565,22 +640,39 @@ class Role(object):
         self._company_name = ''
         self._get_role_properties()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """String representation of the instance of this class.
+
+        Returns:
+            str: String representation of the role.
+
+        Usage:
+            print(role)
+        """
         representation_string = 'Role class instance for Role: "{0}"'
         return representation_string.format(self.role_name)
 
-    def _get_role_id(self, role_name):
+    def _get_role_id(self, role_name: str) -> str:
         """Gets the role id associated with this role.
 
-            Returns:
-                str - id associated with this role
+        Args:
+            role_name (str): The name of the role.
+
+        Returns:
+            str: ID associated with this role.
+
+        Usage:
+            role_id = role._get_role_id('MyRole')
         """
         roles = Roles(self._commcell_object)
         return roles.get(role_name).role_id
 
-    def _get_role_properties(self):
-        """Gets the properties of this role"""
+    def _get_role_properties(self) -> None:
+        """Gets the properties of this role.
+
+        Raises:
+            SDKException: If the response is empty or not successful.
+        """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._request_role
         )
@@ -656,25 +748,27 @@ class Role(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_role_props(self, properties_dict, name_val=None):
+    def _update_role_props(self, properties_dict: dict, name_val: str = None) -> None:
         """Updates the properties of this role
 
-            Args:
-                properties_dict (dict)  --  role property dict which is to be updated
-                    e.g.: {
-                            "description": "My description"
-                        }
+        Args:
+            properties_dict (dict): Role property dict which is to be updated.
+                e.g.: {
+                        "description": "My description"
+                    }
+            name_val (str): The new role name, if updating the role name. Defaults to None.
 
-            Returns:
-                role Properties update dict
+        Raises:
+            SDKException:
+                if role doesn't exist
 
-            Raises:
-                SDKException:
-                    if role doesn't exist
+                if response is empty
 
-                    if response is empty
+                if response is not success
 
-                    if response is not success
+        Usage:
+            role._update_role_props({"description": "New description"})
+            role._update_role_props({}, name_val="NewRoleName")
         """
         if name_val:
             request_json = {
@@ -718,20 +812,23 @@ class Role(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def associate_user(self, rolename, username):
+    def associate_user(self, rolename: str, username: str) -> None:
         """Updates the user who can manage this role with the permission provided
 
-            Args:
-                role Name   --  Role given to user on this role object
-                user Name   --  user name who can manage this role
+        Args:
+            rolename (str): Role given to user on this role object.
+            username (str): User name who can manage this role.
 
-            Raises:
-                SDKException:
-                    if role Name doesn't exist
+        Raises:
+            SDKException:
+                if role Name doesn't exist
 
-                    if user Name doesn't exist
+                if user Name doesn't exist
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            role.associate_user('Admin', 'user1')
         """
         if not isinstance(username, str):
             raise SDKException('Role', '101')
@@ -784,20 +881,23 @@ class Role(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def associate_usergroup(self, rolename, usergroupname):
+    def associate_usergroup(self, rolename: str, usergroupname: str) -> None:
         """Updates the usergroup who can manage this role with the permission provided
 
-            Args:
-                role Name        --  Role given to user on this role object
-                user Group Name   --  user name who can manage this role
+        Args:
+            rolename (str): Role given to user on this role object.
+            usergroupname (str): User name who can manage this role.
 
-            Raises:
-                SDKException:
-                    if role Name doesn't exist
+        Raises:
+            SDKException:
+                if role Name doesn't exist
 
-                    if user Group Name doesn't exist
+                if user Group Name doesn't exist
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            role.associate_usergroup('Admin', 'group1')
         """
         if not isinstance(usergroupname, str):
             raise SDKException('Role', '101')
@@ -852,31 +952,32 @@ class Role(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def modify_capability(self, request_type, permission_list="", categoryname_list=""):
+    def modify_capability(self, request_type: str, permission_list: str = "", categoryname_list: str = "") -> None:
         """Updates role capabilities
 
-             Args:
-                 request_type(str)      --  type of request to be done
-                                            ADD, OVERWRITE, DELETE
-                 category Name list     --  role will be created with all the
-                                            permissions associated with this category
-                    e.g.: category Name=Client :role will have all permisisons from
-                                        this category.
-                    e.g.: category Name=Client Group :role will have all permissions
-                                        from this category
-                    e.g.: category Name=commcell :role will have all permissions from
-                                        this category
-                 permission_list(list)  --  permission array which is to be updated
-                     e.g.: permisison_list=["View", "Agent Management", "Browse"]
-             Returns:
-                 Role Properties update dict
-                             Raises:
+        Args:
+            request_type (str): Type of request to be done (ADD, OVERWRITE, DELETE).
+            permission_list (str, optional): Permission array which is to be updated.
+                e.g.: ["View", "Agent Management", "Browse"]. Defaults to "".
+            categoryname_list (str, optional): Role will be created with all the
+                permissions associated with this category.
+                e.g.: category Name=Client :role will have all permisisons from
+                            this category.
+                e.g.: category Name=Client Group :role will have all permissions
+                            from this category
+                e.g.: category Name=commcell :role will have all permissions from
+                            this category. Defaults to "".
+
+        Raises:
             SDKException:
-                    if data type of input is invalid
+                if data type of input is invalid
 
-                    if role already exists on the commcell
+                if role already exists on the commcell
 
-         """
+        Usage:
+            role.modify_capability('ADD', permission_list=['View', 'Browse'])
+            role.modify_capability('DELETE', categoryname_list=['Client'])
+        """
 
         update_role_request = {
             "NONE": 0,
@@ -885,7 +986,7 @@ class Role(object):
             "ADD":2,
             "DELETE": 3
         }
-        if(permission_list == "" and categoryname_list == ""):
+        if (permission_list == "" and categoryname_list == ""):
             raise SDKException('Role', '102', "Capabilties can not be modified!!  "
                                               "either permission_list or categoryname_list "
                                               "should have some value! ")
@@ -931,53 +1032,103 @@ class Role(object):
         self.refresh()
 
     @property
-    def role_name(self):
-        """Returns the role name of this commcell role"""
+    def role_name(self) -> str:
+        """Returns the role name of this commcell role
+
+        Returns:
+            str: The name of the role.
+
+        Usage:
+            name = role.role_name
+        """
         return self._role_name
 
     @role_name.setter
-    def role_name(self, val):
+    def role_name(self, val: str) -> None:
         """Sets the value for role_name with the parameter provided
 
+        Args:
+            val (str): The new name for the role.
+
+        Usage:
+            role.role_name = 'NewRoleName'
         """
         self._update_role_props(properties_dict={}, name_val=val)
 
 
     @property
-    def role_id(self):
-        """Returns the role id of this commcell role"""
+    def role_id(self) -> str:
+        """Returns the role id of this commcell role
+
+        Returns:
+            str: The ID of the role.
+
+        Usage:
+            role_id = role.role_id
+        """
         return self._role_id
 
     @property
-    def role_description(self):
-        """Returns the role_desccription of this commcell role"""
+    def role_description(self) -> str:
+        """Returns the role_desccription of this commcell role
+
+        Returns:
+            str: The description of the role.
+
+        Usage:
+            description = role.role_description
+        """
         return self._role_description
 
     @property
-    def company_name(self):
+    def company_name(self) -> str:
         """
         Returns:
-            str  -  company name to which user group belongs to.
-            str  -  empty string, if usergroup belongs to Commcell
+            str: company name to which user group belongs to.
+            str: empty string, if usergroup belongs to Commcell
+
+        Usage:
+            company = role.company_name
         """
         return self._company_name
 
     @role_description.setter
-    def role_description(self, value):
-        """Sets the description for this commcell role"""
+    def role_description(self, value: str) -> None:
+        """Sets the description for this commcell role
+
+        Args:
+            value (str): The new description for the role.
+
+        Usage:
+            role.role_description = 'New description'
+        """
         props_dict = {
             "description": value
         }
         self._update_role_props(props_dict)
 
     @property
-    def status(self):
-        """Returns the role_status of this commcell role"""
+    def status(self) -> bool:
+        """Returns the role_status of this commcell role
+
+        Returns:
+            bool: The status of the role (True if enabled, False if disabled).
+
+        Usage:
+            status = role.status
+        """
         return self._role_status
 
     @status.setter
-    def status(self, value):
-        """Sets the description for this commcell role"""
+    def status(self, value: bool) -> None:
+        """Sets the description for this commcell role
+
+        Args:
+            value (bool): The new status for the role (True to enable, False to disable).
+
+        Usage:
+            role.status = False
+        """
         props_dict = {
             "flags": {
                 "disabled": not value
@@ -986,10 +1137,21 @@ class Role(object):
         self._update_role_props(props_dict)
 
     @property
-    def permissions(self):
-        """Returns the permissions that are associated with role"""
+    def permissions(self) -> dict:
+        """Returns the permissions that are associated with role
+
+        Returns:
+            dict: The permissions associated with the role.
+
+        Usage:
+            permissions = role.permissions
+        """
         return self._role_permissions
 
-    def refresh(self):
-        """Refresh the properties of the Roles."""
+    def refresh(self) -> None:
+        """Refresh the properties of the Roles.
+
+        Usage:
+            role.refresh()
+        """
         self._get_role_properties()

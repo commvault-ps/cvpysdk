@@ -58,6 +58,8 @@ Projects:
 
     get_entity_sensitivity_counts()     --  Get the count of entities by sensitivity level (critical, high, moderate, none)
 
+    get_entity_distribution()           --  Gets the entity distribution statistics for the Exchange and OneDrive applications.
+
     get_extracted_solr_query()          --  Construct a Solr query string for the given entity values
 
 Project:
@@ -408,6 +410,17 @@ class Projects():
         request_top_entities_facet["json.facet"] = request_top_entities_facet["json.facet"] % count
         _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
                                   params=request_top_entities_facet)
+        return stats
+
+    def get_entity_distribution(self):
+        """
+        Gets the entity distribution statistics for the Exchange and OneDrive applications.
+        Returns:
+            dict: Statistics or data for the entity distribution.
+        """
+        request_entity_dist_facet = copy.deepcopy(RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET)
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_entity_dist_facet)
         return stats
 
     def get_entity_sensitivity_counts(self):
