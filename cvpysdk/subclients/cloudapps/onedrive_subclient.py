@@ -96,6 +96,8 @@ OneDriveSubclient:
 
     run_backup_onedrive_for_business_client()                           -- Runs client level backup
 
+    restore_user_to_azure_blob()                                        -- Runs restore to azure blob for specified users on OneDrive for business client
+
 """
 
 from __future__ import unicode_literals
@@ -951,6 +953,24 @@ class OneDriveSubclient(CloudAppsSubclient):
         }
         restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
             source_user_list, **kwargs)
+        return self._process_restore_response(restore_json)
+
+    def restore_user_to_azure_blob(self, users, blob_name):
+        """Runs restore to azure blob for specified users on OneDrive for business client
+            Args:
+                users (list) : list of SMTP addresses of users
+                blob_name (str) : Name of credential to which restore needs to be performed
+            Returns:
+                object - instance of the Job class for this restore job
+        """
+        source_user_list = self._get_user_guids(users)
+        credential = self._commcell_object.credentials.get(blob_name)
+        if credential is None:
+            raise SDKException('Subclient', '102', f'Credential "{blob_name}" not found')
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **{
+            'restore_to_blob': True,
+            'blob_container_id': credential.credential_id
+        })
         return self._process_restore_response(restore_json)
 
     def out_of_place_restore_onedrive_for_business_client(self, users, destination_path, **kwargs):

@@ -2298,7 +2298,7 @@ class Job(object):
         waiting_time = 0
         previous_status = None
         return_timeout = kwargs.get('return_timeout')
-
+        email_ids = self._commcell_object.job_logs_emails
         status_list = ['pending', 'waiting']
 
         while not self.is_finished:
@@ -2330,13 +2330,19 @@ class Job(object):
 
             if pending_time > timeout or waiting_time > timeout:
                 self.kill()
+                if len(email_ids):
+                    self.send_logs(email_ids=email_ids)
                 break
 
             # set the value of previous status as the value of current status
             previous_status = status
         else:
-            return self._status.lower() not in ["failed", "killed", "failed to start"]
-
+            if self._status.lower() not in ["failed", "killed", "failed to start"]:
+               return True
+            else:
+                if len(email_ids):
+                    self.send_logs(email_ids=email_ids)
+                return False
         return False
 
     @property
@@ -2688,6 +2694,115 @@ class Job(object):
 
         if wait_for_job_to_kill is True:
             self._wait_for_status("KILLED")
+
+    def send_logs(self, email_ids=None):
+        """
+        function to send the logs of the job
+
+        Args:
+            email_ids (list)  -   list of email ids to which the logs should be sent
+        """
+        if email_ids is None:
+            email_ids = []
+        details = self._get_job_details()
+        failure_reason = details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [{}])[0].get(
+            'FailureReason', '')
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 5010
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "sendLogFilesOption": {
+                                    "actionLogsEndJobId": 0,
+                                    "emailSelected": True,
+                                    "jobid": int(self._job_id),
+                                    "tsDatabase": False,
+                                    "galaxyLogs": True,
+                                    "getLatestUpdates": False,
+                                    "actionLogsStartJobId": 0,
+                                    "computersSelected": False,
+                                    "csDatabase": False,
+                                    "otherDatabases": False,
+                                    "crashDump": False,
+                                    "isNetworkPath": False,
+                                    "saveToFolderSelected": False,
+                                    "notifyMe": True,
+                                    "includeJobResults": False,
+                                    "doNotIncludeLogs": True,
+                                    "machineInformation": False,
+                                    "scrubLogFiles": False,
+                                    "emailSubject": f"{self._commcell_object.commserv_name} : Logs for Job ID # {self._job_id} [Error]: {failure_reason}",
+                                    "osLogs": False,
+                                    "allUsersProfile": False,
+                                    "splitFileSizeMB": 512,
+                                    "actionLogs": False,
+                                    "includeIndex": False,
+                                    "databaseLogs": True,
+                                    "includeDCDB": False,
+                                    "collectHyperScale": False,
+                                    "logFragments": False,
+                                    "uploadLogsSelected": True,
+                                    "useDefaultUploadOption": True,
+                                    "enableChunking": True,
+                                    "collectRFC": False,
+                                    "collectUserAppLogs": False,
+                                    "impersonateUser": {
+                                        "useImpersonation": False
+                                    },
+                                    "clients": [
+                                        {
+                                            "clientId": 0,
+                                            "clientName": None
+                                        }
+                                    ],
+                                    "recipientTo": {
+                                        "emailids": email_ids,
+                                        "users": [],
+                                        "userGroups": []
+                                    },
+                                    "sendLogsOnJobCompletion": False,
+                                    "emailDescription": f"<h4>Error summary</h4> {failure_reason}"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json
+        )
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    error_message = response.json().get('errorMessage', 'nil')
+                    raise SDKException(
+                        'Job', '102', 'Sending logs failed\nError: "{0}"'.format(error_message)
+                    )
+                else:
+                    send_logs_job = Job(self._commcell_object, response.json()['jobIds'][0])
+                    try:
+                        send_logs_job.wait_for_completion()
+                    except Exception as exp:
+                        pass
+                return True
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', response.text)
 
     def refresh(self):
         """Refresh the properties of the Job."""

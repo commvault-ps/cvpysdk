@@ -610,6 +610,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_RECOVERY_TARGETS': '{0}V4/RecoveryTargets',
     'GET_RECOVERY_TARGET': '{0}V4/RecoveryTarget/%s',
+    'GET_RUNBOOK_TARGET': '{0}V4/Cleanroom/Target/%s',
 
     'RETIRE': '{0}Client/%s/Retire',
     'GET_REMOTE_CACHE_CLIENTS': '{0}RemoteCacheClients',

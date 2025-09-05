@@ -439,6 +439,7 @@ from .name_change import NameChange
 from .organization import Organizations
 from .constants import AppIDAType, AppIDAName, OSType
 from .constants import ResourcePoolAppType
+from .credential_manager import Credentials
 
 
 class Clients(object):
@@ -482,6 +483,7 @@ class Clients(object):
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
+        self._cred_manager = Credentials(self._commcell_object)
         self._hidden_clients = None
         self._virtualization_clients = None
         self._virtualization_access_nodes = None
@@ -1246,7 +1248,7 @@ class Clients(object):
                               'clientGUID': 'clientProperties.client.clientEntity.clientGUID',
                               'companyName': 'clientProperties.client.clientEntity.entityInfo.companyName',
                               'idaList': 'client.idaList.idaEntity.appName',
-                              'clientRoles': 'clientProperties.clientProps.clientRoles',
+                              'clientRoles': 'clientProperties.clientProps.clientRoles.name',
                               'isDeletedClient': 'clientProperties.clientProps.IsDeletedClient',
                               'version': 'clientProperties.client.versionInfo.version',
                               'OSName': 'client.osInfo.OsDisplayInfo.OSName',
@@ -2607,11 +2609,9 @@ class Clients(object):
 
     def add_splunk_client(self,
                           new_client_name,
-                          password,
                           master_uri,
                           master_node,
-                          user_name,
-                          plan):
+                          plan, **kwargs):
 
         """
         Adds new splunk client after clientname and plan validation
@@ -2675,10 +2675,6 @@ class Clients(object):
                                     "clientId": client_id,
                                     "clientName": master_node
                                 }
-                            },
-                            "splunkUser": {
-                                "password": password,
-                                "userName": user_name
                             }
                         }
                     }
@@ -2694,6 +2690,21 @@ class Clients(object):
                 "clientName": new_client_name
             }
         }
+
+        if 'credential_name' not in kwargs:
+            request_json["clientInfo"]["distributedClusterInstanceProperties"]["clusterConfig"]["splunkConfig"][
+                "splunkUser"] = {
+                "password": kwargs.get('password'),
+                "userName": kwargs.get('user_name')
+            }
+        else:
+            cred_name=kwargs.get('credential_name')
+            self.credential = self._cred_manager.get(cred_name)
+            request_json["clientInfo"]["distributedClusterInstanceProperties"]["clusterConfig"]["splunkConfig"][
+                "splunkUserCredInfo"] = {
+                "credentialId": self.credential.credential_id,
+                "credentialName": cred_name
+            }
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_SPLUNK_CLIENT, request_json

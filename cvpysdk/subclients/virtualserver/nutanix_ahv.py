@@ -61,6 +61,7 @@ class nutanixsubclient(VirtualServerSubclient):
                                      restore_new_name=None,
                                      overwrite=True,
                                      power_on=True,
+                                     run_security_scan=False,
                                      copy_precedence=0,
                                      restore_option=None,
                                      vcenter_client=None,
@@ -85,6 +86,9 @@ class nutanixsubclient(VirtualServerSubclient):
 
                 power_on                (bool)       --  power on the  restored VM
                                                         default: True
+
+                run_security_scan       (bool)       -- run threat analysis on VM
+                                                        default:False
 
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
@@ -133,6 +137,7 @@ class nutanixsubclient(VirtualServerSubclient):
             unconditional_overwrite=overwrite,
             power_on=power_on,
             copy_precedence=copy_precedence,
+            run_security_scan=run_security_scan,
             volume_level_restore=1,
             esx_host=host,
             esx_server=vcenter_client,

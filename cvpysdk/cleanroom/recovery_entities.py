@@ -37,7 +37,7 @@ WORKLOADS = {
 }
 
 INSTANCES = {
-    'AZURE_RESOURCE_MANAGER': 'Azure Resource Manager',
+    'AZURE_V2': 'Azure Resource Manager',
     'AMAZON': 'Amazon Web Services'
 }
 

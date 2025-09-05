@@ -414,6 +414,7 @@ class CleanroomTarget:
             # Get the target id if target id is not provided
             self._cleanroom_target_id = self._get_cleanroom_target_id()
         self._RECOVERY_TARGET_API = self._services['GET_RECOVERY_TARGET'] % self._cleanroom_target_id
+        self._RUNBOOK_TARGET_API = self._services['GET_RUNBOOK_TARGET'] % self._cleanroom_target_id
 
         self._cleanroom_target_properties = None
 
@@ -433,6 +434,22 @@ class CleanroomTarget:
         self._availability_zone = None
         self._storage_account = None
         self._restore_as_managed_vm = None
+        self._infra_server_group_name = None
+
+        self._maxNoOfAccessNodes = None
+        self._infra_security_group = None
+        self._infra_virtual_network = None
+        self._natGatewayPublicIPSettings = None
+        self._infraPublicIPprefix = None
+        self._infraPublicIP = None
+        self._infra_resourceGroup = None
+        self._infra_vm_size = None
+        self._custom_images = None
+        self._networkAddressSpace = None
+        self._deployBastion = None
+        self._recovery_SecurityRules = None
+        self._infra_SecurityRules = None
+
         self._instance_type = None
         self._encryption_key = None
         self._key_pair = None
@@ -465,14 +482,13 @@ class CleanroomTarget:
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-
     def _set_policy_type(self, policy_type):
         """Sets the policy type"""
         if policy_type == "AMAZON":
             self._policy_type = 1
         elif policy_type == "MICROSOFT":
             self._policy_type = 2
-        elif policy_type == "AZURE_RESOURCE_MANAGER":
+        elif policy_type == "AZURE_V2":
             self._policy_type = 7
         elif policy_type in ["VMW_BACKUP_LABTEMPLATE", "VMW_LIVEMOUNT"]:
             self._policy_type = 13
@@ -489,17 +505,21 @@ class CleanroomTarget:
                     if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET_API)
+        flag, response = self._cvpysdk_object.make_request('GET', self._RUNBOOK_TARGET_API)
+        flag_old, response_old = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET_API)
 
-        if flag:
-            if response.json() and 'entity' in response.json():
+        if flag and flag_old:
+            if response.json():
                 self._cleanroom_target_properties = response.json()
-                self._application_type = self._cleanroom_target_properties['entity']['applicationType']
-                self._destination_hypervisor = self._cleanroom_target_properties['entity']['destinationHypervisor'][
-                    'name']
-                self._vm_suffix = self._cleanroom_target_properties["vmDisplayName"].get("suffix", "")
-                self._vm_prefix = self._cleanroom_target_properties["vmDisplayName"].get("prefix", "")
-                access_node = self._cleanroom_target_properties.get("accessNode", {})
+                self._application_type = (
+                    self._cleanroom_target_properties.get("general", {}).get("target", {}).get("applicationType", ""))
+                self._destination_hypervisor = (
+                    self._cleanroom_target_properties.get("general", {}).get("hypervisor", {}).get("name", ""))
+                self._vm_suffix = (
+                    self._cleanroom_target_properties.get("general", {}).get("entityDisplayName", {}).get("suffix", ""))
+                self._vm_prefix = (
+                    self._cleanroom_target_properties.get("general", {}).get("entityDisplayName", {}).get("prefix", ""))
+                access_node = self._cleanroom_target_properties.get("general", {}).get("accessNode", {})
                 node_type = access_node.get("type", "")
 
                 self._access_node = (
@@ -513,76 +533,102 @@ class CleanroomTarget:
                     if node_type in ("Client", "Group")
                     else None
                 )
-                self._access_node_client_group = (self._cleanroom_target_properties.get('proxyClientGroupEntity', {})
-                                                  .get('clientGroupName'))
-                self._users = self._cleanroom_target_properties.get('securityOptions', {}).get('users', [])
-                self._user_groups = self._cleanroom_target_properties.get('securityOptions', {}).get('userGroups', [])
-                self._instance = self._cleanroom_target_properties["entity"].get("policyType", "")
+                self._users = (
+                    self._cleanroom_target_properties.get("general", {}).get('security', {}).get('users', []))
+                self._user_groups = (
+                    self._cleanroom_target_properties.get("general", {}).get('securityOptions', {}).get('userGroups',
+                                                                                                        []))
+                self._instance = (
+                    self._cleanroom_target_properties.get("general", {}).get("target", {}).get("vendor", ""))
                 self._set_policy_type(self._instance)
-
-                if self.policy_type == 1:
-                    self._region = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                    .get('region', {})
-                                    .get('name', ''))
-                    self._availability_zone = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                               .get('availabilityZone', ''))
-                    self._iam_role = (self._cleanroom_target_properties.get('amazonPolicy', {})
-                                      .get('iamRole', {}).get('name', ''))
-                    self._encryption_key = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                            .get('encryptionKey', {}).get('keyName', ''))
-                    self._instance_type = (self._cleanroom_target_properties.get('amazonPolicy', {})
-                                           .get('vmInstanceTypes', [{}])[0]
-                                           .get('vmInstanceTypeName', ''))
-                    self._security_group = (self._cleanroom_target_properties.get('securityOptions', {})
-                                            .get('securityGroup', [{}])[0]
-                                            .get('name', ''))
-                    self._network_subnet = (self._cleanroom_target_properties.get('networkOptions', {})
-                                            .get('network', ''))
-                    self._volume_type = (self._cleanroom_target_properties.get('amazonPolicy', {})
-                                         .get('volumeType', {}).get('name', ''))
-                    self._key_pair = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                      .get('keyPair', ''))
+                if response_old.json():
+                    self._cleanroom_old_target_properties = response_old.json()
+                    if self.policy_type == 1:
+                        self._region = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
+                                        .get('region', {})
+                                        .get('name', ''))
+                        self._availability_zone = (
+                            self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
+                            .get('availabilityZone', ''))
+                        self._iam_role = (self._cleanroom_old_target_properties.get('amazonPolicy', {})
+                                          .get('iamRole', {}).get('name', ''))
+                        self._encryption_key = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
+                                                .get('encryptionKey', {}).get('name', ''))
+                        self._instance_type = (self._cleanroom_old_target_properties.get('amazonPolicy', {})
+                                               .get('vmInstanceTypes', [{}])[0]
+                                               .get('vmInstanceTypeName', ''))
+                        self._security_group = (self._cleanroom_old_target_properties.get('securityOptions', {})
+                                                .get('securityGroup', [{}])[0]
+                                                .get('name', ''))
+                        self._network_subnet = (self._cleanroom_old_target_properties.get('networkOptions', {})
+                                                .get('network', ''))
+                        self._volume_type = (self._cleanroom_old_target_properties.get('amazonPolicy', {})
+                                             .get('volumeType', {}).get('name', ''))
+                        self._key_pair = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
+                                          .get('keyPair', ''))
 
                 if self._policy_type == 7:
-                    self._region = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
+                    self._region = (self._cleanroom_target_properties.get('recovery', {})
                                     .get('region', {})
-                                    .get('name'))
-                    self._availability_zone = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                               .get('availabilityZone'))
-                    self._storage_account = (self._cleanroom_target_properties.get("destinationOptions", {})
-                                             .get("dataStore", ""))
+                                    .get('name', ''))
+                    self._availability_zone = (self._cleanroom_target_properties.get('recovery', {})
+                                               .get('availabilityZone', {}).get('guid', ''))
+                    self._storage_account = (self._cleanroom_target_properties.get("recovery", {})
+                                             .get("storageAccount", {}).get("guid", ''))
 
-                    self._vm_size = (self._cleanroom_target_properties.get('amazonPolicy', {})
-                                     .get('vmInstanceTypes', [{}])[0]
-                                     .get('vmInstanceTypeName', ''))
-                    self._disk_type = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                       .get('volumeType'))
-                    self._virtual_network = (self._cleanroom_target_properties.get('networkOptions', {})
-                                             .get('networkCard', {})
-                                             .get('networkDisplayName'))
-                    self._security_group = (self._cleanroom_target_properties.get('securityOptions', {})
-                                            .get('securityGroups', [{}])[0]
+                    self._vm_size = (self._cleanroom_target_properties.get('recovery', {}).get("vmSize", {})
+                                     .get("guid"))
+                    self._disk_type = (self._cleanroom_target_properties.get('recovery', {})
+                                       .get('storageType').get('guid', ''))
+                    self._virtual_network = (self._cleanroom_target_properties.get('recovery', {})
+                                             .get('virtualNetwork', {})
+                                             .get('name', ''))
+                    self._security_group = (self._cleanroom_target_properties.get('recovery', {})
+                                            .get('securityGroup', {})
                                             .get('name', ''))
-                    self._create_public_ip = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                              .get('publicIP'))
-                    self._restore_as_managed_vm = (self._cleanroom_target_properties.get('cloudDestinationOptions', {})
-                                                   .get('restoreAsManagedVM'))
-                    expiry_hours = (self._cleanroom_target_properties.get("liveMountOptions", {})
-                                    .get("expirationTime", {})
-                                    .get("minutesRetainUntil", ""))
-                    expiry_days = (self._cleanroom_target_properties.get("liveMountOptions", {})
-                                   .get("expirationTime", {})
-                                   .get("daysRetainUntil", ""))
-                    if expiry_hours:
-                        self._expiration_time = f'{expiry_hours} hours'
-                    elif expiry_days:
-                        self._expiration_time = f'{expiry_days} days'
-                    self._test_virtual_network = (self._cleanroom_target_properties.get('networkOptions', {})
-                                                  .get('cloudNetwork', {})
-                                                  .get('label'))
-                    self._test_vm_size = (self._cleanroom_target_properties.get('amazonPolicy', {})
-                                          .get('vmInstanceTypes', [{}])[0]
-                                          .get('vmInstanceTypeName', ''))
+                    self._create_public_ip = (self._cleanroom_target_properties.get('recovery', {})
+                                              .get('createPublicIPAddress'))
+                    # infrastructure network settings
+                    self._maxNoOfAccessNodes = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                .get('maxNoOfAccessNodes', ''))
+                    self._infra_virtual_network = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                   .get('networkSettings', {}).get('virtualNetwork', {})
+                                                   .get('name', ''))
+                    self._infra_security_group = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                  .get('networkSettings', {}).get('securityGroup', {})
+                                                  .get('name', ''))
+                    self._natGatewayPublicIPSettings = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                        .get('networkSettings', {}).get("natGatewayPublicIPSettings",
+                                                                                        {})
+                                                        .get('ipPrefix', {}).get('guid', ""))
+                    self._infraPublicIPprefix = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                 .get('networkSettings', {}).get("infrastructurePublicIPSettings", {})
+                                                 .get('ipPrefix', {}).get('guid', ""))
+                    self._infraPublicIP = (self._cleanroom_target_properties.get('infrastructure', {})
+                                           .get('networkSettings', {}).get("infrastructurePublicIPSettings", {})
+                                           .get('createPublicIPAddress', ""))
+                    # infrastructure advanced settings
+
+                    self._infra_server_group_name = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                     .get('advancedSettings', {}).get('serverGroup', {})
+                                                     .get('name', ''))
+                    self._infra_resourceGroup = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                 .get('advancedSettings', {}).get('resourceGroup', {}).get('name', ''))
+                    self._infra_vm_size = (self._cleanroom_target_properties.get('infrastructure', {})
+                                          .get('advancedSettings', {}).get("vmSize", {}).get('guid', ""))
+                    self._custom_images = (self._cleanroom_target_properties.get('infrastructure', {})
+                                          .get('advancedSettings', {}).get("customImages", [{}]))
+
+                    # advanced settings
+
+                    self._networkAddressSpace = (
+                        self._cleanroom_target_properties.get('advanced', {}).get("networkAddressSpace", {}))
+                    self._deployBastion = (self._cleanroom_target_properties.get('advanced', {})
+                                           .get("networkAddressSpace", {}).get("deploySecureConnection", ""))
+                    self._recovery_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
+                                                    .get("securityGroupRules", {}).get("recoveredEntity", [{}]))
+                    self._infra_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
+                                                 .get("securityGroupRules", {}).get("infrastructure", [{}]))
             else:
                 raise SDKException('Response', '102')
         else:
@@ -651,13 +697,6 @@ class CleanroomTarget:
         return self._vm_suffix
 
     @property
-    def expiration_time(self):
-        """Returns: (str) VMware/Azure: the expiration time of the test boot VM/test failover VM
-            eg: 4 hours or 3 days
-        """
-        return self._expiration_time
-
-    @property
     def storage_account(self):
         """Returns: (str) Azure: the storage account name used to deploy the VM's storage"""
         return self._storage_account
@@ -693,14 +732,64 @@ class CleanroomTarget:
         return self._vm_size
 
     @property
-    def restore_as_managed_vm(self):
-        """Returns: (bool) whether the destination VM will be a managed VM"""
-        return self._restore_as_managed_vm
-
-    @property
     def availability_zone(self):
         """Returns: (str) the availability zone of the cleanroom Recovery Group"""
         return self._availability_zone
+
+    @property
+    def deployBastion(self):
+        """Returns boolean deploy bastion enabled or not"""
+        return self._deployBastion
+
+    @property
+    def custom_image(self):
+        """Returns list of custom images set on the target"""
+        return self._custom_images
+
+    @property
+    def infra_virtual_network(self):
+        """Returns name of infra virtual network"""
+        return self._infra_virtual_network
+
+    @property
+    def infra_security_group(self):
+        """Returns infra security group name"""
+        return self._infra_security_group
+
+    @property
+    def natGatewayPublicIPSettings(self):
+        """Returns NAT gateway public IP settings"""
+        return self._natGatewayPublicIPSettings
+
+    @property
+    def infraPublicIPprefix(self):
+        """Returns public ip prefix"""
+        return self._infraPublicIPprefix
+
+    @property
+    def infrapublicip(self):
+        """Returns boolean if create public ip enabled for Infra"""
+        return self._infraPublicIP
+
+    @property
+    def infra_server_group(self):
+        """Returns server group which will be used in autoscale"""
+        return self._infra_server_group_name
+
+    @property
+    def infra_resource_group(self):
+        """Returns name of resource group where autoscale node will be created"""
+        return self._infra_resourceGroup
+
+    @property
+    def infra_vm_size(self):
+        """Returns name of vm size for infra"""
+        return self._infra_vm_size
+
+    @property
+    def networkAddressSpace(self):
+        """Returns dict of address space for vnet and subnets(recovery entity,infra, bastion)"""
+        return self._networkAddressSpace
 
     @property
     def iam_role(self):

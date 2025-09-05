@@ -305,6 +305,11 @@ class RecoveryGroup:
         """Returns boolean value of windows defender property set at recovery group level"""
         return self._properties['recoveryGroup']['threatScan']['enableWindowsDefenderScan']
 
+    @property
+    def powerOffDestinationVMPostRecovery(self):
+        """Returns boolean if power off/on post recovery enabled on the recovery group"""
+        return self._properties['recoveryGroup']['powerOffDestinationVMPostRecoveryAndValidation']
+
     def _recover_entities(self, entity_ids, threat_scan=False, win_defender_scan=False):
         """
         Sends request to recover all entities with specified ids

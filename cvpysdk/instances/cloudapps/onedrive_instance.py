@@ -459,12 +459,14 @@ class OneDriveInstance(CloudAppsInstance):
         del restore_options['virtualServerRstOption']
 
         associations = request_json['taskInfo']['associations'][0]
-        subclient_id = associations['subclientId']
+        associations['subclientId'] = subclient_id = int(self.subclients['default']['id'])
 
         cloudAppsRestoreOptions = restore_options['cloudAppsRestoreOptions']
-        cloudAppsRestoreOptions['googleRestoreOptions']['findQuery'] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        cloudAppsRestoreOptions['googleRestoreOptions'][
+            'findQuery'] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
         if include_deleted_items:
-            cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter']['filters'][0]['fieldValues']['values'].extend(["3333","3334","3335"])
+            cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter'][
+                'filters'][0]['fieldValues']['values'].extend(["3333", "3334", "3335"])
 
         destination_option = "Destination"
         destination_value = "Original location"
@@ -474,53 +476,58 @@ class OneDriveInstance(CloudAppsInstance):
         if disk_restore:
             destination_option = "Destination server"
             destination_value = destination_client
-
+        if restore_to_blob:
+            restore_options['cloudAppsRestoreOptions']['googleRestoreOptions']['blobContainerId'] = kwargs.get(
+                'blob_container_id')
+            restore_options['cloudAppsRestoreOptions']['googleRestoreOptions']['googleRestoreChoice'] = 4
+            destination_option = "Destination Azure Blob Storage"
+            destination_value = ""
 
         options["commonOpts"] = {
             "notifyUserOnJobCompletion": False,
             "jobMetadata": [
-              {
-                "selectedItems": [
-                  {
-                    "itemName": source_item_list[0],
-                    "itemType": "User"
-                  }
-                ],
-                "jobOptionItems": [
-                  {
-                    "option": "Restore destination",
-                    "value": "OneDrive for Business"
-                  },
-                  {
-                    "option": "Source",
-                    "value": source_item_list[0]
-                  },
-                  {
-                    "option": destination_option,
-                    "value": destination_value
-                  },
-                  {
-                    "option": "If the file exists",
-                    "value": "Restore as a copy" if restore_as_copy and not overwrite else "Unconditionally overwrite" if overwrite else "Skip"
+                {
+                    "selectedItems": [
+                        {
+                            "itemName": source_item_list[0],
+                            "itemType": "User"
+                        }
+                    ],
+                    "jobOptionItems": [
+                        {
+                            "option": "Restore destination",
+                            "value": "Azure Blob Storage" if restore_to_blob else "OneDrive for Business"
+                        },
+                        {
+                            "option": "Source",
+                            "value": source_item_list[0]
+                        },
+                        {
+                            "option": destination_option,
+                            "value": destination_value
+                        },
+                        {
+                            "option": "If the file exists",
+                            "value": "Restore as a copy" if restore_as_copy and not overwrite else "Unconditionally overwrite" if overwrite else "Skip"
 
-                  },
-                  {
-                    "option": "Skip file permissions",
-                    "value": "Enabled" if skip_file_permissions else "Disabled"
-                  },
-                  {
-                    "option": "Include deleted items",
-                    "value": "Enabled" if include_deleted_items else "Disabled"
-                  }
-                ]
-              }
+                        },
+                        {
+                            "option": "Skip file permissions",
+                            "value": "Enabled" if skip_file_permissions else "Disabled"
+                        },
+                        {
+                            "option": "Include deleted items",
+                            "value": "Enabled" if include_deleted_items else "Disabled"
+                        }
+                    ]
+                }
             ]
-          }
+        }
 
         joboptionitems = options['commonOpts']['jobMetadata'][0]['jobOptionItems']
 
         if out_of_place:
-            joboptionitems.append({"option": "Destination client","value": destination_client })
+            joboptionitems.append({"option": "Destination client", "value": destination_client})
         if disk_restore:
             joboptionitems.append({"option": "Destination path", "value": destination_path})
 

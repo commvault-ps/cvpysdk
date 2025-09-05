@@ -44,6 +44,8 @@ read_trueup_items_for_whole_client()  --  Method to read data from TrueUp API fo
 
 extract_last_sync_missing_items() --  Extract LastSyncMissingItems values from JSON data for TrueUp API
 
+restore_to_azure_blob() -- Runs restore to azure blob for specified users on OneDrive for business client
+
 """
 
 
@@ -269,6 +271,18 @@ class OneDriveClient(Client):
                                                                                   destination_client,
                                                                                   destination_path,
                                                                                   skip_file_permissions=skip_file_permissions)
+        return restore_job
+
+    def restore_to_azure_blob(self, users, blob_name):
+        """Runs restore to azure blob for specified users on OneDrive for business client
+            Args:
+                users (list) : list of SMTP addresses of users
+                blob_name (str) : Name of credential to which restore needs to be performed
+            Returns:
+                restore_job (Job): Returns restore job Object
+        """
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.restore_user_to_azure_blob(users, blob_name)
         return restore_job
 
     def modify_server_plan(self, old_plan, new_plan):

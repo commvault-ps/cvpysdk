@@ -760,6 +760,7 @@ class Commcell(object):
         self._cost_assessment = None
         self._commserv_details_loaded = False
         self._commserv_details_set = False
+        self._job_logs_emails = []
         self.refresh()
 
         del self._password
@@ -3844,8 +3845,12 @@ class Commcell(object):
         **Note** To determine CommServ OS type logged in user
         should have access on CommServ client
         """
-        if self._is_linux_commserv is None and self.clients.has_client(self.commserv_name):
-            self._is_linux_commserv = 'unix' in self.commserv_client.os_info.lower()
+        try:
+            if self._is_linux_commserv is None and self.clients.has_client(self.commserv_name):
+                self._is_linux_commserv = 'unix' in self.commserv_client.os_info.lower()
+        except SDKException:
+            # If unable to determine the CommServ OS type, set it to Windows
+            self._is_linux_commserv = False
         return self._is_linux_commserv
 
     @property
@@ -3903,6 +3908,19 @@ class Commcell(object):
             else:
                 raise SDKException('Response', '101', self._update_response_(response.text))
         return self._db_instant_clones
+
+    @property
+    def job_logs_emails(self):
+        """Returns the list of email servers associated with the Commcell"""
+        return self._job_logs_emails
+
+    @job_logs_emails.setter
+    def job_logs_emails(self, email_servers):
+        """Sets the list of email servers associated with the Commcell"""
+        if isinstance(email_servers, list):
+            self._job_logs_emails = email_servers
+        else:
+            raise SDKException('Commcell', '101', 'Email servers should be a list')
 
     def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
         """

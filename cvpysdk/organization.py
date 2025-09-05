@@ -568,11 +568,11 @@ class Organizations:
 
         if fl:
             if all(col in self.valid_columns for col in fl):
-                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+                fl_parameters = f"fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
             else:
                 raise SDKException('Organization', '102', 'Invalid column name passed')
         else:
-            fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
+            fl_parameters = f"fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
         return fl_parameters
 
     def _get_sort_parameters(self, sort: list = None) -> str:
@@ -644,15 +644,16 @@ class Organizations:
                 search (str)  --   contains the string to search in the commcell entity cache (default: None).
                 fq     (list) --   contains the columnName, condition and value as a sublist of a list (default: None).
                                         e.g. fq = [['name','contains','test'],['status','equals','active']]
+                include_deleted_companies (bool) --  Flag to include deleted companies in the response.
 
         Returns:
-            dict: Dictionary of all the properties present in response.
+            dict: Dictionary of all the properties present in the response.
         """
         # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
         limit = kwargs.get('limit', None)
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
+        limit_parameters = f'&start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
 
@@ -661,12 +662,13 @@ class Organizations:
         search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
                             f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
         params = [
+            fl_parameters,
+            fq_parameters,
+            "&includeDeletedCompanies=true" if kwargs.get('include_deleted_companies', False) else '',
             limit_parameters,
             sort_parameters,
-            fl_parameters,
             hard_refresh,
             search_parameter,
-            fq_parameters
         ]
 
         # adding required additional param for comet layer
