@@ -1705,9 +1705,12 @@ class Instances(object):
                                         catalog_connect     (dict)--  Credentials to connect to catalog
                                         {
                                             "userName": "",  (str)        -- Catalog DB user name
-                                            "password"; "",  (str)        -- Password of catalog user
+                                            "password": "",  (str)        -- Password of catalog user
                                             "domainName": ""    (str)     -- SID of catalog database
                                         }
+                                        credential_name    (str)   --  Oracl DB Credential Name
+                                        catalog_credential (str)   --  Oracle Recovery Catalog credential name
+                                        osuser_credential  (str)   --  OS User Account Credential Name
             Returns:
                 object - instance of the Instance class
             Raises:
@@ -1723,38 +1726,31 @@ class Instances(object):
                     instance_name)
             )
         required_options = ['oracle_user_name', 'oracle_home', 'cmdline_storage_policy',
-                            'log_storage_policy', 'connect_string']
+                            'log_storage_policy', 'connect_string', 'credential_name']
         for option in required_options:
             if option not in oracle_options.keys():
                 raise SDKException(
                     'Instance',
                     '102',
                     "Required option: {0} is missing, Please provide all parameters:".format(option))
+
         password = b64encode(oracle_options.get("oracle_password", "").encode()).decode()
         connect_string_password = b64encode(
             oracle_options.get("connect_string", {}).get("password", "").encode()
         ).decode()
+        username = oracle_options.get("connect_string", {}).get("username", "")
+        service_name = oracle_options.get("connect_string", {}).get("service_name", "")
 
         request_json = {
             "instanceProperties": {
                 "instance": {
                     "clientName": self._client_object.client_name,
                     "instanceName": instance_name,
-                    "appName": "Oracle",
+                    "appName": "Oracle Database",
                 },
                 "oracleInstance": {
                     "TNSAdminPath": oracle_options.get("tns_admin", ""),
                     "oracleHome": oracle_options.get("oracle_home", ""),
-                    "oracleUser": {
-                        "userName": oracle_options.get("oracle_user_name", ""),
-                        "domainName": oracle_options.get("oracle_domain_name", ""),
-                        "password": password,
-                    },
-                    "sqlConnect": {
-                        "domainName": oracle_options.get("connect_string", {}).get("service_name", ""),
-                        "userName": oracle_options.get("connect_string", {}).get("username", "/"),
-                        "password": connect_string_password,
-                    },
                     "oracleStorageDevice": {
                         "commandLineStoragePolicy": {
                             "storagePolicyName": oracle_options.get("cmdline_storage_policy", "")
@@ -1766,12 +1762,59 @@ class Instances(object):
                 }
             }
         }
-        if oracle_options.get("catalog_connect"):
-            catalog = {
-                'useCatalogConnect': True,
-                'catalogConnect': oracle_options.get("catalog_connect", "")
+
+        if username == "/":
+            request_json["instanceProperties"]["oracleInstance"]["sqlConnect"] = {
+                "userName": "/"
             }
-            request_json['instanceProperties']['oracleInstance'].update(catalog)
+            request_json["instanceProperties"]["oracleInstance"]["dbConnectCredInfo"] = {
+                "credentialName": ""
+            }
+        else:
+            if not self._commcell_object.credentials.has_credential(oracle_options.get("credential_name")):
+                self._commcell_object.credentials.add_oracle_database_creds(
+                    oracle_options.get("credential_name"), username, connect_string_password, service_name)
+            request_json["instanceProperties"]["oracleInstance"]["dbConnectCredInfo"] = {
+                "credentialName": oracle_options.get("credential_name")
+            }
+            request_json["instanceProperties"]["oracleInstance"]["sqlConnect"] = {
+                "userName": "",
+                "domainName": ""
+            }
+
+        if oracle_options.get("catalog_connect") and oracle_options.get("catalog_credential"):
+            catalog_username = oracle_options.get("catalog_connect", {}).get("userName", "")
+            catalog_password = oracle_options.get("catalog_connect", {}).get("password", "")
+            domain_name = oracle_options.get("catalog_connect", {}).get("domainName", "")
+            if not self._commcell_object.credentials.has_credential(oracle_options.get("catalog_credential")):
+                self._commcell_object.credentials.add_oracle_catalog_creds(
+                    oracle_options.get("catalog_credential"), catalog_username, catalog_password, domain_name)
+            request_json["instanceProperties"]["oracleInstance"]["useCatalogConnect"] = True
+            request_json["instanceProperties"]["oracleInstance"]["catalogConnectCredInfo"] = {
+                "credentialName": oracle_options.get("catalog_credential")
+            }
+        else:
+            request_json["instanceProperties"]["oracleInstance"]["useCatalogConnect"] = False
+
+        if 'win' in self._agent_object._client_object.os_info.lower():
+            if oracle_options.get("oracle_domain_name") and oracle_options.get("oracle_user_name"):
+                os_username = f"{oracle_options['oracle_domain_name']}\\{oracle_options['oracle_user_name']}"
+                if not self._commcell_object.credentials.has_credential(oracle_options.get("osuser_credential")):
+                    self._commcell_object.credentials.add("windows", oracle_options.get("osuser_credential"),
+                                                          os_username, password)
+                request_json["instanceProperties"]["oracleInstance"]["osUserCredInfo"] = {
+                    "credentialName": oracle_options.get("osuser_credential")
+                }
+            else:
+                request_json["instanceProperties"]["oracleInstance"]["oracleUser"] = {
+                    "userName": "",
+                    "domainName": ""
+                }
+        else:
+            request_json["instanceProperties"]["oracleInstance"]["oracleUser"] = {
+                "userName": oracle_options.get("oracle_user_name", "")
+            }
+
         self._process_add_response(request_json)
 
     def add_cosmosdb_instance(self, instance_name, **instance_options):
@@ -2393,7 +2436,7 @@ class Instance(object):
 
         if restore_option.get('index_free_restore', False):
             request_json["taskInfo"]["subTasks"][0]["subTask"] = self._json_restore_by_job_subtask
-            jobs_list = restore_option.get('backup_job_ids')
+            jobs_list = restore_option.get('restore_jobs')
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["jobIds"] = jobs_list
             source_item = []
             for i in jobs_list:

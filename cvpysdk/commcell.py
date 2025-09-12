@@ -153,6 +153,8 @@ Commcell:
 
     disable_limit_user_logon_attempts()   -- Disables limit user logon attempts feature.
 
+    get_aws_backup_gateway_cft_url() -- Returns the CFT link to create and point AWS Backup gateway
+
 
 Commcell instance Attributes
 ============================
@@ -3908,6 +3910,43 @@ class Commcell(object):
             else:
                 raise SDKException('Response', '101', self._update_response_(response.text))
         return self._db_instant_clones
+
+    def get_aws_backup_gateway_cft_url(self, region_name='us-east-1', authentication="IAM Role", platform="linux"):
+        """Returns the AWS CFT URL to launch backupgateway
+            Args:
+            region_name (str) : AWS region where the BGW should be launched
+            authentication(str): Type of Iam Role should be associated with the EC2
+                1: IAM Role
+                2: Access and Secret Key
+                3: STS Assume Role
+            platform(str): OS of the backup gateway that get created
+
+        Returns:
+            The AWS cloud formation URL to launch the stack for backup gateway
+        example:
+                    {
+                        region_name: "us-east-1",
+                        authentication: ["Iam Role","access and secret key", "sts assume role"],
+                        platform: "linux"
+                    }
+
+        """
+        if "sts" in authentication.lower():
+            authentication = 3
+        elif "key" in authentication.lower():
+            authentication = 2
+        else:
+            authentication = 1
+        base_url = self._services['GET_AWS_CFT'] % (platform, region_name, authentication)
+        flag, response = self._cvpysdk_object.make_request('GET', base_url)
+        if flag:
+            if response.json():
+                return response.json().get("quickLinkUrl")
+            else:
+                raise SDKException('Response', '102', 'Failed to get CFT URL')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def job_logs_emails(self):

@@ -221,6 +221,8 @@ Classifiers:
 
     delete()                            --  deletes the classifier in the commcell
 
+    add_arlie_classifier()              --  Creates new Arlie classifier with given name in the commcell
+
 
 
 Classifier:
@@ -287,6 +289,10 @@ Classifier Attributes
 
     **sample_details**          --  returns dict containing model sample count details used for this classifier training
 
+    **categories**             --  returns list of categories associated with this classifier
+
+    **provider**               --  returns the provider type for this classifier
+
 """
 import copy
 import os
@@ -294,7 +300,7 @@ import time
 from enum import Enum
 
 from ..exception import SDKException
-from .constants import ActivateEntityConstants, ClassifierConstants, TrainingStatus
+from .constants import ActivateEntityConstants, ClassifierConstants, TrainingStatus, Providers
 from .constants import TagConstants
 
 
@@ -1937,6 +1943,56 @@ class Classifiers(object):
             raise SDKException('Classifier', '105')
         self._response_not_success(response)
 
+    def add_arlie_classifier(self, classifier_name, categories):
+        """Creates new Arlie classifier with given name in the commcell
+
+                Args:
+
+                    classifier_name     (str)       --      Name of the classifier
+
+                    categories          (list)     --      List of categories for the classifier
+
+                Returns:
+
+                    object      --  returns object of Classifier class
+
+                Raises:
+
+                    SDKException:
+
+                        if input data type is not valid
+
+                        if response is empty or not success
+
+                        if failed to create classifier
+
+        """
+
+        if not isinstance(classifier_name, str):
+            raise SDKException('Classifier', '101')
+        if not isinstance(categories, list):
+            raise SDKException('Classifier', '101')
+        request_json = copy.deepcopy(ClassifierConstants.CREATE_ARLIE_REQUEST_JSON)
+        request_json['entityName'] = request_json['displayName'] = request_json['entityKey'] = classifier_name
+        # convert categories into comma separated string
+        categories = ','.join(categories)
+        request_json['entityXML']['classifierDetails']['categories'] = categories
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._api_create_classifier, request_json
+        )
+
+        if flag:
+            if response.json() and 'entityDetails' in response.json() and 'err' not in response.json():
+                entity_id = response.json()['entityDetails'][0]['entityId']
+                self.refresh()
+                classifier_obj = Classifier(
+                    commcell_object=self._commcell_object,
+                    classifier_name=classifier_name,
+                    entity_id=entity_id)
+                return classifier_obj
+            raise SDKException('Classifier', '104')
+        self._response_not_success(response)
+
     def add(self, classifier_name, content_analyzer, description="Created from CvPySDK", training_zip_data_file=None):
         """Creates new classifier with given name in the commcell
 
@@ -2148,6 +2204,8 @@ class Classifier(object):
         self._sync_ca_client_id = []
         self._last_training_time = None
         self._training_accuracy = None
+        self._categories = None
+        self._provider = None
         self._training_status = TrainingStatus.NOT_APPLICABLE.value
         self._sample_details = {}
         self._api_upload = self._services['CA_UPLOAD_FILE']
@@ -2437,7 +2495,7 @@ class Classifier(object):
             raise SDKException('Classifier', '109')
         self._response_not_success(response)
 
-    def modify(self, classifier_new_name=None, description="Modified from CvPySDK", enabled=True):
+    def modify(self, classifier_new_name=None, description="Modified from CvPySDK", enabled=True, categories=None):
         """Modifies the classifier entity
 
                 Args:
@@ -2448,6 +2506,8 @@ class Classifier(object):
 
                     enabled                     (bool)      --  flag to denote whether classifier is enabled or disabled
 
+                    categories                  (list)      --  List of user defined categories for Arlie classifier
+
                 Returns:
 
                     None
@@ -2457,6 +2517,7 @@ class Classifier(object):
                     SDKException:
 
                             if failed to modify the classifier
+                            if categories is given for non Arlie based classifier
 
         """
         flag, response = self._cvpysdk_obj.make_request(
@@ -2469,6 +2530,12 @@ class Classifier(object):
                     self._classifier_name = classifier_new_name
                 if description:
                     request['description'] = description
+                if categories:
+                    # check if the classifier is arlie based classifier
+                    if self.provider is not Providers.ARLIE_CLASSIFIER.value:
+                        raise SDKException('Classifier', '102',
+                                           "Given classifier is not an Arlie based classifier")
+                    request['entityXML']['classifierDetails']['categories'] = ','.join(categories)
                 if enabled:
                     request['enabled'] = True
                 else:
@@ -2592,6 +2659,10 @@ class Classifier(object):
                 sync_ca = self._entity_xml['classifierDetails']['syncedContentAnalyzers'].get('contentAnalyzerList', [])
                 for content_analyzer in sync_ca:
                     self._sync_ca_client_id.append(content_analyzer['clientId'])
+            if 'categories' in self._entity_xml['classifierDetails']:
+                self._categories = self._entity_xml['classifierDetails']['categories']
+            if 'provider' in self._entity_xml['classifierDetails']:
+                self._provider = self._entity_xml['classifierDetails']['provider']
         return regex_entity_dict
 
     @property
@@ -2658,6 +2729,29 @@ class Classifier(object):
     def sample_details(self):
         """Returns dict containing model sample count details used for this classifier training"""
         return self._sample_details
+
+    @property
+    def categories(self):
+        """Returns the list of categories for arlie based classifier"""
+        return self._categories
+    # Create a function to set categories
+    @categories.setter
+    def categories(self, categories):
+        """Sets the categories for arlie based classifier
+            Args:
+                categories       (list)       --  list of categories
+            Raises:
+                SDKException:
+                        if input data type is not valid
+        """
+        if not isinstance(categories, list):
+            raise SDKException('Classifier', '101')
+        self.modify(categories=categories)
+
+    @property
+    def provider(self):
+        """Returns the provider type for this classifier"""
+        return self._provider
 
     def refresh(self):
         """Refresh the classifier details for associated object"""

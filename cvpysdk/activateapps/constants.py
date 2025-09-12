@@ -980,6 +980,11 @@ class TrainingStatus(Enum):
     CANCELLED = 5
     NOT_USABLE = 6
 
+class Providers(Enum):
+    """Class for classifier providers"""
+    CV_CLASSIFIER = 0,
+    AZURE_CLASSIFIER = 1,
+    ARLIE_CLASSIFIER = 2
 
 class ClassifierConstants:
     """Class to maintain all the Classsifier related constants"""
@@ -1005,6 +1010,21 @@ class ClassifierConstants:
         }
     }
 
+    CREATE_ARLIE_REQUEST_JSON = {
+        "enabled": True,
+        "entityName": "",
+        "displayName": "",
+        "entityKey": "",
+        "entityType": "ML_MODEL",
+        "entityXML": {
+            "isSystemDefinedEntity": False,
+            "classifierDetails": {
+                "provider": Providers.ARLIE_CLASSIFIER.value,
+                "categories": [],
+                "classifierType": "MULTICLASS"
+            }
+        }
+    }
 
 class ActivateEntityConstants:
     """Class to maintain all the Activate entity related constants"""

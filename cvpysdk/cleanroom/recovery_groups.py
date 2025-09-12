@@ -25,24 +25,52 @@ RecoveryGroup:      Class for a single recovery group selected, and to perform o
 
 """
 from enum import Enum
+from json.decoder import JSONDecodeError
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from cvpysdk.exception import SDKException
-from json.decoder import JSONDecodeError
 
 from cvpysdk.cleanroom.target import CleanroomTarget
 
 from .recovery_entities import RecoveryEntities
 
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
 
 class RecoveryGroups:
-    """Class representing all the cleanroom recovery groups"""
+    """
+    Manages and represents all cleanroom recovery groups within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        """Initialize object of the RecoveryGroups class.
+    This class provides an interface to interact with recovery groups, allowing users to
+    query, retrieve, and refresh group information. It supports checking for the existence
+    of specific recovery groups, accessing all available groups, and obtaining details
+    about individual groups.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Initialization with a CommCell object for context
+        - Property to access all recovery groups
+        - Check for the existence of a recovery group by name
+        - Retrieve details of a specific recovery group
+        - Refresh the recovery group information from the source
+        - String representation of the recovery groups collection
+        - Internal method to fetch recovery group data
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize a RecoveryGroups object with the specified Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', '<password>')
+            >>> recovery_groups = RecoveryGroups(commcell)
+            >>> print("RecoveryGroups object initialized successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -53,53 +81,66 @@ class RecoveryGroups:
         self.refresh()
 
     @property
-    def all_groups(self):
-        """Returns dict of all recovery groups.
+    def all_groups(self) -> Dict[str, int]:
+        """Get a dictionary of all recovery groups and their corresponding IDs.
 
-         Returns dict    -   consists of all groups
+        Returns:
+            Dict[str, int]: A dictionary where each key is the name of a recovery group,
+            and each value is the group's unique ID.
 
-                {
-                     "group1_name": group1_id,
-                     "group2_name": group2_id
-                }
+        Example:
+            >>> recovery_groups = RecoveryGroups(commcell_object)
+            >>> groups = recovery_groups.all_groups
+            >>> print(groups)
+            {'FinanceGroup': 101, 'HRGroup': 102}
 
+        #ai-gen-doc
         """
         return self._recovery_groups
 
-    def has_recovery_group(self, recovery_group_name):
-        """Checks if a recovery group is present in the commcell.
+    def has_recovery_group(self, recovery_group_name: str) -> bool:
+        """Check if a recovery group with the specified name exists in the Commcell.
 
-            Args:
-                recovery_group_name (str)  --  name of the recovery group
+        Args:
+            recovery_group_name: The name of the recovery group to check.
 
-            Returns:
-                bool - boolean output whether the group is present in commcell or not
+        Returns:
+            True if the recovery group exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the group name argument is not string
+        Raises:
+            SDKException: If the provided recovery_group_name is not a string.
 
+        Example:
+            >>> rg = RecoveryGroups(commcell_object)
+            >>> exists = rg.has_recovery_group("Finance_Recovery_Group")
+            >>> print(f"Recovery group exists: {exists}")
+            # Output: Recovery group exists: True
+
+        #ai-gen-doc
         """
         if not isinstance(recovery_group_name, str):
             raise SDKException('RecoveryGroup', '101')
 
         return self._recovery_groups and recovery_group_name in self._recovery_groups
 
-    def get(self, recovery_group_name):
-        """Returns a recovery group object.
+    def get(self, recovery_group_name: str) -> 'RecoveryGroup':
+        """Retrieve a recovery group object by its name.
 
-            Args:
-                recovery_group_name (str)  --  name of the recovery group
+        Args:
+            recovery_group_name: The name of the recovery group to retrieve.
 
-            Returns:
-                object - instance of the recovery group class for the given group name
+        Returns:
+            An instance of the recovery group class corresponding to the specified group name.
 
-            Raises:
-                SDKException:
-                    if type of the group name argument is not string
+        Raises:
+            SDKException: If the group name is not a string or if no group exists with the given name.
 
-                    if no group exists with the given name
+        Example:
+            >>> recovery_groups = RecoveryGroups()
+            >>> group = recovery_groups.get("Finance_Backup_Group")
+            >>> print(f"Retrieved group: {group}")
 
+        #ai-gen-doc
         """
         if not isinstance(recovery_group_name, str):
             raise SDKException('RecoveryGroup', '101')
@@ -114,16 +155,36 @@ class RecoveryGroups:
             raise SDKException('RecoveryGroup', '102',
                                'No recovery group exists with name: {0}'.format(recovery_group_name))
 
-    def refresh(self):
-        """Refresh the recovery groups"""
+    def refresh(self) -> None:
+        """Reload the recovery group information from the Commcell.
+
+        This method refreshes the internal state of the RecoveryGroups object, ensuring that 
+        any changes to recovery groups on the Commcell are reflected in this instance.
+
+        Example:
+            >>> recovery_groups = RecoveryGroups(commcell_object)
+            >>> recovery_groups.refresh()
+            >>> print("Recovery groups have been refreshed.")
+
+        #ai-gen-doc
+        """
         self._recovery_groups = self._get_recovery_groups()
 
-    def __str__(self):
-        """Representation string consisting of all recovery groups .
+    def __str__(self) -> str:
+        """Return a string representation of all recovery groups.
 
-            Returns:
-                str     -   string of all the groups
+        This method provides a human-readable string that lists all recovery groups 
+        managed by this RecoveryGroups instance.
 
+        Returns:
+            A string containing the names or details of all recovery groups.
+
+        Example:
+            >>> recovery_groups = RecoveryGroups(commcell_object)
+            >>> print(str(recovery_groups))
+            RecoveryGroup1, RecoveryGroup2, RecoveryGroup3
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'RecoveryGroup')
 
@@ -136,22 +197,26 @@ class RecoveryGroups:
 
         return representation_string.strip()
 
-    def _get_recovery_groups(self):
-        """Gets all the recovery groups.
+    def _get_recovery_groups(self) -> dict:
+        """Retrieve all recovery groups associated with the client.
 
-            Returns:
-                dict - consists of all recovery groups in the client
+        Returns:
+            dict: A dictionary mapping recovery group names to their corresponding IDs.
+                Example:
                     {
-                         "group1_name": group1_id,
-                         "group2_name": group2_id
+                        "group1_name": group1_id,
+                        "group2_name": group2_id
                     }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
 
-                    if response is not success
+        Example:
+            >>> recovery_groups = recovery_groups_obj._get_recovery_groups()
+            >>> print(recovery_groups)
+            {'FinanceGroup': 101, 'HRGroup': 102}
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUPS_URL)
 
@@ -169,6 +234,20 @@ class RecoveryGroups:
 
 
 class RecoveryStatus(Enum):
+    """
+    Enumeration representing various recovery statuses.
+
+    This class defines a set of constant values to indicate the status of a recovery process.
+    It is intended to be used wherever recovery states need to be tracked or communicated,
+    providing a clear and type-safe way to represent different recovery outcomes.
+
+    Key Features:
+        - Enumerates recovery status values
+        - Ensures type safety and clarity in status representation
+        - Facilitates consistent usage of recovery states across the codebase
+
+    #ai-gen-doc
+    """
     NO_STATUS = 0
     NONE = 0
     NOT_READY = 1
@@ -182,6 +261,20 @@ class RecoveryStatus(Enum):
     CLEANUP_FAILED = 9
 
 class RecoveryStatusNotReadyCategory(Enum):
+    """
+    Enumeration for recovery status categories indicating 'not ready' states.
+
+    This Enum class is used to represent various categories or reasons why a recovery
+    process may be considered 'not ready'. It provides a structured way to classify
+    and handle different 'not ready' statuses within recovery workflows.
+
+    Key Features:
+        - Defines distinct 'not ready' recovery status categories
+        - Facilitates clear status management in recovery processes
+        - Enables type-safe usage of recovery status categories
+
+    #ai-gen-doc
+    """
     NONE = 0
     INVALID_VM_NAME = 1
     INVALID_COPY = 2
@@ -194,18 +287,47 @@ class RecoveryStatusNotReadyCategory(Enum):
     AUTOSCALING_DISABLED = 256
 
 class RecoveryGroup:
-    """Class to perform actions on a recovery group"""
+    """
+    Class for managing and performing operations on a recovery group.
 
-    def __init__(self, commcell_object, recovery_group_name, recovery_group_id=None):
-        """Initialize the instance of the RecoveryGroup class.
+    The RecoveryGroup class provides a comprehensive interface for interacting with
+    recovery groups, including accessing their properties, managing associated entities,
+    and performing recovery actions. It supports threat scanning, Windows Defender scanning,
+    and cleanup operations for recovered entities. The class also allows validation of
+    new recovery targets and hypervisors, and provides access to related resources such as
+    security groups, virtual networks, resource groups, and storage accounts.
 
-            Args:
-                commcell_object   (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with commcell object, recovery group name, and ID
+        - Access to recovery group properties (ID, name, target name, entities, etc.)
+        - Management of recovery entities and their statuses
+        - Threat scan and Windows Defender scan enablement checks
+        - Power-off option for destination VMs post-recovery
+        - Entity recovery operations (recover all, recover specific entities)
+        - Threat count retrieval for entities
+        - Refresh and update recovery group properties
+        - Validation of new recovery targets and hypervisors
+        - Cleanup of recovered entities
+        - Deletion of recovery group
 
-                recovery_group_name      (str)       --  name of the target
+    #ai-gen-doc
+    """
 
-                recovery_group_id        (str)       --  id of the target (default: None)
+    def __init__(self, commcell_object: 'Commcell', recovery_group_name: str, recovery_group_id: Optional[str] = None) -> None:
+        """Initialize a RecoveryGroup instance.
 
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+            recovery_group_name: The name of the recovery group to manage.
+            recovery_group_id: Optional; the unique identifier of the recovery group. If not provided, it may be determined automatically.
+
+        Example:
+            >>> commcell = Commcell('hostname', 'username', 'password')
+            >>> recovery_group = RecoveryGroup(commcell, 'Finance_Recovery_Group')
+            >>> # With a specific recovery group ID
+            >>> recovery_group = RecoveryGroup(commcell, 'Finance_Recovery_Group', recovery_group_id='12345')
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -226,110 +348,302 @@ class RecoveryGroup:
         self._recovery_target = CleanroomTarget(self._commcell_object, self.target_name)
 
     @property
-    def recovery_entities(self):
-        """Returns RecoveryEntity Manager object using which RecoveryEnity object can be created further"""
+    def recovery_entities(self) -> 'RecoveryEntities':
+        """Get the RecoveryEntities manager associated with this RecoveryGroup.
+
+        This property provides access to the RecoveryEntities manager, which can be used to create and manage individual RecoveryEntity objects within the recovery group.
+
+        Returns:
+            RecoveryEntities: The manager object for handling RecoveryEntity instances.
+
+        Example:
+            >>> recovery_group = RecoveryGroup(commcell_object, group_id)
+            >>> entities_manager = recovery_group.recovery_entities
+            >>> print(f"RecoveryEntities manager: {entities_manager}")
+            >>> # Use entities_manager to create or manage RecoveryEntity objects
+
+        #ai-gen-doc
+        """
         return self._recovery_entities
 
     @property
-    def id(self):
-        """recovery group id"""
+    def id(self) -> int:
+        """Get the unique identifier of the recovery group.
+
+        Returns:
+            The recovery group ID as an integer.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> group_id = rg.id  # Access the recovery group ID using the property
+            >>> print(f"Recovery Group ID: {group_id}")
+
+        #ai-gen-doc
+        """
         return int(self._recovery_group_id)
 
     @property
-    def name(self):
+    def name(self) -> str:
+        """Get the name of the recovery group.
+
+        Returns:
+            The name of this RecoveryGroup as a string.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> group_name = rg.name  # Access the name property
+            >>> print(f"Recovery group name: {group_name}")
+
+        #ai-gen-doc
+        """
         return self.recovery_group_name
 
     @property
-    def target_name(self):
+    def target_name(self) -> str:
+        """Get the name of the target associated with this RecoveryGroup.
+
+        Returns:
+            The target name as a string.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> name = recovery_group.target_name
+            >>> print(f"Target name: {name}")
+
+        #ai-gen-doc
+        """
         return self.entities[0]['target']['name']
 
     @property
-    def entities(self):
-        """All entities properties in recovery group"""
+    def entities(self) -> List[Dict[str, Any]]:
+        """Get all entity properties in the recovery group.
+
+        Returns:
+            A list of dictionaries, each containing the properties of an entity within the recovery group.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> entity_list = recovery_group.entities
+            >>> print(f"Number of entities: {len(entity_list)}")
+            >>> for entity in entity_list:
+            ...     print(entity)
+
+        #ai-gen-doc
+        """
         return self._properties['entities']
 
     @property
-    def entities_list(self):
-        """List if all the entities in a recovery group"""
+    def entities_list(self) -> list:
+        """Get the list of all entities in the recovery group.
+
+        Returns:
+            list: A list containing all entities that are part of this recovery group.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> entities = rg.entities_list  # Use dot notation to access the property
+            >>> print(f"Entities in the recovery group: {entities}")
+
+        #ai-gen-doc
+        """
         entity_list = []
         for entity in self.entities:
             entity_list.append(entity['name'])
         return entity_list
 
     @property
-    def entities_id(self):
-        """List of entities' id in the recovery group"""
+    def entities_id(self) -> List[int]:
+        """Get the list of entity IDs in the recovery group.
+
+        Returns:
+            List[int]: A list containing the IDs of all entities that are part of this recovery group.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> entity_ids = recovery_group.entities_id
+            >>> print(f"Entity IDs in the group: {entity_ids}")
+
+        #ai-gen-doc
+        """
         entity_list_id = []
         for entity in self.entities:
             entity_list_id.append(entity['id'])
         return entity_list_id
 
     @property
-    def security_group(self):
-        """Returns: (str) Azure: the security group name"""
+    def security_group(self) -> str:
+        """Get the name of the Azure security group associated with this recovery group.
+
+        Returns:
+            The security group name as a string.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> group_name = rg.security_group
+            >>> print(f"Security group: {group_name}")
+
+        #ai-gen-doc
+        """
         return self.entities[0]['recoveryConfiguration']['configuration']['azure']['overrideReplicationOptions']['securityGroup']['id']
 
     @property
-    def virtual_network(self):
-        """Returns: (str) Azure: the virtual network name"""
+    def virtual_network(self) -> str:
+        """Get the name of the Azure virtual network associated with this recovery group.
+
+        Returns:
+            The name of the Azure virtual network as a string.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> vnet_name = recovery_group.virtual_network
+            >>> print(f"Virtual Network: {vnet_name}")
+
+        #ai-gen-doc
+        """
         return self.entities[0]['recoveryConfiguration']['configuration']['azure']['overrideReplicationOptions'][
             'virtualNetwork']['networkName']
 
     @property
-    def resource_group(self):
-        """Returns: (str) Azure: the resource group name"""
+    def resource_group(self) -> str:
+        """Get the Azure resource group name associated with this RecoveryGroup.
+
+        Returns:
+            The name of the Azure resource group as a string.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> group_name = rg.resource_group
+            >>> print(f"Resource group: {group_name}")
+
+        #ai-gen-doc
+        """
         return self.entities[0]['recoveryConfiguration']['configuration']['azure']['resourceGroup']
 
     @property
-    def storage_account(self):
-        """Returns: (str) Azure: the storage account name used to deploy the VM's storage"""
+    def storage_account(self) -> str:
+        """Get the Azure storage account name used for deploying the VM's storage.
+
+        Returns:
+            The name of the Azure storage account as a string.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> account_name = rg.storage_account
+            >>> print(f"Storage account: {account_name}")
+
+        #ai-gen-doc
+        """
         return self.entities[0]['recoveryConfiguration']['configuration']['azure']['storageAccount']
 
     @property
-    def get_new_target_name(self):
-        """Returns the created target name for the recovery group created via custom config"""
+    def get_new_target_name(self) -> str:
+        """Get the generated target name for the recovery group created using custom configuration.
+
+        Returns:
+            The name of the target created for the recovery group as a string.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> target_name = recovery_group.get_new_target_name
+            >>> print(f"New target name: {target_name}")
+
+        #ai-gen-doc
+        """
         return f'{self.recovery_group_name}-Target'
 
     @property
-    def get_new_hypervisor_name(self):
-        """Returns the created hypervisor name for the recovery group created via custom config"""
+    def get_new_hypervisor_name(self) -> str:
+        """Get the name of the newly created hypervisor for the recovery group.
+
+        This property returns the name of the hypervisor that was created as part of the recovery group setup using a custom configuration.
+
+        Returns:
+            The name of the created hypervisor as a string.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> hypervisor_name = recovery_group.get_new_hypervisor_name
+            >>> print(f"New hypervisor name: {hypervisor_name}")
+
+        #ai-gen-doc
+        """
         return f'{self.get_new_target_name}-Hypervisor'
 
     @property
-    def is_threatscan_enabled(self):
-        """Returns boolean value of threat scan property set at recovery group level"""
+    def is_threatscan_enabled(self) -> bool:
+        """Check if threat scan is enabled at the recovery group level.
+
+        Returns:
+            True if the threat scan property is enabled for this recovery group, False otherwise.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> if rg.is_threatscan_enabled:
+            ...     print("Threat scan is enabled for this recovery group.")
+            ... else:
+            ...     print("Threat scan is not enabled for this recovery group.")
+
+        #ai-gen-doc
+        """
         return self._properties['recoveryGroup']['threatScan']['enableThreatScan']
 
     @property
-    def is_windefender_enabled(self):
-        """Returns boolean value of windows defender property set at recovery group level"""
+    def is_windefender_enabled(self) -> bool:
+        """Check if Windows Defender is enabled at the recovery group level.
+
+        Returns:
+            True if the Windows Defender property is enabled for this recovery group, False otherwise.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> if rg.is_windefender_enabled:
+            ...     print("Windows Defender is enabled for this recovery group.")
+            ... else:
+            ...     print("Windows Defender is not enabled for this recovery group.")
+
+        #ai-gen-doc
+        """
         return self._properties['recoveryGroup']['threatScan']['enableWindowsDefenderScan']
 
     @property
-    def powerOffDestinationVMPostRecovery(self):
-        """Returns boolean if power off/on post recovery enabled on the recovery group"""
-        return self._properties['recoveryGroup']['powerOffDestinationVMPostRecoveryAndValidation']
-
-    def _recover_entities(self, entity_ids, threat_scan=False, win_defender_scan=False):
-        """
-        Sends request to recover all entities with specified ids
-
-        Args:
-            entity_ids         (list)    --  iterable of entity ids
-            threat_scan       (bool)    --  run security scan on restored VM
-                                            default: False
-            win_defender_scan (bool)    --  run security scan on restored VM
-                                            default: False
+    def powerOffDestinationVMPostRecovery(self) -> bool:
+        """Indicate whether the power off/on option is enabled for the destination VM after recovery.
 
         Returns:
-            job_id: job id of recovery
+            bool: True if the destination VM will be powered off (and/or on) post recovery; False otherwise.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> is_power_off_enabled = recovery_group.powerOffDestinationVMPostRecovery
+            >>> print(f"Power off/on post recovery enabled: {is_power_off_enabled}")
+
+        #ai-gen-doc
+        """
+        return self._properties['recoveryGroup']['powerOffDestinationVMPostRecoveryAndValidation']
+
+    def _recover_entities(self, entity_ids: list, threat_scan: bool = False, win_defender_scan: bool = False) -> int:
+        """Send a request to recover all entities with the specified IDs.
+
+        This method initiates the recovery process for the provided entity IDs. Optionally, security scans
+        such as threat scan and Windows Defender scan can be performed on the restored virtual machines.
+
+        Args:
+            entity_ids: A list of entity IDs to be recovered.
+            threat_scan: If True, runs a security scan on the restored VMs. Defaults to False.
+            win_defender_scan: If True, runs a Windows Defender scan on the restored VMs. Defaults to False.
+
+        Returns:
+            The job ID (int) of the initiated recovery operation.
 
         Raises:
-            SDKException:
-                if response is empty
+            SDKException: If the response is empty or the recovery request is not successful.
 
-                if response is not success
+        Example:
+            >>> group = RecoveryGroup()
+            >>> job_id = group._recover_entities([101, 102, 103], threat_scan=True)
+            >>> print(f"Recovery job started with ID: {job_id}")
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._RECOVER_URL, payload={
             'recoveryGroup': {
@@ -350,19 +664,23 @@ class RecoveryGroup:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def get_threats_count(self):
-        """
-        Sends request to get overall threats count of recovery group
+    def get_threats_count(self) -> int:
+        """Retrieve the total number of threats detected for the recovery group.
+
+        This method sends a request to obtain the overall threats count associated with the recovery group.
 
         Returns:
-            (int) threatCount: threats count of recovery group
+            The number of threats detected for the recovery group as an integer.
 
         Raises:
-            SDKException:
-                if response is empty
+            SDKException: If the response is empty or the request is not successful.
 
-                if response is not success
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> threat_count = rg.get_threats_count()
+            >>> print(f"Total threats detected: {threat_count}")
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUP_THREATS_COUNT)
 
@@ -374,19 +692,28 @@ class RecoveryGroup:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def recover_all(self,threat_scan=False, win_defender_scan=False):
-        """
-        Sends request to recover all entities
+    def recover_all(self, threat_scan: bool = False, win_defender_scan: bool = False) -> int:
+        """Initiate recovery for all entities in the recovery group.
+
+        This method sends a request to recover all entities associated with the recovery group.
+        Optional threat scanning and Windows Defender scanning can be enabled during the recovery process.
+
+        Args:
+            threat_scan: If True, perform a threat scan as part of the recovery. Defaults to False.
+            win_defender_scan: If True, perform a Windows Defender scan during recovery. Defaults to False.
 
         Returns:
-            job_id: job id of recovery
+            The job ID (int) of the initiated recovery operation.
 
         Raises:
-            SDKException:
-            if response is empty
+            SDKException: If the response is empty or the recovery request is unsuccessful.
 
-            if response is not success
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> job_id = recovery_group.recover_all(threat_scan=True, win_defender_scan=False)
+            >>> print(f"Recovery job started with ID: {job_id}")
 
+        #ai-gen-doc
         """
         eligible_entities = [entity['id'] for entity in self.entities if
                              entity['recoveryStatus'] not in [RecoveryStatus.NOT_READY.value,
@@ -395,22 +722,34 @@ class RecoveryGroup:
 
         return self._recover_entities(eligible_entities, threat_scan, win_defender_scan)
 
-    def refresh(self):
-        """Refresh the recovery group"""
+    def refresh(self) -> None:
+        """Reload the recovery group information to ensure the latest state is reflected.
+
+        This method refreshes the internal data of the recovery group, updating it with the most current information from the source.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> rg.refresh()  # Updates the recovery group with the latest data
+
+        #ai-gen-doc
+        """
         self._properties = self._get_recovery_group_properties()
 
-    def _get_recovery_group_properties(self):
-        """Gets recovery group properties.
+    def _get_recovery_group_properties(self) -> dict:
+        """Retrieve the properties of the recovery group.
 
-            Returns:
-                dict - properties for the recovey group
+        Returns:
+            dict: A dictionary containing the properties of the recovery group.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> properties = recovery_group._get_recovery_group_properties()
+            >>> print(properties)
+            >>> # The returned dictionary contains key-value pairs describing the recovery group
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUP_URL)
 
@@ -422,15 +761,21 @@ class RecoveryGroup:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def delete(self):
-        """
-        Sends a request to delete a replication Group
+    def delete(self) -> None:
+        """Send a request to delete the replication group associated with this RecoveryGroup instance.
+
+        This method initiates the deletion process for the replication group. If the deletion fails
+        or the response is empty, an SDKException is raised.
 
         Raises:
-            SDKException:
-                if response is empty
+            SDKException: If the response from the deletion request is empty or indicates failure.
 
-                if response is not success
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> recovery_group.delete()
+            >>> print("Replication group deleted successfully.")
+
+        #ai-gen-doc
         """
 
         flag, response = self._cvpysdk_object.make_request('DELETE', self._RECOVERY_GROUP_URL)
@@ -443,12 +788,25 @@ class RecoveryGroup:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def get_entity_status(self):
-        """
-        Returns the recovery status and readiness category for entities.
+    def get_entity_status(self) -> dict:
+        """Retrieve the recovery status and readiness category for all entities in the recovery group.
 
         Returns:
-            dict: A mapping of entity names to their recovery status and not-ready category.
+            dict: A dictionary mapping each entity name to its recovery status and not-ready category.
+            The structure is typically:
+                {
+                    "entity_name_1": {"status": "Ready", "not_ready_category": None},
+                    "entity_name_2": {"status": "Not Ready", "not_ready_category": "Network Issue"},
+                    ...
+                }
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> status_info = recovery_group.get_entity_status()
+            >>> for entity, info in status_info.items():
+            ...     print(f"{entity}: Status={info['status']}, Not Ready Category={info['not_ready_category']}")
+
+        #ai-gen-doc
         """
         status_map = {}
         for entity in self.entities:
@@ -461,17 +819,80 @@ class RecoveryGroup:
             }
         return status_map
 
-    def validate_new_recovery_target_exists(self):
-        """Verifies if the created new recovery target via custom config exists with correct name."""
+    def validate_new_recovery_target_exists(self) -> bool:
+        """Check if a newly created recovery target (via custom configuration) exists with the correct name.
+
+        Returns:
+            bool: True if the recovery target exists and matches the expected name, False otherwise.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> exists = rg.validate_new_recovery_target_exists()
+            >>> print(f"Recovery target exists: {exists}")
+
+        #ai-gen-doc
+        """
         observed_target = self.target_name
         expected_target = self.get_new_target_name
 
         return observed_target == expected_target
 
-    def validate_new_hypervisor_exists(self):
-        """Verifies if the created new hypervisor via custom config exists with correct name."""
+    def validate_new_hypervisor_exists(self) -> bool:
+        """Check if the newly created hypervisor via custom configuration exists with the correct name.
+
+        Returns:
+            bool: True if the new hypervisor exists and has the correct name, False otherwise.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> exists = rg.validate_new_hypervisor_exists()
+            >>> print(f"Hypervisor exists: {exists}")
+
+        #ai-gen-doc
+        """
         observed_hypervisor = self._recovery_target.destination_hypervisor
         expected_hypervisor = self.get_new_hypervisor_name
 
         return observed_hypervisor == expected_hypervisor
 
+    def cleanup_recovered_entities(self) -> int:
+        """Perform cleanup of all recovered entities in the recovery group.
+
+        This method initiates a cleanup operation for all entities that have been recovered 
+        within the recovery group. It returns the job ID associated with the cleanup process.
+
+        Returns:
+            int: The job ID of the initiated cleanup job.
+
+        Raises:
+            SDKException: If the response from the cleanup operation is empty or unsuccessful.
+
+        Example:
+            >>> recovery_group = RecoveryGroup()
+            >>> job_id = recovery_group.cleanup_recovered_entities()
+            >>> print(f"Cleanup job started with Job ID: {job_id}")
+
+        #ai-gen-doc
+        """
+        entity_ids = self.entities_id
+        group_id = self.id
+
+        if not entity_ids:
+            raise SDKException('RecoveryGroup', '101', 'entity_ids cannot be empty')
+
+        payload = {
+            "recoveryGroup": {"id": group_id},
+            "entities": [{"id": eid} for eid in entity_ids]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST',
+            self._commcell_object._services['CLEANUP_RECOVERY_GROUP'],
+            payload
+        )
+        if flag:
+            try:
+                return response.json()['jobId']
+            except (JSONDecodeError, KeyError):
+                raise SDKException('Response', '102', 'Job id not found in response')
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))

@@ -439,7 +439,6 @@ from .name_change import NameChange
 from .organization import Organizations
 from .constants import AppIDAType, AppIDAName, OSType
 from .constants import ResourcePoolAppType
-from .credential_manager import Credentials
 
 
 class Clients(object):
@@ -483,7 +482,6 @@ class Clients(object):
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
-        self._cred_manager = Credentials(self._commcell_object)
         self._hidden_clients = None
         self._virtualization_clients = None
         self._virtualization_access_nodes = None
@@ -2627,6 +2625,8 @@ class Clients(object):
 
             user_name             (str)   --  splunk instance username
 
+            credential_name       (str)   --  credential name associated with splunk instance
+
             plan                  (str)   --  plan assocated with the new client
 
         Returns:
@@ -2640,6 +2640,7 @@ class Clients(object):
 
                 if response is not success
         """
+
         if self._commcell_object.plans.has_plan(plan):
             plan_object = self._commcell_object.plans.get(plan)
             plan_id = int(plan_object.plan_id)
@@ -2699,7 +2700,7 @@ class Clients(object):
             }
         else:
             cred_name=kwargs.get('credential_name')
-            self.credential = self._cred_manager.get(cred_name)
+            self.credential = self._commcell_object.credentials.get(cred_name)
             request_json["clientInfo"]["distributedClusterInstanceProperties"]["clusterConfig"]["splunkConfig"][
                 "splunkUserCredInfo"] = {
                 "credentialId": self.credential.credential_id,

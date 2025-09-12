@@ -110,7 +110,6 @@ from ..exception import SDKException
 from .dbinstance import DatabaseInstance
 
 
-
 class OracleInstance(DatabaseInstance):
     """
     Class to represent a standalone Oracle Instance
@@ -759,12 +758,13 @@ class OracleInstance(DatabaseInstance):
             }
         }
 
-    def _process_browse_response(self, request_json):
+    def _process_browse_response(self, request_json, use_cache=True):
         """Runs the DBBrowse API with the request JSON provided for Browse,
             and returns the contents after parsing the response.
 
             Args:
                 request_json    (dict)  --  JSON request to run for the API
+                use_cache       (bool)  --  whether to use cached tablespaces or not
 
             Returns:
                 list - list containing tablespaces for the instance
@@ -777,7 +777,7 @@ class OracleInstance(DatabaseInstance):
 
                     if browse is not success
         """
-        if 'tablespaces' in self._instanceprop:
+        if use_cache and 'tablespaces' in self._instanceprop:
             return self._instanceprop['tablespaces']
 
         browse_service = self._commcell_object._services['ORACLE_INSTANCE_BROWSE'] % (
@@ -846,7 +846,12 @@ class OracleInstance(DatabaseInstance):
         if not self.is_catalog_enabled:
             raise SDKException('Instance', r'102', 'Catalog is not enabled.')
         try:
-            return self._properties['oracleInstance']['catalogConnect']['userName']
+            credential = self._properties.get('oracleInstance', {}).get('catalogConnectCredInfo', {}).get(
+                'credentialName', '')
+            if credential:
+                return self._commcell_object.credentials.get(credential).credential_user_name
+            else:
+                return self._properties['oracleInstance']['catalogConnect']['userName']
         except KeyError as error_str:
             raise SDKException('Instance', r'102',
                                'Catalog user not set - {}'.format(error_str))
@@ -869,7 +874,14 @@ class OracleInstance(DatabaseInstance):
         if not self.is_catalog_enabled:
             raise SDKException('Instance', r'102', 'Catalog is not enabled.')
         try:
-            return self._properties['oracleInstance']['catalogConnect']['domainName']
+            credential = self._properties.get('oracleInstance', {}).get('catalogConnectCredInfo', {}).get(
+                'credentialName', '')
+            if credential:
+                return \
+                    self._commcell_object.credentials.get(credential)._credential_properties["additionalInformation"][
+                        "databaseAdvancedCredInfo"]["connectService"]
+            else:
+                return self._properties['oracleInstance']['catalogConnect']['domainName']
         except KeyError as error_str:
             raise SDKException('Instance', r'102',
                                'Catalog database not set - {}'.format(error_str))
@@ -883,7 +895,12 @@ class OracleInstance(DatabaseInstance):
             string - string of oracle software owner
 
         """
-        return self._properties['oracleInstance']['oracleUser']['userName']
+        credential = self._properties.get('oracleInstance', {}).get('osUserCredInfo', {}).get(
+            'credentialName', '')
+        if credential:
+            return self._commcell_object.credentials.get(credential).credential_user_name
+        else:
+            return self._properties['oracleInstance']['oracleUser']['userName']
 
     @property
     def version(self):
@@ -950,7 +967,12 @@ class OracleInstance(DatabaseInstance):
         Returns: Oracle database user for the instance
 
         """
-        return self._properties['oracleInstance']['sqlConnect']['userName']
+        credential = self._properties.get('oracleInstance', {}).get('dbConnectCredInfo', {}).get(
+            'credentialName', '')
+        if credential:
+            return self._commcell_object.credentials.get(credential).credential_user_name
+        else:
+            return self._properties['oracleInstance']['sqlConnect']['userName']
 
     @property
     def tns_name(self):
@@ -966,7 +988,14 @@ class OracleInstance(DatabaseInstance):
 
         """
         try:
-            return self._properties['oracleInstance']['sqlConnect']['domainName']
+            credential = self._properties.get('oracleInstance', {}).get('dbConnectCredInfo', {}).get(
+                'credentialName', '')
+            if credential:
+                return \
+                    self._commcell_object.credentials.get(credential)._credential_properties["additionalInformation"][
+                        "databaseAdvancedCredInfo"]["connectService"]
+            else:
+                return self._properties['oracleInstance']['sqlConnect']['domainName']
         except KeyError as error_str:
             raise SDKException('Instance', r'102',
                                'Instance TNS Entry not set - {}'.format(error_str))
@@ -990,17 +1019,40 @@ class OracleInstance(DatabaseInstance):
             list -- list containing tablespace names for the database
 
         """
-        return [ts['tableSpace'] for ts in self.browse()]
+        tablespaces = []
+        browse_response = self.browse()
+        if browse_response:
+            for db in browse_response:
+                if 'tablespace' in db:
+                    tablespaces.append(db['tablespace'])
+
+                # In the case of CDB, we may have to browse through each
+                # individual database (PDB) to fetch all the tablespaces
+                elif 'database' in db:
+                    options = self._get_browse_options()
+                    options['path'] = f"/{db['database']}"
+                    tablespaces.extend(self.browse(use_cache=False, **options))
+        return tablespaces
 
     def browse(self, *args, **kwargs):
-        """Overridden method to browse oracle database tablespaces"""
+        """Overridden method to browse oracle database tablespaces
+
+        Args:
+            *args       --  variable length argument list for browse options
+            **kwargs    --  keyword arguments for browse options and the following additional argument(s):
+                            - use_cache (bool) : whether to use cached tablespaces or not
+
+        Returns:
+            list - list containing tablespaces for the instance
+        """
+        use_cache = kwargs.pop('use_cache', True)
         if args and isinstance(args[0], dict):
             options = args[0]
         elif kwargs:
             options = kwargs
         else:
             options = self._get_browse_options()
-        return self._process_browse_response(options)
+        return self._process_browse_response(options, use_cache)
 
     def backup(self, subclient_name=r"default"):
         """Uses the default subclient to backup the database

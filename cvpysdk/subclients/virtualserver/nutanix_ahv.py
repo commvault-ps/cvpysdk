@@ -61,10 +61,10 @@ class nutanixsubclient(VirtualServerSubclient):
                                      restore_new_name=None,
                                      overwrite=True,
                                      power_on=True,
-                                     run_security_scan=False,
                                      copy_precedence=0,
                                      restore_option=None,
                                      vcenter_client=None,
+                                     run_security_scan=False,
                                      **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
@@ -87,9 +87,6 @@ class nutanixsubclient(VirtualServerSubclient):
                 power_on                (bool)       --  power on the  restored VM
                                                         default: True
 
-                run_security_scan       (bool)       -- run threat analysis on VM
-                                                        default:False
-
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
@@ -99,6 +96,9 @@ class nutanixsubclient(VirtualServerSubclient):
                 vcenter_client        (str)        --  name of the vcenter client where the VM
                                                         should be restored
                                                         default: {}
+
+                run_security_scan       (bool)       -- run threat analysis on VM
+                                                        default:False
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
@@ -137,7 +137,6 @@ class nutanixsubclient(VirtualServerSubclient):
             unconditional_overwrite=overwrite,
             power_on=power_on,
             copy_precedence=copy_precedence,
-            run_security_scan=run_security_scan,
             volume_level_restore=1,
             esx_host=host,
             esx_server=vcenter_client,
@@ -145,7 +144,8 @@ class nutanixsubclient(VirtualServerSubclient):
             datastore=container,
             client_name=proxy_client,
             in_place=False,
-            restore_new_name=restore_new_name
+            restore_new_name=restore_new_name,
+            run_security_scan=run_security_scan,
         )
 
         # set attr for all the option in restore xml from user inputs

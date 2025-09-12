@@ -253,6 +253,7 @@ Attributes
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from typing import TYPE_CHECKING, Dict, Optional, Union, List
 
 from ..exception import SDKException
 from ..job import Job
@@ -261,38 +262,60 @@ from ..schedules import Schedules, SchedulePattern
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
 
+if TYPE_CHECKING:
+    from ..commcell import Commcell
 
 class JobOperationsOnStorageCopy:
-    """Enum for different job operations on Storage Copy."""
-    DELETE = 'DELETE'
-    PREVENT_COPY = 'DISALLOW_COPY'
-    ALLOW_COPY = 'ALLOW_COPY'
-    RECOPY = 'RECOPY'
+    """Enum for different job operations on Storage Copy.
 
+    Attributes:
+        DELETE (str): Represents the 'DELETE' operation.
+        PREVENT_COPY (str): Represents the 'DISALLOW_COPY' operation.
+        ALLOW_COPY (str): Represents the 'ALLOW_COPY' operation.
+        RECOPY (str): Represents the 'RECOPY' operation.
+
+    Usage:
+        >>> operation = JobOperationsOnStorageCopy.DELETE
+    """
+    DELETE: str = 'DELETE'
+    PREVENT_COPY: str = 'DISALLOW_COPY'
+    ALLOW_COPY: str = 'ALLOW_COPY'
+    RECOPY: str = 'RECOPY'
 
 class StoragePolicies(object):
-    """Class for getting all the storage policies associated with the commcell."""
+    """Class for getting all the storage policies associated with the commcell.
 
-    def __init__(self, commcell_object):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _POLICY (str): The service endpoint for storage policies.
+        _DELETE_POLICY (str): The service endpoint for deleting storage policies.
+        _policies (dict): A dictionary of storage policies.
+
+    Usage:
+        # Initialize StoragePolicies object
+        storage_policies = StoragePolicies(commcell_object)
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize object of the StoragePolicies class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (Commcell): instance of the Commcell class
 
-            Returns:
-                object - instance of the StoragePolicies class
+        Returns:
+            object: instance of the StoragePolicies class
         """
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services['STORAGE_POLICY']
-        self._DELETE_POLICY =  self._commcell_object._services['DELETE_STORAGE_POLICY']
+        self._DELETE_POLICY = self._commcell_object._services['DELETE_STORAGE_POLICY']
         self._policies = None
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Representation string consisting of all storage policies of the commcell.
 
-            Returns:
-                str - string of all the storage policies associated with the commcell
+        Returns:
+            str: string of all the storage policies associated with the commcell
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Storage Policy')
 
@@ -302,25 +325,25 @@ class StoragePolicies(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representation string for the instance of the Clients class."""
         return "StoragePolicies class instance for Commcell"
 
-    def _get_policies(self):
+    def _get_policies(self) -> dict:
         """Gets all the storage policies associated to the commcell specified by commcell object.
 
-            Returns:
-                dict - consists of all storage policies of the commcell
-                    {
-                         "storage_policy1_name": storage_policy1_id,
-                         "storage_policy2_name": storage_policy2_id
-                    }
+        Returns:
+            dict: consists of all storage policies of the commcell
+                {
+                     "storage_policy1_name": storage_policy1_id,
+                     "storage_policy2_name": storage_policy2_id
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._POLICY + "?getAll=TRUE")
@@ -347,49 +370,54 @@ class StoragePolicies(object):
             raise SDKException('Response', '101', response_string)
 
     @property
-    def all_storage_policies(self):
+    def all_storage_policies(self) -> dict:
         """Returns dict of all the storage policies on this commcell
 
-            dict - consists of all storage policies of the commcell
-                    {
-                         "storage_policy1_name": storage_policy1_id,
-                         "storage_policy2_name": storage_policy2_id
-                    }
+        Returns:
+            dict: consists of all storage policies of the commcell
+                {
+                     "storage_policy1_name": storage_policy1_id,
+                     "storage_policy2_name": storage_policy2_id
+                }
         """
         return self._policies
 
-    def has_policy(self, policy_name):
+    def has_policy(self, policy_name: str) -> bool:
         """Checks if a storage policy exists in the commcell with the input storage policy name.
 
-            Args:
-                policy_name (str)  --  name of the storage policy
+        Args:
+            policy_name (str):  name of the storage policy
 
-            Returns:
-                bool - boolean output whether the storage policy exists in the commcell or not
+        Returns:
+            bool: boolean output whether the storage policy exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the storage policy name argument is not string
+        Raises:
+            SDKException:
+                if type of the storage policy name argument is not string
         """
         if not isinstance(policy_name, str):
             raise SDKException('Storage', '101')
 
         return self._policies and policy_name.lower() in self._policies
 
-    def get(self, storage_policy_name):
+    def get(self, storage_policy_name: str) -> 'StoragePolicy':
         """Returns a StoragePolicy object of the specified storage policy name.
 
-            Args:
-                storage_policy_name     (str)   --  name of the storage policy
+        Args:
+            storage_policy_name (str): name of the storage policy
 
-            Returns:
-                object - instance of the StoragePolicy class for the given policy name
+        Returns:
+            object: instance of the StoragePolicy class for the given policy name
 
-            Raises:
-                SDKException:
-                    if type of the storage policy name argument is not string
+        Raises:
+            SDKException:
+                if type of the storage policy name argument is not string
 
-                    if no storage policy exists with the given name
+                if no storage policy exists with the given name
+
+        Usage:
+            # Get a storage policy object
+            storage_policy = storage_policies.get('MyStoragePolicy')
         """
         if not isinstance(storage_policy_name, str):
             raise SDKException('Storage', '101')
@@ -406,45 +434,45 @@ class StoragePolicies(object):
             )
 
     def add_global_storage_policy(self,
-                                  global_storage_policy_name,
-                                  library,
-                                  media_agent,
-                                  dedup_path=None,
-                                  dedup_path_media_agent=None):
+                                  global_storage_policy_name: str,
+                                  library: str,
+                                  media_agent: str,
+                                  dedup_path: str = None,
+                                  dedup_path_media_agent: str = None) -> 'StoragePolicy':
         """adds a global storage policy
 
-            Args:
-                global_storage_policy_name   (str)  --  name of the global storage policy which you want to add
+        Args:
+            global_storage_policy_name   (str):  name of the global storage policy which you want to add
+            library                      (str):  name of the library which you want to be associated with your
+                                                    global storage policy
+            media_agent                  (str):  name of the media agent which you want to be associated with
+                                                    the global storage policy
+            dedup_path                    (str): path of the deduplication database. Defaults to None.
+            dedup_path_media_agent       (str): name of the media agent where the deduplication database
+                                                    is stored. Defaults to None.
 
-                library                      (str)  --  name of the library which you want to be associated with your
-                global storage policy
-
-                media_agent                  (str)  --  name of the media agent which you want to be associated with
-                the global storage policy
-
-                        *enter BOTH, the dedup_path and dedup_path_media_agent if you want the deduplication
-                         to be enabled.
-
-                dedup_path                    (str) -- path of the deduplication database
-                default- None
-
-                dedup_path_media_agent:       (str) -- name of the media agent where the deduplication database
-                                                       is stored
-                default- None
-
-            Returns:
-                    the success message along with the name of the global storage policy if created successfully
+        Returns:
+            StoragePolicy: the success message along with the name of the global storage policy if created successfully
                     else the error messages or the exceptions raised
 
-            Raises:
-                SDKException:
-                        if the global_storage_policy_name,library,media_agent,dedup_path,dedup_path_media_agent
-                        is not of type String
+        Raises:
+            SDKException:
+                if the global_storage_policy_name,library,media_agent,dedup_path,dedup_path_media_agent
+                is not of type String
 
-                        if response is empty
+                if response is empty
 
-                        if response is not success
+                if response is not success
 
+        Usage:
+            # Add a global storage policy without deduplication
+            storage_policies.add_global_storage_policy('GlobalPolicy', 'MyLibrary', 'MyMediaAgent')
+
+            # Add a global storage policy with deduplication
+            storage_policies.add_global_storage_policy(
+                'DedupGlobalPolicy', 'MyLibrary', 'MyMediaAgent',
+                dedup_path='/path/to/dedup', dedup_path_media_agent='DedupMA'
+            )
         """
 
         if not (isinstance(global_storage_policy_name, str) and
@@ -510,12 +538,12 @@ class StoragePolicies(object):
             request_json["storagePolicyCopyInfo"].update(storage_policy_copy_info)
 
         # don't create dedup global storage policy if the arguments are not supplied
-        elif(dedup_path or dedup_path_media_agent):
+        elif (dedup_path or dedup_path_media_agent):
             raise SDKException("Storage", "101", "cannot create dedup global policy without complete arguments \n"
                                "supply both dedup path and dedup path media agent")
 
         # checking to create non dedup global storage policy
-        elif(dedup_path is None and dedup_path_media_agent is None):
+        elif (dedup_path is None and dedup_path_media_agent is None):
             storage_policy_copyinfo = {
                 "extendedFlags": {
                     "globalStoragePolicy": 1
@@ -548,76 +576,56 @@ class StoragePolicies(object):
         return self.get(global_storage_policy_name)
 
     def add(self,
-            storage_policy_name,
-            library=None,
-            media_agent=None,
-            dedup_path=None,
-            incremental_sp=None,
-            retention_period=5,
-            number_of_streams=None,
-            ocum_server=None,
-            dedup_media_agent=None,
-            dr_sp=False,
-            **kwargs):
+            storage_policy_name: str,
+            library: str = None,
+            media_agent: str = None,
+            dedup_path: str = None,
+            incremental_sp: str = None,
+            retention_period: int = 5,
+            number_of_streams: int = None,
+            ocum_server: str = None,
+            dedup_media_agent: str = None,
+            dr_sp: bool = False,
+            **kwargs) -> object:
         """Adds a new Storage Policy to the Commcell.
 
             Args:
-                storage_policy_name (str)         --  name of the new storage policy to add
+                storage_policy_name (str): name of the new storage policy to add
+                library             (str): name or instance of the library to add the policy to
+                media_agent         (str): name or instance of media agent to add the policy to
+                dedup_path          (str): the path of the deduplication database
+                incremental_sp      (str): the name of the incremental storage policy associated with the storage policy
+                retention_period    (int): time period in days to retain the data backup for
+                number_of_streams   (int): the number of streams for the storage policy
+                ocum_server         (str): On Command Unified Server Name
+                dedup_media_agent   (str): name of media agent where deduplication database is hosted.
+                dr_sp                (bool): if True creates dr storage policy if False creates data protection policy
+                **kwargs (dict): dict of keyword arguments as follows:
+                    global_policy_name   (str): name of the global storage policy on which you want the policy being created to be dependent.
+                    global_dedup_policy (bool): whether the global storage policy has a global deduplication pool or not
 
-                library             (str/object)  --  name or instance of the library
-                to add the policy to
-
-                media_agent         (str/object)  --  name or instance of media agent
-                to add the policy to
-
-                dedup_path          (str)         --  the path of the deduplication database
-                default: None
-
-                incremental_sp      (str)         --  the name of the incremental storage policy
-                associated with the storage policy
-                default: None
-
-                retention_period    (int)         --  time period in days to retain
-                the data backup for
-                default:5
-
-                number_of_streams   (int)         --  the number of streams for the storage policy
-                default: None
-
-                ocum_server         (str)         --  On Command Unified Server Name
-                default: None
-
-                dedup_media_agent   (str)          --  name of media agent where deduplication database is hosted.
-                default:None
-
-                dr_sp                (bool)         --  if True creates dr storage policy
-                                                        if False creates data protection policy
-                default:False
-
-                **kwargs    --  dict of keyword arguments as follows:
-
-                    global_policy_name   (str)         --  name of the global storage policy on which you want
-                                                           the policy being created to be dependent.
-
-                    global_dedup_policy (bool)  -- whether the global storage policy has a global deduplication pool
-                                                   or not
-                    default:True                  (meaning the global storage policy will have deduplication enabled)
+            Returns:
+                object: The created storage policy object.
 
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
-
                     if type of the retention period argument is not int
-
                     if type of the library argument is not either string or DiskLibrary instance
-
                     if type of the media agent argument is not either string or MediaAgent instance
-
                     if failed to create storage policy
-
                     if response is empty
-
                     if response is not success
+
+            Usage:
+                # Add a new storage policy
+                storage_policies.add(storage_policy_name='SP01', library='DiskLib1', media_agent='MA01', dedup_path='/dedup/path', retention_period=10)
+
+                # Add a new storage policy with incremental storage policy
+                storage_policies.add(storage_policy_name='SP02', library='DiskLib2', media_agent='MA02', incremental_sp='IncSP02', retention_period=7)
+
+                # Add a new storage policy with global policy
+                storage_policies.add(storage_policy_name='SP03', global_policy_name='GlobalSP03')
         """
 
         extra_arguments = {
@@ -811,45 +819,39 @@ class StoragePolicies(object):
 
         return self.get(storage_policy_name)
 
-    def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool, retention_period_days=15,
-                    ocum_server=None):
-        """
-        Adds storage policy with tape data path
+
+    def add_tape_sp(self, storage_policy_name: str, library: str, media_agent: str, drive_pool: str, scratch_pool: str, retention_period_days: int = 15,
+                    ocum_server: str = None) -> 'StoragePolicy':
+        """Adds storage policy with tape data path
+
         Args:
-                storage_policy_name (str)         --  name of the new storage policy to add
+                storage_policy_name (str): name of the new storage policy to add
+                library             (str): name or instance of the library to add the policy to
+                media_agent         (str): name or instance of media agent to add the policy to
+                drive_pool          (str): Drive pool name of the tape library
+                scratch_pool      (str): Scratch pool name of the tape library
+                retention_period_days    (int): time period in days to retain the data backup for
+                ocum_server         (str): On Command Unified Server Name
 
-                library             (str)     --  name or instance of the library
-                to add the policy to
-
-                media_agent         (str/object)  --  name or instance of media agent
-                to add the policy to
-
-                drive_pool          (str)         --  Drive pool name of the tape library
-
-                scratch_pool      (str)          --  Scratch pool name of the tape library
-
-                retention_period_days    (int)         --  time period in days to retain
-                the data backup for
-                default: 15
-
-                ocum_server         (str)         --  On Command Unified Server Name
-                default: None
+            Returns:
+                object: The created storage policy object.
 
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
-
                     if type of the retention period argument is not int
-
                     if type of the library argument is not either string or DiskLibrary instance
-
                     if type of the media agent argument is not either string or MediaAgent instance
-
                     if failed to create storage policy
-
                     if response is empty
-
                     if response is not success
+
+            Usage:
+                # Add a new tape storage policy
+                storage_policies.add_tape_sp(storage_policy_name='TapeSP01', library='TapeLib1', media_agent='MA03', drive_pool='DrivePool1', scratch_pool='ScratchPool1', retention_period_days=30)
+
+                # Add a new tape storage policy with OCUM server
+                storage_policies.add_tape_sp(storage_policy_name='TapeSP02', library='TapeLib2', media_agent='MA04', drive_pool='DrivePool2', scratch_pool='ScratchPool2', ocum_server='OCUMServer')
         """
         tape_library = library
         if not (isinstance(drive_pool, str) and
@@ -923,21 +925,26 @@ class StoragePolicies(object):
 
         return self.get(storage_policy_name)
 
-    def delete(self, storage_policy_name):
+
+    def delete(self, storage_policy_name: str) -> str:
         """Deletes a storage policy from the commcell.
 
             Args:
-                storage_policy_name (str)  --  name of the storage policy to delete
+                storage_policy_name (str): name of the storage policy to delete
+
+            Returns:
+                str: Response text after deleting the storage policy.
 
             Raises:
                 SDKException:
                     if type of the storage policy name argument is not string
-
                     if failed to delete storage policy
-
                     if response is empty
-
                     if response is not success
+
+            Usage:
+                # Delete a storage policy
+                storage_policies.delete(storage_policy_name='SP01')
         """
         if not isinstance(storage_policy_name, str):
             raise SDKException('Storage', '101')
@@ -978,16 +985,45 @@ class StoragePolicies(object):
                 'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
             )
 
-    def refresh(self):
+
+    def refresh(self) -> None:
         """Refresh the storage policies associated with the Commcell."""
         self._policies = self._get_policies()
 
-
 class StoragePolicy(object):
-    """Class for performing storage policy operations for a specific storage policy"""
+    """Class for performing storage policy operations for a specific storage policy
 
-    def __init__(self, commcell_object, storage_policy_name, storage_policy_id=None):
-        """Initialise the Storage Policy class instance."""
+    Attributes:
+        _storage_policy_name (str): The name of the storage policy (lowercase).
+        _commcell_object (Commcell): The Commcell object associated with this storage policy.
+        _storage_policy_id (str): The ID of the storage policy.
+        _STORAGE_POLICY (str): API service endpoint for storage policy details.
+        _STORAGE_POLICY_ADVANCED (str): API service endpoint for advanced storage policy details.
+        _storage_policy_properties (dict): Properties of the storage policy.
+        _storage_policy_advanced_properties (dict): Advanced properties of the storage policy.
+        _copies (dict): Dictionary of copies associated with the storage policy.
+
+    Usage:
+        sp = StoragePolicy(commcell_object, 'StoragePolicy1')
+    Raises:
+        SDKException:
+            if storage policy does not exist
+    """
+
+    def __init__(self, commcell_object: 'Commcell', storage_policy_name: str, storage_policy_id: str = None) -> None:
+        """Initialise the Storage Policy class instance.
+
+        Args:
+            commcell_object (Commcell):  instance of the Commcell class
+
+            storage_policy_name (str):    name of the storage policy
+
+            storage_policy_id (str, optional):  id of the storage policy, defaults to None
+
+        Raises:
+            SDKException:
+                if storage policy does not exist
+        """
         self._storage_policy_name = storage_policy_name.lower()
         self._commcell_object = commcell_object
 
@@ -1007,28 +1043,35 @@ class StoragePolicy(object):
         self._copies = {}
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """String representation of the instance of this class.
+
+        Returns:
+            str: String representation of the storage policy.
+        """
         representation_string = 'Storage Policy class instance for Storage Policy: "{0}"'
         return representation_string.format(self.storage_policy_name)
 
-    def _get_storage_policy_id(self):
-        """Gets the storage policy id asscoiated with the storage policy"""
+    def _get_storage_policy_id(self) -> str:
+        """Gets the storage policy id asscoiated with the storage policy
 
+        Returns:
+            str: ID of the storage policy.
+        """
         storage_policies = StoragePolicies(self._commcell_object)
         return storage_policies.get(self.storage_policy_name).storage_policy_id
 
-    def _get_storage_policy_advanced_properties(self):
+    def _get_storage_policy_advanced_properties(self) -> dict:
         """Gets the advanced storage policy properties of this storage policy.
 
-            Returns:
-                dict - dictionary consisting of the advanced properties of this storage policy
+        Returns:
+            dict: dictionary consisting of the advanced properties of this storage policy
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._STORAGE_POLICY_ADVANCED
@@ -1043,17 +1086,17 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_storage_policy_properties(self):
+    def _get_storage_policy_properties(self) -> dict:
         """Gets the storage policy properties of this storage policy.
 
-            Returns:
-                dict - dictionary consisting of the properties of this storage policy
+        Returns:
+            dict: dictionary consisting of the properties of this storage policy
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._STORAGE_POLICY
@@ -1068,7 +1111,7 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _initialize_storage_policy_properties(self):
+    def _initialize_storage_policy_properties(self) -> None:
         """Initializes the common properties for the storage policy."""
         self._storage_policy_properties = self._get_storage_policy_properties()
         self._copies = {}
@@ -1097,22 +1140,22 @@ class StoragePolicy(object):
                 }
                 self._copies[copy_name] = temp
 
-    def edit_block_size_on_gdsp(self,
-                                size=512):
-        """
-        edit the block size on the gdsp
+    def edit_block_size_on_gdsp(self, size: int = 512) -> None:
+        """edit the block size on the gdsp
 
         Args:
-                size (int) - SIDB block size to be changed to
-
+            size (int): SIDB block size to be changed to
 
         Raises:
             SDKException:
-                    if error in response
+                if error in response
 
-                    if response received is empty
+                if response received is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            sp.edit_block_size_on_gdsp(size=1024)
         """
         request_json = {
                         "App_UpdateStoragePolicyReq": {
@@ -1143,22 +1186,23 @@ class StoragePolicy(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-    
-    def edit_max_device_stream(self, stream=50):
-        """
-        edit the max device stream
+
+    def edit_max_device_stream(self, stream: int = 50) -> None:
+        """edit the max device stream
 
         Args:
-                stream (int) - max device stream to be set on storage policy.
-
+            stream (int): max device stream to be set on storage policy.
 
         Raises:
             SDKException:
-                    if error in response
+                if error in response
 
-                    if response received is empty
+                if response received is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            sp.edit_max_device_stream(stream=100)
         """
         request_json = {
             "numberOfStreams": stream
@@ -1185,19 +1229,22 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def has_copy(self, copy_name):
+    def has_copy(self, copy_name: str) -> bool:
         """Checks if a storage policy copy exists for this storage
             policy with the input storage policy name.
 
-            Args:
-                copy_name (str)  --  name of the storage policy copy
+        Args:
+            copy_name (str):  name of the storage policy copy
 
-            Returns:
-                bool - boolean output whether the storage policy copy exists or not
+        Returns:
+            bool: boolean output whether the storage policy copy exists or not
 
-            Raises:
-                SDKException:
-                    if type of the storage policy copy name argument is not string
+        Raises:
+            SDKException:
+                if type of the storage policy copy name argument is not string
+
+        Usage:
+            sp.has_copy('copy1')
         """
         if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
@@ -1205,42 +1252,48 @@ class StoragePolicy(object):
         return self._copies and copy_name.lower() in self._copies
 
     def create_secondary_copy(self,
-                              copy_name,
-                              library_name=None,
-                              media_agent_name=None,
-                              drive_pool=None,
-                              spare_pool=None,
-                              tape_library_id=None,
-                              drive_pool_id=None,
-                              spare_pool_id=None,
-                              snap_copy=False,
-                              global_policy=None,
-                              retention_days=30):
+                              copy_name: str,
+                              library_name: str = None,
+                              media_agent_name: str = None,
+                              drive_pool: str = None,
+                              spare_pool: str = None,
+                              tape_library_id: str = None,
+                              drive_pool_id: str = None,
+                              spare_pool_id: str = None,
+                              snap_copy: bool = False,
+                              global_policy: str = None,
+                              retention_days: int = 30) -> None:
         """Creates Synchronous copy for this storage policy
 
-            Args:
-                copy_name           (str)   --  copy name to create
+        Args:
+            copy_name           (str):  copy name to create
+            library_name        (str):  library name to be assigned
+            media_agent_name    (str):  media_agent to be assigned
+            drive_pool          (str):  drive pool name to be assigned
+            spare_pool          (str):  spare pool name to be assigned
+            tape_library_id     (str):  tape library id to be assigned
+            drive_pool_id       (str):  drive pool id to be assigned
+            spare_pool_id       (str):  spare pool id to be assigned
+            snap_copy           (bool): boolean on whether copy should be a snap copy
+                                        default: False
+            global_policy       (str):  name of the global policy to be assigned
+            retention_days      (int):  retention in days for the copy
 
-                library_name        (str)   --  library name to be assigned
+        Raises:
+            SDKException:
+                if type of inputs in not string
 
-                media_agent_name    (str)   --  media_agent to be assigned
+                if copy with given name already exists
 
-                snap_copy           (bool)  --  boolean on whether copy should be a snap copy
-                default: False
+                if failed to create copy
 
-                global_policy       (str)   --  name of the global policy to be assigned
+                if response received is empty
 
-            Raises:
-                SDKException:
-                    if type of inputs in not string
+                if response is not success
 
-                    if copy with given name already exists
-
-                    if failed to create copy
-
-                    if response received is empty
-
-                    if response is not success
+        Usage:
+            sp.create_secondary_copy(copy_name='copy2', library_name='DiskLib1', media_agent_name='MediaAgent1')
+            sp.create_secondary_copy(copy_name='copy3', global_policy='GlobalPool1')
         """
         if global_policy is not None:
             if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
@@ -1374,24 +1427,27 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def run_content_indexing(self):
+    def run_content_indexing(self) -> 'Job':
         """starts the offline CI job for this storage policy
 
-            Args:
-                None
+        Args:
+            None
 
-            Returns:
-                object - instance of the Job class for this CI job
+        Returns:
+            Job: instance of the Job class for this CI job
 
-            Raises:
-                SDKException:
-                        if type of inputs is not valid
+        Raises:
+            SDKException:
+                if type of inputs is not valid
 
-                        if failed to start content indexing job
+                if failed to start content indexing job
 
-                        if response received is empty
+                if response received is empty
 
-                        if response is not success
+                if response is not success
+
+        Usage:
+            job = sp.run_content_indexing()
         """
         request_xml = """<TMMsg_CreateTaskReq>
         <taskInfo>
@@ -1428,42 +1484,34 @@ class StoragePolicy(object):
 
     def enable_content_indexing(
             self,
-            cloud_id,
-            include_doc_type=None,
-            max_doc_size=None,
-            min_doc_size=None,
-            exclude_doc_type=None):
+            cloud_id: str,
+            include_doc_type: str = None,
+            max_doc_size: str = None,
+            min_doc_size: str = None,
+            exclude_doc_type: str = None) -> None:
         """configures offline CI for this storage policy
 
-                Args:
+        Args:
+            cloud_id         (str): cloud id of the search engine
+            include_doc_type (str): include document types for content indexing
+            exclude_doc_type (str): exclude document types for content indexing
+            max_doc_size     (str): maximum document size for CI in KB
+            min_doc_size     (str): minimum document size for CI in KB
 
-                    cloud_id            (str)   --  cloud id of the search engine
+        Raises:
+            SDKException:
+                if type of inputs is not valid
 
-                    include_doc_type    (str)   --  include document types for content indexing
+                if failed to configure content indexing
 
-                        Example : "*.csv,*.ppt"
+                if response received is empty
 
-                    exclude_doc_type    (str)   --  exclude document types for content indexing
+                if response is not success
 
-                        Example : "*.py,*.txt"
-
-                    max_doc_size        (str)   --  maximum document size for CI in KB
-
-                    min_doc_size        (str)   --  minimum document size for CI in KB
-
-                Returns:
-                    None
-
-                Raises:
-
-                    SDKException:
-                            if type of inputs is not valid
-
-                            if failed to configure content indexing
-
-                            if response received is empty
-
-                            if response is not success
+        Usage:
+            storage_policy.enable_content_indexing(cloud_id='cloud123')
+            storage_policy.enable_content_indexing(cloud_id='cloud456', include_doc_type='*.csv,*.ppt')
+            storage_policy.enable_content_indexing(cloud_id='cloud789', max_doc_size='102400', min_doc_size='10')
         """
         if not isinstance(cloud_id, str):
             raise SDKException('Storage', '101')
@@ -1507,29 +1555,29 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def enable_entity_extraction(self, entity_details, entity_names, ca_client_name):
+
+    def enable_entity_extraction(self, entity_details: list, entity_names: list, ca_client_name: str) -> None:
         """configures offline CI entity extraction for given subclient id's on this storage policy
 
-                Args:
-                    entity_details     (list)     --  List of subclient to configure for Entity Extraction
+        Args:
+            entity_details  (list): List of subclient to configure for Entity Extraction
+            entity_names    (list): list of entity names to be configured for Entity Extraction
+            ca_client_name  (str): client name where Content Analyzer package is installed
 
-                    Format : [[clientname,agent type,backup set name,subclient name]]
+        Raises:
+            SDKException:
+                if type of inputs is not valid
 
-                    entity_names         (list)   --  list of entity names to be configured for Entity Extraction
+                if failed to configure EE
 
-                    Example : [Email,SSN]
+                if response received is empty
 
-                    ca_client_name       (str)    --  client name where Content Analyzer package is installed
+                if response is not success
 
-                Raises:
-                    SDKException:
-                        if type of inputs is not valid
-
-                        if failed to configure EE
-
-                        if response received is empty
-
-                        if response is not success
+        Usage:
+            entity_details = [['client1', 'File System', 'defaultBackupSet', 'subclient1']]
+            entity_names = ['Email', 'SSN']
+            storage_policy.enable_entity_extraction(entity_details, entity_names, 'CA_Client')
         """
         if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
             raise SDKException('Storage', '101')
@@ -1589,60 +1637,70 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     def create_snap_copy(self,
-                         copy_name,
-                         is_mirror_copy,
-                         is_snap_copy,
-                         library_name,
-                         media_agent_name,
-                         source_copy,
-                         provisioning_policy=None,
-                         resource_pool=None,
-                         is_replica_copy=None,
-                         **kwargs):
+                         copy_name: str,
+                         is_mirror_copy: bool,
+                         is_snap_copy: bool,
+                         library_name: str,
+                         media_agent_name: str,
+                         source_copy: str,
+                         provisioning_policy: str = None,
+                         resource_pool: str = None,
+                         is_replica_copy: bool = None,
+                         **kwargs) -> None:
         """Creates Snap copy for this storage policy
 
-            Args:
-                copy_name           (str)   --  copy name to create
+        Args:
+            copy_name           (str): copy name to create
+            is_mirror_copy      (bool): if true then copyType will be Mirror
+            is_snap_copy        (bool): if true then copyType will be Snap
+            library_name        (str): library name to be assigned
+            media_agent_name    (str): media_agent to be assigned
+            source_copy         (str): Name of the Source Copy for this copy
+            provisioning_policy (str): Name of the provisioning Policy to add
+                                        default : None
+            resource_pool       (str): Name of the resource pool to add
+                                        default : None
+            is_replica_copy     (bool): if true then Replica Copy will be created
+                                        default : None
 
-                is_mirror_copy      (bool)   --  if true then copyType will be Mirror
+        Raises:
+            SDKException:
+                if type of inputs in not string
 
-                is_snap_copy        (bool)   --  if true then copyType will be Snap
+                if copy with given name already exists
 
-                library_name        (str)   --  library name to be assigned
+                if failed to create copy
 
-                media_agent_name    (str)   --  media_agent to be assigned
+                if response received is empty
 
-                source_copy         (str)   --  Name of the Source Copy for this copy
+                if response is not success
 
-                provisioning_policy (str)   --  Name of the provisioning Policy to add
-                default : None
+        Usage:
+            storage_policy.create_snap_copy(
+                copy_name='snap_copy1',
+                is_mirror_copy=True,
+                is_snap_copy=True,
+                library_name='library1',
+                media_agent_name='media_agent1',
+                source_copy='primary'
+            )
 
-                resource_pool       (str)   --  Name of the resource pool to add
-                default : None
-
-                is_replica_copy     (bool)   --  if true then Replica Copy will be created
-                default : None
-
-                is_c2c_target       (bool)   -- if true then NetApp Cloud target copy will be created 
-                default : False
-
-                job_retention       (bool)  -- if true job based retention will be set
-                default : False
-
-                enable_selective_copy (int) -- Enable selective copy with value selectiveRule
-
-            Raises:
-                SDKException:
-                    if type of inputs in not string
-
-                    if copy with given name already exists
-
-                    if failed to create copy
-
-                    if response received is empty
-
-                    if response is not success
+            storage_policy.create_snap_copy(
+                copy_name='snap_copy2',
+                is_mirror_copy=False,
+                is_snap_copy=True,
+                library_name='library2',
+                media_agent_name='media_agent2',
+                source_copy='primary',
+                provisioning_policy='policy1',
+                resource_pool='pool1',
+                is_replica_copy=True,
+                is_c2c_target=True,
+                job_based_retention=True,
+                enable_selective_copy=1
+            )
         """
         if not (isinstance(copy_name, str) and
                 isinstance(library_name, str) and
@@ -1700,7 +1758,7 @@ class StoragePolicy(object):
         else:
             request_xml = """
                                         <App_CreateStoragePolicyCopyReq copyName="{0}">
-                                            <storagePolicyCopyInfo copyType="2" description="" isMirrorCopy="{1}" isSnapCopy="{2}">
+                                            <storagePolicyCopyInfo copyType="2" description= \"\" isMirrorCopy="{1}" isSnapCopy="{2}">
                                                 <StoragePolicyCopy copyName="{0}" storagePolicyName="{4}" />
                                                 <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
                                                 <library  libraryName="{7}" />
@@ -1747,23 +1805,27 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def delete_secondary_copy(self, copy_name):
+
+    def delete_secondary_copy(self, copy_name: str) -> None:
         """Deletes the copy associated with this storage policy
 
-            Args:
-                copy_name   (str)   --  copy name to be deleted
+        Args:
+            copy_name (str): copy name to be deleted
 
-            Raises:
-                SDKException:
-                    if type of input parameters is not string
+        Raises:
+            SDKException:
+                if type of input parameters is not string
 
-                    if storage policy copy doesn't exist with given name
+                if storage policy copy doesn't exist with given name
 
-                    if failed to delete storage policy copy
+                if failed to delete storage policy copy
 
-                    if response received is empty
+                if response received is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            storage_policy.delete_secondary_copy('copy1')
         """
         if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
@@ -1807,36 +1869,56 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
     def create_selective_copy(self,
-                              copy_name,
-                              library_name,
-                              media_agent_name,
-                              sel_freq,
-                              first_or_last_full,
-                              backups_from,
-                              daystartson=None):
+                              copy_name: str,
+                              library_name: str,
+                              media_agent_name: str,
+                              sel_freq: str,
+                              first_or_last_full: str,
+                              backups_from: str,
+                              daystartson: Optional[Dict[str, Union[str, int]]] = None) -> None:
         """Creates Selective copy for this storage policy
 
-            Args:
-                copy_name           (str)   --  copy name to create
-                library_name        (str)   --  library name to be assigned
-                media_agent_name    (str)   --  media_agent to be assigned
-                drive_pool etc are for tape library
+        Args:
+            copy_name (str): copy name to create
+            library_name (str): library name to be assigned
+            media_agent_name (str): media_agent to be assigned
+            sel_freq (str): {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
+            first_or_last_full (str): {FirstFull, LastFull, LastFullWait}
+            backups_from (str): start date in yyyy-mm-dd format to pick jobs from this date
+            daystartson (Optional[Dict[str, Union[str, int]]]): Dictionary containing day start information. Defaults to None.
 
-                sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
-                first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
-                backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
+        Raises:
+            SDKException:
+                if type of inputs in not string
 
-            Raises:
-                SDKException:
-                    if type of inputs in not string
+                if copy with given name already exists
 
-                    if copy with given name already exists
+                if failed to create copy
 
-                    if failed to create copy
+                if response received is empty
 
-                    if response received is empty
+                if response is not success
 
-                    if response is not success
+        Usage:
+            sp.create_selective_copy(
+                copy_name='SelectiveCopy1',
+                library_name='DiskLib1',
+                media_agent_name='MediaAgent1',
+                sel_freq='daily',
+                first_or_last_full='LastFull',
+                backups_from='2023-01-01',
+                daystartson={'hours': 10, 'minutes': 30, 'seconds': 0, 'ampm': 'AM'}
+            )
+
+            sp.create_selective_copy(
+                copy_name='SelectiveCopy2',
+                library_name='TapeLib1',
+                media_agent_name='MediaAgent2',
+                sel_freq='weekly',
+                first_or_last_full='FirstFull',
+                backups_from='2023-06-01',
+                daystartson='Friday'
+            )
         """
         if not (isinstance(copy_name, str) and
                 isinstance(library_name, str) and
@@ -1931,47 +2013,73 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     @property
-    def copies(self):
-        """Treats the storage policy copies as a read-only attribute"""
+    def copies(self) -> Dict:
+        """Treats the storage policy copies as a read-only attribute
+
+        Returns:
+            dict: The storage policy copies.
+        """
         return self._copies
 
+
     @property
-    def storage_policy_id(self):
-        """Treats the storage policy id as a read-only attribute."""
+    def storage_policy_id(self) -> str:
+        """Treats the storage policy id as a read-only attribute.
+
+        Returns:
+            str: The storage policy ID.
+        """
         return self._storage_policy_id
 
+
     @property
-    def name(self):
-        """Returns the Storage Policy display name"""
+    def name(self) -> str:
+        """Returns the Storage Policy display name
+
+        Returns:
+            str: The display name of the storage policy.
+        """
         return self._storage_policy_properties['storagePolicy']['storagePolicyName']
 
-    @property
-    def storage_policy_name(self):
-        """Treats the storage policy name as a read-only attribute."""
-        return self._storage_policy_name
 
     @property
-    def description(self):
-        """Returns the Storage Policy Description Field"""
+    def storage_policy_name(self) -> str:
+        """Treats the storage policy name as a read-only attribute.
+
+        Returns:
+            str: The storage policy name.
+        """
+        return self._storage_policy_name
+
+
+    @property
+    def description(self) -> Optional[str]:
+        """Returns the Storage Policy Description Field
+
+        Returns:
+            Optional[str]: The description of the storage policy, or None if not available.
+        """
         if self._storage_policy_advanced_properties is None:
             self._storage_policy_advanced_properties = self._get_storage_policy_advanced_properties()
         return self._storage_policy_advanced_properties.get('policies',[{}])[0].get('description')
 
-    def get_copy_precedence(self, copy_name):
-        """ returns the copy precedence value associated with the copy name
 
-            Args:
-                copy_name           (str)   --  Storage copy name
+    def get_copy_precedence(self, copy_name: str) -> int:
+        """returns the copy precedence value associated with the copy name
 
-            Returns:
-                copy_precedence     (int)   --  Copy precedence number of
-                storage copy
+        Args:
+            copy_name (str): Storage copy name
 
-            Raises:
-                Exception:
-                    if unable to find the given copy name
+        Returns:
+            int: Copy precedence number of storage copy
 
+        Raises:
+            SDKException: if unable to find the given copy name
+
+        Usage:
+            copy_precedence = storage_policy_object.get_copy_precedence('copy1')
         """
         policy_copies = self.copies
         if policy_copies.get(copy_name):
@@ -1982,29 +2090,71 @@ class StoragePolicy(object):
             '102',
             'Failed to get copy precedence from policy')
 
-    def update_snapshot_options(self, **options):
+
+    def update_snapshot_options(self, **options: Dict[str, Union[str, int, bool, None]]) -> None:
         """
         Method for Updating Storage Policy Snapshot Options like Backup Copy and Snapshot Catalog
 
         Args:
-            Available Snapshot Options:
+            options (dict): A dictionary containing snapshot options.
 
-            enable_backup_copy               (bool)   --  Enables backup copy if the value is True
+                Available Snapshot Options:
 
-            source_copy_for_snap_to_tape     (str)    --  Source Copy name for backup copy
+                enable_backup_copy (bool): Enables backup copy if the value is True
 
-            enable_snapshot_catalog          (bool)   --  Enables Snapshot Catalog if value is True
+                source_copy_for_snap_to_tape (str): Source Copy name for backup copy
 
-            source_copy_for_snapshot_catalog (str)    --  Source Copy name for Snapshot Catalog
+                enable_snapshot_catalog (bool): Enables Snapshot Catalog if value is True
 
-            is_ocum                          (bool)   --  True if Storage policy is enabled with
-                                                          ocum server
-            enable_selective_copy                 (int)   -- Enable selective copy option based on input value
+                source_copy_for_snapshot_catalog (str): Source Copy name for Snapshot Catalog
 
-            disassociate_sc_from_backup_copy    (bool)    -- Associate/Disassociate subclient from backup copy
-                                                                True: Disassociate subclient
-                                                                False: Associate subclient
+                is_ocum (bool): True if Storage policy is enabled with ocum server
 
+                enable_selective_copy (int): Enable selective copy option based on input value
+
+                disassociate_sc_from_backup_copy (bool): Associate/Disassociate subclient from backup copy
+                                                            True: Disassociate subclient
+                                                            False: Associate subclient
+
+        Raises:
+            SDKException: if the update fails.
+
+        Usage:
+            storage_policy.update_snapshot_options(
+                enable_backup_copy=True,
+                source_copy_for_snap_to_tape='copy1',
+                enable_snapshot_catalog=False,
+                source_copy_for_snapshot_catalog=None,
+                is_ocum=False,
+                enable_selective_copy=1,
+                disassociate_sc_from_backup_copy=True,
+                appName='app1',
+                applicationId=123,
+                backupsetId=456,
+                backupsetName='bkset1',
+                clientId=789,
+                clientName='client1',
+                subclientId=101,
+                subclientName='subclient1'
+            )
+
+            storage_policy.update_snapshot_options(
+                enable_backup_copy=False,
+                source_copy_for_snap_to_tape=None,
+                enable_snapshot_catalog=True,
+                source_copy_for_snapshot_catalog='copy2',
+                is_ocum=True,
+                enable_selective_copy=0,
+                disassociate_sc_from_backup_copy=False,
+                appName='app2',
+                applicationId=321,
+                backupsetId=654,
+                backupsetName='bkset2',
+                clientId=987,
+                clientName='client2',
+                subclientId=102,
+                subclientName='subclient2'
+            )
         """
         enable_backup_copy = options['enable_backup_copy']
         enable_snapshot_catalog = options['enable_snapshot_catalog']
@@ -2133,23 +2283,27 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def run_backup_copy(self):
+
+    def run_backup_copy(self) -> 'Job':
         """
         Runs the backup copy from Commcell for the given storage policy
 
         Args:
-                None
+            None
 
         Returns:
-                object - instance of the Job class for this backup copy job
+            Job: instance of the Job class for this backup copy job
+
         Raises:
             SDKException:
+                if backup copy job failed
 
-                    if backup copy job failed
+                if response is empty
 
-                    if response is empty
+                if response is not success
 
-                    if response is not success
+        Usage:
+            job = storage_policy.run_backup_copy()
         """
         request_json = {
             "taskInfo": {
@@ -2207,7 +2361,7 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def modify_dynamic_stream_allocation(self, enable=True):
+    def modify_dynamic_stream_allocation(self, enable: bool = True) -> None:
         """
         Modifies the DSA option for the Storage Policy
             Args:
@@ -2226,7 +2380,7 @@ class StoragePolicy(object):
                        '''.format(self.storage_policy_name, int(enable))
         self._commcell_object.qoperation_execute(request_xml)
 
-    def run_snapshot_cataloging(self):
+    def run_snapshot_cataloging(self) -> 'Job':
         """
         Runs the deferred catalog job from Commcell for the given storage policy
 
@@ -2306,7 +2460,7 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
     @property
-    def storage_policy_properties(self):
+    def storage_policy_properties(self) -> dict:
         """Returns the storage policy properties
 
             dict - consists of storage policy properties
@@ -2314,7 +2468,7 @@ class StoragePolicy(object):
         return self._storage_policy_properties
 
     @property
-    def storage_policy_advanced_properties(self):
+    def storage_policy_advanced_properties(self) -> dict:
         """Returns the  storage policy advanced properties
 
             dict - consists of storage policy advanced properties
@@ -2324,7 +2478,7 @@ class StoragePolicy(object):
         return self._storage_policy_advanced_properties
 
     @property
-    def library_name(self):
+    def library_name(self) -> str:
         """Treats the library name as a read-only attribute."""
         primary_copy = self._storage_policy_properties.get('copy')
         if 'library' in primary_copy[0]:
@@ -2332,7 +2486,7 @@ class StoragePolicy(object):
             return library.get('libraryName')
 
     @property
-    def library_id(self):
+    def library_id(self) -> int:
         """Treats the library id as a read-only attribute."""
         primary_copy = self._storage_policy_properties.get('copy')
         if 'library' in primary_copy[0]:
@@ -2340,7 +2494,7 @@ class StoragePolicy(object):
             return library.get('libraryId')
 
     @property
-    def aux_copies(self):
+    def aux_copies(self) -> list:
         """
         Returns the list of all aux copies in the policy
         Returns:
@@ -2353,7 +2507,7 @@ class StoragePolicy(object):
         return aux_copies
 
     @property
-    def snap_copy(self):
+    def snap_copy(self) -> str:
         """
         Returns the name of the snap copy
         Returns:
@@ -2365,9 +2519,9 @@ class StoragePolicy(object):
                 snap_copy = _copy
         return snap_copy
 
-    def run_aux_copy(self, storage_policy_copy_name=None,
-                     media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=1000, schedule_pattern=None, **kwargs):
+    def run_aux_copy(self, storage_policy_copy_name: str = None,
+                     media_agent: str = None, use_scale: bool = True, streams: int = 0,
+                     all_copies: bool = True, total_jobs_to_process: int = 1000, schedule_pattern: dict = None, **kwargs) -> 'Job':
         """Runs the aux copy job from the commcell.
             Args:
 
@@ -2505,12 +2659,12 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh the properties of the StoragePolicy."""
         self._initialize_storage_policy_properties()
         self._storage_policy_advanced_properties = None
 
-    def seal_ddb(self, copy_name):
+    def seal_ddb(self, copy_name: str) -> None:
         """
         Seals the deduplication database
 
@@ -2535,15 +2689,13 @@ class StoragePolicy(object):
         """.format(copy_name, self.storage_policy_name)
         self._commcell_object._qoperation_execute(request_xml)
 
-    def update_transactional_ddb(self, update_value, copy_name, media_agent_name):
+    def update_transactional_ddb(self, update_value: bool, copy_name: str, media_agent_name: str) -> None:
         """
         Updates TransactionalDDB option on the deduplication database
 
             Args:
                 update_value    (bool)   --   enable(True)/disable(False)
-
                 copy_name       (str)   --   name of the associated copy
-
                 media_agent_name(str)   --   name of the media agent
 
             Raises:
@@ -2578,33 +2730,26 @@ class StoragePolicy(object):
 
         self._commcell_object._qoperation_execute(request_xml)
 
-    def create_dedupe_secondary_copy(self, copy_name, library_name,
-                                     media_agent_name, path, ddb_media_agent,
-                                     dash_full=None,
-                                     source_side_disk_cache=None,
-                                     software_compression=None):
+    def create_dedupe_secondary_copy(self, copy_name: str, library_name: str,
+                                     media_agent_name: str, path: str, ddb_media_agent: str,
+                                     dash_full: bool = None,
+                                     source_side_disk_cache: bool = None,
+                                     software_compression: bool = None) -> None:
         """Creates Synchronous copy for this storage policy
 
             Args:
                 copy_name               (str)   --  copy name to create
-
                 library_name            (str)   --  library name to be assigned
-
                 media_agent_name        (str)   --  media_agent to be assigned
-
                 path                    (str)   --  path where deduplication store is to be hosted
-
                 ddb_media_agent         (str)   --  media agent name on which deduplication store
                                                     is to be hosted
-
                 dash_full               (bool)  --  enable DASH full on deduplication store (True/False)
-                Default None
-
+                                                    Default None
                 source_side_disk_cache  (bool)  -- enable source side disk cache (True/False)
-                Default None
-
+                                                    Default None
                 software_compression    (bool)  -- enable software compression (True/False)
-                Default None
+                                                    Default None
 
             Raises:
                 SDKException:
@@ -2703,40 +2848,43 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
     def run_ddb_verification(self,
-                             copy_name,
-                             ver_type,
-                             ddb_ver_level,
-                             use_scalable=True,
-                             orphan_chunk_listing=False):
-        """
-        Runs DDB verification job
+                             copy_name: str,
+                             ver_type: str,
+                             ddb_ver_level: str,
+                             use_scalable: bool = True,
+                             orphan_chunk_listing: bool = False) -> object:
+        """Runs DDB verification job
 
-            Args:
-                copy_name       (str)   --  name of the copy which is associated with the DDB store
+        Args:
+            copy_name       (str): name of the copy which is associated with the DDB store
 
-                ver_type        (str)   --  backup level (Full/Incremental)
+            ver_type        (str): backup level (Full/Incremental)
 
-                ddb_ver_level   (str)   --  DDB verification type
-                                            (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
-                                            QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+            ddb_ver_level   (str): DDB verification type
+                                        (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
+                                        QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
 
-                use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
-                                            Default: True
+            use_scalable    (bool): True/False to use Scalable Resource Allocation
+                                        Default: True
 
-                orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
+            orphan_chunk_listing (bool): True/False to run orphan chunk listing phase during DDB Defragmentation
 
-            Returns:
-                object - instance of the Job class for this DDB verification job
+        Returns:
+            object: instance of the Job class for this DDB verification job
 
-            Raises:
-                SDKException:
-                    if type of input parameters is not string
+        Raises:
+            SDKException:
+                if type of input parameters is not string
 
-                    if job failed
+                if job failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            >>> storage_policy.run_ddb_verification(copy_name='MyCopy', ver_type='Full', ddb_ver_level='DDB_VERIFICATION')
+            >>> storage_policy.run_ddb_verification(copy_name='MyCopy', ver_type='Incremental', ddb_ver_level='DDB_DEFRAGMENTATION', orphan_chunk_listing=True)
         """
         if not (isinstance(copy_name, str) and
                 isinstance(ver_type, str) and
@@ -2814,33 +2962,41 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def run_data_verification(self, media_agent_name='', copy_name='', streams=0,
-                              jobs_to_verify='NEW', use_scalable=True, schedule_pattern=None, **kwargs):
+
+    def run_data_verification(self, media_agent_name: str = '', copy_name: str = '', streams: int = 0,
+                              jobs_to_verify: str = 'NEW', use_scalable: bool = True, schedule_pattern: object = None, **kwargs) -> object:
         """Runs Data verification job
 
         Args:
-            media_agent_name    (str)  : name of the mediaAgent to use for data reading
+            media_agent_name    (str): name of the mediaAgent to use for data reading
 
-            copy_name           (str)  : name of Copy
+            copy_name           (str): name of Copy
                                          (default - verifies jobs on all copies)
 
-            streams             (int)  : number of streams to use
+            streams             (int): number of streams to use
                                          (default - use Maximum)
 
-            jobs_to_verify      (str)  : jobs to be Verified
+            jobs_to_verify      (str): jobs to be Verified
                                          (NEW/ VERF_EXPIRED/ ALL)
 
-            use_scalable       (bool) : True/False to use Scalable Resource Allocation
+            use_scalable       (bool): True/False to use Scalable Resource Allocation
                                          (default - True)
 
-            kwargs              (dict) : optional arguments
+            kwargs              (dict): optional arguments
                 Available kwargs Options:
                     job_description     (str): Description for Job
 
         Returns:
-            object - instance of the Job class for this Data Verification Job
+            object: instance of the Job class for this Data Verification Job
 
-            errorMessage - If Data Verification Job fails to Start
+        Raises:
+            SDKException:
+                if type of input parameters is not string
+                if Data Verification Job fails to Start
+
+        Usage:
+            >>> storage_policy.run_data_verification(media_agent_name='MyMediaAgent', copy_name='MyCopy', streams=5, jobs_to_verify='NEW')
+            >>> storage_policy.run_data_verification(copy_name='MyCopy', jobs_to_verify='ALL', job_description='Verify all jobs')
         """
         if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
                 and isinstance(media_agent_name, str) and isinstance(streams, int)):
@@ -2922,42 +3078,47 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     def move_dedupe_store(self,
-                          copy_name,
-                          dest_path,
-                          src_path,
-                          dest_media_agent,
-                          src_media_agent,
-                          config_only=False):
+                          copy_name: str,
+                          dest_path: str,
+                          src_path: str,
+                          dest_media_agent: str,
+                          src_media_agent: str,
+                          config_only: bool = False) -> 'Job':
         """
         Moves a deduplication store
 
-            Args:
-                copy_name               (str)   -- name of the storage policy copy
+        Args:
+            copy_name           (str): name of the storage policy copy
 
-                dest_path:              (str)   -- path where new partition is to be hosted
+            dest_path          (str): path where new partition is to be hosted
 
-                src_path:               (str)   -- path where existing partition is hosted
+            src_path           (str): path where existing partition is hosted
 
-                dest_media_agent:       (str)   -- media agent name where new partition is to be hosted
+            dest_media_agent   (str): media agent name where new partition is to be hosted
 
-                src_media_agent:        (str)   -- media agent name where existing partition is hosted
+            src_media_agent    (str): media agent name where existing partition is hosted
 
-                config_only             (bool)  -- to only chnage in DB (files need to be moved manually) (True/False)
-                Default : False
+            config_only        (bool): to only chnage in DB (files need to be moved manually) (True/False)
+                                        Default : False
 
-            Returns:
-                object - object - instance of the Job class for this DDB move job
+        Returns:
+            object: instance of the Job class for this DDB move job
 
-            Raises:
-                SDKException:
-                    if type of input parameters is not string
+        Raises:
+            SDKException:
+                if type of input parameters is not string
 
-                    if job failed
+                if job failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            >>> storage_policy.move_dedupe_store(copy_name='MyCopy', dest_path='/new/path', src_path='/old/path', dest_media_agent='DestMA', src_media_agent='SrcMA')
+            >>> storage_policy.move_dedupe_store(copy_name='MyCopy', dest_path='/new/path', src_path='/old/path', dest_media_agent='DestMA', src_media_agent='SrcMA', config_only=True)
         """
         if not (isinstance(copy_name, str) and
                 isinstance(dest_path, str) and
@@ -3030,25 +3191,29 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     def add_ddb_partition(self,
-                          copy_id,
-                          sidb_store_id,
-                          sidb_new_path,
-                          media_agent):
+                          copy_id: str,
+                          sidb_store_id: str,
+                          sidb_new_path: str,
+                          media_agent: str) -> None:
         """
         Adds a new DDB partition
-            Args:
-                copy_id         (str)   -- storage policy copy id
+        Args:
+            copy_id         (str): storage policy copy id
 
-                sidb_store_id   (str)   -- deduplication store id
+            sidb_store_id   (str): deduplication store id
 
-                sidb_new_path   (str)   -- path where new partition is to be hosted
+            sidb_new_path   (str): path where new partition is to be hosted
 
-                media_agent     (str)   -- media agent on which new partition is to be hosted
+            media_agent     (str): media agent on which new partition is to be hosted
 
-            Raises:
-                SDKException:
-                    if type of input parameters is not string
+        Raises:
+            SDKException:
+                if type of input parameters is not string
+
+        Usage:
+            >>> storage_policy.add_ddb_partition(copy_id='123', sidb_store_id='456', sidb_new_path='/new/path', media_agent='MyMediaAgent')
         """
         if not (isinstance(copy_id, str) and
                 isinstance(sidb_store_id, str) and
@@ -3074,20 +3239,24 @@ class StoragePolicy(object):
                    media_agent.media_agent_name, sidb_new_path)
         self._commcell_object._qoperation_execute(request_xml)
 
-    def get_copy(self, copy_name):
+
+    def get_copy(self, copy_name: str) -> object:
         """Returns a storage policy copy object if copy exists
 
-            Args:
-               copy_name (str)  --  name of the storage policy copy
+        Args:
+           copy_name (str): name of the storage policy copy
 
-            Returns:
-               object - instance of the StoragePolicyCopy class for the given copy name
+        Returns:
+           object: instance of the StoragePolicyCopy class for the given copy name
 
-            Raises:
-               SDKException:
-                   if type of the copy name argument is not string
+        Raises:
+           SDKException:
+               if type of the copy name argument is not string
 
-                   if no copy exists with the given name
+               if no copy exists with the given name
+
+        Usage:
+            >>> copy = storage_policy.get_copy(copy_name='MyCopy')
         """
         if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
@@ -3099,16 +3268,19 @@ class StoragePolicy(object):
                 'Storage', '102', 'No copy exists with name: {0}'.format(copy_name)
             )
 
-    def get_primary_copy(self):
+
+    def get_primary_copy(self) -> 'StoragePolicyCopy':
         """Returns the primary copy of the storage policy
 
-            Returns:
-                object  -   Instance of the StoragePolicyCopy class of the primary copy
+        Returns:
+            object: Instance of the StoragePolicyCopy class of the primary copy
 
-            Raises:
-               SDKException:
-                   if unable to find a primary copy in the storage policy
+        Raises:
+           SDKException:
+               if unable to find a primary copy in the storage policy
 
+        Usage:
+            >>> primary_copy = storage_policy.get_primary_copy()
         """
 
         for copy_name, copy_info in self.copies.items():
@@ -3117,12 +3289,15 @@ class StoragePolicy(object):
 
         raise SDKException('Storage', '102', 'Unable to find a primary copy in the storage policy')
 
-    def get_secondary_copies(self):
+
+    def get_secondary_copies(self) -> List['StoragePolicyCopy']:
         """Returns all the secondary copies in the storage policy sorted by copy precedence
 
-            Returns:
-                list    -   A list of storage policy copy instances.
+        Returns:
+            list: A list of storage policy copy instances.
 
+        Usage:
+            >>> secondary_copies = storage_policy.get_secondary_copies()
         """
 
         sorted_copies = sorted(self.copies.items(), key=lambda x: x[1]['copyPrecedence'])  # Sort by copy precedence
@@ -3135,18 +3310,21 @@ class StoragePolicy(object):
 
         return result
 
-    def delete_job(self, job_id, commcell_id=2):
+
+    def delete_job(self, job_id: str, commcell_id: str = 2) -> None:
         """Deletes a job on Storage Policy
 
-            Args:
-                job_id          (str)   --  ID for the job to be deleted
+        Args:
+            job_id          (str): ID for the job to be deleted
 
-                commcell_id     (str)   --  The commcell ID of the job to be deleted
+            commcell_id     (str): The commcell ID of the job to be deleted
 
-            Raises:
-                SDKException:
-                    if type of input parameters is not string
+        Raises:
+            SDKException:
+                if type of input parameters is not string
 
+        Usage:
+            >>> storage_policy.delete_job(job_id='1234')
         """
 
         if not isinstance(job_id, str):
@@ -3164,17 +3342,21 @@ class StoragePolicy(object):
 
         self._commcell_object._qoperation_execute(request_xml)
 
-    def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
-        """ Marks Deduplication store for recovery
 
-            Args:
-               store_id         (str)  --  SIDB store id
+    def mark_for_recovery(self, store_id: str, sub_store_id: str, media_agent_name: str, dedupe_path: str) -> None:
+        """Marks Deduplication store for recovery
 
-               sub_store_id     (str)  --  SIDB substore id
+        Args:
+           store_id         (str): SIDB store id
 
-               media_agent_name (str)  --  name of the media agent on which DDB is hosted
+           sub_store_id     (str): SIDB substore id
 
-               dedupe_path      (str)  --  SIDB store path
+           media_agent_name (str): name of the media agent on which DDB is hosted
+
+           dedupe_path      (str): SIDB store path
+
+        Usage:
+            >>> storage_policy.mark_for_recovery(store_id='123', sub_store_id='456', media_agent_name='MyMediaAgent', dedupe_path='/dedupe/path')
         """
 
         request_xml = """
@@ -3185,25 +3367,22 @@ class StoragePolicy(object):
                 """.format(store_id, sub_store_id, media_agent_name, dedupe_path)
         self._commcell_object._qoperation_execute(request_xml)
 
-    def run_recon(self, copy_name, sp_name, store_id, full_reconstruction=0, use_scalable_resource='false'):
-        """ Runs non-mem DB Reconstruction job
+    def run_recon(self, copy_name: str, sp_name: str, store_id: str, full_reconstruction: int = 0, use_scalable_resource: str = 'false') -> None:
+        """Runs non-mem DB Reconstruction job
 
             Args:
-               copy_name    (str)  --  name of the storage policy copy
+               copy_name             (str): name of the storage policy copy
+               sp_name               (str): name of the storage policy
+               store_id              (str): SIDB store id associated with the copy
+               full_reconstruction   (int): flag to enable full reconstruction job
+               use_scalable_resource (str): to enable scalable resources
 
-               sp_name      (str)  --  name of the storage policy
+            Returns:
+                dict: JSON response from the API if the request was successful.
 
-               store_id     (str)  --  SIDB store id associated with the copy
-
-               full_reconstruction      (int)  --  flag to enable full reconstruction job
-                                                   Valid values:
-                                                   0: to start regular reconstruction job
-                                                   1: to start full reconstruction job
-
-               use_scalable_resource    (str)  --  to enable scalable resources
-                                                   Valid values:
-                                                   'true': to start old way reconstruction job
-                                                   'false': to start reconstruction job with scalable resources
+            Usage:
+                storage_policy.run_recon(copy_name='copy1', sp_name='sp1', store_id='123')
+                storage_policy.run_recon(copy_name='copy2', sp_name='sp2', store_id='456', full_reconstruction=1, use_scalable_resource='true')
         """
         request_xml = """
         <TMMsg_DedupSyncTaskReq flags="0">
@@ -3240,16 +3419,22 @@ class StoragePolicy(object):
             if response.json():
                 return response.json()
 
-    def reassociate_all_subclients(self, dest_storage_policy_name='CV_DEFAULT'):
-        """
-        Reassociates all subclients associated to Storage Policy
+
+    def reassociate_all_subclients(self, dest_storage_policy_name: str = 'CV_DEFAULT') -> None:
+        """Reassociates all subclients associated to Storage Policy
+
         Args:
-            dest_storage_policy_name(str):  Name of a Storage Policy to which the Subclients are to
-                                            be reassociated.
-                                            Default Value:
-                                            'CV_DEFAULT': 'Not Assigned' to any Policy.
+            dest_storage_policy_name (str): Name of a Storage Policy to which the Subclients are to
+                                             be reassociated.
+                                             Default Value:
+                                             'CV_DEFAULT': 'Not Assigned' to any Policy.
+
         Raises:
-            SDKException    :   If failed to reassociate
+            SDKException: If failed to reassociate
+
+        Usage:
+            storage_policy.reassociate_all_subclients()
+            storage_policy.reassociate_all_subclients(dest_storage_policy_name='new_policy')
         """
         request_json = {
             "App_ReassociateStoragePolicyReq": {
@@ -3283,16 +3468,16 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def start_over(self):
-        """
-        performs a start over operation on the specified storage policy/gdsp
 
-            Args:
+    def start_over(self) -> None:
+        """performs a start over operation on the specified storage policy/gdsp
 
             Raises:
-                  SDKException -- if response is bad/ flag is false
+                Exception: if the policy is a dependent policy.
+                SDKException: if response is bad/ flag is false
 
-        returns None
+            Usage:
+                storage_policy.start_over()
         """
         dependent_flag = self.storage_policy_properties["copy"][0]["dedupeFlags"].get("useGlobalDedupStore", 0)
         if dependent_flag == 1:
@@ -3329,20 +3514,24 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def run_data_forecast(self, **kwargs):
+
+    def run_data_forecast(self, **kwargs: dict) -> None:
         """runs data forecast and retention report generation operation
 
             Args:
-
-                **kwargs    --  dict of keyword arguments as follows:
-
-                    localeName      str     localeName for report [defaults to "en-us"]
+                **kwargs (dict): dict of keyword arguments as follows:
+                    localeName (str): localeName for report [defaults to "en-us"]
 
             Raises:
-                  SDKException -- if response is bad/ flag is false
+                SDKException: if response is bad/ flag is false
 
-            Returns None
-                """
+            Returns:
+                Job: Returns the Job object if the data forecast was successfully started.
+
+            Usage:
+                storage_policy.run_data_forecast()
+                storage_policy.run_data_forecast(localeName='fr-CA')
+        """
         request = {
                     "processinginstructioninfo": {},
                     "taskInfo": {
@@ -3445,20 +3634,44 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
 class StoragePolicyCopy(object):
-    """Class for performing storage policy copy operations for a specific storage policy copy"""
+    """Class for performing storage policy copy operations for a specific storage policy copy.
 
-    def __init__(self, commcell_object, storage_policy, copy_name, copy_id=None):
+    Attributes:
+        _copy_name (str): The name of the copy (lowercase).
+        _commcell_object (Commcell): Instance of the Commcell class.
+        _cvpysdk_object (CVPySDK): Instance of the CVPySDK class.
+        _services (dict): Dictionary of Commvault services.
+        storage_policy (StoragePolicy): The storage policy to which the copy is associated.
+        storage_policy_id (str): The ID of the storage policy.
+        _storage_policy_name (str): The name of the storage policy.
+        copy_id (str): The ID of the copy.
+        _copy_properties (dict): Properties of the copy.
+        _STORAGE_POLICY_COPY (str): API endpoint for the storage policy copy.
+        _storage_policy_flags (dict): Storage policy flags.
+        _copy_flags (dict): Copy flags.
+        _extended_flags (dict): Extended flags.
+        _data_path_config (dict): Data path configuration.
+        _media_properties (dict): Media properties.
+        _retention_rules (dict): Retention rules.
+        _data_encryption (dict): Data encryption settings.
+        _dedupe_flags (dict): Deduplication flags.
+        _media_agent (dict): Media agent settings.
+
+    Usage:
+        sp_copy = StoragePolicyCopy(commcell_object, storage_policy, copy_name)
+    """
+
+    def __init__(self, commcell_object: 'Commcell', storage_policy: Union[str, 'StoragePolicy'], copy_name: str, copy_id: str = None) -> None:
         """Initialise the Storage Policy Copy class instance.
 
             Args:
-                commcell_object (object)        --  instance of the Commcell class
-                storage_policy  (str/object)    -- storage policy to which copy is associated with
-                copy_name       (str)           -- copy name
-                copy_id         (str)           -- copy ID
-                Default : None
+                commcell_object (object): instance of the Commcell class
+                storage_policy (str/object): storage policy to which copy is associated with
+                copy_name (str): copy name
+                copy_id (str, optional): copy ID. Defaults to None
 
             Returns:
-                object - instance of the StoragePolicyCopy class
+                None
 
         """
         self._copy_name = copy_name.lower()
@@ -3485,13 +3698,19 @@ class StoragePolicyCopy(object):
             self.storage_policy_id, self.copy_id)
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+
+    def __repr__(self) -> str:
+        """String representation of the instance of this class.
+
+        Returns:
+            str: String representation of the Storage Policy Copy object.
+        """
         representation_string = 'Storage Policy Copy class instance for Storage Policy/ Copy: "{0}/{1}"'
         return representation_string.format(self._storage_policy_name, self._copy_name)
 
+
     @property
-    def all_copies(self):
+    def all_copies(self) -> dict:
         """Returns dict of  the storage policy copy associated with this storage policy
 
             dict - consists of stoarge policy copy properties
@@ -3503,21 +3722,37 @@ class StoragePolicyCopy(object):
         """
         return self.storage_policy._copies[self._copy_name]
 
-    def get_copy_id(self):
-        """Gets the storage policy id asscoiated with the storage policy"""
+
+    def get_copy_id(self) -> str:
+        """Gets the storage policy id asscoiated with the storage policy.
+
+        Returns:
+            str: The ID of the storage policy copy.
+        """
         return self.all_copies["copyId"]
 
-    def get_copy_Precedence(self):
-        """Gets the copyprecendence asscoiated with the storage policy copy"""
+
+    def get_copy_Precedence(self) -> str:
+        """Gets the copyprecendence asscoiated with the storage policy copy.
+
+        Returns:
+            str: The copy precedence of the storage policy copy.
+        """
         return self.all_copies["copyPrecedence"]
 
+
     @property
-    def is_active(self):
-        """Gets whether the Storage Policy Copy is active or not"""
+    def is_active(self) -> bool:
+        """Gets whether the Storage Policy Copy is active or not.
+
+        Returns:
+            bool: True if the storage policy copy is active, False otherwise.
+        """
         return bool(self._copy_properties.get('active'))
 
+
     @is_active.setter
-    def is_active(self, active):
+    def is_active(self, active: bool) -> None:
         """Marks the Storage Policy Copy as active/inactive (True/False)
             Args:
                 active    (bool):    mark the Storage Policy Copy as active/inactive (True/False)
@@ -3534,15 +3769,17 @@ class StoragePolicyCopy(object):
         self._copy_properties['active'] = int(active)
         self._set_copy_properties()
 
-    def refresh(self):
+
+    def refresh(self) -> None:
         """Refresh the properties of the StoragePolicy."""
         self._get_copy_properties()
 
-    def _get_request_json(self):
+
+    def _get_request_json(self) -> dict:
         """ Gets all the storage policy copy properties .
 
            Returns:
-                dict - all storage policy copy properties put inside a dict
+                dict: all storage policy copy properties put inside a dict
 
         """
         self._copy_properties["StoragePolicyCopy"]["storagePolicyName"] = self._storage_policy_name
@@ -3551,7 +3788,8 @@ class StoragePolicyCopy(object):
         }
         return copy_json
 
-    def _get_copy_properties(self):
+
+    def _get_copy_properties(self) -> None:
         """Gets the storage policy copy properties.
 
             Raises:
@@ -3591,7 +3829,8 @@ class StoragePolicyCopy(object):
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def _set_copy_properties(self):
+
+    def _set_copy_properties(self) -> None:
         """sets the properties of this storage policy copy.
 
             Raises:
@@ -3628,29 +3867,37 @@ class StoragePolicyCopy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     @property
-    def copy_name(self):
+    def copy_name(self) -> str:
         """Returns the name of the copy"""
         return self._copy_name
 
+
     @property
-    def override_pool_retention(self):
+    def override_pool_retention(self) -> bool:
         """Returns if Override Pool Retention flag is set or not"""
         return bool(self._extended_flags.get('overRideGACPRetention', 0))
 
+
     @override_pool_retention.setter
-    def override_pool_retention(self, override):
+    def override_pool_retention(self, override: bool) -> None:
         """Sets/Unsets the override Pool Retention Flag. Not Applicable for Storage Pool Copies
 
         Args:
-            override(bool)  :   Override the pool Retention (True/False)
+            override(bool):   Override the pool Retention (True/False)
         """
         self._extended_flags['overRideGACPRetention'] = int(override)
         self._set_copy_properties()
 
+
     @property
-    def copy_retention(self):
-        """Treats the copy retention as a read-only attribute."""
+    def copy_retention(self) -> dict:
+        """Treats the copy retention as a read-only attribute.
+
+        Returns:
+            dict: A dictionary containing the retention values for days, cycles, archiveDays and jobs.
+        """
         retention_values = {}
         retention_values["days"] = self._retention_rules['retainBackupDataForDays']
         retention_values["cycles"] = self._retention_rules['retainBackupDataForCycles']
@@ -3658,8 +3905,9 @@ class StoragePolicyCopy(object):
         retention_values["jobs"] = self._retention_rules['jobs']
         return retention_values
 
+
     @copy_retention.setter
-    def copy_retention(self, retention_values):
+    def copy_retention(self, retention_values: tuple) -> None:
         """Sets the copy retention as the value provided as input.
             Args:
                 retention_values    (tuple) --  retention values to be set on a copy
@@ -3701,15 +3949,21 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def copy_software_compression(self):
-        """Treats the copy software compression setting as a read-only attribute."""
+    def copy_software_compression(self) -> bool:
+        """Treats the copy software compression setting as a read-only attribute.
+
+        Returns:
+            bool: True if software compression is enabled, False otherwise.
+        """
         return 'compressionOnClients' in self._extended_flags
 
-    def set_copy_software_compression(self, value):
+
+    def set_copy_software_compression(self, value: bool) -> None:
         """Sets the copy software compression setting as the value provided as input.
             Args:
-                value    (bool) --  software compression value to be set on a copy (True/False)
+                value    (bool):  software compression value to be set on a copy (True/False)
 
             Raises:
                 SDKException:
@@ -3728,16 +3982,22 @@ class StoragePolicyCopy(object):
         self._extended_flags['compressionOnClients'] = int(value)
         self._set_copy_properties()
 
+
     @property
-    def copy_dedupe_dash_full(self):
-        """Treats the copy deduplication setting as a read-only attribute."""
+    def copy_dedupe_dash_full(self) -> bool:
+        """Treats the copy deduplication setting as a read-only attribute.
+
+        Returns:
+            bool: True if DASH full is enabled, False otherwise.
+        """
         return 'enableDASHFull' in self._dedupe_flags
 
+
     @copy_dedupe_dash_full.setter
-    def copy_dedupe_dash_full(self, value):
+    def copy_dedupe_dash_full(self, value: bool) -> None:
         """Sets the copy deduplication setting as the value provided as input.
             Args:
-                value    (bool) --  dash full value to be set on a copy (True/False)
+                value    (bool):  dash full value to be set on a copy (True/False)
 
             Raises:
                 SDKException:
@@ -3756,16 +4016,22 @@ class StoragePolicyCopy(object):
         self._dedupe_flags['enableDASHFull'] = int(value)
         self._set_copy_properties()
 
+
     @property
-    def copy_dedupe_disk_cache(self):
-        """Treats the copy deduplication setting as a read-only attribute."""
+    def copy_dedupe_disk_cache(self) -> bool:
+        """Treats the copy deduplication setting as a read-only attribute.
+
+        Returns:
+            bool: True if disk cache is enabled, False otherwise.
+        """
         return 'enableSourceSideDiskCache' in self._dedupe_flags
 
+
     @copy_dedupe_disk_cache.setter
-    def copy_dedupe_disk_cache(self, value):
+    def copy_dedupe_disk_cache(self, value: bool) -> None:
         """Sets the copy deduplication setting as the value provided as input.
             Args:
-                value    (bool) --  disk cache value to be set on a copy (True/False)
+                value    (bool):  disk cache value to be set on a copy (True/False)
 
             Raises:
                 SDKException:
@@ -3780,16 +4046,22 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def store_priming(self):
-        """Treats the copy store priming setting as a read-only attribute."""
+    def store_priming(self) -> bool:
+        """Treats the copy store priming setting as a read-only attribute.
+
+        Returns:
+            bool: True if store priming is enabled, False otherwise.
+        """
         return self._dedupe_flags.get('useDDBPrimingOption', 0) > 0
 
+
     @store_priming.setter
-    def store_priming(self, value):
+    def store_priming(self, value: bool) -> None:
         """Sets the copy store priming setting as the value provided as input.
             Args:
-                value    (bool) --  store priming flag to be set on a copy (True/False)
+                value    (bool):  store priming flag to be set on a copy (True/False)
 
             Raises:
                 SDKException:
@@ -3805,16 +4077,22 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def copy_client_side_dedup(self):
-        """Treats the copy deduplication setting as a read-only attribute."""
+    def copy_client_side_dedup(self) -> bool:
+        """Treats the copy deduplication setting as a read-only attribute.
+
+        Returns:
+            bool: True if client-side deduplication is enabled, False otherwise.
+        """
         return 'enableClientSideDedup' in self._dedupe_flags
 
+
     @copy_client_side_dedup.setter
-    def copy_client_side_dedup(self, value):
+    def copy_client_side_dedup(self, value: bool) -> None:
         """Sets the copy deduplication setting as the value provided as input.
             Args:
-                value    (bool) --  client side dedupe value to be set on a copy (True/False)
+                value    (bool):  client side dedupe value to be set on a copy (True/False)
 
             Raises:
                 SDKException:
@@ -3830,20 +4108,27 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
-    def is_dedupe_enabled(self):
+
+    def is_dedupe_enabled(self) -> bool:
         """
         checks whether deduplication is enabled on the give storage policy copy
         returns Boolean
         """
         return bool(self._dedupe_flags.get('enableDeduplication', 0))
 
+
     @property
-    def source_copy(self):
-        """Treats the copy deduplication setting as a read-only attribute."""
+    def source_copy(self) -> str:
+        """Treats the copy deduplication setting as a read-only attribute.
+
+        Returns:
+            str: The name of the source copy.
+        """
         return self._copy_properties.get('sourceCopy', {}).get('copyName')
 
+
     @source_copy.setter
-    def source_copy(self, copy_name):
+    def source_copy(self, copy_name: str) -> None:
         """Sets the source copy as provided in the input.
 
                     Args:
@@ -3874,38 +4159,32 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
-    def set_encryption_properties(self, **props):
+    def set_encryption_properties(self, **props: dict) -> None:
         """sets copy encryption properties based on given inputs
 
-            Args:
+        Args:
+            **props (dict): Dictionary of keyword arguments as follows:
+                preserve         (bool): Whether to set preserve source encryption or not. Default: False.
+                plain_text       (bool): Whether to store as plaintext or not. Default: False.
+                network_encryption (bool): Whether to set network encryption or not. Default: False.
+                re_encryption    (bool): Whether to set re-encryption or not. Default: False.
+                encryption_type  (str): Encryption type specification. Default: "BlowFish".
+                encryption_length (int): Encryption key length specification. Default: 128.
 
-                **props         dict of keyword arguments as follows:
+        Raises:
+            SDKException:
+                - if failed to set copy encryption
+                - if the type of inputs are not correct
 
-                    preserve            (Bool)      whether to set preserve source encryption or not    default:False
+        Usage:
+            To preserve encryption:
+            >>> storage_policy_copy.set_encryption_properties(preserve=True)
 
-                    plain_text          (Bool)      whether to store as plaintext or not                default:False
+            To store as plaintext:
+            >>> storage_policy_copy.set_encryption_properties(plain_text=True)
 
-                    network_encryption       (Bool)      whether to set network encryption or not       default:False
-
-                    re_encryption          (Bool)      whether to set re-encryption or not              default:False
-
-                    encryption_type            (str)       encryption type specification             default:"BlowFish"
-
-                    encryption_length          (int)       encryption key length specification          default:128
-
-            Returns:
-                  SDKException:
-                            if failed to set copy encryption
-                            if the type of inputs are not correct
-
-            ***********************************************************************************************************
-
-            to preserve encryption --> set_encryption_properties(preserve=True)
-
-            to store as plaintext --> set_encryption_properties(plaintext=True)
-
-            to set network encryption --> set_encryption_properties(plaintext=True, network_encryption=True,
-                                                                    encryption_type="BlowFish", encryption_length=128)
+            To set network encryption:
+            >>> storage_policy_copy.set_encryption_properties(plain_text=True, network_encryption=True, encryption_type="BlowFish", encryption_length=128)
 
             to set re-encryption --> set_encryption_properties(re_encryption=True,
                                                                encryption_type="BlowFish", encryption_length=128)
@@ -3970,9 +4249,14 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def copy_reencryption(self):
-        """Treats the secondary copy encryption as a read-only attribute."""
+    def copy_reencryption(self) -> str:
+        """Treats the secondary copy encryption as a read-only attribute.
+
+        Returns:
+            str: The encryption setting ("True" or "False") based on the copy flags.
+        """
         if 'auxCopyReencryptData' in self._copy_flags:
             if self._copy_flags['auxCopyReencryptData'] == 1:
                 encryption_setting = "True"
@@ -3983,34 +4267,29 @@ class StoragePolicyCopy(object):
 
         return encryption_setting
 
+
     @copy_reencryption.setter
-    def copy_reencryption(self, encryption_values):
+    def copy_reencryption(self, encryption_values: tuple) -> None:
         """Sets the secondary copy encryption as the value provided as input.
             Args:
-                encryption_values    (tuple) --  encryption values to be set on a copy
-
-                    tuple:
-
-                        **bool** -   value to specify encrypt data [True/False]
-
-                        **str** -   value to specify cipher type
-
-                        **int** -   value to specify key length [128/256]
-
-                        **int** -   value to specify GDSP dependent copy [True/False]
-
-                    e.g. :
-                        to enable encryption:
-                            storage_policy_copy.copy_reencryption = (True, "TWOFISH", "128", False)
-
-                        to disable encryption:
-                            storage_policy_copy.copy_reencryption = (False, "",0, False)
+                encryption_values (tuple): Encryption values to be set on a copy.
+                    The tuple should contain:
+                        bool: Value to specify encrypt data [True/False].
+                        str: Value to specify cipher type.
+                        int: Value to specify key length [128/256].
+                        int: Value to specify GDSP dependent copy [True/False].
 
             Raises:
                 SDKException:
-                    if failed to update encryption settings for copy
+                    - if failed to update encryption settings for copy
+                    - if the type of value input is not correct
 
-                    if the type of value input is not correct
+            Usage:
+                To enable encryption:
+                >>> storage_policy_copy.copy_reencryption = (True, "TWOFISH", 128, False)
+
+                To disable encryption:
+                >>> storage_policy_copy.copy_reencryption = (False, "", 0, False)
         """
         if "dataEncryption" not in self._copy_properties:
             self._copy_properties["dataEncryption"] = {
@@ -4045,18 +4324,29 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def copy_precedence(self):
-        """Gets the copy precedence of the copy"""
+    def copy_precedence(self) -> int:
+        """Gets the copy precedence of the copy
+
+        Returns:
+            int: The copy precedence.
+        """
         return self.all_copies["copyPrecedence"]
 
+
     @property
-    def media_agent(self):
-        """Gets the media agent name of the copy"""
+    def media_agent(self) -> str:
+        """Gets the media agent name of the copy
+
+        Returns:
+            str: The media agent name.
+        """
         return self._media_agent.get('mediaAgentName')
 
-    def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
-                         include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+
+    def get_jobs_on_copy(self, from_date: str = None, to_date: str = None, backup_type: str = None, retained_by: int = 0,
+                         include_to_be_copied_jobs: bool = False, list_partial_jobs_only: bool = False) -> list:
         """Fetches the Details of jobs on Storage Policy Copy
 
         Args:
@@ -4081,9 +4371,23 @@ class StoragePolicyCopy(object):
                                                   [default: False]
 
         Returns:
-            (list)  :   List of dict's with each dict containing details of a job
+            list: List of dict's with each dict containing details of a job
+
         Raises:
             SDKException:   if the response/fetch operation failed
+
+        Usage:
+            Get all jobs on the copy:
+            >>> storage_policy_copy.get_jobs_on_copy()
+
+            Get jobs within a specific date range:
+            >>> storage_policy_copy.get_jobs_on_copy(from_date='2024/01/01', to_date='2024/01/31')
+
+            Get only full backup jobs:
+            >>> storage_policy_copy.get_jobs_on_copy(backup_type='full')
+
+            Include jobs that are to be copied:
+            >>> storage_policy_copy.get_jobs_on_copy(include_to_be_copied_jobs=True)
         """
         command = f"qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName='{self._storage_policy_name}'" \
                   f" -si @i_copyName='{self.copy_name}'"
@@ -4117,24 +4421,23 @@ class StoragePolicyCopy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _run_job_operations_on_storage_copy(self, job_id, operation):
+
+    def _run_job_operations_on_storage_copy(self, job_id: Union[int, str, list], operation: str) -> None:
         """Run different job operations for a Storage Copy
 
         Args:
-            job_id          (int or str or list): Job Id(s) that needs to be marked
-            operation       (str)               : Operation to be performed on the job(s)
-
-        Valid operation types:
-            JobOperationsOnStorageCopy.DELETE
-            JobOperationsOnStorageCopy.PREVENT_COPY
-            JobOperationsOnStorageCopy.ALLOW_COPY
-            JobOperationsOnStorageCopy.RECOPY
+            job_id    (int or str or list): Job Id(s) that needs to be marked
+            operation (str): Operation to be performed on the job(s)
 
         Raises:
-            SDKException:   if the job_id is not of type int, str or list of int/str
-                            if the operation is not a valid operation type
-                            if the response is empty or not successful
-                            if the error code in response is not 0
+            SDKException:
+                - if the job_id is not of type int, str or list of int/str
+                - if the operation is not a valid operation type
+                - if the response is empty or not successful
+                - if the error code in response is not 0
+
+        Usage:
+            This is a private method and should not be called directly.
         """
         payload_template = {
             "opType": operation,
@@ -4188,32 +4491,41 @@ class StoragePolicyCopy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def delete_job(self, job_id):
-        """
-        Deletes a job on Storage Policy
-            Args:
-                job_id      (str)   --  ID for the job to be deleted
+
+    def delete_job(self, job_id: str) -> None:
+        """Deletes a job on Storage Policy
+
+        Args:
+            job_id (str): ID for the job to be deleted
 
         Raises:
             SDKException:
                 if type of input parameters is not string
+
+        Usage:
+            >>> storage_policy_copy.delete_job(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
             job_id=job_id,
             operation=JobOperationsOnStorageCopy.DELETE
         )
 
-    def _mark_jobs_on_copy(self, job_id, operation):
+
+    def _mark_jobs_on_copy(self, job_id: Union[int, str, list], operation: JobOperationsOnStorageCopy) -> None:
         """Marks job(s) for given operation on a secondary copy
 
         Args:
-            job_id      (int or str or list): Job Id(s) that needs to be marked
-            operation   (str):  Operation that the job(s) needs to be marked for.
-                                Operations Supported: (allowcopy/recopy/donotcopy/
-                                markJobsBad/pickForVerification/donotPickForVerification)
+            job_id    (int or str or list): Job Id(s) that needs to be marked
+            operation (JobOperationsOnStorageCopy): Operation that the job(s) needs to be marked for.
+                             Operations Supported: (allowcopy/recopy/donotcopy/
+                             markJobsBad/pickForVerification/donotPickForVerification)
+
         Raises:
             SDKException:
                 if type of input parameters is not string or List of strings
+
+        Usage:
+            This is a private method and should not be called directly.
         """
         if not isinstance(job_id, str) and not isinstance(job_id, int):
             if not isinstance(job_id, list) or\
@@ -4248,74 +4560,107 @@ class StoragePolicyCopy(object):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
 
-    def pick_for_copy(self, job_id):
+
+    def pick_for_copy(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) to be Picked for Copy to a secondary copy
 
         Args:
-            job_id      (int or str or list): Job Id(s) that needs to be marked
+            job_id (int or str or list): Job Id(s) that needs to be marked
+
+        Usage:
+            >>> storage_policy_copy.pick_for_copy(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
             job_id=job_id,
             operation=JobOperationsOnStorageCopy.ALLOW_COPY
         )
 
-    def recopy_jobs(self, job_id):
+
+    def recopy_jobs(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) to be picked for ReCopying to a secondary copy
 
         Args:
-            job_id      (int or str or list): Job Id(s) that needs to be marked
+            job_id (int or str or list): Job Id(s) that needs to be marked
+
+        Usage:
+            >>> storage_policy_copy.recopy_jobs(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
             job_id=job_id,
             operation=JobOperationsOnStorageCopy.RECOPY
         )
 
-    def do_not_copy_jobs(self, job_id):
+
+    def do_not_copy_jobs(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) as Do Not Copy to a secondary copy
 
         Args:
-            job_id      (int or str or list):   Job Id(s) that needs to be marked
+            job_id (int or str or list): Job Id(s) that needs to be marked
+
+        Usage:
+            >>> storage_policy_copy.do_not_copy_jobs(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
             job_id=job_id,
             operation=JobOperationsOnStorageCopy.PREVENT_COPY
         )
 
-    def pick_jobs_for_data_verification(self, job_id):
+
+    def pick_jobs_for_data_verification(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) on a copy to be Picked for Data Verification
 
         Args:
-            job_id      (int or str or list):   Job Id(s) that needs to be marked
-        """
-        self._mark_jobs_on_copy(job_id, 'pickForVerification')
+            job_id (int or str or list): Job Id(s) that needs to be marked
 
-    def do_not_verify_data(self, job_id):
+        Usage:
+            >>> storage_policy_copy.pick_jobs_for_data_verification(job_id='1234')
+        """
+        self._mark_jobs_on_copy(job_id, JobOperationsOnStorageCopy.PICK_FOR_VERIFICATION)
+
+
+    def do_not_verify_data(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) on a copy to not be Picked for Data Verification
 
         Args:
-            job_id      (int or str or list):   Job Id(s) that needs to be marked
+            job_id (int or str or list): Job Id(s) that needs to be marked
+
+        Usage:
+            >>> storage_policy_copy.do_not_verify_data(job_id='1234')
         """
         self._mark_jobs_on_copy(job_id, 'donotPickForVerification')
 
-    def mark_jobs_bad(self, job_id):
+
+    def mark_jobs_bad(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) on a copy as Bad
 
         Args:
-            job_id      (int or str or list):   Job Id(s) that needs to be marked
-        """
-        self._mark_jobs_on_copy(job_id, 'markJobsBad')
+            job_id (int or str or list): Job Id(s) that needs to be marked
 
-    def pick_jobs_for_backupcopy(self, job_id):
+        Usage:
+            >>> storage_policy_copy.mark_jobs_bad(job_id='1234')
+        """
+        self._mark_jobs_on_copy(job_id, JobOperationsOnStorageCopy.MARK_JOBS_BAD)
+
+
+    def pick_jobs_for_backupcopy(self, job_id: Union[int, str, list]) -> None:
         """This method is used to re-pick the job from backup which are unpick manually
 
         Args:
-            job_id      (int or str or list):   Job Id(s) that needs to be marked
+            job_id (int or str or list): Job Id(s) that needs to be marked
+
+        Usage:
+            >>> storage_policy_copy.pick_jobs_for_backupcopy(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, 'pickforbackupcopy')
+        self._mark_jobs_on_copy(job_id, JobOperationsOnStorageCopy.PICK_FOR_BACKUPCOPY)
 
     @property
-    def extended_retention_rules(self):
-        """Treats the extended retention rules setting as a read-only attribute."""
+    def extended_retention_rules(self) -> tuple:
+        """Treats the extended retention rules setting as a read-only attribute.
+
+        Returns:
+            tuple: A tuple containing three dictionaries, each representing an extended retention rule.
+                   Each dictionary contains 'isEnabled', 'rule', 'endDays', and 'graceDays' keys.
+        """
 
         mapping = {
             2: "EXTENDED_ALLFULL",
@@ -4372,8 +4717,9 @@ class StoragePolicyCopy(object):
             rule_three = False
         return rule_one, rule_two, rule_three
 
+
     @extended_retention_rules.setter
-    def extended_retention_rules(self, extended_retention):
+    def extended_retention_rules(self, extended_retention: tuple) -> None:
         """Sets the copy extended retention rules as the value provided as input
 
             Args:
@@ -4398,13 +4744,12 @@ class StoragePolicyCopy(object):
 
                         **int**     -   value for graceDays
 
-                    e.g.:
-
-                        >>> copy_obj.extended_retention_rules = [1, True, "EXTENDED_ALLFULL", 0, 0]
-
             Raises:
                 SDKException:
                     if failed to update extended Retention Rule on copy
+
+        Usage:
+            copy_obj.extended_retention_rules = [1, True, "EXTENDED_ALLFULL", 0, 0]
 
         """
         mapping = {
@@ -4431,13 +4776,19 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def copy_retention_managed_disk_space(self):
-        """Treats managed disk space setting as a read-only attribute"""
+    def copy_retention_managed_disk_space(self) -> bool:
+        """Treats managed disk space setting as a read-only attribute
+
+        Returns:
+            bool: True if managed disk space is enabled, False otherwise.
+        """
         return 'enableManagedDiskSpace' in self._retention_rules
 
+
     @copy_retention_managed_disk_space.setter
-    def copy_retention_managed_disk_space(self, managed_disk_space_value):
+    def copy_retention_managed_disk_space(self, managed_disk_space_value: bool) -> None:
         """Sets managed disk space attribute value with provided input value
 
             Args:
@@ -4448,6 +4799,9 @@ class StoragePolicyCopy(object):
 
                     if the type of value input is not correct
 
+        Usage:
+            copy_obj.copy_retention_managed_disk_space = True
+            copy_obj.copy_retention_managed_disk_space = False
         """
         if not isinstance(managed_disk_space_value, bool):
             raise SDKException('Storage', '101')
@@ -4458,12 +4812,18 @@ class StoragePolicyCopy(object):
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 1
         self._set_copy_properties()
 
+
     @property
-    def is_parallel_copy(self):
-        """Treats the parallel copy setting as a read-only attribute."""
+    def is_parallel_copy(self) -> bool:
+        """Treats the parallel copy setting as a read-only attribute.
+
+        Returns:
+            bool: True if parallel copy is enabled, False otherwise.
+        """
         return 'enableParallelCopy' in self._copy_flags
 
-    def set_parallel_copy(self, value):
+
+    def set_parallel_copy(self, value: bool) -> None:
         """ Sets the parallel copy on storage policy copy as the value provided as input.
             Args:
                 value    (bool) --  parallel copy on storage policy copy value to be set on a copy (True/False)
@@ -4473,6 +4833,10 @@ class StoragePolicyCopy(object):
                     if failed to update parallel copy on storage policy copy
 
                     if the type of value input is not correct
+
+        Usage:
+            copy_obj.set_parallel_copy(True)
+            copy_obj.set_parallel_copy(False)
         """
         if not isinstance(value, bool):
             raise SDKException('Storage', '101')
@@ -4481,15 +4845,21 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def space_optimized_auxillary_copy(self):
-        """Treats the space optimized auxillary copy setting as a read-only attribute."""
+    def space_optimized_auxillary_copy(self) -> bool:
+        """Treats the space optimized auxillary copy setting as a read-only attribute.
+
+        Returns:
+            bool: True if space optimized auxillary copy is enabled, False otherwise.
+        """
         if self._copy_properties.get('extendedFlags', {}).get('spaceOptimizedAuxCopy'):
             return True
         return False
 
+
     @space_optimized_auxillary_copy.setter
-    def space_optimized_auxillary_copy(self, value):
+    def space_optimized_auxillary_copy(self, value: bool) -> None:
         """Sets the space optimized auxillary copy setting as the value provided as input.
             Args:
                 value    (bool) --  Enable/Disable Space Optimized Auxillary Copy
@@ -4498,6 +4868,10 @@ class StoragePolicyCopy(object):
                     if failed to update property
 
                     if the type of value input is not correct
+
+        Usage:
+            copy_obj.space_optimized_auxillary_copy = True
+            copy_obj.space_optimized_auxillary_copy = False
         """
         if not isinstance(value, bool):
             raise SDKException('Storage', '101')
@@ -4505,12 +4879,18 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def is_inline_copy(self):
-        """Treats the inline copy setting as a read-only attribute."""
+    def is_inline_copy(self) -> bool:
+        """Treats the inline copy setting as a read-only attribute.
+
+        Returns:
+            bool: True if inline copy is enabled, False otherwise.
+        """
         return 'inlineAuxCopy' in self._copy_flags
 
-    def set_inline_copy(self, value):
+
+    def set_inline_copy(self, value: bool) -> None:
         """ Sets the inline copy on storage policy copy as the value provided as input.
             Args:
                 value    (bool) --  inline copy on storage policy copy value to be set on a copy (True/False)
@@ -4520,6 +4900,10 @@ class StoragePolicyCopy(object):
                     if failed to update inline copy on storage policy copy
 
                     if the type of value input is not correct
+
+        Usage:
+            copy_obj.set_inline_copy(True)
+            copy_obj.set_inline_copy(False)
         """
         if not isinstance(value, bool):
             raise SDKException('Storage', '101')
@@ -4528,8 +4912,9 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+
     @property
-    def network_throttle_bandwidth(self):
+    def network_throttle_bandwidth(self) -> int:
         """Treats the Network Throttle Bandwidth as a read-only attribute.
 
             Returns:
@@ -4537,8 +4922,9 @@ class StoragePolicyCopy(object):
         """
         return int(self._copy_properties.get('throttleNetworkBandWidthMBHR'))
 
+
     @network_throttle_bandwidth.setter
-    def network_throttle_bandwidth(self, value):
+    def network_throttle_bandwidth(self, value: int) -> None:
         """ Sets the Network Throttle Bandwidth on storage policy copy as the value provided as input.
             Args:
                 value    (int):  value of Network Throttle Bandwidth in MBPH
@@ -4548,6 +4934,9 @@ class StoragePolicyCopy(object):
                     if failed to update Network Throttle Bandwidth on storage policy copy
 
                     if the type of value input is not correct
+
+        Usage:
+            copy_obj.network_throttle_bandwidth = 100
         """
         if not isinstance(value, int):
             raise SDKException('Storage', '101')
@@ -4555,23 +4944,26 @@ class StoragePolicyCopy(object):
         self._copy_properties['throttleNetworkBandWidthMBHR'] = value
         self._set_copy_properties()
 
-    def add_svm_association(self, src_array_id, source_array, tgt_array_id,
-                            target_array, **kwargs):
+
+    def add_svm_association(self, src_array_id: int, source_array: str, tgt_array_id: int,
+                            target_array: str, **kwargs) -> None:
         """ Method to add SVM association on Replica/vault and Mirror Copy
 
             Agrs:
                 src_array_id    (int)   --  Controlhost id of source SVM
-
                 source_array    (str)   --  Name of the source Array
-
                 tgt_array_id    (int)   --  Controlhost id of target SVM
-
                 target_array    (str)   --  Name of the Target Array
-
                 target_vendor   (str)   --  Target Vendor Name
-                
+
                 tgt_vendor_id   (int)   --  Target Vendor id
 
+            Raises:
+                SDKException:
+                    - If failed to Update SVM Association on Copy
+
+        Usage:
+            copy_obj.add_svm_association(123, "source_array", 456, "target_array", target_vendor="vendor", tgt_vendor_id=789)
         """
         target_vendor = kwargs.get('target_vendor', "")
         tgt_vendor_id = kwargs.get('tgt_vendor_id', 0)
@@ -4652,17 +5044,21 @@ class StoragePolicyCopy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def set_key_management_server(self, kms_name):
+
+    def set_key_management_server(self, kms_name: str) -> None:
         """Sets the Key Management Server to this copy
 
             Args:
                 kms_name  (str) -- The Key Management Server's name
 
-            Raises SDKException:
-                If input is not valid
+            Raises:
+                SDKException:
+                    If input is not valid
 
-                If API response is not successful
+                    If API response is not successful
 
+        Usage:
+            copy_obj.set_key_management_server("kms_server_name")
         """
         if not isinstance(kms_name, str):
             raise SDKException('Storage', '101')
@@ -4672,17 +5068,22 @@ class StoragePolicyCopy(object):
             "rotateMasterKey": True
         }
         self._set_copy_properties()
-    
-    def set_multiplexing_factor(self, mux_factor):
+
+
+    def set_multiplexing_factor(self, mux_factor: int) -> None:
         """Sets/Unset the multiplexing factor for the storage policy copy
 
             Args:
                 mux_factor  (int) -- The value for multiplexing factor
 
-            Raises SDKException:
-                If input is not valid
+            Raises:
+                SDKException:
+                    If input is not valid
 
-                If API response is not successful
+                    If API response is not successful
+
+        Usage:
+            copy_obj.set_multiplexing_factor(4)
         """
         if not isinstance(mux_factor, int):
             raise SDKException('Storage', '101')
@@ -4690,25 +5091,32 @@ class StoragePolicyCopy(object):
         self._copy_properties['mediaProperties'] = {
             "multiplexingFactor" : mux_factor
         }
-        self._set_copy_properties()    
+        self._set_copy_properties()
+
 
     @property
-    def ddb_resiliency(self):
+    def ddb_resiliency(self) -> bool:
         """Treats the Resiliency Flag as a read-only attribute.
             Returns:
                 (bool) : Value of Resiliency Flag
         """
         return bool(self._dedupe_flags.get('allowJobsToRunWithoutAllPartitions'))
 
-    def set_ddb_resiliency(self, is_enabled, min_num_partitions):
+
+    def set_ddb_resiliency(self, is_enabled: bool, min_num_partitions: int) -> None:
         """Sets Resiliency On or Off, and set partition threshold for Resiliency
             Args:
                 is_enabled  (Boolean) -- True or False to enable and disable resiliency respectively.
                 min_num_partitions (int) -- Number of partitions required to be online for Resiliency to take affect.
-            Raises SDKException:
-                If input is not valid
-                If min_num_partitions < 1
-                If API response is not successful
+            Raises:
+                SDKException:
+                    If input is not valid
+                    If min_num_partitions < 1
+                    If API response is not successful
+
+        Usage:
+            copy_obj.set_ddb_resiliency(True, 2)
+            copy_obj.set_ddb_resiliency(False, 2)
         """
         if isinstance(is_enabled, bool) or isinstance(min_num_partitions, int):
             SDKException('Storage', '101')
@@ -4722,7 +5130,8 @@ class StoragePolicyCopy(object):
             self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 0
             self._set_copy_properties()
 
-    def delete_datapath(self, library_name, media_agent_name):
+
+    def delete_datapath(self, library_name: str, media_agent_name: str) -> None:
         """
         Delete DataPath from the storage policy copy
 
@@ -4735,6 +5144,9 @@ class StoragePolicyCopy(object):
                 SDKException:
                     - If type of required input parameters is not string
                     - If API response is not successful
+
+        Usage:
+            copy_obj.delete_datapath("library1", "media_agent1")
         """
         if not (isinstance(media_agent_name, str)) and isinstance(library_name):
             raise SDKException('Storage', '101')
@@ -4772,28 +5184,33 @@ class StoragePolicyCopy(object):
             error_message = response.json().get("errorMessage")
             raise SDKException('Response', '111', error_message)
 
-    def rotate_encryption_master_key(self):
+
+    def rotate_encryption_master_key(self) -> None:
         """
         Rotates the encryption key for this copy
+
+        Usage:
+            copy_obj.rotate_encryption_master_key()
         """
         self._copy_properties["dataEncryption"] = {
             "rotateMasterKey": True
         }
         self._set_copy_properties()
-        
-    def set_default_datapath(self, library_name, media_agent_name):
-        """
-        Set default data path for that storage policy copy.
 
-            Args:
-                library_name    (str)   --   name of the library
+    def set_default_datapath(self, library_name: str, media_agent_name: str) -> None:
+        """Set default data path for that storage policy copy.
 
-                media_agent_name(str)   --   name of the media agent
+        Args:
+            library_name    (str): name of the library
+            media_agent_name(str): name of the media agent
 
-            Raises:
-                SDKException:
-                    - If type of required input parameters is not string
-                    - If API response is not successful
+        Raises:
+            SDKException:
+                - If type of required input parameters is not string
+                - If API response is not successful
+
+        Usage:
+            storage_policy_copy.set_default_datapath('mylibrary', 'myagent')
         """
         if not (isinstance(media_agent_name, str)) and isinstance(library_name):
             raise SDKException('Storage', '101')
@@ -4831,17 +5248,34 @@ class StoragePolicyCopy(object):
             error_message = response.json().get("errorMessage")
             raise SDKException('Response', '111', error_message)
 
+
     @property
-    def is_compliance_lock_enabled(self):
-        """Checks whether compliance lock on copy is enabled or not"""
+    def is_compliance_lock_enabled(self) -> bool:
+        """Checks whether compliance lock on copy is enabled or not
+
+        Returns:
+            bool: True if compliance lock is enabled, False otherwise.
+
+        Usage:
+            is_enabled = storage_policy_copy.is_compliance_lock_enabled
+        """
         return 'wormCopy' in self._copy_flags
 
-    def get_store_seal_frequency(self):
+
+    def get_store_seal_frequency(self) -> dict:
         """Gets the store seal frequency for the copy
 
         Returns:
-            dict -- store seal frequency for the copy
+            dict: store seal frequency for the copy
                     Eg: {'size': 0, 'days': 2, 'months': 0}
+
+        Raises:
+            SDKException:
+                - If API response is not successful
+                - If response is empty
+
+        Usage:
+            frequency = storage_policy_copy.get_store_seal_frequency()
         """
         request_json = {
             "EVGui_StoragePolicySummaryReq": {
@@ -4868,13 +5302,17 @@ class StoragePolicyCopy(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def enable_compliance_lock(self):
+
+    def enable_compliance_lock(self) -> None:
         """Sets compliance lock (wormCopy flag)
 
         Raises:
             SDKException:
                 if response is not success.
                 if response is empty.
+
+        Usage:
+            storage_policy_copy.enable_compliance_lock()
         """
         self._copy_properties['copyFlags']['wormCopy'] = 1
         self._set_copy_properties()
@@ -4882,13 +5320,17 @@ class StoragePolicyCopy(object):
         if not self.is_compliance_lock_enabled:
             raise SDKException('Response', '101', 'Failed to set compliance lock')
 
-    def disable_compliance_lock(self):
+
+    def disable_compliance_lock(self) -> None:
         """Unsets compliance lock (wormCopy flag)
 
         Raises:
             SDKException:
                 if response is not success.
                 if response is empty.
+
+        Usage:
+            storage_policy_copy.disable_compliance_lock()
         """
 
         disable_compliance_lock_url = self._services['DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK'] % (
@@ -4926,33 +5368,44 @@ class StoragePolicyCopy(object):
 
         if self.is_compliance_lock_enabled:
             raise SDKException('Response', '101', 'Failed to unset compliance lock')
-    
-    def is_media_refresh_enabled(self):
-        """Checks whether Media Refresh on copy is enabled or not"""
+
+
+    def is_media_refresh_enabled(self) -> bool:
+        """Checks whether Media Refresh on copy is enabled or not
+
+        Returns:
+            bool: True if media refresh is enabled, False otherwise.
+
+        Usage:
+            is_enabled = storage_policy_copy.is_media_refresh_enabled()
+        """
         mediaRefreshEnabled = self._copy_flags.get('enableMediaRefresh', 0)
         return mediaRefreshEnabled == 1
 
-    def update_media_refresh(self, enable=True, **kwargs):
+
+    def update_media_refresh(self, enable: bool = True, **kwargs) -> None:
         """
         update media refresh (enable/disable) on storage pool/policy copy property.
         
         Args:
-                enable                  (boolean)   --  True to enable media refresh, False to disable media refresh 
+                enable                  (bool): True to enable media refresh, False to disable media refresh 
                                                         (default: True)
-
-                monthsBeforeMediaAged   (int)       --  months before media is aged.
+                monthsBeforeMediaAged   (int): months before media is aged.
                                                         (default: 3)
-
-                monthsAfterMediaWritten (int)       --  months after media is wrtten.
+                monthsAfterMediaWritten (int): months after media is wrtten.
                                                         (default: 12)
-
-                percentage              (int)       --  percentage of media capacity is used.
+                percentage              (int): percentage of media capacity is used.
                                                         (default:  51)
 
         Raises:
             SDKException:
                 if response is not success.
                 if response is empty.
+
+        Usage:
+            storage_policy_copy.update_media_refresh()
+            storage_policy_copy.update_media_refresh(enable=False)
+            storage_policy_copy.update_media_refresh(monthsBeforeMediaAged=6, monthsAfterMediaWritten=18, percentage=75)
         """
         monthsBeforeMediaAged = kwargs.get('monthsBeforeMediaAged', 3)
         monthsAfterMediaWritten = kwargs.get('monthsAfterMediaWritten', 12)

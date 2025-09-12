@@ -55,6 +55,10 @@ Credentials:
 
     add_mysql_database_creds    --  Creates MySQL credential on this commcell
 
+    add_oracle_database_creds   --  Creates Oracle credential on this commcell
+
+    add_oracle_catalog_creds    --  Creates Oracle Recovery Catalog credential on this commcell
+
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
 
     add_azure_app_registration_creds()  --  Creates credential for azure using azure application
@@ -418,7 +422,8 @@ class Credentials(object):
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
 
-    def add_database_creds(self, database_type, credential_name, username, password, description=None):
+    def add_database_creds(self, database_type, credential_name, username, password, description=None,
+                           service_name=None):
         """Creates database credential on this commcell for a given DATABASE type
             Args:
                 database_type   (str)   --  type of database credential to be created
@@ -427,11 +432,13 @@ class Credentials(object):
 
                 credential_name (str)   --  name to be given to credential account
 
-                username  (str)         --  MySQL username
+                username  (str)         --  DB username
 
-                password   (str)        --  MySQL password
+                password   (str)        --  DB password
 
                 description (str)       --  description of the credential
+
+                service_name (str)      --  service name of oracle db
 
             Raises:
                 SDKException:
@@ -439,7 +446,7 @@ class Credentials(object):
 
                     if response is not successful
         """
-        if database_type not in ["MYSQL", "INFORMIX", "POSTGRESQL", "DB2"]:
+        if database_type not in ["MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT"]:
             raise SDKException(
                 'Credential', '102', "Invalid database Type provided."
             )
@@ -457,6 +464,9 @@ class Credentials(object):
             "password": password,
             "description": description
         }
+
+        if database_type in ["ORACLE", "ORACLE_CATALOG_ACCOUNT"]:
+            create_credential["serviceName"] = service_name
 
         request = self._services['ADD_CREDENTIALS']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -553,6 +563,51 @@ class Credentials(object):
                     if response is not successful
         """
         self.add_database_creds("MYSQL", credential_name, username, password, description)
+
+    def add_oracle_database_creds(self, credential_name, username, password, service_name, description=None):
+        """Creates Oracle credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  Oracle DB username
+
+                password   (str)        --  Oracle DB password
+
+                service_name (str)      --  Service Name of Oracle DB
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        return self.add_database_creds("ORACLE", credential_name, username, password, description, service_name)
+
+    def add_oracle_catalog_creds(self, credential_name, username, password, service_name, description=None):
+        """Creates Oracle Recovery Catalog credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  Oracle DB username
+
+                password   (str)        --  Oracle DB password
+
+                service_name (str)      --  Service Name of Oracle DB
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        return self.add_database_creds("ORACLE_CATALOG_ACCOUNT", credential_name, username, password, description,
+                                       service_name)
 
     def add_azure_cloud_creds(self, credential_name, account_name, access_key_id, **kwargs):
         """Creates azure access key based credential on this commcell

@@ -232,6 +232,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'INSTANCE_BROWSE': '{0}Client/%s/%s/Instance/%s/Browse',
     'CLOUD_DATABASE_BROWSE': '{0}BrowseRDSBackups',
+    'GET_AWS_CFT': '{0}v4/Cloud/AWS/ExpressConfig/QuickCreateLink/AccessNodeCFT?platform=%s&regionName=%s&authentication=%s',
 
     'SQL_RESTORE_OPTIONS': '{0}SQL/RestoreOptions',
 

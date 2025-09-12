@@ -207,15 +207,37 @@ from __future__ import unicode_literals
 
 import copy
 from enum import Enum
+from typing import List, Dict, Union, Any, Optional, TYPE_CHECKING
 
 from .exception import SDKException
 from .security.security_association import SecurityAssociation
 from .activateapps.constants import TargetApps, PlanConstants
-from functools import reduce
-from typing import List, Tuple, Dict, Union
+from .policies.storage_policies import StoragePolicy
+from .policies.schedule_policies import SchedulePolicy
+
+if TYPE_CHECKING:
+    from .commcell import Commcell
 
 class PlanTypes(Enum):
-    """Class Enum to represent different plan types"""
+    """Class Enum to represent different plan types
+
+    Attributes:
+        Any (int): Represents any plan type.
+        DLO (int): Represents the DLO plan type.
+        MSP (int): Represents the MSP plan type.
+        FS (int): Represents the FS plan type.
+        SNAP (int): Represents the SNAP plan type.
+        VSA (int): Represents the VSA plan type.
+        EXCHANGE (int): Represents the EXCHANGE plan type.
+        DC (int): Represents the DC plan type.
+        EDISCOVERY (int): Represents the EDISCOVERY plan type.
+        ARCHIVER (int): Represents the ARCHIVER plan type.
+
+    Usage:
+        >>> plan_type = PlanTypes.DLO
+        >>> print(plan_type.value)
+        1
+    """
     Any = 0
     DLO = 1
     MSP = 2
@@ -228,37 +250,58 @@ class PlanTypes(Enum):
     ARCHIVER = 9
 
 class _PayloadGeneratorPlanV4:
-    """Class to provide payload for creating/modifying server plans using V4 API."""
+    """Class to provide payload for creating/modifying server plans using V4 API.
 
-    def __init__(self, commcell):
+    Attributes:
+        __commcell: Commcell object associated with this payload generator.
+
+    Usage:
+        # Initialize the payload generator
+        payload_generator = _PayloadGeneratorPlanV4(commcell)
+    """
+
+    def __init__(self, commcell: 'Commcell') -> None:
         """Initialize the _PayloadGeneratorPlanV4 class instance"""
         self.__commcell = commcell
 
-    def get_copy_payload(self, copy_details: dict, is_aux_copy: bool=False) -> dict:
+    def get_copy_payload(self, copy_details: dict, is_aux_copy: bool = False) -> dict:
         """
-            Method to get single copy details payload based on the provided configuration.
+        Method to get single copy details payload based on the provided configuration.
 
-            Args:
-                - copy_details (dict): Configuration for the copy.
-                Should contain the following keys:
-                    - 'storage_name' (str): Name of the storage.
-                    - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
-                    - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
-                    - 'region_name' (str, optional): Name of the region
-                    - 'storageTemplateTags' (dict): To indentify storage based on tags (Needed only for Global Plans)
+        Args:
+            copy_details (dict): Configuration for the copy.
+                                 Should contain the following keys:
+                                     - 'storage_name' (str): Name of the storage.
+                                     - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
+                                     - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
+                                     - 'region_name' (str, optional): Name of the region
+                                     - 'storageTemplateTags' (dict): To indentify storage based on tags (Needed only for Global Plans)
+            is_aux_copy  (bool): Indicates if the copy is an aux copy. Default: False
 
-                Note: Additional properties can be sent in the input to update the payload with the same exact key names.
-                    
-                - is_aux_copy (bool, optional): Indicates if the copy is an aux copy. Default: False
-                    
-            Returns:
-                dict: Copy details as a dictionary.
+        Returns:
+            dict: Copy details as a dictionary.
+
+        Raises:
+            SDKException: If storage details are missing in the copy configuration.
+
+        Usage:
+            # Example 1: Get copy payload with storage name
+            copy_details = {'storage_name': 'StoragePool1', 'retentionPeriodDays': 60, 'backupDestinationName': 'PrimaryCopy'}
+            payload = payload_generator.get_copy_payload(copy_details)
+
+            # Example 2: Get copy payload with storage template tags
+            copy_details = {'storageTemplateTags': {'key1': 'value1'}, 'retentionPeriodDays': 90, 'backupDestinationName': 'SecondaryCopy'}
+            payload = payload_generator.get_copy_payload(copy_details)
+
+            # Example 3: Get aux copy payload
+            copy_details = {'storage_name': 'StoragePool2', 'retentionPeriodDays': 30, 'backupDestinationName': 'AuxCopy1'}
+            payload = payload_generator.get_copy_payload(copy_details, is_aux_copy=True)
         """
         # validate the input
         if 'storageTemplateTags' not in copy_details and 'storage_name' not in copy_details:
             raise SDKException('Plan', '102', 'Storage details is required for copy configuration.')
 
-        temp_dict = copy_details.copy() # make a copy of the input to avoid modifying the original input
+        temp_dict = copy_details.copy()  # make a copy of the input to avoid modifying the original input
 
         payload = {
             "backupDestinationName": copy_details.get("backupDestinationName", "Primary"),
@@ -295,21 +338,27 @@ class _PayloadGeneratorPlanV4:
 
     def get_backupdestinations_payload(self, destinations_config: List[dict]) -> list:
         """
-            Method to get the payload for multiple copies based on the provided configuration.
+        Method to get the payload for multiple copies based on the provided configuration.
 
-            Args:
-                - destinations_config (list): List of dictionaries representing copy configurations.
-                Each dictionary should contain the following keys:
-                    - 'storage_name' (str): Name of the storage.
-                    - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
-                    - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
-                    - 'region_name' (str, optional): Name of the region
+        Args:
+            destinations_config (list): List of dictionaries representing copy configurations.
+                                        Each dictionary should contain the following keys:
+                                            - 'storage_name' (str): Name of the storage.
+                                            - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
+                                            - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
+                                            - 'region_name' (str, optional): Name of the region
 
-                Note: Additional properties can be sent in the input to update the payload with the same exact key names.
+        Returns:
+            list: Backup destinations payload as a list.
 
-            Returns:
-                dict: Backup destinations payload as a dictionary.
-            """
+        Usage:
+            # Example: Get backup destinations payload
+            destinations_config = [
+                {'storage_name': 'StoragePool1', 'retentionPeriodDays': 60, 'backupDestinationName': 'PrimaryCopy'},
+                {'storage_name': 'StoragePool2', 'retentionPeriodDays': 30, 'backupDestinationName': 'AuxCopy1'}
+            ]
+            payload = payload_generator.get_backupdestinations_payload(destinations_config)
+        """
         backup_destinations = []
 
         # primary copy
@@ -329,18 +378,28 @@ class _PayloadGeneratorPlanV4:
 
         Args:
             schedule_details (dict): Configuration for the schedule.
-            - Should contain the following
-                - backupType (str): Type of backup schedule
-                - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
+                                     - Should contain the following
+                                         - backupType (str): Type of backup schedule
+                                         - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
 
-            - For scheduleOperation = MODIFY / DELETE:
-                - scheduleId (int): ID of the schedule
-                - policyId (int): ID of the policy
-
-            - Note: Additional properties can be sent in the input to update the payload with the same exact key names. Get the path and key names from the API documentation or Command Center equivalent API.
+                                     - For scheduleOperation = MODIFY / DELETE:
+                                         - scheduleId (int): ID of the schedule
+                                         - policyId (int): ID of the policy
 
         Returns:
             dict: Schedule details as a dictionary.
+
+        Raises:
+            SDKException: If 'backupType' is missing or if 'scheduleId' and 'policyId' are missing for MODIFY/DELETE operations.
+
+        Usage:
+            # Example 1: Get schedule payload for adding a schedule
+            schedule_details = {'backupType': 'INCREMENTAL'}
+            payload = payload_generator.get_schedule_payload(schedule_details)
+
+            # Example 2: Get schedule payload for modifying a schedule
+            schedule_details = {'backupType': 'INCREMENTAL', 'scheduleOperation': 'MODIFY', 'scheduleId': 123, 'policyId': 456}
+            payload = payload_generator.get_schedule_payload(schedule_details)
         """
         # Validate the input
         if 'backupType' not in schedule_details:
@@ -395,18 +454,24 @@ class _PayloadGeneratorPlanV4:
 
     def get_rpo_payload(self, schedules: list[dict]) -> dict:
         """
-            Method to get the payload for multiple schedules based on the provided configuration
+        Method to get the payload for multiple schedules based on the provided configuration
 
-            Args:
-                schedules (list): List of dictionaries representing schedule configurations.
-                - Each dictionary should contain the following
-                    - backupType (str): Type of backup
-                    - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
+        Args:
+            schedules (list): List of dictionaries representing schedule configurations.
+                              - Each dictionary should contain the following
+                                  - backupType (str): Type of backup
+                                  - scheduleOperation (str): Operation to perform on the schedule. (Default: ADD)
 
-                - Note: Additional properties can be sent in the input to update the payload with the same exact key names.
+        Returns:
+            dict: Full schedule payload as a dictionary.
 
-            Returns:
-                dict: Full schedule payload as a dictionary.
+        Usage:
+            # Example: Get RPO payload for multiple schedules
+            schedules = [
+                {'backupType': 'INCREMENTAL'},
+                {'backupType': 'TRANSACTIONLOG'}
+            ]
+            payload = payload_generator.get_rpo_payload(schedules)
         """
         schedules_payload = []
 
@@ -418,24 +483,34 @@ class _PayloadGeneratorPlanV4:
 
     def get_create_server_plan_payload(self, plan_name: str, backup_destinations: List[dict], schedules: List[dict], **additional_params) -> dict:
         """
-            Method to get a payload for creating a server plan.
+        Method to get a payload for creating a server plan.
 
-            Args:
-                - plan_name (str): Name of the backup plan.
-                - backup_destinations (list): List of dictionaries representing backup destinations.
-                - schedules (list): List of dictionaries representing backup schedules.
+        Args:
+            plan_name          (str): Name of the backup plan.
+            backup_destinations (list): List of dictionaries representing backup destinations.
+            schedules           (list): List of dictionaries representing backup schedules.
+            additional_params   (dict): Additional parameters for the plan. Include:
+                                        - rpo_backup_window (list, optional): Backup window for RPO schedules.
+                                        - full_backup_window (list, optional): Backup window for full backup schedules.
+                                        - enable_backup_copy (bool, optional): Enable backup copy.
+                                        - backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
+                                        - snap_retention_days (int, optional): Retention period in days.
+                                        - snap_recovery_points (int, optional): Snap recovery point.
 
-                - additional_params (dict): Additional parameters for the plan. Include:
-                - rpo_backup_window (list, optional): Backup window for RPO schedules.
-                - full_backup_window (list, optional): Backup window for full backup schedules.
-                - enable_backup_copy (bool, optional): Enable backup copy.
-                - backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
-                - snap_retention_days (int, optional): Retention period in days.
-                - snap_recovery_points (int, optional): Snap recovery point.
+        Returns:
+            dict: Payload for creating a backup plan.
 
-            Returns:
-                dict: Payload for creating a backup plan.
-            """
+        Usage:
+            # Example: Get create server plan payload
+            backup_destinations = [
+                {'storage_name': 'StoragePool1', 'retentionPeriodDays': 60, 'backupDestinationName': 'PrimaryCopy'}
+            ]
+            schedules = [
+                {'backupType': 'INCREMENTAL'}
+            ]
+            additional_params = {'snap_retention_days': 30}
+            payload = payload_generator.get_create_server_plan_payload('MyPlan', backup_destinations, schedules, **additional_params)
+        """
         plan_payload = {
             "planName": plan_name,
             "backupDestinations": self.get_backupdestinations_payload(backup_destinations),
@@ -472,12 +547,11 @@ class _PayloadGeneratorPlanV4:
         Returns:
             dict: The updated dictionary.
 
-        Example:
+        Usage:
+            # Example: Update a nested dictionary
             original = {'a': 1, 'b': {'c': 2, 'd': 3}}
             update = {'b': {'d': 4}, 'e': 5}
             updated = update_payload(original, update)
-            print(updated)
-            {'a': 1, 'b': {'c': 2, 'd': 4}, 'e': 5}
         """
         for key, value in update_info_dict.items():
             if isinstance(value, dict):
@@ -487,16 +561,34 @@ class _PayloadGeneratorPlanV4:
         return original_payload
 
 class Plans(object):
-    """Class for representing all the plans in the commcell."""
+    """Class for representing all the plans in the commcell.
 
-    def __init__(self, commcell_object):
+    Attributes:
+        _all_plans_props (Any): Placeholder for all plans properties.
+        _commcell_object (object): Instance of the Commcell class.
+        _cvpysdk_object (object): Instance of the cvpysdk class.
+        _services (dict): Dictionary of service URLs.
+        _update_response_ (callable): Method to update the response string.
+        _PLANS (str): Service URL for plans.
+        _V4_DC_PLANS (str): Service URL for v4 data center plans.
+        _V4_PLANS (str): Service URL for v4 server plans.
+        _V4_GLOBAL_PLANS (str): Service URL for v4 global server plans.
+        _plans (dict): Dictionary of plans.
+        _plans_cache (dict): Cache of plans.
+        filter_query_count (int): Count of filter queries.
+
+    Usage:
+        >>> plans = Plans(commcell_object)
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize object of Plans class.
 
-            Args:
-                commcell_object (object)  -- instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
 
-            Returns:
-                object - instance of Plans class
+        Returns:
+            None
         """
 
         self._all_plans_props = None
@@ -515,11 +607,12 @@ class Plans(object):
         self.filter_query_count = 0
         self.refresh()
 
-    def __str__(self):
+
+    def __str__(self) -> str:
         """Representation string consisting of all plans of the Commcell.
 
-            Returns:
-                str - string of all the plans for a commcell
+        Returns:
+            str: String of all the plans for a commcell.
         """
         representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'Plan')
 
@@ -529,30 +622,42 @@ class Plans(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the Plans class."""
+
+    def __repr__(self) -> str:
+        """Representation string for the instance of the Plans class.
+
+        Returns:
+            str: A string representation of the Plans class instance.
+        """
         return "Plans class instance for Commcell"
 
-    def __len__(self):
-        """Returns the number of the plans added to the Commcell."""
+
+    def __len__(self) -> int:
+        """Returns the number of the plans added to the Commcell.
+
+        Returns:
+            int: The number of plans in the Commcell.
+        """
         return len(self.all_plans)
 
-    def __getitem__(self, value):
+
+    def __getitem__(self, value: str) -> str:
         """Returns the name of the plan for the given plan ID or
             the details of the plan for given plan Name.
 
-            Args:
-                value   (str / int)     --  Name or ID of the plan
+        Args:
+            value (str): Name or ID of the plan.
 
-            Returns:
-                str     -   name of the plan, if the plan id was given
+        Returns:
+            str: Name of the plan, if the plan id was given.
+            dict: Dict of details of the plan, if plan name was given.
 
-                dict    -   dict of details of the plan, if plan name was given
+        Raises:
+            IndexError: No plan exists with the given Name / Id.
 
-            Raises:
-                IndexError:
-                    no plan exists with the given Name / Id
-
+        Usage:
+            >>> plan_name = plans["plan_id"]
+            >>> plan_details = plans["plan_name"]
         """
         value = str(value)
 
@@ -564,22 +669,29 @@ class Plans(object):
             except IndexError:
                 raise IndexError('No plan exists with the given Name / Id')
 
-    def _get_plans(self, full_response: bool = False):
-        """Gets all the plans associated with the commcell
-            Args:
-                full_response(bool) --  flag to return complete response
-            Returns:
-                dict - consists of all plans in the commcell
-                    {
-                        "plan1_name": plan1_id,
-                        "plan2_name": plan2_id
-                    }
 
-                Raises:
-                    SDKException:
-                        if response is empty
+    def _get_plans(self, full_response: bool = False) -> dict:
+        """Gets all the plans associated with the commcell.
 
-                        if response is not success
+        Args:
+            full_response (bool): Flag to return complete response. Defaults to False.
+
+        Returns:
+            dict: Consists of all plans in the commcell.
+
+                {
+                    "plan1_name": plan1_id,
+                    "plan2_name": plan2_id
+                }
+
+        Raises:
+            SDKException:
+                if response is empty.
+                if response is not success.
+
+        Usage:
+            >>> plans = self._get_plans()
+            >>> full_plans = self._get_plans(full_response=True)
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._PLANS)
 
@@ -618,32 +730,34 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_plan_template(self, plan_sub_type, plan_type="MSP"):
+
+    def _get_plan_template(self, plan_sub_type: str, plan_type: str = "MSP") -> dict:
         """Gets the Plan subtype's JSON template.
 
-            Args:
-                plan_sub_type    (str)   --  Sub-type of plan to add
+        Args:
+            plan_sub_type (str): Sub-type of plan to add.
 
-                    "Server"    -   Server Plans
+                "Server"    -   Server Plans
 
-                    "FSServer"  -   File System Plans
+                "FSServer"  -   File System Plans
 
-                    "Laptop"    -   Laptop Plans
+                "Laptop"    -   Laptop Plans
 
+            plan_type (str): Type of plan to add. Defaults to "MSP".
 
-                plan_type       (str)   --  Type of plan to add
+                default: "MSP"
 
-                    default: "MSP"
+        Returns:
+            dict: JSON string of the Plan's template.
 
-            Returns:
-                str     -   JSON string of the Plan's template
+        Raises:
+            SDKException:
+                if type or subtype of the plan does not exist.
+                if there is a failure in getting the template.
 
-            Raises:
-                SDKException:
-                    if type or subtype of the plan does not exist
-
-                    if there is a failure in getting the template
-
+        Usage:
+            >>> server_template = self._get_plan_template("Server")
+            >>> laptop_template = self._get_plan_template("Laptop", plan_type="MSP")
         """
         if not (isinstance(plan_sub_type, str) and
                 isinstance(plan_type, str)):
@@ -662,15 +776,22 @@ class Plans(object):
                 response_string = self._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
 
+
     def _get_fl_parameters(self, fl: list = None) -> str:
         """
         Returns the fl parameters to be passed in the mongodb caching api call
 
         Args:
-            fl    (list)  --   list of columns to be passed in API request
+            fl (list): List of columns to be passed in API request. Defaults to None.
 
         Returns:
-            fl_parameters(str) -- fl parameter string
+            str: fl parameter string.
+
+        Raises:
+            SDKException: If an invalid column name is passed.
+
+        Usage:
+            >>> fl_params = self._get_fl_parameters(fl=['planName', 'planId'])
         """
         self.valid_columns = {
             'planName': 'plans.plan.planName',
@@ -697,17 +818,24 @@ class Plans(object):
 
         return fl_parameters
 
+
     def _get_sort_parameters(self, sort: list = None) -> str:
         """
         Returns the sort parameters to be passed in the mongodb caching api call
 
         Args:
-            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
-                                valid sor type -- 1 for ascending and -1 for descending
-                                e.g. sort = ['connectName','1']
+            sort (list): Contains the name of the column on which sorting will be performed and type of sort.
+                           Valid sort type -- 1 for ascending and -1 for descending
+                           e.g. sort = ['connectName','1']
 
         Returns:
-            sort_parameters(str) -- sort parameter string
+            str: sort parameter string
+
+        Raises:
+            SDKException: If an invalid column name is passed.
+
+        Usage:
+            >>> sort_params = self._get_sort_parameters(sort=['planName', '1'])
         """
         sort_type = str(sort[1])
         col = sort[0]
@@ -717,15 +845,23 @@ class Plans(object):
             raise SDKException('Plan', '102', 'Invalid column name passed')
         return sort_parameter
 
+
     def _get_fq_parameters(self, fq: list = None) -> str:
         """
         Returns the fq parameters based on the fq list passed
         Args:
-             fq     (list) --   contains the columnName, condition and value
+             fq (list): Contains the columnName, condition and value
                     e.g. fq = [['planName','contains', test'],['numAssocEntities','between', '0-1']]
 
         Returns:
-            fq_parameters(str) -- fq parameter string
+            str: fq parameter string
+
+        Raises:
+            SDKException: If an invalid column name is passed or an invalid condition is passed.
+
+        Usage:
+            >>> fq_params = self._get_fq_parameters(fq=[['planName', 'contains', 'test']])
+            >>> fq_params_between = self._get_fq_parameters(fq=[['numAssocEntities', 'between', '0-1']])
         """
         conditions = {"contains", "notContain", "eq", "neq", "gt", "lt"}
         params = []
@@ -750,26 +886,35 @@ class Plans(object):
 
         return "".join(params)
 
+
     def get_plans_cache(self, hard: bool = False, **kwargs) -> dict:
         """
         Returns plan cache in response.
 
         Args:
-            hard  (bool)    --   Flag to perform hard refresh on plans cache.
+            hard (bool): Flag to perform hard refresh on plans cache. Defaults to False.
             **kwargs (dict):
-                fl (list)   --   List of columns to return in response (default: None).
-                sort (list) --   Contains the name of the column on which sorting will be performed and type of sort.
-                                       Valid sort type: 1 for ascending and -1 for descending
-                                       e.g. sort = ['columnName', '1'] (default: None).
-                limit (list)--   Contains the start and limit parameter value.
-                                        Default ['0', '100'].
-                search (str)--   Contains the string to search in the commcell entity cache (default: None).
-                fq (list)   --   Contains the columnName, condition, and value.
-                                        e.g. fq = [['planName', 'contains', 'test'],
-                                        ['numAssocEntities', 'between', '0-1']] (default: None).
+                fl (list): List of columns to return in response (default: None).
+                sort (list): Contains the name of the column on which sorting will be performed and type of sort.
+                               Valid sort type: 1 for ascending and -1 for descending
+                               e.g. sort = ['columnName', '1'] (default: None).
+                limit (list): Contains the start and limit parameter value.
+                                Default ['0', '100'].
+                search (str): Contains the string to search in the commcell entity cache (default: None).
+                fq (list): Contains the columnName, condition, and value.
+                                e.g. fq = [['planName', 'contains', 'test'],
+                                ['numAssocEntities', 'between', '0-1']] (default: None).
 
         Returns:
             dict: Dictionary of all the properties present in response.
+
+        Raises:
+            SDKException: If the response is not successful or if it fails to get the plans summary.
+
+        Usage:
+            >>> plans_cache = self.get_plans_cache()
+            >>> plans_cache_hard = self.get_plans_cache(hard=True)
+            >>> plans_cache_filtered = self.get_plans_cache(fl=['planName', 'planId'], sort=['planName', '1'], limit=['0', '50'], search='test', fq=[['planName', 'contains', 'test']])
         """
         # computing parameters
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
@@ -833,11 +978,13 @@ class Plans(object):
         else:
             raise SDKException("Plan", "102", "Failed to get plans summary")
 
+
     @property
-    def all_plans(self):
+    def all_plans(self) -> dict:
         """Returns the dictionary consisting of all the plans added to the Commcell.
 
-            dict - consists of all the plans configured on the commcell
+        Returns:
+            dict: Consists of all the plans configured on the commcell.
 
                 {
                     "plan1_name": plan1_id,
@@ -845,59 +992,67 @@ class Plans(object):
                     "plan2_name": plan2_id
                 }
 
+        Usage:
+            >>> all_plans = plans.all_plans
         """
         return self._plans
 
+
     @property
-    def all_plans_cache(self):
+    def all_plans_cache(self) -> dict:
         """Returns the dictionary consisting of all the plans cache present in mongoDB
 
-                    dict - consists of all the plans configured on the commcell
+        Returns:
+            dict: Consists of all the plans configured on the commcell.
 
-                        {
-                        "plan1_name":
-                         {
-                         id : <plan's id>,
-                         Type : <type of plan>,
-                         subtype : <sub type of plan>,
-                         status: <status of the plan>,
-                         numCopies: <number of copies>,
-                         numAssocEntities: <associated Entities Count>,
-                         RPO: <rpo in minutes>,
-                         planStatusFlag: <status of plan>,
-                         company: <name of the company plan belongs to>
-                         },
+                {
+                    "plan1_name":
+                     {
+                     id : <plan's id>,
+                     Type : <type of plan>,
+                     subtype : <sub type of plan>,
+                     status: <status of the plan>,
+                     numCopies: <number of copies>,
+                     numAssocEntities: <associated Entities Count>,
+                     RPO: <rpo in minutes>,
+                     planStatusFlag: <status of plan>,
+                     company: <name of the company plan belongs to>
+                     },
 
-                        "plan2_name":
-                         {
-                         id : <plan's id>,
-                         Type : <type of plan>,
-                         subtype : <sub type of plan>,
-                         status: <status of the plan>,
-                         numCopies: <number of copies>,
-                         numAssocEntities: <associated Entities Count>,
-                         RPO: <rpo in minutes>,
-                         planStatusFlag: <status of plan>,
-                         company: <name of the company plan belongs to>
-                         },
-                    }
+                    "plan2_name":
+                     {
+                     id : <plan's id>,
+                     Type : <type of plan>,
+                     subtype : <sub type of plan>,
+                     status: <status of the plan>,
+                     numCopies: <number of copies>,
+                     numAssocEntities: <associated Entities Count>,
+                     RPO: <rpo in minutes>,
+                     planStatusFlag: <status of plan>,
+                     company: <name of the company plan belongs to>
+                     },
+                }
 
-                """
+        Usage:
+            >>> all_plans_cache = plans.all_plans_cache
+        """
         if not self._plans_cache:
             self._plans_cache = self.get_plans_cache()
         return self._plans_cache
 
-    def filter_plans(self, plan_type, company_name=None):
+
+    def filter_plans(self, plan_type: str, company_name: str = None) -> dict:
         """
         Returns the dictionary consisting of specified type and company plans.
 
         Args:
-            plan_type (str)      --      Type of plan ['DLO', 'Server', 'Laptop', 'Database', 'FSServer', 'FSIBMiVTL', 'Snap', 'VSAServer', 'VSAReplication', 
-                                                        'ExchangeUser', 'ExchangeJournal', 'Office365', 'Dynamics365', 'DataClassification', 'Archiver']
-            company_name (str)    --     To filter plans based on the company. For Commcell, company_name = 'Commcell'. Default will return all plans
+            plan_type (str): Type of plan ['DLO', 'Server', 'Laptop', 'Database', 'FSServer', 'FSIBMiVTL', 'Snap', 'VSAServer', 'VSAReplication',
+                                            'ExchangeUser', 'ExchangeJournal', 'Office365', 'Dynamics365', 'DataClassification', 'Archiver']
+            company_name (str): To filter plans based on the company. For Commcell, company_name = 'Commcell'. Default will return all plans
 
         Returns:
-            dict - consists of all the plans with specified types configured on the commcell
+            dict: Consists of all the plans with specified types configured on the commcell.
+
                 {
                     "plan1_name": plan1_id,
                     "plan2_name": plan2_id
@@ -905,9 +1060,13 @@ class Plans(object):
 
         Raises:
             SDKException:
-                if input data type is not valid
-                if an invalid plan type is passed as a parameter
-                if failed to get the response
+                if input data type is not valid.
+                if an invalid plan type is passed as a parameter.
+                if failed to get the response.
+
+        Usage:
+            >>> server_plans = self.filter_plans("Server")
+            >>> commcell_plans = self.filter_plans("Server", company_name="Commcell")
         """
         if not isinstance(plan_type, str):
             raise SDKException('Plan', '101')
@@ -942,39 +1101,44 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def has_plan(self, plan_name):
+
+    def has_plan(self, plan_name: str) -> bool:
         """Checks if a plan exists in the commcell with the input plan name.
 
-            Args:
-                plan_name   (str)   --  name of the plan
+        Args:
+            plan_name (str): Name of the plan.
 
-            Returns:
-                bool    -   boolean output whether the plan exists in the commcell or not
+        Returns:
+            bool: Boolean output whether the plan exists in the commcell or not.
 
-            Raises:
-                SDKException:
-                    if type of the plan name argument is not string
+        Raises:
+            SDKException: If type of the plan name argument is not string.
 
+        Usage:
+            >>> has_plan = plans.has_plan("MyPlan")
         """
         if not isinstance(plan_name, str):
             raise SDKException('Plan', '101')
 
         return self._plans and plan_name.lower() in self._plans
 
-    def get(self, plan_name):
+    def get(self, plan_name: str) -> 'Plan':
         """Returns a plan object of the specified plan name.
 
-            Args:
-                plan_name (str)  --  name of the plan
+        Args:
+            plan_name (str): name of the plan
 
-            Returns:
-                object - instance of the Plan class for the the given plan name
+        Returns:
+            object: instance of the Plan class for the the given plan name
 
-            Raises:
-                SDKException:
-                    if type of the plan name argument is not string
+        Raises:
+            SDKException:
+                if type of the plan name argument is not string
 
-                    if no plan exists with the given name
+                if no plan exists with the given name
+
+        Usage:
+            plan = plans.get('MyPlan')
         """
         if not isinstance(plan_name, str):
             raise SDKException('Plan', '101')
@@ -993,23 +1157,27 @@ class Plans(object):
                     plan_name)
             )
 
-    def delete(self, plan_name):
+
+    def delete(self, plan_name: str) -> None:
         """Deletes the plan from the commcell.
 
-            Args:
-                plan_name (str)  --  name of the plan to remove from the commcell
+        Args:
+            plan_name (str): name of the plan to remove from the commcell
 
-            Raises:
-                SDKException:
-                    if type of the plan name argument is not string
+        Raises:
+            SDKException:
+                if type of the plan name argument is not string
 
-                    if failed to delete plan
+                if failed to delete plan
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-                    if no plan exists with the given name
+                if no plan exists with the given name
+
+        Usage:
+            plans.delete('MyPlan')
         """
         if not isinstance(plan_name, str):
             raise SDKException('Plan', '101')
@@ -1055,50 +1223,54 @@ class Plans(object):
                     'No plan exists with name: {0}'.format(plan_name)
                 )
 
-    def add_exchange_plan(self, plan_name: str, plan_sub_type: str = 'ExchangeUser', **kwargs):
+
+    def add_exchange_plan(self, plan_name: str, plan_sub_type: str = 'ExchangeUser', **kwargs) -> 'Plan':
         """Adds a new exchange plan to the commcell.
 
-            Args:
-                plan_name           (str)   --  name of the new plan to add
+        Args:
+            plan_name           (str): name of the new plan to add
+            plan_sub_type       (str): Type of plan to add - ExchangeUser or ExchangeJournal
+                                         Default: ExchangeUser
+            kwargs              (dict): Optional parameters for creating a plan
+                Accepted Values:
+                    retain_msgs_received_time           (int): Retain messages based on received time
+                    retain_msgs_deletion_time           (int): Retain messages based on deletion time
+                    enable_cleanup_archive_mailbox      (bool): Enable cleanup on archive mailbox
+                    cleanup_msg_older_than              (int): Cleanup messages older than
+                    cleanup_msg_larger_than             (int): Cleanup messages larger than
+                    enable_content_search               (bool): Enable content indexing
+                    enable_archive_on_archive_mailbox   (bool): Enable archive on archived mailbox
+                    create_stubs                        (bool): Create stubs during cleanup
+                    prune_stubs                         (bool): Prune stubs during cleanup
+                    prune_msgs                          (bool): Prune messages during cleanup
+                    number_of_days_src_pruning          (int): Number of days for source pruning
+                    include_msgs_older_than             (int): Include messages older than for archiving
+                    include_msgs_larger_than            (int): Inlcude messages larger than for archiving
+                    exclude_folder_filter               (list): Exclude folder filter
+                    include_folder_filter               (list): Include folder filter
+                    enable_message_rules                (bool): Enable message rules
+                    truncate_body                       (bool): Truncate body
+                    truncate_body_to_size               (int): Size to which body should be truncated
+                                                                 (default: 1024)
+                    num_days_backup_version             (int): Number of days to retain backup versions
+                                                                 (default:365)
 
-                plan_sub_type       (str)   --  Type of plan to add - ExchangeUser or ExchangeJournal
-                    Default: ExchangeUser
+        Returns:
+            object: Plan object of the created plan
 
-                kwargs              (dict)  --  Optional parameters for creating a plan
-                    Accepted Values:
-                        retain_msgs_received_time           (int)   -- Retain messages based on received time
-                        retain_msgs_deletion_time           (int)   -- Retain messages based on deletion time
-                        enable_cleanup_archive_mailbox      (bool)  -- Enable cleanup on archive mailbox
-                        cleanup_msg_older_than              (int)   -- Cleanup messages older than
-                        cleanup_msg_larger_than             (int)   -- Cleanup messages larger than
-                        enable_content_search               (bool)  -- Enable content indexing
-                        enable_archive_on_archive_mailbox   (bool)  -- Enable archive on archived mailbox
-                        create_stubs                        (bool)  -- Create stubs during cleanup
-                        prune_stubs                         (bool)  -- Prune stubs during cleanup
-                        prune_msgs                          (bool)  -- Prune messages during cleanup
-                        number_of_days_src_pruning          (int)   -- Number of days for source pruning
-                        include_msgs_older_than             (int)   -- Include messages older than for archiving
-                        include_msgs_larger_than            (int)   -- Inlcude messages larger than for archiving
-                        exclude_folder_filter               (list)  -- Exclude folder filter
-                        include_folder_filter               (list)  -- Include folder filter
-                        enable_message_rules                (bool)  -- Enable message rules
-                        truncate_body                       (bool)  -- Truncate body
-                        truncate_body_to_size               (int)   -- Size to which body should be truncated
-                                                                       (default: 1024)
-                        num_days_backup_version             (int)   -- Number of days to retain backup versions
-                                                                       (default:365)
+        Raises:
+            SDKException:
+                if input parameters are incorrect
 
-            Returns:
-                Plan object of the created plan
+                if Plan already exists
 
-            Raises:
-                SDKException:
-                    if input parameters are incorrect
+                if error in creating the plan
 
-                    if Plan already exists
-
-                    if error in creating the plan
-
+        Usage:
+            plans.add_exchange_plan('MyExchangePlan')
+            plans.add_exchange_plan('MyExchangePlan', plan_sub_type='ExchangeJournal')
+            plans.add_exchange_plan('MyExchangePlan', retain_msgs_deletion_time=30)
+            plans.add_exchange_plan('MyExchangePlan', enable_content_search=True, num_days_backup_version=730)
         """
         if plan_sub_type not in ['ExchangeUser', 'ExchangeJournal']:
             raise SDKException('Plan', '101', "Plan subtype should be ExchangeUser or ExchangeJournal.")
@@ -1202,143 +1374,120 @@ class Plans(object):
             raise SDKException('Response', '101', response_string)
 
     def create_server_plan(
-        self, plan_name: str, backup_destinations: Union[List[dict], dict], schedules: Union[List[dict], dict]=None, **additional_params
-    ) -> object:
-        """
-            Method to create a server plan using V4 API
+        self, plan_name: str, backup_destinations: Union[List[dict], dict], schedules: Union[List[dict], dict]=None, **additional_params: Any
+    ) -> 'Plan':
+        """Method to create a server plan using V4 API
 
-            Args:
-                plan_name (str)             --  Name of the plan to create
+        Args:
+            plan_name           (str): Name of the plan to create.
+            backup_destinations (list/dict): List of dictionaries representing backup destinations.
+            schedules           (list or dict, optional): List of dictionaries representing backup schedules. Defaults to None.
+            additional_params   (dict): Additional parameters for creating a plan.
 
-                backup_destinations (list/dict)  --  List of dictionaries representing backup destinations.
-                Each dictionary should contain the following keys:
-                    - 'storage_name' (str): Name of the storage.
-                    - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
-                    - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
-                    - 'region_name' (str, optional): Name of the region
-                    To create elastic plans, region_name should be specified for all the copies
+        Returns:
+            object: The created plan object.
 
-                Examples:
-                # specify just storage and rest use default values
-                {"storage_name": "Backup Storage"}
+        Raises:
+            SDKException: If failed to create new V4 Server Plan.
 
-                # specify storage name and retention period 
-                {"storage_name": "Backup Storage", "retentionPeriodDays": 30}
+        Usage:
+            # specify just storage and rest use default values
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"})
 
-                # create plan with aux copies
-                [
-                    {"storage_name": "Backup Storage 1"},
-                    {"storage_name": "Backup Storage 2", "backupDestinationName": "Aux Copy 1"},
-                ]
+            # specify storage name and retention period
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage", "retentionPeriodDays": 30})
 
-                # create elastic plan
-                {"storage_name": "Backup Storage", "region_name": "asia"}
+            # create plan with aux copies
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations=[
+                {"storage_name": "Backup Storage 1"},
+                {"storage_name": "Backup Storage 2", "backupDestinationName": "Aux Copy 1"},
+            ])
 
-                # create elastic plan with multiple regions and multiple copies in each region
-                [
-                    {"storage_name": "Backup Storage 1", "region_name": "asia"},
-                    {"storage_name": "Backup Storage 2", "region_name": "asia", "backupDestinationName": "Aux Copy Name"},
-                    {"storage_name": "Backup Storage 3", "region_name": "africa"},
-                    {"storage_name": "Backup Storage 4", "region_name": "africa", "backupDestinationName": "Aux Copy Name"}
-                ]
+            # create elastic plan
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage", "region_name": "asia"})
 
-                Note: Additional properties can be sent in the input to update the payload with the same exact key names. Refer API documentation for more details or use Command Center equivalent API.
-                    
-                schedules (list or dict, optional)  --  List of dictionaries representing backup schedules.
-                Each dictionary should contain the following keys:
-                    - backupType (str): Type of backup schedule
-                    - forDatabasesOnly (bool): Indicates if the schedule is for databases only (Default: False)
-                    - Additional properties to update the default schedule details.
+            # create elastic plan with multiple regions and multiple copies in each region
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations=[
+                {"storage_name": "Backup Storage 1", "region_name": "asia"},
+                {"storage_name": "Backup Storage 2", "region_name": "asia", "backupDestinationName": "Aux Copy Name"},
+                {"storage_name": "Backup Storage 3", "region_name": "africa"},
+                {"storage_name": "Backup Storage 4", "region_name": "africa", "backupDestinationName": "Aux Copy Name"}
+            ])
 
-                Examples:
+            # create plan with default schedules
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"})
 
-                # create plan with default schedules
-                None
+            # create plan with no schedules
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules=[])
 
-                # create plan with no schedules
-                []
+            # create plan with schedules based on backup type and rest use default values
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={"backupType": "INCREMENTAL"})
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={"backupType": "FULL"})
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={"backupType": "TRANSACTIONLOG"})
 
-                # create plan with schedules based on backup type and rest use default values
-                {"backupType": "INCREMENTAL"}
-                {"backupType": "FULL"}
+            # specify agents for schedules
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={"backupType": "INCREMENTAL", "forDatabasesOnly": False})
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={"backupType": "FULL", "forDatabasesOnly": True})
+
+            # create plan with multiple schedules
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules=[
+                {"backupType": "INCREMENTAL"},
+                {"backupType": "FULL", "forDatabasesOnly": True},
                 {"backupType": "TRANSACTIONLOG"}
+            ])
 
-                # specify agents for schedules
-                {"backupType": "INCREMENTAL", "forDatabasesOnly": False}
-                {"backupType": "FULL", "forDatabasesOnly": True}
+            # advance properties for schedules
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={"backupType": "TRANSACTIONLOG", "scheduleOption": {"useDiskCacheForLogBackups": True}})
 
-                # create plan with multiple schedules
-                [
-                    {"backupType": "INCREMENTAL"},
-                    {"backupType": "FULL", "forDatabasesOnly": True},
-                    {"backupType": "TRANSACTIONLOG"}
-                ]
-
-                # advance properties for schedules
-                {"backupType": "TRANSACTIONLOG", "scheduleOption": {"useDiskCacheForLogBackups": True}}
-
-                # specify pattern and start time for schedule
-                {
-                    "backupType": "INCREMENTAL",
-                    "schedulePattern": {
-                        "scheduleFrequencyType": "DAILY",
-                        "startTime": 75600,
-                        "frequency": 1
-                    }
+            # specify pattern and start time for schedule
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations={"storage_name": "Backup Storage"}, schedules={
+                "backupType": "INCREMENTAL",
+                "schedulePattern": {
+                    "scheduleFrequencyType": "DAILY",
+                    "startTime": 75600,
+                    "frequency": 1
                 }
+            })
 
-                Note: Additional properties can be sent in the input to update the payload with the same exact key names. Refer API documentation for more details or use Command Center equivalent API.
-                    
-                additional_params (dict)    --  Additional parameters for creating a plan
-                    Accepted Values:
-                        rpo_backup_window (list, optional): Backup window for RPO schedules.
-                        full_backup_window (list, optional): Backup window for full backup schedules.
-                        enable_backup_copy (bool, optional): Enable backup copy.
-                        backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
-                        snap_retention_days (int, optional): Retention period in days.
-                        snap_recovery_points (int, optional): Snap recovery point.
-                        gcm_options (dict, optional): Global Configuration Manager options
-                            commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)
+            # For Global Plans, backup_destinations input should be in the following format:
+            # Example #1: For Single Copy
+            backup_destinations = {
+                "storageTemplateTags": [
+                    {
+                        "name": "Tag Name",
+                        "value": "Tag Value"
+                    }
+                ]
+            }
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations=backup_destinations, gcm_options={"commcells": [{"id": 1}]})
 
-                        For Global Plans, backup_destinations input should be in the following format:
-
-                        Example #1: For Single Copy
-                            backup_destinations = {
-                                "storageTemplateTags": [
-                                    {
-                                        "name": "Tag Name",
-                                        "value": "Tag Value"
-                                    }
-                                ]
-                            }
-
-                        Example #2: For Multiple Copies
-                        backup_destinations = [
-                            {
-                                'storageTemplateTags': [
-                                    {
-                                        'name': 'Tag Name 1', 
-                                        'value': 'Tag Value 1'
-                                    }
-                                ]
-                            }, 
-                            {
-                                'backupDestinationName': 'Aux Copy Name', 
-                                'storageTemplateTags': [
-                                    {
-                                        'name': 'Tag Name 2', 
-                                        'value': 'Tag Value 2'
-                                    }
-                                ]
-                            }
-                        ]
-
+            # Example #2: For Multiple Copies
+            backup_destinations = [
+                {
+                    'storageTemplateTags': [
+                        {
+                            'name': 'Tag Name 1',
+                            'value': 'Tag Value 1'
+                        }
+                    ]
+                },
+                {
+                    'backupDestinationName': 'Aux Copy Name',
+                    'storageTemplateTags': [
+                        {
+                            'name': 'Tag Name 2',
+                            'value': 'Tag Value 2'
+                        }
+                    ]
+                }
+            ]
+            Plans.create_server_plan(plan_name='test_plan', backup_destinations=backup_destinations, gcm_options={"commcells": [{"id": 1}]})
         """
         if schedules is None:
             schedules = [
                 {'backupType': 'INCREMENTAL'},
                 {'backupType': 'TRANSACTIONLOG'},
-            ] # default schedules
+            ]  # default schedules
 
         if isinstance(backup_destinations, dict):
             backup_destinations = [backup_destinations]
@@ -1354,13 +1503,13 @@ class Plans(object):
             service_commcell_ids = gcm_options.get('commcells', [])  # [{'id': 1}, {'id': 2}]
             apply_on_all_commcells = False if service_commcell_ids else True
             request_json = {
-            "globalConfigInfo": {
-                "commcells": service_commcell_ids,
-                "scope": "",
-                "scopeFilterQuery": "",
-                "applyOnAllCommCells": apply_on_all_commcells
-            },
-            "plan": request_json
+                "globalConfigInfo": {
+                    "commcells": service_commcell_ids,
+                    "scope": "",
+                    "scopeFilterQuery": "",
+                    "applyOnAllCommCells": apply_on_all_commcells
+                },
+                "plan": request_json
             }
 
         endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
@@ -1400,65 +1549,47 @@ class Plans(object):
             raise SDKException('Response', '101', response_string)
 
     def add(self,
-            plan_name,
-            plan_sub_type,
-            storage_pool_name=None,
-            sla_in_minutes=1440,
-            override_entities=None):
+            plan_name: str,
+            plan_sub_type: str,
+            storage_pool_name: str=None,
+            sla_in_minutes: int=1440,
+            override_entities: dict=None) -> 'Plan':
         """Adds a new Plan to the CommCell.
 
         Args:
-            plan_name           (str)   --  name of the new plan to add
-
-            plan_sub_type       (str)   --  Type of plan to add
-
-                "Server"    -   Server Plans
-
-                "FSServer"  -   File System Plans
-
-                "Laptop"    -   Laptop Plans
-
-                "ExchangeUser"  -   Exchange Mailbox Plan
-
-
-            storage_pool_name   (str)   --  name of the storage pool to be used for the plan
-
-            sla_in_minutes      (int)   --  Backup SLA in hours
-
-                default: 1440
-
-            override_entities   (dict)  --  Specify the entities with respective
-                                            inheritance values.
-
-                default: None
-
-                    {
-                        'privateEntities': [1, 4],
-
-                        'enforcedEntities': [256, 512, 1024]
-                    }
-                    - where,
-                            privateEntities are set when respective entity overriding is required
-                            enforcedEntities are set when respective entity overriding is not
-                            allowed
-                            left blank if overriding is optional
-
-                    - entity IDs,
-                            1    - Storage
-                            4    - RPO/Schedules
-                            256  - Windows content
-                            512  - Unix content
-                            1024 - Mac content
+            plan_name           (str): name of the new plan to add.
+            plan_sub_type       (str): Type of plan to add.
+            storage_pool_name   (str): name of the storage pool to be used for the plan. Defaults to None.
+            sla_in_minutes      (int): Backup SLA in hours. Defaults to 1440.
+            override_entities   (dict): Specify the entities with respective inheritance values. Defaults to None.
 
         Returns:
-            object  -   instance of the Plan class created by this method
+            object: instance of the Plan class created by this method.
 
         Raises:
             SDKException:
-                if input parameters are incorrect
+                if input parameters are incorrect.
+                if Plan already exists.
 
-                if Plan already exists
+        Usage:
+            # Adds a new Server Plan to the CommCell
+            Plans.add(plan_name='test_plan', plan_sub_type='Server', storage_pool_name='test_storage_pool')
 
+            # Adds a new File System Plan to the CommCell
+            Plans.add(plan_name='test_plan', plan_sub_type='FSServer', storage_pool_name='test_storage_pool')
+
+            # Adds a new Laptop Plan to the CommCell
+            Plans.add(plan_name='test_plan', plan_sub_type='Laptop', storage_pool_name='test_storage_pool')
+
+            # Adds a new Exchange Mailbox Plan to the CommCell
+            Plans.add(plan_name='test_plan', plan_sub_type='ExchangeUser', storage_pool_name='test_storage_pool')
+
+            # Adds a new Plan to the CommCell with override entities
+            override_entities = {
+                'privateEntities': [1, 4],
+                'enforcedEntities': [256, 512, 1024]
+            }
+            Plans.add(plan_name='test_plan', plan_sub_type='Server', storage_pool_name='test_storage_pool', override_entities=override_entities)
         """
         if not (isinstance(plan_name, str) and
                 isinstance(plan_sub_type, str)):
@@ -1619,24 +1750,28 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get_eligible_plans(self, entities):
+    def get_eligible_plans(self, entities: dict) -> dict:
         """Returns dict of plans that are eligible for the specified entities
 
-            Args:
-                entities    (dict)  - dictionary containing entities as keys and
-                                        their respective IDs as values
-                    {
-                        'clientId': id,
-                        'appId': id,
-                        'backupsetId': id
-                    }
+        Args:
+            entities (dict): dictionary containing entities as keys and
+                             their respective IDs as values
+                             {
+                                 'clientId': id,
+                                 'appId': id,
+                                 'backupsetId': id
+                             }
 
-            Returns:
-                dict                - dict of eligible plans
+        Returns:
+            dict: dict of eligible plans
 
-            Raises:
-                SDKException:
-                    if there is an error in the response
+        Raises:
+            SDKException:
+                if there is an error in the response
+
+        Usage:
+            >>> entities = {'clientId': 1, 'appId': 2, 'backupsetId': 3}
+            >>> plans = commcell_object.plans.get_eligible_plans(entities)
         """
         query = ''
         for i in entities:
@@ -1661,8 +1796,19 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get_supported_solutions(self):
-        """Method to get supported solutions for plans"""
+    def get_supported_solutions(self) -> dict:
+        """Method to get supported solutions for plans
+
+        Returns:
+            dict: Dictionary of supported solutions.
+
+        Raises:
+            SDKException:
+                if there is an error in the response
+
+        Usage:
+            >>> solutions = commcell_object.plans.get_supported_solutions()
+        """
         flag, response = self._cvpysdk_object.make_request(
             'GET',
             self._services['PLAN_SUPPORTED_SOLUTIONS']
@@ -1676,14 +1822,18 @@ class Plans(object):
         else:
             raise SDKException('Response', '102')
 
-    def refresh(self, **kwargs):
+    def refresh(self, **kwargs: Any) -> None:
         """
         Refresh the list of plans on this commcell.
 
-            Args:
-                **kwargs (dict):
-                    mongodb (bool)  -- Flag to fetch plans cache from MongoDB (default: False).
-                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
+        Args:
+            **kwargs (dict):
+                mongodb (bool): Flag to fetch plans cache from MongoDB (default: False).
+                hard (bool): Flag to hard refresh MongoDB cache for this entity (default: False).
+
+        Usage:
+            >>> commcell_object.plans.refresh()
+            >>> commcell_object.plans.refresh(mongodb=True, hard=True)
         """
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
@@ -1692,65 +1842,62 @@ class Plans(object):
         if mongodb:
             self._plans_cache = self.get_plans_cache(hard=hard)
 
-    def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
+    def add_data_classification_plan(self, plan_name: str, index_server: str, target_app: TargetApps = TargetApps.FSO, **kwargs: Any) -> 'Plan':
         """Adds data classification plan to the commcell
 
-            Args:
+        Args:
+            plan_name (str): Name of plan
+            index_server (str): Index server name
+            target_app (TargetApps): Target app for this plan
+                                     cvpysdk.activateapps.constants.TargetApps
+            **kwargs:
+                index_content (bool): Specifies whether to index content or not to index server
+                content_analyzer (list): list of Content analyzer client name
+                entity_list (list): list of entities which needs to be extracted
+                classifier_list (list): list of classifier which needs to be classified
+                enable_ocr (bool): specifies whether OCR is enabled or not
+                ocr_language (int): Language to be used when doing OCR
+                                        Default : English (Value-1)
 
-                plan_name           (str)       --  Name of plan
+                 Supported Languages:
 
-                index_server        (str)       --  Index server name
+                            ENGLISH = 1,
+                            HEBREW = 2,
+                            SPANISH = 3,
+                            FRENCH = 4,
+                            ITALIAN = 5,
+                            DANISH = 6
 
+                include_docs (str): Include documents type separated by comma
+                exclude_path (list): List of paths which needs to be excluded
+                min_doc_size (int): Minimum document size in MB
+                max_doc_size (int): Maximum document size in MB
 
-                target_app          (enum)      --  Target app for this plan
-                                                        cvpysdk.activateapps.constants.TargetApps
+        Returns:
+            object: Plan object
 
-                **kwargs
+        Raises:
+            SDKException:
+                if input is not valid
+                if failed to create plan
+                if failed to find entities/classifier details
 
-                    index_content       (bool)      --  Speifies whether to index content or not to index server
-
-                    content_analyzer    (list)      --  list of Content analyzer client name
-
-                    entity_list         (list)      --  list of entities which needs to be extracted
-
-                    classifier_list     (list)      --  list of classifier which needs to be classified
-
-                    enable_ocr          (bool)      --  specifies whether OCR is enabled or not
-
-                    ocr_language        (int)       --  Language to be used when doing OCR
-                                                            Default : English (Value-1)
-
-                     Supported Languages:
-
-                                    ENGLISH = 1,
-                                    HEBREW = 2,
-                                    SPANISH = 3,
-                                    FRENCH = 4,
-                                    ITALIAN = 5,
-                                    DANISH = 6
-
-                    include_docs        (str)       --  Include documents type separated by comma
-
-                    exclude_path        (list)      --  List of paths which needs to be excluded
-
-                    min_doc_size        (int)       --  Minimum document size in MB
-
-                    max_doc_size        (int)       --  Maximum document size in MB
-
-            Returns:
-
-                object  - Plan object
-
-            Raises:
-
-                SDKException:
-
-                        if input is not valid
-
-                        if failed to create plan
-
-                        if failed to find entities/classifier details
-
+        Usage:
+            >>> plan = commcell_object.plans.add_data_classification_plan(
+            ...     plan_name='My Data Classification Plan',
+            ...     index_server='index_server_name',
+            ...     target_app=TargetApps.FSO,
+            ...     index_content=True,
+            ...     content_analyzer=['content_analyzer_client'],
+            ...     entity_list=['entity1', 'entity2'],
+            ...     classifier_list=['classifier1', 'classifier2'],
+            ...     enable_ocr=True,
+            ...     ocr_language=1,
+            ...     include_docs='pdf,doc',
+            ...     exclude_path=['/path/to/exclude'],
+            ...     min_doc_size=1,
+            ...     max_doc_size=10
+            ... )
         """
         extraction_policy_list = []
         if not (isinstance(plan_name, str)):
@@ -1788,6 +1935,8 @@ class Plans(object):
             activate_obj = self._commcell_object.activate
             if 'entity_list' in kwargs or 'classifier_list' in kwargs:
                 entity_mgr_obj = activate_obj.entity_manager()
+                if 'classifier_list' in kwargs:
+                    entity_mgr_obj.refresh() # to get the latest classifiers
                 # classifier is also an activate entity with type alone different so append this to entity list itself
                 entity_list = []
                 for entity in kwargs.get('entity_list', []):
@@ -1870,8 +2019,8 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def add_risk_analysis_dc_plan(self, plan_name, app_type=PlanConstants.RAPlanAppType.CLASSIFIED,
-                                  content_analyzer=None, index_server=None, **kwargs):
+    def add_risk_analysis_dc_plan(self, plan_name: str, app_type: PlanConstants.RAPlanAppType = PlanConstants.RAPlanAppType.CLASSIFIED,
+                                  content_analyzer: Optional[List[str]] = None, index_server: Optional[str] = None, **kwargs: Any) -> 'Plan':
         """Adds Risk Analysis data classification plan to the commcell
             Args:
                 plan_name         (str)             --  Name of plan
@@ -1997,11 +2146,17 @@ class Plans(object):
             raise SDKException('Response', '101', response_string)
 
     def get_plans_summary(self) -> dict:
-
         """Returns plan summary in response
 
         Returns:
-            list - plans summary
+            dict: plans summary
+
+        Raises:
+            SDKException:
+                if there is an error in the response
+
+        Usage:
+            >>> plans_summary = commcell_object.plans.get_plans_summary()
 
         **NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE**
         """
@@ -2024,11 +2179,22 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def add_office365_plan(self, plan_name)->None:
+    def add_office365_plan(self, plan_name: str) -> None:
         """
         Creates Office 365 plan
+
         Args:
-            plan_name (str) : name of the plan to be created
+            plan_name (str): name of the plan to be created
+
+        Raises:
+            SDKException:
+                if plan_name is not a string
+                if the API request fails
+                if the response status code is not 200
+                if the response received is empty
+
+        Usage:
+            plans.add_office365_plan('MyOffice365Plan')
         """
         if not isinstance(plan_name, str):
             raise SDKException('Plan','102','Plan name should be passed as String')
@@ -2051,32 +2217,86 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     @property
-    def all_plans_prop(self)->list[dict]:
+    def all_plans_prop(self) -> list[dict]:
         """
         Returns complete GET API response
+
+        Returns:
+            list[dict]: List of all plans properties.
+
+        Usage:
+            all_plans = plans.all_plans_prop
         """
         self._all_plans_props = self._get_plans(full_response=True).get("plans",[])
         return self._all_plans_props
 
-
 class Plan(object):
-    """Class for performing operations for a specific Plan."""
+    """Class for performing operations for a specific Plan.
 
-    def __init__(self, commcell_object, plan_name, plan_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _services (dict): Dictionary of service URLs.
+        _update_response_ (callable): Method to update response.
+        _plan_name (str): Name of the plan (lowercase).
+        _plan_properties (dict): Properties of the plan.
+        _plan_id (str): ID of the plan.
+        _PLAN (str): URL for the plan.
+        _V4_PLAN (str): V4 URL for the plan.
+        _V4_DC_PLAN (str): V4 DC URL for the plan.
+        _PLAN_RPO (str): URL for the plan RPO.
+        _PLAN_RPO_RUN (str): URL for the plan RPO run.
+        _ADD_USERS_TO_PLAN (str): URL to add users to the plan.
+        _API_SECURITY (str): URL for security association.
+        _API_SECURITY_ENTITY (str): URL for entity security association.
+        _SERVER_PLAN_BACKUP_DESTINATION (str): URL for server plan backup destination.
+        _properties (None): Placeholder for properties.
+        _sla_in_minutes (None): Placeholder for SLA in minutes.
+        _operation_window (None): Placeholder for operation window.
+        _full_operation_window (None): Placeholder for full operation window.
+        _plan_type (None): Placeholder for plan type.
+        _subtype (None): Placeholder for subtype.
+        _security_associations (dict): Dictionary of security associations.
+        _provider_domain_name (None): Placeholder for provider domain name.
+        _resources (None): Placeholder for resources.
+        _storage_pool (None): Placeholder for storage pool.
+        _child_policies (dict): Dictionary of child policies.
+        _storage_copies (dict): Dictionary of storage copies.
+        _all_copies (None): Placeholder for all copies.
+        _user_group (None): Placeholder for user group.
+        _client_group (None): Placeholder for client group.
+        _override_entities (None): Placeholder for override entities.
+        _parent_plan_name (None): Placeholder for parent plan name.
+        _addons (list): List of addons.
+        _associated_entities (dict): Dictionary of associated entities.
+        _dc_plan_props (dict): Dictionary of DC plan properties.
+        _plan_entity_type (int): Plan entity type.
+        _region_id (list): List of region IDs.
+        _applicable_solutions (list): List of applicable solutions.
+        _v4_plan_properties (dict): Dictionary of V4 plan properties.
+        plan_v4_helper (object): Instance of PayloadGeneratorPlanV4.
+        _data_schedule_policy (None): Placeholder for data schedule policy.
+        _log_schedule_policy (None): Placeholder for log schedule policy.
+        _snap_schedule_policy (None): Placeholder for snap schedule policy.
+    """
+
+    def __init__(self, commcell_object: 'Commcell', plan_name: str, plan_id: Optional[str] = None) -> None:
         """Initialize the Plan class instance.
 
-            Args:
-                commcell_object     (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
+            plan_name (str): Name of the plan.
+            plan_id (str, optional): ID of the plan. Defaults to None.
 
-                plan_name           (str)     --  name of the plan
+        Raises:
+            SDKException:
+                if plan_id is not provided and plan does not exist
 
-                plan_id             (str)     --  id of the plan
-                    default: None
-
-            Returns:
-                object - instance of the Plan class
-
+        Usage:
+            >>> plan = Plan(commcell_object, 'MyPlan')
+            >>> plan = Plan(commcell_object, 'MyPlan', plan_id='23')
         """
         self._commcell_object = commcell_object
 
@@ -2136,34 +2356,47 @@ class Plan(object):
         self._log_schedule_policy = None
         self._snap_schedule_policy = None
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """String representation of the instance of this class.
+
+        Returns:
+            str: String representation of the plan.
+
+        Usage:
+            >>> str(plan_object)
+        """
         representation_string = 'Plan class instance for plan: "{0}", of Commcell: "{1}"'
 
         return representation_string.format(
             self._plan_name, self._commcell_object.commserv_name
         )
 
-    def _get_plan_id(self):
+    def _get_plan_id(self) -> str:
         """Gets the plan id associated with this plan.
 
-            Returns:
-                str - id associated with this plan
+        Returns:
+            str: ID associated with this plan.
+
+        Usage:
+            >>> plan_id = plan_object._get_plan_id()
         """
         plans = Plans(self._commcell_object)
         return plans.get(self.plan_name).plan_id
 
     def _get_v4_plan_properties(self) -> Dict:
-        """Gets the properties of this plan from V4 API
+        """Gets the properties of this plan from V4 API.
 
-            Returns:
-                dict - dictionary consisting of the properties of this plan
+        Returns:
+            dict: Dictionary consisting of the properties of this plan.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            >>> properties = plan_object._get_v4_plan_properties()
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._V4_PLAN)
 
@@ -2177,17 +2410,20 @@ class Plan(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_plan_properties(self):
+    def _get_plan_properties(self) -> Dict:
         """Gets the plan properties of this plan.
 
-            Returns:
-                dict - dictionary consisting of the properties of this plan
+        Returns:
+            dict: Dictionary consisting of the properties of this plan.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            >>> properties = plan_object._get_plan_properties()
         """
         plan_properties_url = '{0}?propertyLevel=30'.format(self._PLAN)
         flag, response = self._cvpysdk_object.make_request('GET', plan_properties_url)
@@ -2351,59 +2587,64 @@ class Plan(object):
             raise SDKException('Response', '101', response_string)
 
     def derive_and_add(self,
-                       plan_name,
-                       storage_pool_name=None,
-                       sla_in_minutes=None,
-                       override_entities=None):
+                       plan_name: str,
+                       storage_pool_name: Optional[str] = None,
+                       sla_in_minutes: Optional[int] = None,
+                       override_entities: Optional[dict] = None) -> 'Plan':
         """Derives the base plan based on the the inheritance properties to created a derived plan
 
             Args:
-                plan_name           (str)        --  name of the new plan to add
+                plan_name           (str)        :  name of the new plan to add
+                storage_pool_name   (str)   :  name of the storage pool to be used for the plan
+                                                    default: None   :   when the name is left to default, it inherits the base plan
+                                                                        storage pool if overriding is optional/not allowed
+                sla_in_minutes        (int)        :  Backup SLA in hours
+                                                    default: None   :   when the SLA is left to default, it inherits the base plan
+                                                                        SLA if overriding is optional/not allowed
+                override_entities   (dict)  :  Specify the entities with respective overriding.
+                                                    default: None
+                                                        {
+                                                            'privateEntities': [1, 4],
+                                                            'enforcedEntities': [256, 512, 1024]
+                                                        }
+                                                        - where,
+                                                                privateEntities are set when respective entity overriding is must
+                                                                enforcedEntities are set when respective entity overriding is
+                                                                not allowed
+                                                                left blank if overriding is optional
 
-                storage_pool_name   (str)   --  name of the storage pool to be used for the plan
-                    default: None   :   when the name is left to default, it inherits the base plan
-                                        storage pool if overriding is optional/not allowed
-
-                sla_in_minutes        (int)        --  Backup SLA in hours
-                    default: None   :   when the SLA is left to default, it inherits the base plan
-                                        SLA if overriding is optional/not allowed
-
-                override_entities   (dict)  --  Specify the entities with respective overriding.
-
-                    default: None
-
-                        {
-                            'privateEntities': [1, 4],
-
-                            'enforcedEntities': [256, 512, 1024]
-                        }
-                        - where,
-                                privateEntities are set when respective entity overriding is must
-                                enforcedEntities are set when respective entity overriding is
-                                not allowed
-                                left blank if overriding is optional
-
-                        - entity IDs,
-                                1    - Storage
-                                4    - SLA/Schedules
-                                256  - Windows content
-                                512  - Unix content
-                                1024 - Mac content
+                                                        - entity IDs,
+                                                                1    - Storage
+                                                                4    - SLA/Schedules
+                                                                256  - Windows content
+                                                                512  - Unix content
+                                                                1024 - Mac content
 
 
-        Returns:
-            object - instance of the Plan class created by this method
+            Returns:
+                object: instance of the Plan class created by this method
 
-        Raises:
-            SDKException:
-                if plan name is in incorrect format
+            Raises:
+                SDKException:
+                    if plan name is in incorrect format
 
-                if plan already exists
+                    if plan already exists
 
-                if neccessary arguments are not passed
+                    if neccessary arguments are not passed
 
-                if inheritance rules are not followed
+                    if inheritance rules are not followed
 
+            Usage:
+                # Example 1: Derive a plan with a new name, inheriting storage pool and SLA
+                # new_plan = plan_object.derive_and_add('new_derived_plan')
+
+                # Example 2: Derive a plan with a specific storage pool and SLA
+                # new_plan = plan_object.derive_and_add('new_derived_plan', storage_pool_name='new_sp', sla_in_minutes=60)
+
+                # Example 3: Derive a plan with override entities
+                # override_config = {'privateEntities': [1, 4], 'enforcedEntities': [256, 512, 1024]}
+                # new_plan = plan_object.derive_and_add('new_derived_plan', override_entities=override_config)
+                pass
         """
         if not isinstance(plan_name, str):
             raise SDKException('Plan', '101', 'Plan name must be string value')
@@ -2633,34 +2874,54 @@ class Plan(object):
         else:
             raise SDKException('Plan', '102', 'Inheritance disabled for plan')
 
-    def modify_schedule(self, schedule_json, is_full_schedule=False):
+
+    def modify_schedule(self, schedule_json: dict, is_full_schedule: bool = False) -> None:
         """Modifies the incremental RPO schedule pattern of the plan with the given schedule json
 
             Args:
-            schedule_json (dict) -- {
-                    pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                     pattern to be sent
+                schedule_json    (dict) :  {
+                                                pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
+                                                                 pattern to be sent
 
-                                     eg: {
-                                            "freq_type": 'daily',
-                                            "active_start_time": time_in_%H/%S (str),
-                                            "repeat_days": days_to_repeat (int)
-                                         }
+                                                                 eg: {
+                                                                        "freq_type": 'daily',
+                                                                        "active_start_time": time_in_%H/%S (str),
+                                                                        "repeat_days": days_to_repeat (int)
+                                                                     }
 
-                    options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
+                                                options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
 
-                                    eg:  {
-                                        "maxNumberOfStreams": 0,
-                                        "useMaximumStreams": True,
-                                        "useScallableResourceManagement": True,
-                                        "totalJobsToProcess": 1000,
-                                        "allCopies": True,
-                                        "mediaAgent": {
-                                            "mediaAgentName": "<ANY MEDIAAGENT>"
-                                        }
-                                    }
-                    }
-            is_full_schedule (bool) --  Pass True if he schedule to be modified is the full backup schedule
+                                                                eg:  {
+                                                                    "maxNumberOfStreams": 0,
+                                                                    "useMaximumStreams": True,
+                                                                    "useScallableResourceManagement": True,
+                                                                    "totalJobsToProcess": 1000,
+                                                                    "allCopies": True,
+                                                                    "mediaAgent": {
+                                                                        "mediaAgentName": "<ANY MEDIAAGENT>"
+                                                                    }
+                                                                }
+                                            }
+                is_full_schedule (bool) :  Pass True if he schedule to be modified is the full backup schedule
+
+            Raises:
+                IndexError: If full backup schedule is not enabled and is_full_schedule is True.
+
+            Usage:
+                # Example 1: Modify the incremental schedule
+                # schedule_json = {
+                #     'pattern': {'freq_type': 'daily', 'active_start_time': '00/00', 'repeat_days': 1},
+                #     'options': {'maxNumberOfStreams': 0, 'useMaximumStreams': True}
+                # }
+                # plan_object.modify_schedule(schedule_json)
+
+                # Example 2: Modify the full backup schedule
+                # schedule_json = {
+                #     'pattern': {'freq_type': 'weekly', 'active_start_time': '00/00', 'repeat_weeks': 1, 'week_days': ['Sunday']},
+                #     'options': {'maxNumberOfStreams': 0, 'useMaximumStreams': True}
+                # }
+                # plan_object.modify_schedule(schedule_json, is_full_schedule=True)
+                pass
         """
         if is_full_schedule:
             try:
@@ -2679,21 +2940,25 @@ class Plan(object):
         )
         self.refresh()
 
-    def __handle_response(self, flag: bool, response: object, custom_error_message: str=None):
+
+    def __handle_response(self, flag: bool, response: object, custom_error_message: str=None) -> None:
         """Handles the response received from the server
 
         Args:
-            flag (bool)                 --  boolean specifying whether the request was successful or not
-
-            response (Response Object)  --  response received from the server
-
-            custom_error_message (str)  --  custom error message to be used in case of failure
+            flag                 (bool) :  boolean specifying whether the request was successful or not
+            response             (object) :  response received from the server
+            custom_error_message (str) :  custom error message to be used in case of failure
 
         Raises:
             SDKException:
                 if response is empty
 
                 if response is not success
+
+        Usage:
+            # Example: Handle a response with a custom error message
+            # plan_object.__handle_response(flag, response, "Custom error occurred")
+            pass
         """
         if flag:
             if response.json():
@@ -2715,24 +2980,44 @@ class Plan(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     def get_plan_properties(self) -> Dict:
         """
         Method to get the properties of this plan fetched from v4 API.
         
         Returns:
             Dict: A dictionary containing the properties of the plan fetched from the v4 API.
+
+        Usage:
+            # Example: Get the plan properties
+            # properties = plan_object.get_plan_properties()
+            pass
         """
         return self._v4_plan_properties
 
-    def get_storage_copy_details(self, copy_name: str, region_name: str = None) -> Dict:
+
+    def get_storage_copy_details(self, copy_name: str, region_name: Optional[str] = None) -> Dict:
         """Method to get the storage copy details of the given copy name and region name
 
         Args:
-            copy_name (str): Name of the copy
+            copy_name   (str): Name of the copy
             region_name (str, optional): Name of the region
 
         Returns:
             dict: Dictionary consisting of the properties of the given copy name
+
+        Raises:
+            SDKException:
+                if no copy is found with the given name and region.
+                if multiple copies are found with the given name and region.
+
+        Usage:
+            # Example 1: Get storage copy details by copy name
+            # copy_details = plan_object.get_storage_copy_details('copy1')
+
+            # Example 2: Get storage copy details by copy name and region name
+            # copy_details = plan_object.get_storage_copy_details('copy1', 'region1')
+            pass
         """
         backup_destinations = self._v4_plan_properties.get('backupDestinations', [])
 
@@ -2754,36 +3039,46 @@ class Plan(object):
 
         return copy.deepcopy(copy_details) # return a deep copy to avoid modifying the original properties
 
-    def get_storage_copy_id(self, copy_name: str, region_name: str = None) -> int:
+
+    def get_storage_copy_id(self, copy_name: str, region_name: Optional[str] = None) -> int:
         """Gets the storage copy id of the given copy name
 
         Args:
-            copy_name (str): Name of the copy
+            copy_name   (str): Name of the copy
             region_name (str, optional): Name of the region
 
         Returns:
             int: Storage copy id of the given copy name
+
+        Usage:
+            # Example 1: Get storage copy ID by copy name
+            # copy_id = plan_object.get_storage_copy_id('copy1')
+
+            # Example 2: Get storage copy ID by copy name and region name
+            # copy_id = plan_object.get_storage_copy_id('copy1', 'region1')
+            pass
         """
         copy_details = self.get_storage_copy_details(copy_name, region_name)
         return copy_details.get('planBackupDestination', {}).get('id', 0) if copy_details else 0
 
     def add_copy(self, copy_name: str, storage_pool: str, retention: int=30, extended_retention: dict=None, region: str=None) -> None:
-        """
-            Method to add an aux copy to the plan
+        """Method to add an aux copy to the plan
 
-            Args:
-                copy_name   (str)   -   name of the copy that is being added
-                storage_pool (str)  -   name of the storage pool that is to be used for the copy
-                retention   (int)   -   retention period in days for the copy
-                extended_retention (dict)  -   extended retention rules of a copy
-                region      (str)   -   region name to which copy needs to be added
+        Args:
+            copy_name    (str): name of the copy that is being added
+            storage_pool (str): name of the storage pool that is to be used for the copy
+            retention    (int): retention period in days for the copy
+            extended_retention (dict): extended retention rules of a copy
+            region       (str): region name to which copy needs to be added
 
-            Returns:
-                None
-
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
                 -   if failed to add new copy to the plan
+
+        Usage:
+            plan.add_copy(copy_name='copy1', storage_pool='pool1', retention=60)
+            plan.add_copy(copy_name='copy2', storage_pool='pool2', retention=90, extended_retention={'rule': 'value'})
+            plan.add_copy(copy_name='copy3', storage_pool='pool3', region='region1')
         """
         copy_details = {
             "backupDestinationName": copy_name,
@@ -2806,25 +3101,34 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to add new copy to the plan : [{self.plan_name}]')
 
+
     def edit_copy(self, copy_name: str, new_retention_days: int = None, new_recovery_points: int = None, new_extended_retention: dict = None, current_region_name: str = None) -> None:
-        """
-        Method to edit a copy settings
+        """Method to edit a copy settings
 
         Args:
-            copy_name (str): name of the copy that is being edited
-            new_retention_days (int): new retention period in days for the copy
+            copy_name           (str): name of the copy that is being edited
+            new_retention_days  (int): new retention period in days for the copy
             new_recovery_points (int): new recovery points for the snap copy
             new_extended_retention (dict): new extended retention rules of a copy
             current_region_name (str): name of the region from which the copy needs to be edited
 
-            Example:
-                new_extended_retention =  {
+        Raises:
+            SDKException:
+                - if both retention days and recovery points are set at the same time
+                - if recovery points are set for a non-snap copy
+                - if failed to edit copy settings for the plan
+
+        Usage:
+            plan.edit_copy(copy_name='copy1', new_retention_days=60)
+            plan.edit_copy(copy_name='copy2', new_recovery_points=10)
+            plan.edit_copy(copy_name='copy3', new_extended_retention={
                 "firstExtendedRetentionRule": {
                     "isInfiniteRetention": False,
                     "type": "WEEKLY_FULLS",
                     "retentionPeriodDays": 90
                 }
-        }
+            })
+            plan.edit_copy(copy_name='copy4', current_region_name='region1')
         """
         copy_details = self.get_storage_copy_details(copy_name, current_region_name)
         copy_id = self.get_storage_copy_id(copy_name, current_region_name)
@@ -2860,20 +3164,21 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to edit copy settings for the plan : [{self.plan_name}] Copy: [{copy_name}] Region: [{current_region_name}]')
 
+
     def delete_copy(self, copy_name: str, region_name: str=None) -> None:
-        """
-        Method to remove a copy from the plan
+        """Method to remove a copy from the plan
 
         Args:
-            copy_name (str)   -   name of the copy to be removed
-            region_name (str) -   name of the region from which the copy needs to be removed
-
-        Returns:
-            None
+            copy_name   (str): name of the copy to be removed
+            region_name (str): name of the region from which the copy needs to be removed
 
         Raises:
             SDKException:
                 -   if failed to remove the copy from the plan
+
+        Usage:
+            plan.delete_copy(copy_name='copy1')
+            plan.delete_copy(copy_name='copy2', region_name='region1')
         """
         copy_id = self.get_storage_copy_id(copy_name, region_name)
 
@@ -2881,19 +3186,19 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to remove copy from the plan: [{self.plan_name}]')
 
+
     def add_region(self, region_name: str) -> None:
-        """
-        Method to add a region to the plan
+        """Method to add a region to the plan
 
         Args:
-            region_name (str)   -   name of the region that is being added
-
-        Returns:
-            None
+            region_name (str): name of the region that is being added
 
         Raises:
             SDKException:
                 -   if failed to add new region to the plan
+
+        Usage:
+            plan.add_region(region_name='region1')
         """
         region_id = self._commcell_object.regions.get(region_name).region_id
 
@@ -2907,19 +3212,19 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to add new region to the plan : [{self.plan_name}]')
 
+
     def remove_region(self, region_name: str) -> None:
-        """
-        Method to remove a region from the plan
+        """Method to remove a region from the plan
 
         Args:
-            region_name (str)   -   name of the region that is being removed
-
-        Returns:
-            None
+            region_name (str): name of the region that is being removed
 
         Raises:
             SDKException:
                 -   if failed to remove the region from the plan
+
+        Usage:
+            plan.remove_region(region_name='region1')
         """
         region_id = self._commcell_object.regions.get(region_name).region_id
 
@@ -2927,28 +3232,29 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to remove region from the plan: [{self.plan_name}]')
 
+
     def get_schedule_properties(self, schedule_filter: dict) -> dict:
-        """
-        Method to get the schedule properties of the plan
+        """Method to get the schedule properties of the plan
 
         Args:
-            schedule_filter (dict) - dictionary containing the filter criteria for the schedule
-
-            Example for schedule filter:
-
-            # select the full backup schedule
-                {"backupType": "FULL"}
-
-            # select the schedule where backup type is incremental and schedule is applicable to all agents
-            {"backupType": "INCREMENTAL", "forDatabasesOnly": False}
+            schedule_filter (dict): dictionary containing the filter criteria for the schedule
 
         Returns:
-            dict - schedule properties of the plan
+            dict: schedule properties of the plan
 
         Raises:
             SDKException:
                 - if no schedule is found with the provided filter
                 - if multiple schedules are found with the provided filter
+
+        Usage:
+            # select the full backup schedule
+            schedule_filter = {"backupType": "FULL"}
+            properties = plan.get_schedule_properties(schedule_filter)
+
+            # select the schedule where backup type is incremental and schedule is applicable to all agents
+            schedule_filter = {"backupType": "INCREMENTAL", "forDatabasesOnly": False}
+            properties = plan.get_schedule_properties(schedule_filter)
         """
         schedules = self._v4_plan_properties['rpo']['backupFrequency']['schedules']
         filtered_schedules = [schedule for schedule in schedules if all(schedule.get(key) == value for key, value in schedule_filter.items())]
@@ -2961,44 +3267,38 @@ class Plan(object):
 
         return copy.deepcopy(filtered_schedules[0]) # return a deep copy to avoid modifying the original schedule properties
 
+
     def add_schedule(self, schedule_options: dict) -> None:
-        """
-        Method to add a new schedule to the plan
+        """Method to add a new schedule to the plan
 
         Args:
-            schedule_options (dict) - schedule options to be added (backupType is mandatory)
-
-            Note: To prepare advanced schedule options, refer to the API documentation or Command Center equivalent API
-
-            Example:
-
-            # create schedule based on backup type and rest use default values
-            {"backupType": "INCREMENTAL"}
-            {"backupType": "TRANSACTIONLOG"}
-
-            # create schedule with advanced properties
-            {
-                "backupType": "FULL", 
-                "schedulePattern": {
-                    "scheduleFrequencyType": "DAILY",
-                    "startTime": 75600,
-                    "frequency": 1
-                    }
-            }
-
-            # specify agents for schedules
-            {"backupType": "INCREMENTAL", "forDatabasesOnly": False}
-            {"backupType": "FULL", "forDatabasesOnly": True}
-
-            # advance properties for schedules
-            {"backupType": "TRANSACTIONLOG", "scheduleOption": {"useDiskCacheForLogBackups": True}}
-
-        Returns:
-            None
+            schedule_options (dict): schedule options to be added (backupType is mandatory)
 
         Raises:
             SDKException:
                 - if failed to add the schedule to the plan
+
+        Usage:
+            # create schedule based on backup type and rest use default values
+            plan.add_schedule({"backupType": "INCREMENTAL"})
+            plan.add_schedule({"backupType": "TRANSACTIONLOG"})
+
+            # create schedule with advanced properties
+            plan.add_schedule({
+                "backupType": "FULL",
+                "schedulePattern": {
+                    "scheduleFrequencyType": "DAILY",
+                    "startTime": 75600,
+                    "frequency": 1
+                }
+            })
+
+            # specify agents for schedules
+            plan.add_schedule({"backupType": "INCREMENTAL", "forDatabasesOnly": False})
+            plan.add_schedule({"backupType": "FULL", "forDatabasesOnly": True})
+
+            # advance properties for schedules
+            plan.add_schedule({"backupType": "TRANSACTIONLOG", "scheduleOption": {"useDiskCacheForLogBackups": True}})
         """
         schedule_payload = self.plan_v4_helper.get_schedule_payload(schedule_options)
 
@@ -3011,24 +3311,31 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to add new schedule to the plan: [{self.plan_name}]')
 
+
     def edit_schedule(self, schedule_options: dict, schedule_filter: dict) -> None:
-        """
-        Method to edit the schedule options of the plan
+        """Method to edit the schedule options of the plan
 
         Args:
-            schedule_options (dict) - schedule options to be edited
-            schedule_filter (dict)  - schedule for which the options are to be edited
-
-            Refer to the add_schedule method for the format of the schedule options
-
-            Refer to the get_schedule_properties method for the format of the schedule filter
-
-        Returns:
-            None
+            schedule_options (dict): schedule options to be edited
+            schedule_filter  (dict): schedule for which the options are to be edited
 
         Raises:
             SDKException:
                 - if failed to edit the schedule options of the plan
+
+        Usage:
+            # Define schedule filter
+            schedule_filter = {"backupType": "FULL"}
+
+            # Edit schedule options
+            schedule_options = {
+                "schedulePattern": {
+                    "scheduleFrequencyType": "DAILY",
+                    "startTime": 36000,
+                    "frequency": 2
+                }
+            }
+            plan.edit_schedule(schedule_options, schedule_filter)
         """
         schedule_payload = self.get_schedule_properties(schedule_filter)
 
@@ -3046,21 +3353,21 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to edit schedule options for the plan: [{self.plan_name}]')
 
+
     def delete_schedule(self, schedule_filter: dict) -> None:
-        """
-        Method to delete the schedule from the plan
+        """Method to delete the schedule from the plan
 
         Args:
-            schedule_filter (dict)  - schedule to be deleted
-
-            Refer to the get_schedule_properties method for the format of the schedule filter
-
-        Returns:
-            None
+            schedule_filter (dict): schedule to be deleted
 
         Raises:
             SDKException:
                 - if failed to edit the schedule options of the plan
+
+        Usage:
+            # Define schedule filter
+            schedule_filter = {"backupType": "FULL"}
+            plan.delete_schedule(schedule_filter)
         """
         schedule_payload = self.get_schedule_properties(schedule_filter)
         schedule_payload['scheduleOperation'] = 'DELETE'
@@ -3075,21 +3382,22 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to delete schedule from the plan: [{self.plan_name}]')
 
+
     def edit_snapshot_options(self, enable_backup_copy:bool=True, backup_copy_rpo: int=None) -> None:
-        """
-        Method to edit the snapshot options of the plan
+        """Method to edit the snapshot options of the plan
 
         Args:
-            enable_backup_copy (bool)   -   enable backup copy for the plan
-
-            backup_copy_rpo (int)       -   backup copy RPO for the plan
-
-        Returns:
-            None
+            enable_backup_copy (bool): enable backup copy for the plan
+            backup_copy_rpo  (int): backup copy RPO for the plan
 
         Raises:
             SDKException:
                 -   if failed to edit the snapshot options of the plan
+
+        Usage:
+            plan.edit_snapshot_options(enable_backup_copy=False, backup_copy_rpo=30)
+            plan.edit_snapshot_options(enable_backup_copy=True)
+            plan.edit_snapshot_options(backup_copy_rpo=60)
         """
         request_json = {
             "snapshotOptions": {
@@ -3104,19 +3412,26 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to edit snapshot settings for the plan : [{self.plan_name}]')
 
-    def add_storage_copy(self, copy_name, storage_pool, retention=30, extended_retention=None):
+
+    def add_storage_copy(self, copy_name: str, storage_pool: str, retention: int=30, extended_retention: tuple=None) -> dict:
         """Add a storage copy as backup destination to this plan
-            Args:
-                copy_name   (str)   -   name of the copy that is being added
+        Args:
+            copy_name    (str): name of the copy that is being added
+            storage_pool (str): name of the storage pool for the copy to be added
+            retention    (int): retention period in days for the copy
+            extended_retention (tuple): extended retention rules of a copy
 
-                storage_pool (str)  -   name of the storage pool for the copy to be added
+        Returns:
+            dict: dictionary of all copies of this plan
 
-                retention   (int)   -   retention period in days for the copy
+        Raises:
+            SDKException:
+                - if copy name or storage pool is not a string
+                - if storage policy copy already exists
 
-                extended_retention (tuple)  -   extended retention rules of a copy
-                                                Example: [1, True, "EXTENDED_ALLFULL", 0, 0]
-            Returns:
-                dict    -   dictionary of all copies of this plan
+        Usage:
+            plan.add_storage_copy(copy_name='copy1', storage_pool='pool1', retention=60)
+            plan.add_storage_copy(copy_name='copy2', storage_pool='pool2', retention=90, extended_retention=(1, True, "EXTENDED_ALLFULL", 0, 0))
         """
         if isinstance(copy_name, str) and isinstance(storage_pool, str):
             if not self.storage_policy.has_copy(copy_name):
@@ -3138,8 +3453,17 @@ class Plan(object):
                 'Plan', '102', 'Copy name and storage pool name must be a string.'
             )
 
-    def disable_full_schedule(self):
-        """Disable the full backup schedule of the plan"""
+
+    def disable_full_schedule(self) -> None:
+        """Disable the full backup schedule of the plan
+
+        Raises:
+            IndexError:
+                - if full backup schedule is not enabled
+
+        Usage:
+            plan.disable_full_schedule()
+        """
         try:
             self.schedule_policies['data'].delete_schedule(schedule_id=list(filter(
                 lambda st: st['subTask']['flags'] == 4194304, self.schedule_policies['data']._subtasks
@@ -3147,24 +3471,28 @@ class Plan(object):
         except IndexError:
             raise IndexError('Full backup schedule not enabled')
 
-    def edit_association(self, entities, new_plan=None):
+
+    def edit_association(self, entities: list, new_plan: str=None) -> None:
         """Reassociates or dissociates the entities from this plan
-            Args:
-                entities    (list)  --  list containing entity objects whose plan association must be edited
-                                        Eg: [
-                                            {
-                                                "clientName": "client",
-                                                "subclientName": "subclient",
-                                                "backupsetName": "backupset",
-                                                "appName": "app"
-                                            }
-                                        ]
+        Args:
+            entities (list): list containing entity objects whose plan association must be edited
+            new_plan (str): new plan to which the associated entities must be reassociated with
 
-                new_plan    (str)   --  new plan to which the associated entities must be reassociated with
+        Raises:
+            SDKException:
+                - if plan not found
 
-            Raises:
-                SDKException
-                    if plan not found
+        Usage:
+            entities = [
+                {
+                    "clientName": "client",
+                    "subclientName": "subclient",
+                    "backupsetName": "backupset",
+                    "appName": "app"
+                }
+            ]
+            plan.edit_association(entities)
+            plan.edit_association(entities, new_plan='new_plan_name')
         """
         req_json = {
             'plan': {
@@ -3208,15 +3536,19 @@ class Plan(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def run_plan_schedule(self, schedule_id: int, policy_id: int):
-        """ Method to run a schedule for all the subclients associated with this plan.
+
+    def run_plan_schedule(self, schedule_id: int, policy_id: int) -> None:
+        """Method to run a schedule for all the subclients associated with this plan.
         Args:
-            schedule_id (int)   --  schedule id of the plan
-            policy_id   (int)   --  policy id of the plan
+            schedule_id (int): schedule id of the plan
+            policy_id   (int): policy id of the plan
 
         Raises:
-                SDKException
-                    if no associated sublicent found to run the schedule
+            SDKException:
+                - if no associated sublicent found to run the schedule
+
+        Usage:
+            plan.run_plan_schedule(schedule_id=123, policy_id=456)
         """
         request_json = {
             "scheduleId": int(schedule_id),
@@ -3226,18 +3558,26 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to run schedule for the plan: [{self.plan_name}]')
 
-    def _update_plan_props(self, props):
+    def _update_plan_props(self, props: dict) -> tuple:
         """Updates the properties of the plan
 
             Args:
-                props   (dict)  --  dictionary containing the properties to be updated
+                props (dict): dictionary containing the properties to be updated
                                     {
                                         'planName': 'NewName'
                                     }
 
             Raises:
-                SDKException
+                SDKException:
                     if there is failure in updating the plan
+
+            Returns:
+                tuple: A tuple containing the status of the update and the error code.
+                       If the update is successful, the tuple will contain (True, error_code).
+                       If the update fails, the tuple will contain (False, error_code, error_message).
+
+            Usage:
+                plan._update_plan_props({'planName': 'NewName'})
         """
         flag, response = self._cvpysdk_object.make_request(
             'PUT', self._PLAN, props
@@ -3258,11 +3598,12 @@ class Plan(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_associated_entities(self):
+
+    def _get_associated_entities(self) -> dict:
         """Gets all the backup entities associated with the plan.
 
             Returns:
-                dict - dictionary containing list of entities that are
+                dict: dictionary containing list of entities that are
                        associated with the plan.
 
             Raises:
@@ -3270,6 +3611,9 @@ class Plan(object):
                     if response is empty
 
                     if response is not success
+
+            Usage:
+                entities = plan._get_associated_entities()
         """
         request_url = self._services['ASSOCIATED_ENTITIES'] % (self._plan_id)
         flag, response = self._cvpysdk_object.make_request(
@@ -3283,19 +3627,35 @@ class Plan(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
     @property
-    def plan_id(self):
+    def plan_id(self) -> str:
         """Treats the plan id as a read-only attribute."""
         return self._plan_id
 
+
     @property
-    def plan_name(self):
+    def plan_name(self) -> str:
         """Treats the plan name as a read-only attribute."""
         return self._plan_name
 
+
     @plan_name.setter
-    def plan_name(self, value: str):
-        """modifies the plan name"""
+    def plan_name(self, value: str) -> None:
+        """modifies the plan name
+
+        Args:
+            value (str): The new name for the plan.
+
+        Raises:
+            SDKException:
+                if the input is not a string
+
+                if the plan name update fails
+
+        Usage:
+            plan.plan_name = "New Plan Name"
+        """
         # use v4 API for server plans
         if self.subtype == 33554437:
             req_json = {
@@ -3327,14 +3687,29 @@ class Plan(object):
                 'Plan', '102', 'Plan name must be a string value'
             )
 
+
     @property
-    def sla_in_minutes(self):
+    def sla_in_minutes(self) -> int:
         """Treats the plan SLA/RPO as a read-only attribute."""
         return self._sla_in_minutes
 
+
     @sla_in_minutes.setter
-    def sla_in_minutes(self, value):
-        """Modifies the plan SLA/RPO"""
+    def sla_in_minutes(self, value: int) -> None:
+        """Modifies the plan SLA/RPO
+
+        Args:
+            value (int): The new SLA/RPO value in minutes.
+
+        Raises:
+            SDKException:
+                if the input is not an integer
+
+                if the plan SLA update fails
+
+        Usage:
+            plan.sla_in_minutes = 60
+        """
         if isinstance(value, int):
             req_json = {
                 'summary': {
@@ -3353,25 +3728,31 @@ class Plan(object):
                 'Plan', '102', 'Plan SLA must be an int value'
             )
 
+
     @property
-    def operation_window(self):
+    def operation_window(self) -> dict:
         """Treats the plan incremental operation window as a read-only attribute"""
         return self._operation_window
 
+
     @operation_window.setter
-    def operation_window(self, value):
+    def operation_window(self, value: list) -> None:
         """Modifies the incremental operation window of the plan
 
             Args:
-                value   (list)    --  list of time slots for setting the backup window
+                value (list): list of time slots for setting the backup window
 
-                value   (None)      --  set value to None to clear the operation window
+                value (None): set value to None to clear the operation window
 
             Raises:
                 SDKException:
                     if the input is incorrect
 
                     if the operation window configuration fails
+
+            Usage:
+                plan.operation_window = [{'fromTime': '00:00', 'toTime': '23:59', 'days': ['Monday', 'Tuesday']}]
+                plan.operation_window = None
         """
         if isinstance(value, list):
             req_json = {
@@ -3401,25 +3782,31 @@ class Plan(object):
                 'Plan', '102', 'Plan operation window must be a list value or None'
             )
 
+
     @property
-    def full_operation_window(self):
+    def full_operation_window(self) -> dict:
         """Treats the plan full backup operation window as a read-only attribute"""
         return self._full_operation_window
 
+
     @full_operation_window.setter
-    def full_operation_window(self, value):
+    def full_operation_window(self, value: list) -> None:
         """Modifies the full backup operation window of the plan
 
             Args:
-                value   (list)    --  list of time slots for setting the backup window
+                value (list): list of time slots for setting the backup window
 
-                value   (None)      --  set value to None to clear the operation window
+                value (None): set value to None to clear the operation window
 
             Raises:
                 SDKException:
                     if the input is incorrect
 
                     if the operation window configuration fails
+
+            Usage:
+                plan.full_operation_window = [{'fromTime': '00:00', 'toTime': '23:59', 'days': ['Monday', 'Tuesday']}]
+                plan.full_operation_window = None
         """
         if isinstance(value, list):
             req_json = {
@@ -3448,24 +3835,45 @@ class Plan(object):
                 'Plan', '102', 'Plan full operation window must be a list value or None'
             )
 
+
     @property
-    def plan_type(self):
+    def plan_type(self) -> int:
         """Treats the plan type as a read-only attribute."""
         return self._plan_type
 
+
     @property
-    def subtype(self):
+    def subtype(self) -> int:
         """Treats the plan subtype as a read-only attribute."""
         return self._subtype
 
+
     @property
-    def override_entities(self):
+    def override_entities(self) -> dict:
         """Treats the plan override_entities as a read-only attribute."""
         return self._override_entities
 
+
     @override_entities.setter
-    def override_entities(self, value):
-        """Sets the override restrictions for the plan"""
+    def override_entities(self, value: dict) -> None:
+        """Sets the override restrictions for the plan
+
+        Args:
+            value (dict): Dictionary containing the override restrictions.
+
+        Raises:
+            SDKException:
+                if the input is not a dictionary
+
+                if the plan override restrictions update fails
+
+        Usage:
+            plan.override_entities = {
+                "isSealed": False,
+                "enforcedEntitiesOperationType": 1,
+                "privateEntitiesOperationType": 1
+            }
+        """
         req_json = {
             "inheritance": {
                 "isSealed": False,
@@ -3486,8 +3894,17 @@ class Plan(object):
                 'Plan', '102', 'Override restrictions must be defined in a dict'
             )
 
-    def __set_storage_policy(self):
-        """Method to set the storage policy of the plan"""
+
+    def __set_storage_policy(self) -> None:
+        """Method to set the storage policy of the plan
+
+        Raises:
+            SDKException:
+                if the storage policy is not found
+
+        Usage:
+            This method is called internally and not intended for direct use.
+        """
         self._commcell_object.storage_policies.refresh()
         storage_policy_name = self._plan_properties.get('storage', {}).get('storagePolicy', {}).get('storagePolicyName')
         if storage_policy_name and self._commcell_object.storage_policies.has_policy(storage_policy_name):
@@ -3495,13 +3912,19 @@ class Plan(object):
         else:
             raise SDKException('Plan', '102', f'Failed to fetch storage policy: {storage_policy_name}')
 
+
     @property
-    def storage_policy(self):
-        """Treats the plan storage policy as a read-only attribute"""
+    def storage_policy(self) -> 'StoragePolicy':
+        """Treats the plan storage policy as a read-only attribute
+
+        Returns:
+            object: The storage policy object.
+        """
         if not self._child_policies.get('storagePolicy'):
             self.__set_storage_policy()
 
         return self._child_policies.get('storagePolicy')
+
 
     @property
     def all_copies(self) -> list:
@@ -3509,17 +3932,23 @@ class Plan(object):
         Treats the plan's all storage copies as a read-only attribute
 
         Returns:
-            list -- list of all the copies
+            list: list of all the copies
         """
         return self._all_copies
 
+
     @property
-    def storage_copies(self):
+    def storage_copies(self) -> list:
         """Treats the plan storage policy as a read-only attribute"""
         return self._storage_copies
 
-    def __set_schedule_policies(self):
-        """Sets the schedule policies for the plan"""
+
+    def __set_schedule_policies(self) -> None:
+        """Sets the schedule policies for the plan
+
+        Usage:
+            This method is called internally and not intended for direct use.
+        """
         self._commcell_object.schedule_policies.refresh()
         data_schedule_policy_exists = self._plan_properties.get('schedule', {}).get('task', {}).get('taskName')
         log_schedule_policy_exists = self._plan_properties.get('database', {}).get('scheduleLog', {}).get('task', {}).get('taskName')
@@ -3534,24 +3963,39 @@ class Plan(object):
         if snap_schedule_policy_exists:
             self._child_policies['schedulePolicy']['snap'] = self.snap_schedule_policy
 
+
     @property
-    def schedule_policies(self):
-        """Treats the plan schedule policies as read-only attribute"""
+    def schedule_policies(self) -> dict:
+        """Treats the plan schedule policies as read-only attribute
+
+        Returns:
+            dict: A dictionary containing the schedule policies.
+        """
         if not self._child_policies.get('schedulePolicy'):
             self.__set_schedule_policies()
 
         return self._child_policies.get('schedulePolicy')
 
-    def __get_schedule_policy(self, policy_type: str) -> object:
+
+    def __get_schedule_policy(self, policy_type: str) -> 'SchedulePolicy':
         """
         Returns the schedule policy object of the given policy type
 
         Args:
-            policy_type (str)  --  type of schedule policy to be fetched
+            policy_type (str): type of schedule policy to be fetched
                             Eg: 'data', 'log', 'snap'
 
         Returns:
-            object  --  schedule policy object
+            object: schedule policy object
+
+        Raises:
+            SDKException:
+                if the schedule policy type is invalid
+
+                if the schedule policy is not found
+
+        Usage:
+            data_policy = plan.__get_schedule_policy('data')
         """
         policy_name = ''
         policy_type = policy_type.lower()
@@ -3572,44 +4016,48 @@ class Plan(object):
 
         return schedule_policies.get(policy_name)
 
+
     @property
-    def data_schedule_policy(self) -> object:
+    def data_schedule_policy(self) -> 'SchedulePolicy':
         """
             Treats the plan data scheduler policy as read-only attribute
 
             Returns:
-                object  -   data schedule policy object
+                object: data schedule policy object
         """
         if not self._data_schedule_policy:
             self._data_schedule_policy = self.__get_schedule_policy('data')
         return self._data_schedule_policy
 
+
     @property
-    def log_schedule_policy(self) -> object:
+    def log_schedule_policy(self) -> 'SchedulePolicy':
         """
             Treats the plan log schedule policy as read-only attribute
 
             Returns:
-                object  -   log schedule policy object
+                object: log schedule policy object
         """
         if not self._log_schedule_policy:
             self._log_schedule_policy = self.__get_schedule_policy('log')
         return self._log_schedule_policy
 
+
     @property
-    def snap_schedule_policy(self) -> object:
+    def snap_schedule_policy(self) -> 'SchedulePolicy':
         """
             Treats the plan snap schedule policy as read-only attribute
 
             Returns:
-                object  -   snap schedule policy object
+                object: snap schedule policy object
         """
         if not self._snap_schedule_policy:
             self._snap_schedule_policy = self.__get_schedule_policy('snap')
         return self._snap_schedule_policy
 
+
     @property
-    def addons(self):
+    def addons(self) -> list:
         """Treats the plan addons as read-only attribute"""
         for addon in self._plan_properties.get('summary', {}).get('addons', []):
             self._addons.append(
@@ -3617,8 +4065,13 @@ class Plan(object):
             )
         return self._addons
 
-    def __set_subclient_policy_ids(self):
-        """Sets the subclient policy ids for the plan"""
+
+    def __set_subclient_policy_ids(self) -> None:
+        """Sets the subclient policy ids for the plan
+
+        Usage:
+            This method is called internally and not intended for direct use.
+        """
         backup_content = self._plan_properties.get('laptop', {}).get('content', {}).get('backupContent', [])
 
         self._child_policies['subclientPolicyIds'] = [
@@ -3627,26 +4080,34 @@ class Plan(object):
             if ida.get('subClientPolicy', {}).get('backupSetEntity', {}).get('backupsetId')
         ]
 
+
     @property
-    def subclient_policy(self):
-        """Treats the plan subclient policy as a read-only attribute"""
+    def subclient_policy(self) -> list:
+        """Treats the plan subclient policy as a read-only attribute
+
+        Returns:
+            list: A list of subclient policy IDs.
+        """
         if not self._child_policies.get('subclientPolicyIds'):
             self.__set_subclient_policy_ids()
 
         return self._child_policies.get('subclientPolicyIds')
 
+
     @property
-    def associated_entities(self):
+    def associated_entities(self) -> list:
         """getter for the backup entities associated with the plan"""
         return self._associated_entities
 
+
     @property
-    def parent_plan(self):
+    def parent_plan(self) -> 'Plan':
         """getter for the parent plan of a derived plan"""
         return self._commcell_object.plans.get(self._parent_plan_name)
 
+
     @property
-    def security_associations(self):
+    def security_associations(self) -> dict:
         """getter for the plan's security associations
             Eg:
                 {
@@ -3655,12 +4116,13 @@ class Plan(object):
         """
         return self._security_associations
 
-    def update_security_associations(self, associations_list, is_user = True, request_type = None, external_group = False):
+
+    def update_security_associations(self, associations_list: list, is_user: bool = True, request_type: str = None, external_group: bool = False) -> None:
         """
         Adds the security association on the plan object
 
         Args:
-            associations_list   (list)  --  list of users to be associated
+            associations_list (list): list of users to be associated
                 Example:
                     associations_list = [
                         {
@@ -3673,13 +4135,27 @@ class Plan(object):
                         }
                     ]
  
-            is_user (bool)           --    True or False. set is_user = False, If associations_list made up of user groups
-            request_type (str)      --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
-            external_group (bool)    --    True or False, set external_group = True. If Security associations is being done on External User Groups
+            is_user (bool): True or False. set is_user = False, If associations_list made up of user groups
+            request_type (str): eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+            external_group (bool): True or False, set external_group = True. If Security associations is being done on External User Groups
 
         Raises:
             SDKException:
                 if association is not of List type
+
+        Usage:
+            associations_list = [
+                {
+                    'user_name': 'user1',
+                    'role_name': 'role1'
+                },
+                {
+                    'user_name': 'user2',
+                    'role_name': 'role2'
+                }
+            ]
+            plan.update_security_associations(associations_list)
+            plan.update_security_associations(associations_list, is_user=False, request_type='UPDATE', external_group=True)
         """
         if not isinstance(associations_list, list):
             raise SDKException('Plan', '102')
@@ -3687,13 +4163,15 @@ class Plan(object):
         SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list,
                                         is_user, request_type, external_group)
 
+
     @property
-    def content_indexing_props(self):
+    def content_indexing_props(self) -> dict:
         """returns the DC plan related CI properties from Plan"""
         return self._dc_plan_props
 
+
     @property
-    def content_indexing(self):
+    def content_indexing(self) -> bool:
         """Returns the Content Indexing status of O365 plan"""
         try:
             ci_status = (self.properties.get("office365Info",{})
@@ -3708,21 +4186,32 @@ class Plan(object):
             ci_status= None
         return ci_status
 
+
     @content_indexing.setter
-    def content_indexing(self, value: bool):
-        """Sets content indexing value for O365 plan"""
+    def content_indexing(self, value: bool) -> None:
+        """Sets content indexing value for O365 plan
+
+        Args:
+            value (bool): The new content indexing value.
+
+        Usage:
+            plan.content_indexing = True
+            plan.content_indexing = False
+        """
         self._enable_content_indexing_o365_plan(value)
 
 
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """Returns the configured properties for the Plan"""
         return self._plan_properties
 
+
     @property
-    def region_id(self):
+    def region_id(self) -> str:
         """Returns the Backup destination region id"""
         return self._region_id
+
 
     @property
     def company(self) -> str:
@@ -3730,9 +4219,10 @@ class Plan(object):
         Returns the company of the plan
 
         return:
-            str --  company's domain name
+            str: company's domain name
         """
         return self._provider_domain_name
+
 
     @property
     def resources(self) -> list:
@@ -3740,11 +4230,12 @@ class Plan(object):
         Returns the resources stored in storage resource pool
 
         return:
-            list --  plan's resources
+            list: plan's resources
         """
         return self._resources
 
-    def refresh(self):
+
+    def refresh(self) -> None:
         """Refresh the properties of the Plan."""
         self._properties = self._get_plan_properties()
 
@@ -3762,19 +4253,21 @@ class Plan(object):
             'subclientPolicyIds': []
         } # reset to constructor state
 
-    def associate_user(self, userlist, send_invite=True):
-        """associates the users to the plan.
-            # TODO: Need to handle user groups.
+    def associate_user(self, userlist: List[str], send_invite: bool = True) -> None:
+        """Associates the users to the plan.
 
-           Arguments:
-                userlist(list) - list of users to be associated to the plans.
+        Args:
+            userlist (list): List of users to be associated to the plans.
+            send_invite (bool): Whether to send an invitation to the users. Defaults to True.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty.
+                if response is not success.
 
-                    if response is not success
-
+        Usage:
+            plan.associate_user(['user1', 'user2'])
+            plan.associate_user(['user1'], send_invite=False)
         """
         users_list = []
 
@@ -3817,38 +4310,26 @@ class Plan(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def share(self, user_or_group_name, role_name, is_user=True, ops_type=1):
+
+    def share(self, user_or_group_name: str, role_name: str, is_user: bool = True, ops_type: int = 1) -> None:
         """Shares plan with given user or group by associating with given role
 
-                Args:
+        Args:
+            user_or_group_name (str): User or Group name to which we are sharing.
+            role_name          (str): Role name which needs to associated with.
+            is_user            (bool): Whether the entity to share with is a user. Defaults to True.
+            ops_type           (int): Operation type. Defaults to 1 (Add). Supported: 1 (Add), 3 (Delete).
 
-                    user_or_group_name      (str)       --  User or Group name to which we are sharing
+        Raises:
+            SDKException:
+                if input is not valid.
+                if failed to do sharing.
+                if user/group/role not exists on commcell.
+                if failed to get exisitng association details.
 
-                    role_name               (str)       --  Role name which needs to associated with
-
-                    ops_type                (int)       --  Operation type
-
-                                                            Default : 1 (Add)
-
-                                                            Supported : 1 (Add)
-                                                                        3 (Delete)
-
-                Returns:
-
-                    None
-
-                Raises:
-
-                    SDKException:
-
-                            if input is not valid
-
-                            if failed to do sharing
-
-                            if user/group/role not exists on commcell
-
-                            if failed to get exisitng association details
-
+        Usage:
+            plan.share('user1', 'Role1')
+            plan.share('group1', 'Role2', is_user=False, ops_type=3)
         """
         if not isinstance(user_or_group_name, str) or not isinstance(role_name, str):
             raise SDKException('Plan', '101')
@@ -3930,31 +4411,23 @@ class Plan(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def schedule(self, schedule_name, pattern_json, ops_type=2):
+
+    def schedule(self, schedule_name: str, pattern_json: Dict, ops_type: int = 2) -> None:
         """Creates or modifies the schedule associated with plan
 
-                Args:
+        Args:
+            schedule_name (str): Schedule name.
+            pattern_json  (dict): Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py).
+            ops_type      (int): Operation type. Defaults to 2 (Add/Modify). Supported: 2 (Add/Modify).
 
-                    schedule_name       (str)       --  Schedule name
+        Raises:
+            SDKException:
+                if input is not valid.
+                if failed to create/modify schedule.
+                if plan is not of type Data classification plan.
 
-                    pattern_json        (dict)      --  Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)
-
-                    ops_type            (int)       --  Operation type
-
-                                                            Default : 2 (Add)
-
-                                                            Supported : 2 (Add/Modify)
-
-                Raises:
-
-                      SDKException:
-
-                            if input is not valid
-
-                            if failed to create/modify schedule
-
-                            if plan is not of type Data classification plan
-
+        Usage:
+            plan.schedule('MySchedule', {'frequency': 'daily', 'startTime': '08:00'})
         """
         if not isinstance(schedule_name, str) or not isinstance(pattern_json, dict):
             raise SDKException('Plan', '101')
@@ -3974,42 +4447,33 @@ class Plan(object):
             request_json['schedule']['subTasks'][0]['subTask']['operationType'] = 5022
         self._update_plan_props(request_json)
 
-    def edit_plan(self, **kwargs):
+
+    def edit_plan(self, **kwargs: Dict) -> None:
         """Edit plan options
 
-                Args:
+        Args:
+            **kwargs: Keyword arguments for Data Classification Plan
 
-                    **kwargs for Data Classification Plan
+                index_content   (bool): Specifies whether to index content or not to index server.
+                content_analyzer(list): List of Content analyzer client name.
+                entity_list     (list): List of entities which needs to be extracted.
+                classifier_list (list): List of classifier which needs to be classified.
+                enable_ocr      (bool): Specifies whether OCR is enabled or not.
+                ocr_language    (int): Language to be used when doing OCR. Default : English (Value-1).
+                                         Supported Languages: ENGLISH = 1, HEBREW = 2, SPANISH = 3, FRENCH = 4, ITALIAN = 5, DANISH = 6.
+                include_docs    (str): Include documents type separated by comma.
+                exclude_path    (list): List of paths which needs to be excluded.
+                min_doc_size    (int): Minimum document size in MB.
+                max_doc_size    (int): Maximum document size in MB.
 
-                    index_content       (bool)      --  Speifies whether to index content or not to index server
+        Raises:
+            SDKException:
+                if Function Not supported for this plan type.
+                if No attributes to Edit for DC Plan with TargetApps as : FSO.
 
-                    content_analyzer    (list)      --  list of Content analyzer client name
-
-                    entity_list         (list)      --  list of entities which needs to be extracted
-
-                    classifier_list     (list)      --  list of classifier which needs to be classified
-
-                    enable_ocr          (bool)      --  specifies whether OCR is enabled or not
-
-                    ocr_language        (int)       --  Language to be used when doing OCR
-                                                            Default : English (Value-1)
-
-                     Supported Languages:
-
-                                    ENGLISH = 1,
-                                    HEBREW = 2,
-                                    SPANISH = 3,
-                                    FRENCH = 4,
-                                    ITALIAN = 5,
-                                    DANISH = 6
-
-                    include_docs        (str)       --  Include documents type separated by comma
-
-                    exclude_path        (list)      --  List of paths which needs to be excluded
-
-                    min_doc_size        (int)       --  Minimum document size in MB
-
-                    max_doc_size        (int)       --  Maximum document size in MB
+        Usage:
+            plan.edit_plan(index_content=True, content_analyzer=['CA1'], entity_list=['Entity1'])
+            plan.edit_plan(enable_ocr=True, ocr_language=3, include_docs='pdf,docx')
         """
         if self.plan_type != PlanTypes.DC.value:
             raise SDKException('Plan', '102', "Function Not supported for this plan type")
@@ -4070,29 +4534,29 @@ class Plan(object):
                 raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')
         self._update_plan_props(request_json)
 
-    def edit_risk_analysis_dc_plan(self, **kwargs):
-        """
-        Edit Risk Analysis Data Classification Plan options
-            Args:
-            **kwargs for risk analysis Data Classification Plan
-            index_content       (bool)      --  Specifies whether to index content or not to index server
-            content_analyzer    (list)      --  list of Content analyzer client name
-            entity_list         (list)      --  list of entities which needs to be extracted
-            classifier_list     (list)      --  list of classifier which needs to be classified
-            enable_ocr          (bool)      --  specifies whether OCR is enabled or not
-            ocr_language        (int)       --  Language to be used when doing OCR
-                                                Default : English (Value-1)
-                Supported Languages:
-                            ENGLISH = 1,
-                            HEBREW = 2,
-                            SPANISH = 3,
-                            FRENCH = 4,
-                            ITALIAN = 5,
-                            DANISH = 6
-            include_docs        (str)       --  Include documents type separated by comma
-            exclude_path        (list)      --  List of paths which needs to be excluded
-            min_doc_size        (int)       --  Minimum document size in MB
-            max_doc_size        (int)       --  Maximum document size in MB
+    def edit_risk_analysis_dc_plan(self, **kwargs: Union[bool, list, int, str]) -> None:
+        """Edit Risk Analysis Data Classification Plan options
+
+        Args:
+            **kwargs: Keyword arguments for risk analysis Data Classification Plan
+                index_content   (bool): Specifies whether to index content or not to index server.
+                content_analyzer (list): List of Content analyzer client name.
+                entity_list     (list): List of entities which needs to be extracted.
+                classifier_list (list): List of classifier which needs to be classified.
+                enable_ocr      (bool): Specifies whether OCR is enabled or not.
+                ocr_language    (int): Language to be used when doing OCR.
+                include_docs    (str): Include documents type separated by comma.
+                exclude_path    (list): List of paths which needs to be excluded.
+                min_doc_size    (int): Minimum document size in MB.
+                max_doc_size    (int): Maximum document size in MB.
+
+        Raises:
+            SDKException:
+                - If the plan type is not DC.
+                - If failed to edit risk analysis DC plan.
+
+        Usage:
+            plan.edit_risk_analysis_dc_plan(index_content=True, content_analyzer=['CA_Client'], entity_list=['entity1'], classifier_list=['classifier1'], enable_ocr=True, ocr_language=1, include_docs='txt,pdf', exclude_path=['/tmp'], min_doc_size=1, max_doc_size=10)
         """
         if self.plan_type != PlanTypes.DC.value:
             raise SDKException('Plan', '102', "Function Not supported for this plan type")
@@ -4149,14 +4613,19 @@ class Plan(object):
         self.__handle_response(flag, response, custom_error_message='Failed to edit risk analysis DC plan : '
                                                                     f'[{self.plan_name}]')
 
-    def _enable_content_indexing_o365_plan(self, value):
+
+    def _enable_content_indexing_o365_plan(self, value: bool) -> None:
         """Enable CI for O365 plan
 
-            Args:
-                value (bool)  --- specifies whether to content index or not
+        Args:
+            value (bool): Specifies whether to content index or not
 
-            Returns:
-                None
+        Returns:
+            None
+
+        Usage:
+            plan._enable_content_indexing_o365_plan(True)
+            plan._enable_content_indexing_o365_plan(False)
         """
         request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
 
@@ -4184,19 +4653,27 @@ class Plan(object):
 
         self._update_plan_props(request_json)
 
-    def policy_subclient_ids(self):
+
+    def policy_subclient_ids(self) -> Dict:
         """Returns Policy subclient IDs of the plan
-        
+
         Returns:
-            dict : OS and its associated subclient ID
-        
-        example:
+            dict: OS and its associated subclient ID
+
+        Raises:
+            SDKException:
+                - If failed to get subclient Ids.
+
+        Usage:
+            plan.policy_subclient_ids()
+
+        Example:
             {
                 'Windows' : windows_subclient_policy_subclient_id,
                 'Linux' : linux_subclient_policy_subclient_id,
                 'Mac' : mac_subclient_policy_subclient_id
             }
-        
+
         """
         result = dict()
         for backupset_id in self.subclient_policy:
@@ -4216,29 +4693,36 @@ class Plan(object):
 
         return result
 
-    def __update_content_policy(self, content):
-        """
+
+    def __update_content_policy(self, content: Dict) -> None:
+        """Updates the content policy of the plan.
+
         Args:
-            content (dict)  :  dictionary with backup content details. 
-            
-            example:
-                content = {
-                    "windowsIncludedPaths": ["Desktop"],
-                    "windowsExcludedPaths": ["Music"],
-                    "windowsFilterToExcludePaths": ["Videos"],
-                    "unixIncludedPaths": ["Desktop"],
-                    "unixExcludedPaths": ["Music"],
-                    "unixFilterToExcludePaths": ["Videos"],
-                    "macIncludedPaths": ["Desktop"],
-                    "macExcludedPaths": ["Music"],
-                    "macFilterToExcludePaths": ["Videos"],
-                    "backupSystemState": True,
-                    "useVSSForSystemState": True,
-                    "backupSystemStateOnlyWithFullBackup": False
-                }
+            content (dict): Dictionary with backup content details.
 
+        Raises:
+            SDKException:
+                - If failed to update backup content for the Plan.
+
+        Usage:
+            content = {
+                "windowsIncludedPaths": ["Desktop"],
+                "windowsExcludedPaths": ["Music"],
+                "windowsFilterToExcludePaths": ["Videos"],
+                "unixIncludedPaths": ["Desktop"],
+                "unixExcludedPaths": ["Music"],
+                "unixFilterToExcludePaths": ["Videos"],
+                "macIncludedPaths": ["Desktop"],
+                "macExcludedPaths": ["Music"],
+                "macFilterToExcludePaths": ["Videos"],
+                "backupSystemState": True,
+                "useVSSForSystemState": True,
+                "backupSystemStateOnlyWithFullBackup": False
+            }
+            plan.__update_content_policy(content)
+
+        Note:
             For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
-
         """
 
         request_json = {
@@ -4251,11 +4735,27 @@ class Plan(object):
 
         self.__handle_response(flag, response, f'Failed to update backup content for Plan: {self.plan_name}')
 
-    def __map_content_to_new_format(self, content):
-        """
-            Method to map old content format to new format (if we need to update the content policy of plan)
-            
-            Note: We cannot remove the old format as it is still can be used to modify the content of plans created before SP32. So mapping old content to new ones as needed.
+
+    def __map_content_to_new_format(self, content: Dict) -> Dict:
+        """Method to map old content format to new format (if we need to update the content policy of plan)
+
+        Args:
+            content (dict): Dictionary containing the old content format.
+
+        Returns:
+            dict: Dictionary containing the new content format.
+
+        Usage:
+            old_content = {
+                'Linux': {
+                    'Content': ['/%Pictures%'],
+                    'Exclude': ['/%Documents%']
+                }
+            }
+            new_content = plan.__map_content_to_new_format(old_content)
+
+        Note:
+            We cannot remove the old format as it is still can be used to modify the content of plans created before SP32. So mapping old content to new ones as needed.
         """
         result = {
             "windowsIncludedPaths": [],
@@ -4296,42 +4796,49 @@ class Plan(object):
 
         return result
 
-    def update_backup_content(self, content, request_type = 'OVERWRITE'):
-        """
+
+    def update_backup_content(self, content: Dict, request_type: str = 'OVERWRITE') -> None:
+        """Updates the backup content for the plan.
+
         Args:
-            content (dict)  :  dictionary with backup content details. 
-            
-            example: 
-                content = {
-                    'Windows' : {
-                        'Content' : ['\\%Pictures%', '\\%Desktop%'],
-                        'Exclude' : ['\\%Documents%'],
-                        'Except' : ['\\%Documents%'],
-                        'Backup System State' : True
-                    },
-                    'Linux' : {
-                        'Content' : ['/%Pictures%'],
-                        'Exclude' : ['/%Documents%']
-                    },
-                    'Mac' : {
-                        'Content' : ['/%Pictures%'],
-                        'Exclude' : ['/%Documents%']
-                    }
-                }
-                    
-            request_type (str)      :  Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. 
+            content (dict): Dictionary with backup content details.
+            request_type (str): Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'.
 
+        Raises:
+            SDKException:
+                - If failed to Change Content of Plan.
+
+        Usage:
+            content = {
+                'Windows': {
+                    'Content': ['\\%Pictures%', '\\%Desktop%'],
+                    'Exclude': ['\\%Documents%'],
+                    'Except': ['\\%Documents%'],
+                    'Backup System State': True
+                },
+                'Linux': {
+                    'Content': ['/%Pictures%'],
+                    'Exclude': ['/%Documents%']
+                },
+                'Mac': {
+                    'Content': ['/%Pictures%'],
+                    'Exclude': ['/%Documents%']
+                }
+            }
+            plan.update_backup_content(content)
+
+            content = {
+                "windowsIncludedPaths": ["Desktop"],
+                "windowsExcludedPaths": ["Music"],
+                "windowsFilterToExcludePaths": ["Videos"],
+                "backupSystemState": True,
+                "useVSSForSystemState": True,
+                "backupSystemStateOnlyWithFullBackup": False
+            }
+            plan.update_backup_content(content)
+
+        Note:
             For plans created from SP32, Please use below format of content
-            example:
-                content = {
-                    "windowsIncludedPaths": ["Desktop"],
-                    "windowsExcludedPaths": ["Music"],
-                    "windowsFilterToExcludePaths": ["Videos"],
-                    "backupSystemState": True,
-                    "useVSSForSystemState": True,
-                    "backupSystemStateOnlyWithFullBackup": False
-                }
-
             For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
 
@@ -4383,22 +4890,22 @@ class Plan(object):
             else:
                 raise SDKException('Plan', 102, response.text)
 
-    def enable_data_aging(self, plan_copy_id: int, is_enable=True):
 
+    def enable_data_aging(self, plan_copy_id: int, is_enable: bool = True) -> None:
         """Method is used to enable/disable the data aging for the plan copy
 
-            Args:
-                plan_copy_id(int)      :   copy_id of the plan
+        Args:
+            plan_copy_id (int): copy_id of the plan
+            is_enable  (bool): value whether to be unable or disable the data aging
 
-                is_enable(bool)       :   value whether to be unable or disable the data aging
+        Raises:
+            SDKException:
+                - If response is empty
+                - If response is not success
 
-                                      example: true = enable
-                                               false = disable
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Usage:
+            plan.enable_data_aging(plan_copy_id=23, is_enable=True)
+            plan.enable_data_aging(plan_copy_id=23, is_enable=False)
         """
         payload = {
             "retentionRules": {
@@ -4416,22 +4923,31 @@ class Plan(object):
             raise SDKException('Response', '102',
                                self._commcell_object._update_response_(response.text))
 
+
     @property
-    def applicable_solutions(self):
+    def applicable_solutions(self) -> list:
         """Method to read applicable solutions"""
         return self._applicable_solutions
 
+
     @applicable_solutions.setter
-    def applicable_solutions(self, solutions: list = list()):
+    def applicable_solutions(self, solutions: list = list()) -> None:
         """Method to update applicable solutions of plan
-        
+
         Args:
-            solutions (list) : List of Applicable Solutions
-            
-            example: 
-                ["File Servers", "Databases"] : FS and DB will be set as a applicable solutions
-                [] : Passing empty list will reset applicable solutions to ALL
-            
+            solutions (list): List of Applicable Solutions
+
+        Raises:
+            SDKException:
+                - If failed to update Applicable Solutions for Plan
+
+        Usage:
+            plan.applicable_solutions = ["File Servers", "Databases"]
+            plan.applicable_solutions = []
+
+        Note:
+            ["File Servers", "Databases"] : FS and DB will be set as a applicable solutions
+            [] : Passing empty list will reset applicable solutions to ALL
         """
         request_url  = self._commcell_object._services['APPLICABLE_SOLNS_ENABLE' if solutions else 'APPLICABLE_SOLNS_DISABLE'] % self.plan_id
 

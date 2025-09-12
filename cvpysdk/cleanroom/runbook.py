@@ -22,47 +22,82 @@ Main file for performing Cleanroom recovery operations
 Runbook:   Class for creating a cleanroom recovery group and target using the new simplified runbook API
 
 """
-from cvpysdk.exception import SDKException
 from json.decoder import JSONDecodeError
+from cvpysdk.exception import SDKException
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
 
 
 class Runbook:
-    """Class to perform actions on a cleanroom runbook"""
+    """
+    Class to perform actions on a cleanroom runbook.
 
-    def __init__(self, commcell_object):
-        """Initialize the instance of the CleanroomRunbook class.
+    This class provides an interface for managing and executing operations on a cleanroom runbook,
+    leveraging a commcell object for communication and orchestration. It supports creation of runbooks,
+    payload population for specific entities, and exposes recovery group identification.
 
-            Args:
-                commcell_object   (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with a commcell object for backend operations
+        - Creation of runbooks using customizable payloads
+        - Property access to recovery group ID for identification and tracking
+        - Payload population for entities, targets, regions, and nodes to facilitate runbook execution
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize a new instance of the Runbook class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> runbook = Runbook(commcell)
+            >>> print("Runbook instance created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._recovery_group_id = None
         self._RUNBOOK_URL = commcell_object._services['CREATE_CLEANROOM_RUNBOOK']    
 
-    def create(self, payload=dict()):
-        """Creates a cleanroom runbook.
+    def create(self, payload: dict = dict()) -> dict:
+        """Create a cleanroom runbook with the specified payload.
 
-            Args:
-                payload (dict)  --  payload for creating the runbook
+        Args:
+            payload: Dictionary containing the parameters required to create the runbook.
 
-            Returns:
-                Response (dict) - response of the request
-                    
-                    {
-                        "recoveryGroup": {
-                            "id": 1234567890,
-                            "name": "runbook_name"
-                        }
+        Returns:
+            dict: The response from the API containing details of the created runbook.
+            Example response:
+                {
+                    "recoveryGroup": {
+                        "id": 1234567890,
+                        "name": "runbook_name"
                     }
+                }
 
-            Raises:
-                SDKException:
-                    if payload is empty
-                    if API response is empty
-                    if API response is not success
+        Raises:
+            SDKException: If the payload is empty, the API response is empty, or the API response indicates failure.
 
+        Example:
+            >>> runbook = Runbook()
+            >>> payload = {
+            ...     "recoveryGroup": {
+            ...         "name": "MyRunbook",
+            ...         "description": "Automated recovery workflow"
+            ...     }
+            ... }
+            >>> response = runbook.create(payload)
+            >>> print(response["recoveryGroup"]["id"])
+            1234567890
+
+        #ai-gen-doc
         """
         if not payload:
             raise SDKException('RecoveryGroup', '101', 'Payload cannot be empty')
@@ -85,101 +120,97 @@ class Runbook:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
             
     @property
-    def recovery_group_id(self):
-        """Returns recovery group id which gets initialized when runbook is created"""
+    def recovery_group_id(self) -> int:
+        """Get the recovery group ID associated with this runbook.
+
+        The recovery group ID is initialized when the runbook is created and uniquely identifies
+        the recovery group for this runbook instance.
+
+        Returns:
+            The integer ID of the recovery group.
+
+        Example:
+            >>> runbook = Runbook()
+            >>> group_id = runbook.recovery_group_id
+            >>> print(f"Recovery Group ID: {group_id}")
+        #ai-gen-doc
+        """
         if self._recovery_group_id is not None:
             return int(self._recovery_group_id)
         return None
 
-    def populate_payload(self, entities, target, region, node=None):
-        """Builds the payload with the required fields for creating a runbook.
+    def populate_payload(self, entities: dict, target: dict, region: dict, node: dict = None) -> dict:
+        """Build the payload required for creating a runbook.
 
-            Args:
-                entities (dict)  --  entities payload to be populated
-                target (dict)  --  target payload to be populated
-                node (dict)  --  access node details to be populated
-                                Optional when using existing target or existing hypervisor
-                region (dict)  --  region details to be populated
+        This method constructs and returns a payload dictionary containing the necessary fields for runbook creation,
+        based on the provided entities, target, region, and optionally, access node details.
 
-            Returns:
-                dict - populated payload
+        Args:
+            entities: Dictionary containing the entities to be included in the runbook. This should include a "name" key
+                and an "entities" list, where each entity dictionary specifies details such as instance, client, backupset,
+                workload type, and execution order.
+            target: Dictionary specifying the target environment for the runbook. The format varies depending on whether
+                an existing target, a new target with an existing hypervisor, or a new target with credentials is used.
+            region: Dictionary containing region details, such as "guid" and "name".
+            node: Optional dictionary specifying access node details, such as "access_node_id" and "access_node_type".
+                This is required only when not using an existing target or hypervisor.
 
-            Sample entities input format:
-            entities= {
-                    "name": "Runbook with existing target",
-                    "entities": [
-                        {
-                            "instance_id": 1,
-                            "instance_name": "DefaultInstanceName",
-                            "client_id": 2,
-                            "client_name": "devcs3",
-                            "backupset_id": 3,
-                            "backupset_name": "defaultBackupSet",
-                            "subclient_id": 14,
-                            "subclient_name": "small file",
-                            "workload": "FILES",
-                            "execution_order": 2
-                        },
-                        {
-                            "instance_id": 6,
-                            "instance_name": "Amazon Web Services",
-                            "client_id": 10,
-                            "client_name": "AWS",
-                            "backupset_id": 14,
-                            "backupset_name": "defaultBackupSet",
-                            "vm_group_id": 18,
-                            "vm_guid": "i-0d485455929da6c11",
-                            "vm_name": "WindowsTestVM1",
-                            "source_vendor": "AMAZON",
-                            "workload": "VM",
-                            "execution_order": 1
-                        }
-                    ]
-                }
-            If combining both VM and FILES workloads, the entities should be a list of dictionaries with the respective fields.
+        Returns:
+            dict: The fully populated payload dictionary ready for runbook creation.
 
-            Sample format for target input to be upopulated in payload:
+        Raises:
+            SDKException: If the entities input is empty, if an invalid workload type is provided, or if the target input is empty.
 
-                If using existing target:
-                target = {
-                    "target_id": 1234567890,
-                    "target_name": "Cleanroom_Target",
-                    "target_vendor": "AZURE_V2",
-                    }
+        Example:
+            >>> entities = {
+            ...     "name": "Runbook with existing target",
+            ...     "entities": [
+            ...         {
+            ...             "instance_id": 1,
+            ...             "instance_name": "DefaultInstanceName",
+            ...             "client_id": 2,
+            ...             "client_name": "devcs3",
+            ...             "backupset_id": 3,
+            ...             "backupset_name": "defaultBackupSet",
+            ...             "subclient_id": 14,
+            ...             "subclient_name": "small file",
+            ...             "workload": "FILES",
+            ...             "execution_order": 2
+            ...         },
+            ...         {
+            ...             "instance_id": 6,
+            ...             "instance_name": "Amazon Web Services",
+            ...             "client_id": 10,
+            ...             "client_name": "AWS",
+            ...             "backupset_id": 14,
+            ...             "backupset_name": "defaultBackupSet",
+            ...             "vm_group_id": 18,
+            ...             "vm_guid": "i-0d485455929da6c11",
+            ...             "vm_name": "WindowsTestVM1",
+            ...             "source_vendor": "AMAZON",
+            ...             "workload": "VM",
+            ...             "execution_order": 1
+            ...         }
+            ...     ]
+            ... }
+            >>> target = {
+            ...     "target_id": 1234567890,
+            ...     "target_name": "Cleanroom_Target",
+            ...     "target_vendor": "AZURE_V2"
+            ... }
+            >>> region = {
+            ...     "guid": "eastus (Commcell)",
+            ...     "name": "US East"
+            ... }
+            >>> node = {
+            ...     "access_node_id": 1234567890,
+            ...     "access_node_type": 3
+            ... }
+            >>> payload = runbook.populate_payload(entities, target, region, node)
+            >>> print(payload)
+            # The returned payload can be used for runbook creation.
 
-                If creating a new target with existing hypervisor:
-                target = {
-                    "target_name": "Cleanroom_Target",
-                    "target_vendor": "AZURE_V2",
-                    "hypervisor_id": 1234567890,
-                    "hypervisor_name": "Hypervisor01",
-                    }
-
-                If creating a new target with existing credentials:
-                target = {
-                    "target_name": "Cleanroom_Target",
-                    "target_vendor": "AZURE_V2",
-                    "credentials_id": 1234567890,
-                    "credentials_name": "Azure_Credentials",
-                    "subscription_id": "<subscription_id>",
-                    }
-            Sample format for access node input to be populated in payload:
-            If using existing access node:
-            node = {
-                "access_node_id": 1234567890,
-                "access_node_type": 3  # 3 for Access Node, 28 for Access Node Group
-            }
-
-            Sample format for region input to be populated in payload:
-            region = {
-                "guid": "eastus (Commcell)",  # Example region
-                "name": "US East"
-            }
-            Raises:
-                SDKException:
-                    if entities input is empty
-                    if invalid workload type is provided in payload
-                    if target input is empty
+        #ai-gen-doc
         """
         if not isinstance(entities['name'], str):
             raise SDKException('RecoveryGroup', '101', 'Missing or invalid Runbook name')

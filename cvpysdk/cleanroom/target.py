@@ -84,20 +84,51 @@ CleanroomTarget Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from cvpysdk.exception import SDKException
+from typing import Dict, TYPE_CHECKING
 from json.decoder import JSONDecodeError
 
+from cvpysdk.exception import SDKException
+
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
 
 class CleanroomTargets:
+    """
+    Manages and represents all Cleanroom targets within a Commcell environment.
 
-    """Class for representing all the Cleanroom targets"""
+    This class provides an interface for interacting with Cleanroom targets, including
+    retrieving, creating, and refreshing target information. It supports checking for
+    the existence of specific targets, accessing all available targets, and constructing
+    payloads for target operations. Designed to work with a Commcell object, it enables
+    seamless integration and management of Cleanroom resources.
 
-    def __init__(self, commcell_object):
-        """Initialize object of the CleanroomTargets class.
+    Key Features:
+        - Initialization with a Commcell object
+        - String representation of Cleanroom targets
+        - Retrieval of all Cleanroom targets
+        - Property access to all targets
+        - Existence check for a specific Cleanroom target
+        - Fetching details of a specific Cleanroom target
+        - Refreshing the Cleanroom targets list
+        - Creation of new Cleanroom targets using payloads
+        - Payload population for target operations
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    #ai-gen-doc
+    """
 
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize a new instance of the CleanroomTargets class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> cleanroom_targets = CleanroomTargets(commcell)
+            >>> print("CleanroomTargets object created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
@@ -110,12 +141,20 @@ class CleanroomTargets:
         self._cleanroom_targets = None
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all targets .
+    def __str__(self) -> str:
+        """Return a string representation of all cleanroom targets.
 
-            Returns:
-                str     -   string of all the targets
+        This method provides a human-readable string that lists all targets managed by the CleanroomTargets instance.
 
+        Returns:
+            A string containing the details of all targets.
+
+        Example:
+            >>> targets = CleanroomTargets()
+            >>> print(str(targets))
+            Target1, Target2, Target3
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'CleanroomTargets')
 
@@ -128,22 +167,26 @@ class CleanroomTargets:
 
         return representation_string.strip()
 
-    def _get_cleanroom_targets(self):
-        """Gets all the cleanroom targets.
+    def _get_cleanroom_targets(self) -> dict:
+        """Retrieve all cleanroom targets associated with the client.
 
-            Returns:
-                dict - consists of all targets in the client
+        Returns:
+            dict: A dictionary mapping target names to their corresponding IDs.
+                Example:
                     {
-                         "target1_name": target1_id,
-                         "target2_name": target2_id
+                        "target1_name": target1_id,
+                        "target2_name": target2_id
                     }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
 
-                    if response is not success
+        Example:
+            >>> targets = cleanroom_targets._get_cleanroom_targets()
+            >>> print(targets)
+            {'FinanceDB': 101, 'HRDocs': 102}
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGETS_API)
         if flag:
@@ -161,54 +204,72 @@ class CleanroomTargets:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def all_targets(self):
-        """Returns dict of all the targets.
+    def all_targets(self) -> Dict[str, int]:
+        """Get a dictionary of all cleanroom targets.
 
-         Returns dict    -   consists of all targets
+        Returns:
+            Dict[str, int]: A dictionary mapping each target's name to its unique ID.
 
+            Example output:
                 {
-                    "target1_name": target1_id,
-
-                    "target2_name": target2_id
+                    "target1_name": 101,
+                    "target2_name": 102
                 }
 
+        Example:
+            >>> targets = cleanroom_targets.all_targets
+            >>> print(targets)
+            {'target1_name': 101, 'target2_name': 102}
+            >>> # Access a specific target's ID
+            >>> target_id = targets.get('target1_name')
+            >>> print(f"Target ID: {target_id}")
+
+        #ai-gen-doc
         """
         return self._cleanroom_targets
 
-    def has_cleanroom_target(self, target_name):
-        """Checks if a target is present in the commcell.
+    def has_cleanroom_target(self, target_name: str) -> bool:
+        """Check if a cleanroom target with the specified name exists in the Commcell.
 
-            Args:
-                target_name (str)  --  name of the target
+        Args:
+            target_name: The name of the cleanroom target to check.
 
-            Returns:
-                bool - boolean output whether the target is present in commcell or not
+        Returns:
+            True if the target exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the target name argument is not string
+        Raises:
+            SDKException: If the type of the target_name argument is not a string.
 
+        Example:
+            >>> targets = CleanroomTargets(commcell_object)
+            >>> exists = targets.has_cleanroom_target("TargetA")
+            >>> print(f"TargetA exists: {exists}")
+
+        #ai-gen-doc
         """
         if not isinstance(target_name, str):
             raise SDKException('Target', '101')
 
         return self._cleanroom_targets and target_name.lower() in self._cleanroom_targets
 
-    def get(self, cleanroom_target_name):
-        """Returns a target object.
+    def get(self, cleanroom_target_name: str) -> 'CleanroomTarget':
+        """Retrieve a target object by its name.
 
-            Args:
-                cleanroom_target_name (str)  --  name of the target
+        Args:
+            cleanroom_target_name: The name of the cleanroom target to retrieve.
 
-            Returns:
-                object - instance of the target class for the given target name
+        Returns:
+            An instance of the target class corresponding to the specified target name.
 
-            Raises:
-                SDKException:
-                    if type of the target name argument is not string
+        Raises:
+            SDKException: If the provided target name is not a string or if no target exists with the given name.
 
-                    if no target exists with the given name
+        Example:
+            >>> targets = CleanroomTargets()
+            >>> target = targets.get("TargetA")
+            >>> print(f"Retrieved target: {target}")
 
+        #ai-gen-doc
         """
         if not isinstance(cleanroom_target_name, str):
             raise SDKException('Target', '101')
@@ -221,31 +282,51 @@ class CleanroomTargets:
 
             raise SDKException('RecoveryTarget', '102', 'No target exists with name: {0}'.format(cleanroom_target_name))
 
-    def refresh(self):
-        """Refresh the cleanroom targets"""
+    def refresh(self) -> None:
+        """Reload the cleanroom targets to ensure the latest information is available.
+
+        This method refreshes the internal state of the CleanroomTargets object, updating its data
+        to reflect any recent changes in the cleanroom targets.
+
+        Example:
+            >>> targets = CleanroomTargets()
+            >>> targets.refresh()
+            >>> print("Cleanroom targets have been refreshed.")
+
+        #ai-gen-doc
+        """
         self._cleanroom_targets = self._get_cleanroom_targets()
 
-    def create(self, payload=dict()):
-        """Creates a cleanroom target.
+    def create(self, payload: dict = dict()) -> dict:
+        """Create a new cleanroom target with the specified payload.
 
-            Args:
-                target_name (str)  --  name of the target
-                payload (dict)  --  payload for creating the target
+        Args:
+            payload: Dictionary containing the parameters required to create the cleanroom target.
+                Example payload:
+                    {
+                        "name": "target_name",
+                        "description": "Target description",
+                        ...
+                    }
 
-            Returns:
-                Response (dict) - response of the request
+        Returns:
+            dict: Response from the API containing details of the created target, such as:
+                {
+                    "id": 1234567890,
+                    "name": "target_name"
+                }
 
-                        {
-                            "id": 1234567890,
-                            "name": "target_name"
-                        }
+        Raises:
+            SDKException: If the payload is not a dictionary, if the API response is empty, or if the API response indicates failure.
 
-            Raises:
-                SDKException:
-                    if payload is not a dictionary
-                    if API response is empty
-                    if API response is not success
+        Example:
+            >>> targets = CleanroomTargets()
+            >>> payload = {"name": "MyTarget", "description": "Test target"}
+            >>> response = targets.create(payload)
+            >>> print(response)
+            {'id': 1234567890, 'name': 'MyTarget'}
 
+        #ai-gen-doc
         """
         if not isinstance(payload, dict):
             raise SDKException('RecoveryTarget', '101', 'Payload must be a dictionary')
@@ -266,59 +347,42 @@ class CleanroomTargets:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def populate_payload(self, target, region, node=None):
-        """Builds the payload with the required fields for creating a cleanroom target.
+    def populate_payload(self, target: dict, region: dict, node: dict = None) -> dict:
+        """Build the payload with the required fields for creating a cleanroom target.
 
-            Args:
-                target (dict)  --  target payload to be populated
-                node (dict)  --  access node details to be populated
-                                Optional when using existing target or existing hypervisor
-                region (dict)  --  region details to be populated
+        This method constructs and returns a payload dictionary for cleanroom target creation,
+        using the provided target, region, and optionally access node details.
 
-            Returns:
-                dict - populated payload
+        Args:
+            target: Dictionary containing target details. Must include required fields depending on the use case.
+            region: Dictionary containing region details to be included in the payload.
+            node: Optional dictionary with access node details. Required when specifying a new access node.
 
-            Sample format for target input to be upopulated in payload:
+        Returns:
+            A dictionary representing the populated payload for cleanroom target creation.
 
-                If using existing target:
-                target = {
-                    "target_id": 1234567890,
-                    "target_name": "Cleanroom_Target",
-                    "target_vendor": "AZURE_V2",
-                    }
+        Raises:
+            SDKException: If the target input is empty or if the target name is not a string.
 
-                If creating a new target with existing hypervisor:
-                target = {
-                    "target_name": "Cleanroom_Target",
-                    "target_vendor": "AZURE_V2",
-                    "hypervisor_id": 1234567890,
-                    "hypervisor_name": "Hypervisor01",
-                    }
-
-                If creating a new target with existing credentials:
-                target = {
-                    "target_name": "Cleanroom_Target",
-                    "target_vendor": "AZURE_V2",
-                    "credentials_id": 1234567890,
-                    "credentials_name": "Azure_Credentials",
-                    "subscription_id": "<subscription_id>",
-                    }
-            Sample format for access node input to be populated in payload:
-                If using existing access node:
-                node = {
-                    "access_node_id": 1234567890,
-                    "access_node_type": 3  # 3 for Access Node, 28 for Access Node Group
-                }
-
-            Sample format for region input to be populated in payload:
-                region = {
-                    "guid": "eastus (Commcell)",  # Example region
-                    "name": "US East"
-                }
-            Raises:
-                SDKException:
-                    if target input is empty
-                    if target name is not a string
+        Example:
+            >>> target = {
+            ...     "target_name": "Cleanroom_Target",
+            ...     "target_vendor": "AZURE_V2",
+            ...     "credentials_id": 1234567890,
+            ...     "credentials_name": "Azure_Credentials",
+            ...     "subscription_id": "<subscription_id>",
+            ... }
+            >>> region = {
+            ...     "guid": "eastus (Commcell)",
+            ...     "name": "US East"
+            ... }
+            >>> node = {
+            ...     "access_node_id": 1234567890,
+            ...     "access_node_type": 3
+            ... }
+            >>> payload = cleanroom_targets.populate_payload(target, region, node)
+            >>> print(payload)
+            #ai-gen-doc
         """
         if not isinstance(target['target_name'], str):
             raise SDKException('RecoveryTarget', '101', 'Missing or invalid target name')
@@ -387,18 +451,54 @@ class CleanroomTargets:
 
 
 class CleanroomTarget:
-    """Class for performing target operations"""
+    """
+    Class for managing and performing operations on cleanroom targets.
 
-    def __init__(self, commcell_object, cleanroom_target_name, cleanroom_target_id=None):
-        """Initialize the instance of the CleanroomTarget class.
+    The CleanroomTarget class provides a comprehensive interface for handling cleanroom target entities,
+    including creation, deletion, property management, and configuration of various infrastructure and
+    security settings. It exposes numerous properties for accessing and modifying target attributes such as
+    instance details, network configuration, security groups, storage accounts, and more.
 
-            Args:
-                commcell_object   (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with commcell object, target name, and target ID
+        - Retrieval and management of cleanroom target ID and properties
+        - Deletion of cleanroom targets
+        - Setting and accessing policy types
+        - Extensive property accessors for:
+            - Target instance and application type
+            - Hypervisor and access node details
+            - Security user names and client groups
+            - VM naming conventions (prefix/suffix)
+            - Storage account, region, and availability zone
+            - Network, security group, and resource group configuration
+            - Public IP, VM size, and bastion deployment options
+            - Custom image and infrastructure network settings
+            - NAT gateway, public IP settings, and server groups
+            - IAM role, encryption key, instance and volume types
+            - Network subnet, key pair, and other security settings
+        - Refreshing target properties
+        - Deleting cleanroom targets
 
-                cleanroom_target_name      (str)       --  name of the target
+    This class is intended for use in environments where secure, isolated target management is required,
+    providing fine-grained control over infrastructure and security parameters.
 
-                cleanroom_target_id        (str)       --  id of the target
+    #ai-gen-doc
+    """
 
+    def __init__(self, commcell_object: 'Commcell', cleanroom_target_name: str, cleanroom_target_id: str = None) -> None:
+        """Initialize a new instance of the CleanroomTarget class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+            cleanroom_target_name: The name of the cleanroom target.
+            cleanroom_target_id: Optional; the unique identifier for the cleanroom target. If not provided, it may be set later.
+
+        Example:
+            >>> commcell = Commcell('hostname', 'username', 'password')
+            >>> target = CleanroomTarget(commcell, 'TargetA', '12345')
+            >>> # The CleanroomTarget instance is now initialized and ready for use
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
@@ -433,6 +533,7 @@ class CleanroomTarget:
         self._region = None
         self._availability_zone = None
         self._storage_account = None
+        self._resource_group = None
         self._restore_as_managed_vm = None
         self._infra_server_group_name = None
 
@@ -459,22 +560,37 @@ class CleanroomTarget:
         self._security_group = None
         self.refresh()
 
-    def _get_cleanroom_target_id(self):
-        """Gets the target id associated with this target.
+    def _get_cleanroom_target_id(self) -> str:
+        """Retrieve the unique identifier associated with this cleanroom target.
 
-            Returns:
-                str - id associated with this target
+        Returns:
+            The target ID as a string.
 
+        Example:
+            >>> target = CleanroomTarget()
+            >>> target_id = target._get_cleanroom_target_id()
+            >>> print(f"Target ID: {target_id}")
+
+        #ai-gen-doc
         """
         target = CleanroomTargets(self._commcell_object)
         return target.all_targets[self._cleanroom_target_name]
 
-    def _delete_cleanroom_target(self):
-        """Deletes the cleanroom target
+    def _delete_cleanroom_target(self) -> None:
+        """Delete the cleanroom target associated with this object.
 
-            Raises:
-                SDKException:
-                    if response is not success
+        This method removes the cleanroom target from the system. If the deletion is unsuccessful,
+        an SDKException is raised.
+
+        Raises:
+            SDKException: If the response indicates the deletion was not successful.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> target._delete_cleanroom_target()
+            >>> print("Cleanroom target deleted successfully.")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('DELETE', self._RECOVERY_TARGET_API)
         if flag:
@@ -482,8 +598,19 @@ class CleanroomTarget:
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _set_policy_type(self, policy_type):
-        """Sets the policy type"""
+    def _set_policy_type(self, policy_type: str) -> None:
+        """Set the policy type for the CleanroomTarget instance.
+
+        Args:
+            policy_type: The type of policy to assign (e.g., "retention", "access").
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> target._set_policy_type("retention")
+            >>> # The policy type is now set to "retention" for this target
+
+        #ai-gen-doc
+        """
         if policy_type == "AMAZON":
             self._policy_type = 1
         elif policy_type == "MICROSOFT":
@@ -495,15 +622,24 @@ class CleanroomTarget:
         else:
             self._policy_type = -1
 
-    def _get_cleanroom_target_properties(self):
-        """Gets the target properties of this target.
+    def _get_cleanroom_target_properties(self) -> dict:
+        """Retrieve the properties of the cleanroom target.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches and returns the configuration properties associated with the current cleanroom target.
 
-                    if response is not success
+        Returns:
+            dict: A dictionary containing the cleanroom target's properties.
 
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> properties = target._get_cleanroom_target_properties()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2'}
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._RUNBOOK_TARGET_API)
         flag_old, response_old = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET_API)
@@ -586,6 +722,9 @@ class CleanroomTarget:
                     self._security_group = (self._cleanroom_target_properties.get('recovery', {})
                                             .get('securityGroup', {})
                                             .get('name', ''))
+                    self._resource_group = (self._cleanroom_target_properties.get('recovery', {})
+                                            .get('resourceGroup', {})
+                                            .get('guid', ''))
                     self._create_public_ip = (self._cleanroom_target_properties.get('recovery', {})
                                               .get('createPublicIPAddress'))
                     # infrastructure network settings
@@ -635,201 +774,630 @@ class CleanroomTarget:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def cleanroom_target_id(self):
-        """Returns: (str) the id of the cleanroom target"""
+    def cleanroom_target_id(self) -> str:
+        """Get the unique identifier of the cleanroom target.
+
+        Returns:
+            The ID of the cleanroom target as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> target_id = target.cleanroom_target_id  # Access the property
+            >>> print(f"Cleanroom Target ID: {target_id}")
+
+        #ai-gen-doc
+        """
         return self._cleanroom_target_id
 
     @property
-    def cleanroom_target_name(self):
-        """Returns: (str) the display name of the cleanroom target"""
+    def cleanroom_target_name(self) -> str:
+        """Get the display name of the cleanroom target.
+
+        Returns:
+            The display name of the cleanroom target as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> name = target.cleanroom_target_name  # Use dot notation for property access
+            >>> print(f"Cleanroom target name: {name}")
+
+        #ai-gen-doc
+        """
         return self._cleanroom_target_name
 
     @property
-    def policy_type(self):
-        """Returns: (str) the policy type ID
+    def policy_type(self) -> str:
+        """Get the policy type ID associated with this cleanroom target.
+
+        The policy type ID indicates the platform for which the cleanroom target is configured:
             1  - AWS
             2  - Microsoft Hyper-V
             7  - Azure
             13 - VMware
+
+        Returns:
+            The policy type ID as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> policy_id = target.policy_type
+            >>> print(f"Policy type ID: {policy_id}")
+            >>> # Output might be: Policy type ID: 1
+
+        #ai-gen-doc
         """
         return self._policy_type
 
     @property
-    def target_instance(self):
+    def target_instance(self) -> str:
+        """Get the name of the target instance for this CleanroomTarget.
+
+        Returns:
+            The target instance name as a string. Possible values include:
+                - "Instance1"
+                - "Instance2"
+                - "Instance3"
+
+        Example:
+            >>> cleanroom_target = CleanroomTarget()
+            >>> instance = cleanroom_target.target_instance  # Access the target instance property
+            >>> print(f"Target instance: {instance}")
+
+        #ai-gen-doc
+        """
         return self._instance
 
     @property
-    def application_type(self):
-        """Returns: (str) the name of the application type
-            0 - Replication type
-            1 - Regular type
+    def application_type(self) -> str:
+        """Get the name of the application type for this CleanroomTarget.
+
+        Returns:
+            The application type as a string. Possible values:
+                - "0": Replication type
+                - "1": Regular type
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> app_type = target.application_type
+            >>> print(f"Application type: {app_type}")
+            # Output might be "0" for Replication type or "1" for Regular type
+
+        #ai-gen-doc
         """
         return self._application_type
 
     @property
-    def destination_hypervisor(self):
-        """Returns: (str) the client name of destination hypervisor"""
+    def destination_hypervisor(self) -> str:
+        """Get the client name of the destination hypervisor.
+
+        Returns:
+            The client name of the destination hypervisor as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> hypervisor_name = target.destination_hypervisor  # Use dot notation for property access
+            >>> print(f"Destination hypervisor: {hypervisor_name}")
+
+        #ai-gen-doc
+        """
         return self._destination_hypervisor
 
     @property
-    def access_node(self):
-        """Returns: (str) the client name of the access node/proxy of the cleanroom target"""
+    def access_node(self) -> str:
+        """Get the client name of the access node (proxy) for the cleanroom target.
+
+        Returns:
+            The client name of the access node or proxy as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> node_name = target.access_node
+            >>> print(f"Access node: {node_name}")
+
+        #ai-gen-doc
+        """
         return self._access_node
 
     @property
-    def access_node_client_group(self):
-        """Returns: (str) The client group name set on the access node field of cleanroom target"""
+    def access_node_client_group(self) -> str:
+        """Get the client group name set on the access node field of the cleanroom target.
+
+        Returns:
+            The name of the client group configured as the access node for this cleanroom target.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> group_name = target.access_node_client_group  # Use dot notation for property access
+            >>> print(f"Access node client group: {group_name}")
+
+        #ai-gen-doc
+        """
         return self._access_node_client_group
 
     @property
-    def security_user_names(self):
-        """Returns: list<str> the names of the users who are used for ownership of the hypervisor and VMs"""
+    def security_user_names(self) -> list:
+        """Get the list of user names used for ownership of the hypervisor and virtual machines.
+
+        Returns:
+            list: A list of strings representing the user names associated with the ownership of the hypervisor and VMs.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> user_names = target.security_user_names
+            >>> print(user_names)
+            ['admin', 'backup_user', 'vm_owner']
+
+        #ai-gen-doc
+        """
         return [user['userName'] for user in self._users]
 
     @property
-    def vm_prefix(self):
-        """Returns: (str) the prefix of the vm name to be prefixed to the destination VM"""
+    def vm_prefix(self) -> str:
+        """Get the prefix to be used for the destination VM name.
+
+        Returns:
+            The string prefix that will be added to the destination VM's name.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> prefix = target.vm_prefix
+            >>> print(f"VMs will be created with prefix: {prefix}")
+
+        #ai-gen-doc
+        """
         return self._vm_prefix
 
     @property
-    def vm_suffix(self):
-        """Returns: (str) the suffix of the vm name to be suffixed to the destination VM"""
+    def vm_suffix(self) -> str:
+        """Get the suffix to be appended to the destination VM name.
+
+        Returns:
+            The suffix string that will be added to the destination VM's name.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> suffix = target.vm_suffix  # Use dot notation for property access
+            >>> print(f"VM name suffix: {suffix}")
+
+        #ai-gen-doc
+        """
         return self._vm_suffix
 
     @property
-    def storage_account(self):
-        """Returns: (str) Azure: the storage account name used to deploy the VM's storage"""
+    def storage_account(self) -> str:
+        """Get the Azure storage account name used for VM storage deployment.
+
+        Returns:
+            The name of the Azure storage account as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> account_name = target.storage_account
+            >>> print(f"Storage account: {account_name}")
+
+        #ai-gen-doc
+        """
         return self._storage_account
 
     @property
-    def region(self):
-        """Return: (str) Azure: the cleanroom target region for destination VM"""
+    def region(self) -> str:
+        """Get the Azure cleanroom target region for the destination VM.
+
+        Returns:
+            The region name as a string where the cleanroom target VM will be deployed in Azure.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> azure_region = target.region
+            >>> print(f"Cleanroom target region: {azure_region}")
+
+        #ai-gen-doc
+        """
         return self._region
 
     @property
-    def availability_zone(self):
-        """Return: (str) Azure: the cleanroom target availability zone for destination VM"""
+    def availability_zone(self) -> str:
+        """Get the cleanroom target availability zone for the destination VM in Azure.
+
+        Returns:
+            The availability zone as a string for the cleanroom target in Azure.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> zone = target.availability_zone
+            >>> print(f"Availability Zone: {zone}")
+
+        #ai-gen-doc
+        """
         return self._availability_zone
 
     @property
-    def virtual_network(self):
-        """Return: (str) Azure: the cleanroom target virtual network for destination VM"""
+    def virtual_network(self) -> str:
+        """Get the cleanroom target virtual network for the destination VM in Azure.
+
+        Returns:
+            The name or identifier of the Azure virtual network associated with the cleanroom target.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> vnet = target.virtual_network
+            >>> print(f"Cleanroom target virtual network: {vnet}")
+
+        #ai-gen-doc
+        """
         return self._virtual_network
 
     @property
-    def security_group(self):
-        """Return: (str) Azure: the cleanroom target security group for destination VM"""
+    def security_group(self) -> str:
+        """Get the security group associated with the cleanroom target for the destination VM in Azure.
+
+        Returns:
+            The name or identifier of the Azure security group assigned to the cleanroom target's destination VM.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> sg = target.security_group
+            >>> print(f"Security group: {sg}")
+
+        #ai-gen-doc
+        """
         return self._security_group
 
     @property
-    def create_public_ip(self):
-        """Return: (str) Azure: the cleanroom target create public group for destination VM"""
+    def resource_group(self) -> str:
+        """Get the Azure resource group name for the cleanroom target destination VM.
+
+        Returns:
+            The name of the Azure resource group as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> group = target.resource_group
+            >>> print(f"Resource group: {group}")
+
+        #ai-gen-doc
+        """
+        return self._resource_group
+
+    @property
+    def create_public_ip(self) -> str:
+        """Get the public IP group name created for the destination VM in Azure.
+
+        Returns:
+            The name of the public IP group associated with the cleanroom target for the destination virtual machine.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> public_ip_group = target.create_public_ip
+            >>> print(f"Public IP group: {public_ip_group}")
+
+        #ai-gen-doc
+        """
         return self._create_public_ip
 
     @property
-    def vm_size(self):
-        """Return: (str) Azure: the cleanroom target vm size for destination VM"""
+    def vm_size(self) -> str:
+        """Get the Azure VM size for the cleanroom target destination VM.
+
+        Returns:
+            The VM size as a string, representing the Azure VM size configured for the cleanroom target.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> size = target.vm_size
+            >>> print(f"Cleanroom target VM size: {size}")
+
+        #ai-gen-doc
+        """
         return self._vm_size
 
     @property
-    def availability_zone(self):
-        """Returns: (str) the availability zone of the cleanroom Recovery Group"""
-        return self._availability_zone
+    def deployBastion(self) -> bool:
+        """Indicate whether the deploy bastion feature is enabled for this CleanroomTarget.
 
-    @property
-    def deployBastion(self):
-        """Returns boolean deploy bastion enabled or not"""
+        Returns:
+            True if deploy bastion is enabled; False otherwise.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> if target.deployBastion:
+            ...     print("Deploy bastion is enabled.")
+            ... else:
+            ...     print("Deploy bastion is disabled.")
+
+        #ai-gen-doc
+        """
         return self._deployBastion
 
     @property
-    def custom_image(self):
-        """Returns list of custom images set on the target"""
+    def custom_image(self) -> list:
+        """Get the list of custom images configured for the cleanroom target.
+
+        Returns:
+            list: A list containing the custom images set on the target.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> images = target.custom_image
+            >>> print(f"Custom images: {images}")
+
+        #ai-gen-doc
+        """
         return self._custom_images
 
     @property
-    def infra_virtual_network(self):
-        """Returns name of infra virtual network"""
+    def infra_virtual_network(self) -> str:
+        """Get the name of the infrastructure virtual network associated with this CleanroomTarget.
+
+        Returns:
+            The name of the infra virtual network as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> network_name = target.infra_virtual_network  # Use dot notation for property access
+            >>> print(f"Infrastructure virtual network: {network_name}")
+
+        #ai-gen-doc
+        """
         return self._infra_virtual_network
 
     @property
-    def infra_security_group(self):
-        """Returns infra security group name"""
+    def infra_security_group(self) -> str:
+        """Get the name of the infrastructure security group associated with this cleanroom target.
+
+        Returns:
+            The name of the infra security group as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> group_name = target.infra_security_group
+            >>> print(f"Infrastructure security group: {group_name}")
+
+        #ai-gen-doc
+        """
         return self._infra_security_group
 
     @property
-    def natGatewayPublicIPSettings(self):
-        """Returns NAT gateway public IP settings"""
+    def natGatewayPublicIPSettings(self) -> dict:
+        """Get the NAT gateway public IP settings for the cleanroom target.
+
+        Returns:
+            dict: A dictionary containing the NAT gateway public IP configuration details.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> nat_settings = target.natGatewayPublicIPSettings
+            >>> print(nat_settings)
+            {'publicIP': '203.0.113.42', 'allocationMethod': 'Static'}
+
+        #ai-gen-doc
+        """
         return self._natGatewayPublicIPSettings
 
     @property
-    def infraPublicIPprefix(self):
-        """Returns public ip prefix"""
+    def infraPublicIPprefix(self) -> str:
+        """Get the public IP prefix associated with the cleanroom infrastructure.
+
+        Returns:
+            The public IP prefix as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> ip_prefix = target.infraPublicIPprefix
+            >>> print(f"Infrastructure public IP prefix: {ip_prefix}")
+
+        #ai-gen-doc
+        """
         return self._infraPublicIPprefix
 
     @property
-    def infrapublicip(self):
-        """Returns boolean if create public ip enabled for Infra"""
+    def infrapublicip(self) -> bool:
+        """Indicate whether public IP creation is enabled for the infrastructure.
+
+        Returns:
+            bool: True if creating a public IP is enabled for the infrastructure, False otherwise.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> if target.infrapublicip:
+            ...     print("Public IP creation is enabled for Infra")
+            ... else:
+            ...     print("Public IP creation is not enabled for Infra")
+
+        #ai-gen-doc
+        """
         return self._infraPublicIP
 
     @property
-    def infra_server_group(self):
-        """Returns server group which will be used in autoscale"""
+    def infra_server_group(self) -> str:
+        """Get the server group used for autoscale operations.
+
+        Returns:
+            The name of the server group that will be utilized in autoscale scenarios.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> group_name = target.infra_server_group
+            >>> print(f"Autoscale server group: {group_name}")
+
+        #ai-gen-doc
+        """
         return self._infra_server_group_name
 
     @property
-    def infra_resource_group(self):
-        """Returns name of resource group where autoscale node will be created"""
+    def infra_resource_group(self) -> str:
+        """Get the name of the resource group where the autoscale node will be created.
+
+        Returns:
+            The name of the resource group as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> group_name = target.infra_resource_group
+            >>> print(f"Autoscale node will be created in: {group_name}")
+
+        #ai-gen-doc
+        """
         return self._infra_resourceGroup
 
     @property
-    def infra_vm_size(self):
-        """Returns name of vm size for infra"""
+    def infra_vm_size(self) -> str:
+        """Get the name of the virtual machine size used for infrastructure.
+
+        Returns:
+            str: The name of the VM size configured for infrastructure purposes.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> vm_size = target.infra_vm_size  # Use dot notation for property access
+            >>> print(f"Infrastructure VM size: {vm_size}")
+
+        #ai-gen-doc
+        """
         return self._infra_vm_size
 
     @property
-    def networkAddressSpace(self):
-        """Returns dict of address space for vnet and subnets(recovery entity,infra, bastion)"""
+    def networkAddressSpace(self) -> dict:
+        """Get the address space configuration for the virtual network and its subnets.
+
+        Returns:
+            dict: A dictionary containing address space details for the vnet and subnets, 
+            including recovery entity, infrastructure, and bastion subnets.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> address_space = target.networkAddressSpace
+            >>> print(address_space)
+            {'vnet': '10.0.0.0/16', 'recovery_entity': '10.0.1.0/24', 'infra': '10.0.2.0/24', 'bastion': '10.0.3.0/24'}
+
+        #ai-gen-doc
+        """
         return self._networkAddressSpace
 
     @property
-    def iam_role(self):
-        """Returns: (str) the IAM role name used for the cleanroom Recovery Group"""
+    def iam_role(self) -> str:
+        """Get the IAM role name used for the cleanroom Recovery Group.
+
+        Returns:
+            The IAM role name as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> role_name = target.iam_role  # Access the IAM role property
+            >>> print(f"IAM Role: {role_name}")
+        #ai-gen-doc
+        """
         return self._iam_role
 
     @property
-    def encryption_key(self):
-        """Returns: (str) the encryption key name used for the cleanroom Recovery Group"""
+    def encryption_key(self) -> str:
+        """Get the name of the encryption key used for the cleanroom Recovery Group.
+
+        Returns:
+            The name of the encryption key as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> key_name = target.encryption_key
+            >>> print(f"Encryption key name: {key_name}")
+
+        #ai-gen-doc
+        """
         return self._encryption_key
 
     @property
-    def instance_type(self):
-        """Returns: (str) the instance type of the cleanroom Recovery Group"""
+    def instance_type(self) -> str:
+        """Get the instance type of the cleanroom Recovery Group.
+
+        Returns:
+            The instance type as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> print(target.instance_type)
+            >>> # Output might be: 'EC2', 'VMware', etc.
+
+        #ai-gen-doc
+        """
         return self._instance_type
 
     @property
-    def volume_type(self):
-        """Returns: (str) the volume type of the cleanroom Recovery Group"""
+    def volume_type(self) -> str:
+        """Get the volume type of the cleanroom Recovery Group.
+
+        Returns:
+            The volume type as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> vtype = target.volume_type
+            >>> print(f"Volume type: {vtype}")
+
+        #ai-gen-doc
+        """
         return self._volume_type
 
     @property
-    def network_subnet(self):
-        """Returns: (str) the network subnet of the cleanroom Recovery Group"""
+    def network_subnet(self) -> str:
+        """Get the network subnet associated with the cleanroom Recovery Group.
+
+        Returns:
+            The network subnet as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> subnet = target.network_subnet
+            >>> print(f"Cleanroom network subnet: {subnet}")
+
+        #ai-gen-doc
+        """
         return self._network_subnet
 
     @property
-    def security_group(self):
-        """Returns: (str) the security group of the cleanroom Recovery Group"""
-        return self._security_group
+    def key_pair(self) -> str:
+        """Get the name of the key pair used for the cleanroom Recovery Group.
 
-    @property
-    def key_pair(self):
-        """Returns: (str) the key pair name used for the cleanroom Recovery Group"""
+        Returns:
+            The key pair name as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> key_name = target.key_pair  # Access the key pair property
+            >>> print(f"Key pair name: {key_name}")
+
+        #ai-gen-doc
+        """
         return self._key_pair
 
-    def refresh(self):
-        """Refresh the properties of the cleanroom Target."""
+    def refresh(self) -> None:
+        """Reload the properties of the cleanroom target.
+
+        This method updates the cleanroom target's properties to reflect the latest state,
+        ensuring that any changes made externally are incorporated.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> target.refresh()
+            >>> print("Cleanroom target properties refreshed.")
+
+        #ai-gen-doc
+        """
         self._get_cleanroom_target_properties()
 
-    def delete(self):
-        """Deletes the Cleanroom Target. Returns: (bool) whether the target is deleted or not."""
+    def delete(self) -> bool:
+        """Delete the Cleanroom Target.
+
+        This method attempts to delete the Cleanroom Target associated with this instance.
+        It returns True if the deletion was successful, or False otherwise.
+
+        Returns:
+            bool: True if the Cleanroom Target was deleted successfully, False otherwise.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> success = target.delete()
+            >>> print(f"Target deleted: {success}")
+
+        #ai-gen-doc
+        """
         return self._delete_cleanroom_target()

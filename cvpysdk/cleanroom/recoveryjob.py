@@ -28,17 +28,48 @@ RecoveryJob(Job):
 """
 
 import time
+from typing import TYPE_CHECKING
 from cvpysdk.job import Job
 from cvpysdk.exception import SDKException
 from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJobPhaseToText
 
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
 
 
 class RecoveryJob(Job):
-    """Class for performing Recovery Job operation"""
+    """
+    Class for managing and performing Recovery Job operations within a CommCell environment.
 
-    def __init__(self, commcell_object, job_id):
-        """Initialise the Recovery job"""
+    This class provides an interface for interacting with recovery jobs, including
+    initialization, retrieval of job statistics, and management of job properties.
+    It also offers methods to access recovery job phases and restore virtual machines
+    from recovery jobs with configurable retry and frequency options.
+
+    Key Features:
+        - Initialization of recovery job instances with CommCell context and job ID
+        - Retrieval of recovery job statistics
+        - Initialization and management of job properties
+        - Access to recovery job phases
+        - Restoration of virtual machines from recovery jobs with retry and frequency controls
+        - String representation for easy identification
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell', job_id: int) -> None:
+        """Initialize a RecoveryJob instance with the specified Commcell connection and job ID.
+
+        Args:
+            commcell_object: The Commcell object representing the active Commcell session.
+            job_id: The unique identifier for the recovery job.
+
+        Example:
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> recovery_job = RecoveryJob(commcell, 12345)
+            >>> print("Recovery job initialized with ID:", recovery_job.job_id)
+        #ai-gen-doc
+        """
         self._recovery_job_stats = None
 
         service_url = commcell_object._services['DRORCHESTRATION_JOB_STATS']
@@ -46,55 +77,43 @@ class RecoveryJob(Job):
 
         Job.__init__(self, commcell_object, job_id)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a string representation of the RecoveryJob object.
+
+        This method provides a developer-friendly string that can be used to 
+        inspect the RecoveryJob instance, typically for debugging purposes.
+
+        Example:
+            >>> job = RecoveryJob()
+            >>> print(repr(job))
+            >>> # Output will display the RecoveryJob object's details
+
+        #ai-gen-doc
+        """
         representation_string = 'RecoveryJob class instance for job id: "{0}"'
         return representation_string.format(self.job_id)
 
-    def _get_recovery_job_stats(self):
-        """Gets the statistics for the Recovery Job
+    def _get_recovery_job_stats(self) -> list:
+        """Retrieve statistics for the current Recovery Job.
+
+        This method returns a list of dictionaries containing detailed statistics 
+        about the recovery job, including job IDs, recovery entity IDs, replication IDs, 
+        phase information, client details, and vApp details.
+
         Returns:
-                [{
-                    'jobId': 123,
-                    'recoveryEntityId': 1
-                    'replicationId': 1,
-                    'phase': [{
-                            'phase': 1,
-                            'status': 0,
-                            'startTime': {
-                                '_type_': 0,
-                                'time': 0
-                            },
-                            'endTime': {
-                                '_type_': 0,
-                                'time': 0
-                            },
-                            'entity': {
-                                'clientName': 'vm1'
-                            },
-                            'phaseInfo': {
-                                'job': [
-                                    {
-                                        'jobid': 123,
-                                        'opType': 1,
-                                        'failure': {
-                                            'errorMessage': 'Error message'
-                                        },
-                                        'entity': {
-                                            'clientName': 'vm1',
-                                            '_type_': 0
-                                        }
-                                    }
-                                ]
-                            }
-                        }]
-                    'client': {
-                        'clientId': 0,
-                        'clientName': 'vm1'
-                    },
-                    'vapp': {
-                        'vAppId': 1
-                    }
-                }]
+            list: A list of dictionaries, each representing the statistics for a recovery job. 
+            Each dictionary contains keys such as 'jobId', 'recoveryEntityId', 'replicationId', 
+            'phase', 'client', and 'vapp', with nested structures for detailed phase and job info.
+
+        Example:
+            >>> stats = recovery_job._get_recovery_job_stats()
+            >>> for job_stat in stats:
+            ...     print(f"Job ID: {job_stat['jobId']}, Client: {job_stat['client']['clientName']}")
+            >>> # Access phase details
+            >>> if stats and 'phase' in stats[0]:
+            ...     for phase in stats[0]['phase']:
+            ...         print(f"Phase: {phase['phase']}, Status: {phase['status']}")
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._RECOVERY_STATS)
@@ -119,24 +138,46 @@ class RecoveryJob(Job):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _initialize_job_properties(self):
-        """Initialises the job properties and then initialises the Recovery job details"""
+    def _initialize_job_properties(self) -> None:
+        """Initialize the job properties and set up the Recovery job details.
+
+        This method prepares all necessary job properties and initializes the details
+        required for a Recovery job. It should be called before performing any recovery
+        operations to ensure the job is properly configured.
+
+        Example:
+            >>> recovery_job = RecoveryJob()
+            >>> recovery_job._initialize_job_properties()
+            >>> # The RecoveryJob instance is now initialized and ready for use
+
+        #ai-gen-doc
+        """
         Job._initialize_job_properties(self)
         self._recovery_job_stats = self._get_recovery_job_stats()
 
-    def get_phases(self):
-        """
-        Gets the phases of the recovery job
-        Returns: dictionaries of phases for each source and destination VM pair
-            {"source_vm_1": [{
-                'phase_name': enum - Enum of phase short name and full name mapping,
-                'phase_status': int - 0 for success, 1 for failed,
-                'start_time': int - timestamp of start of job,
-                'end_time': int - timestamp of end of job,
-                'machine_name': str - The name of the machine Job is executing on,
-                'error_message': str - Error message, if any,
-            }],
-            }
+    def get_phases(self) -> dict:
+        """Retrieve the phases of the recovery job for each source and destination VM pair.
+
+        Returns:
+            dict: A dictionary where each key is a source VM name, and the value is a list of dictionaries,
+            each representing a phase of the recovery job. Each phase dictionary contains:
+                - 'phase_name': Enum representing the phase short name and full name mapping.
+                - 'phase_status': int (0 for success, 1 for failed).
+                - 'start_time': int, timestamp of the start of the phase.
+                - 'end_time': int, timestamp of the end of the phase.
+                - 'machine_name': str, the name of the machine executing the job.
+                - 'error_message': str, error message if any.
+
+        Example:
+            >>> phases = recovery_job.get_phases()
+            >>> for vm, phase_list in phases.items():
+            ...     print(f"VM: {vm}")
+            ...     for phase in phase_list:
+            ...         print(f"  Phase: {phase['phase_name']}, Status: {phase['phase_status']}")
+            ...         if phase['error_message']:
+            ...             print(f"    Error: {phase['error_message']}")
+
+        #ai-gen-doc
         """
         job_stats = {}
         if not self._recovery_job_stats:
@@ -159,22 +200,30 @@ class RecoveryJob(Job):
             job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
         return job_stats
 
-    def get_restore_vm_from_recovery_job(self, entity, max_retries=30, check_frequency=10):
-        """
-        Retrieves the restore job ID for a specific VM entity during a recovery job.
+    def get_restore_vm_from_recovery_job(self, entity: str, max_retries: int = 30, check_frequency: int = 10) -> int:
+        """Retrieve the restore job ID for a specific VM entity during a recovery job.
 
-        Retries for up to `max_retries` times, checking every `check_frequency` seconds.
+        This method attempts to locate the restore job ID associated with the given VM entity
+        by polling the recovery job status. It will retry up to `max_retries` times, waiting
+        `check_frequency` seconds between each attempt.
 
         Args:
-            entity (str): Name of the VM entity.
-            max_retries (int): Number of attempts to check for the restore phase.
-            check_frequency (int): Time in seconds between attempts.
+            entity: The name of the VM entity for which to retrieve the restore job ID.
+            max_retries: The maximum number of polling attempts to check for the restore phase. Default is 30.
+            check_frequency: The interval in seconds between each polling attempt. Default is 10.
 
         Returns:
-            int: Job ID of the restore VM job.
+            The job ID (int) of the restore VM job if found.
 
         Raises:
-            Exception: If the RESTORE_VM phase is not found after retries.
+            Exception: If the RESTORE_VM phase is not found after the specified number of retries.
+
+        Example:
+            >>> recovery_job = RecoveryJob()
+            >>> restore_job_id = recovery_job.get_restore_vm_from_recovery_job('VM01')
+            >>> print(f"Restore job ID for VM01: {restore_job_id}")
+
+        #ai-gen-doc
         """
         for attempt in range(max_retries):
             recovery_job_obj = RecoveryJob(self._commcell_object, self.job_id)
