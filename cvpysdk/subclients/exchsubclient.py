@@ -45,6 +45,10 @@ ExchangeSubclient:
 
     _get_ad_group_backup_backupoptions_json -- Gets the backup option json for ad group backup
 
+    _get_live_update_job_json -- Method to create xml for live update job
+
+    live_update_job -- Method to run live update job
+
 
 """
 
@@ -1434,3 +1438,71 @@ class ExchangeSubclient(Subclient):
             'POST', create_task, task_json
         )
         return self._process_backup_response(flag, response)
+
+    def _get_live_update_job_json(self):
+        """
+        Method to create xml for live update job
+        Returns:
+            task_xml(str)   -   xml as a string to trigger live update job
+        """
+        task_json = {
+            "taskInfo": {
+                "taskOperation": 1,
+                "associations": [
+                    {
+                        "subclientId": int(self.subclient_id),
+                        "entityType": 7,
+                        "_SubclType_": 0,
+                        "_type_": 7
+                    }
+                ],
+                "task": {
+                    "isEZOperation": False,
+                    "description": "",
+                    "ownerId": 1,
+                    "runUserId": 1,
+                    "taskType": 1,
+                    "ownerName": "",
+                    "alertName": "",
+                    "sequenceNumber": 0,
+                    "isEditing": False,
+                    "GUID": "",
+                    "isFromCommNetBrowserRootNode": False,
+                    "initiatedFrom": 3,
+                    "policyType": 0,
+                    "associatedObjects": 0,
+                    "taskName": ""
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskOrder": 0,
+                            "subTaskType": 2,
+                            "flags": 0,
+                            "operationType": 5027,
+                            "subTaskId": 1
+                        }
+                    }
+                ]
+            }
+        }
+        return task_json
+
+    def live_update_job(self):
+        """
+        Method to run live update job
+        """
+        task_json = self._get_live_update_job_json()
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json)
+        if flag:
+            if not response.status_code == 200:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))

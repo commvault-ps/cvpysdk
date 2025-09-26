@@ -35,31 +35,46 @@ AzureCosmosDBInstance:
 
 from __future__ import unicode_literals
 import time
+from typing import TYPE_CHECKING
+
 from ..cainstance import CloudAppsInstance
 from ...exception import SDKException
 
+if TYPE_CHECKING:
+    from ...job import Job
 
 class AzureCosmosDBInstance(CloudAppsInstance):
     """
-    Class for representing an Instance of the Azure Cosmos DB instance such as
-    Azure CosmosDB Cassandra API
+    Represents an instance of Azure Cosmos DB, including support for APIs such as
+    Azure CosmosDB Cassandra API.
 
+    This class provides functionality to initialize and manage a specific Azure Cosmos DB
+    instance within a cloud application environment. It allows for the restoration of
+    database instances using customizable restore options.
+
+    Key Features:
+        - Initialization of Azure Cosmos DB instance with agent, name, and ID
+        - Restoration of database instance using specified restore options
+        - Designed for integration with cloud application management workflows
+
+    #ai-gen-doc
     """
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initializes the object of the AzureCosmosDBInstance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
+        """Initialize an AzureCosmosDBInstance object.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+        Args:
+            agent_object: Instance of the Agent class associated with this Azure Cosmos DB instance.
+            instance_name: The name of the Azure Cosmos DB instance.
+            instance_id: Optional; the unique identifier for the instance. Defaults to None.
 
-                instance_name   (str)     --  name of the instance
+        Example:
+            >>> agent = Agent(commcell_object, "AzureCosmosDB")
+            >>> cosmos_instance = AzureCosmosDBInstance(agent, "MyCosmosDBInstance")
+            >>> # Optionally, provide an instance ID
+            >>> cosmos_instance_with_id = AzureCosmosDBInstance(agent, "MyCosmosDBInstance", "12345")
 
-                instance_id     (str)     --  id of the instance
-                    default: None
-
-            Returns:
-                object - instance of the Instance class
-
+        #ai-gen-doc
         """
         self._agent_object = agent_object
         self._ca_instance_type = None
@@ -73,31 +88,48 @@ class AzureCosmosDBInstance(CloudAppsInstance):
                 instance_name,
                 instance_id)
 
-    def restore(self, restore_options):
-        """
-            Restores the content of this instance content
+    def restore(self, restore_options: dict) -> 'Job':
+        """Restore the content of this Azure Cosmos DB instance.
 
-            Args:
-                restore_options  : dict of keyword arguments as follows:
-                    Example:
-                       restore_options = {
-                            'no_of_streams': no_of_stream,
-                            'destination_instance': 'destination_instance_name',
-                            'destination_instance_id': destination_instance_id,
-                            'paths': ['path_to_restored'],
-                            'cloudinstancetype': 'cloudinstancetype,
-                            'backupsetname': 'backupsetname',
-                            'unconditional_overwrite': True,
-                            'in_place': True,
-                            'sourcedatabase': 'sourcekeyspacename',
-                            'destinationdatabase': 'destinationkeyspacename',
-                            'srcstorageaccount': 'sourcestorageaccount',
-                            'deststorageaccount': 'destinationstorageaccount'
-                        }
+        This method initiates a restore operation for the instance using the specified options.
 
-            Returns:
+        Args:
+            restore_options: Dictionary containing restore parameters. Supported keys include:
+                - 'no_of_streams' (int): Number of streams to use for the restore.
+                - 'destination_instance' (str): Name of the destination instance.
+                - 'destination_instance_id' (int): ID of the destination instance.
+                - 'paths' (list of str): List of paths to restore.
+                - 'cloudinstancetype' (str): Cloud instance type.
+                - 'backupsetname' (str): Name of the backup set.
+                - 'unconditional_overwrite' (bool): Whether to overwrite existing data.
+                - 'in_place' (bool): Whether to perform an in-place restore.
+                - 'sourcedatabase' (str): Name of the source database.
+                - 'destinationdatabase' (str): Name of the destination database.
+                - 'srcstorageaccount' (str): Source storage account.
+                - 'deststorageaccount' (str): Destination storage account.
 
-                object - instance of the Job class for this restore job
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            >>> restore_options = {
+            ...     'no_of_streams': 4,
+            ...     'destination_instance': 'CosmosDBInstance2',
+            ...     'destination_instance_id': 12345,
+            ...     'paths': ['/dbs/mydb/colls/mycoll'],
+            ...     'cloudinstancetype': 'Standard',
+            ...     'backupsetname': 'DailyBackup',
+            ...     'unconditional_overwrite': True,
+            ...     'in_place': False,
+            ...     'sourcedatabase': 'mydb',
+            ...     'destinationdatabase': 'mydb_restored',
+            ...     'srcstorageaccount': 'sourceaccount',
+            ...     'deststorageaccount': 'destaccount'
+            ... }
+            >>> job = azure_cosmosdb_instance.restore(restore_options)
+            >>> print(f"Restore job started with ID: {job.job_id}")
+
+        #ai-gen-doc
         """
         if not (isinstance(restore_options, dict)):
             raise SDKException('Instance', '101')

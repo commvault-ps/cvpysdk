@@ -28,35 +28,50 @@ Classes:
                          provides methods to get and set instance properties.
 """
 
+from typing import List
+
+from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
 
 
 class MorpheusInstance(VirtualServerInstance):
     """
-    Class for representing a Morpheus instance of the Virtual Server agent.
+    Represents a Morpheus instance of the Virtual Server agent.
 
-    This class extends the VirtualServerInstance base class and provides
-    additional functionality specific to Morpheus server instances.
+    This class extends the VirtualServerInstance base class to provide
+    specialized functionality for managing Morpheus server instances.
+    It encapsulates properties and methods for handling instance-specific
+    details such as server name, host name, and vendor identification.
 
-    Attributes:
-        _vendor_id (int): Vendor ID for Morpheus (fixed as 27).
-        _server_name (list): List containing the name of the associated client.
-        _server_host_name (list): List containing the host name of the associated client.
+    Key Features:
+        - Initialization of Morpheus instance with agent, name, and ID
+        - Retrieval of instance properties and properties in JSON format
+        - Access and modification of server host name via property methods
+        - Access to server name via property
+        - Maintains vendor ID specific to Morpheus (fixed as 27)
+        - Stores associated client name and host name information
+
+    #ai-gen-doc
     """
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        """
-        Initializes the MorpheusInstance object.
+    def __init__(self, agent: Agent, instance_name: str, instance_id: str = None) -> None:
+        """Initialize a MorpheusInstance object.
 
         Args:
-            agent (object): Instance of the Agent class.
-            instance_name (str): Name of the instance.
-            instance_id (int, optional): ID of the instance. Defaults to None.
+            agent: Instance of the Agent class associated with this Morpheus instance.
+            instance_name: The name of the Morpheus instance.
+            instance_id: Optional integer ID of the instance. If not provided, defaults to None.
 
-        Sets:
+        Attributes Set:
             _vendor_id: Vendor ID specific to Morpheus.
             _server_name: Name of the associated client.
             _server_host_name: Host name of the associated client.
+
+        Example:
+            >>> agent = Agent()
+            >>> morpheus_instance = MorpheusInstance(agent, "TestInstance", '101')
+
+        #ai-gen-doc
         """
         super(MorpheusInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 27
@@ -67,24 +82,37 @@ class MorpheusInstance(VirtualServerInstance):
             self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('hostName')
         ]
 
-    def _get_instance_properties(self):
-        """
-        Retrieves the properties of the Morpheus instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of the Morpheus instance.
 
-        This method overrides the base class method to include Morpheus-specific
-        instance properties.
+        This method overrides the base class implementation to fetch and store
+        Morpheus-specific instance properties. It is typically used internally
+        to ensure the instance has the latest configuration and metadata.
 
         Raises:
-            SDKException: If the response is not empty or not successful.
+            SDKException: If the response from the server is not empty or not successful.
+
+        Example:
+            >>> instance = MorpheusInstance()
+            >>> instance._get_instance_properties()
+
+        #ai-gen-doc
         """
         super(MorpheusInstance, self)._get_instance_properties()
 
-    def _get_instance_properties_json(self):
-        """
-        Constructs and returns the JSON representation of the instance properties.
+    def _get_instance_properties_json(self) -> dict:
+        """Construct the JSON representation of the instance properties.
 
         Returns:
-            dict: Dictionary containing all relevant instance properties.
+            dict: A dictionary containing all relevant properties of the Morpheus instance.
+
+        Example:
+            >>> instance = MorpheusInstance()
+            >>> properties_json = instance._get_instance_properties_json()
+            >>> print(properties_json)
+            {'property1': 'value1', 'property2': 'value2', ...}
+
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -100,31 +128,51 @@ class MorpheusInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """
-        Returns the host name(s) of the associated Morpheus server.
+    def server_host_name(self) -> List[str]:
+        """Get the host name(s) of the associated Morpheus server.
 
         Returns:
-            list: List of host names.
+            List[str]: A list containing the host names of the Morpheus server associated with this instance.
+
+        Example:
+            >>> instance = MorpheusInstance()
+            >>> host_names = instance.server_host_name
+            >>> print(host_names)
+            ['morpheus-server1.example.com', 'morpheus-server2.example.com']
+
+        #ai-gen-doc
         """
         return self._server_host_name
 
     @server_host_name.setter
-    def server_host_name(self, value):
-        """
-        Sets the host name(s) of the Morpheus server.
+    def server_host_name(self, value: list) -> None:
+        """Set the host name(s) of the Morpheus server.
 
         Args:
-            value (list): List of host names to set.
+            value: A list of host names to assign to the Morpheus server.
+
+        Example:
+            >>> instance = MorpheusInstance()
+            >>> instance.server_host_name = ["server1.example.com", "server2.example.com"]
+            >>> # The server_host_name property is now set to the provided list of host names
+
+        #ai-gen-doc
         """
         self._server_host_name = value
 
     @property
-    def server_name(self):
-        """
-        Returns the name(s) of the associated Morpheus server.
+    def server_name(self) -> List[str]:
+        """Get the name(s) of the associated Morpheus server(s).
 
         Returns:
-            list: List of server names.
+            List[str]: A list containing the names of the Morpheus servers associated with this instance.
+
+        Example:
+            >>> instance = MorpheusInstance()
+            >>> names = instance.server_name  # Use dot notation for property access
+            >>> print(f"Associated server names: {names}")
+            >>> # Output might be: ['morpheus-server-01', 'morpheus-server-02']
+
+        #ai-gen-doc
         """
         return self._server_name

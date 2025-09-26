@@ -39,27 +39,56 @@ KubernetesBackupset:
 """
 from enum import Enum
 from json import JSONDecodeError
+from typing import *
 from cvpysdk.backupsets.vsbackupset import VSBackupset
 from cvpysdk.exception import SDKException
 from ...subclients.virtualserver.kubernetes import ApplicationGroups
 
-class KubernetesBackupset(VSBackupset):
 
-    def __init__(self, instance_object, backupset_name, backupset_id=None):
-        """Initialise the backupset object."""
+class KubernetesBackupset(VSBackupset):
+    """Derived class from Virtual server Backupset Base class.
+
+    Represents a Kubernetes Backupset and to perform operations on that Backupset.
+
+    Attributes:
+        _blr_pair_details (dict): Placeholder for BLR pair details.
+        _application_groups (ApplicationGroups): Manages application groups within the Kubernetes backupset.
+
+    Usage:
+        ```
+        k8s_backupset = KubernetesBackupset(instance_object, 'default')
+        ```
+    """
+
+    def __init__(self, instance_object: object, backupset_name: str, backupset_id: str = None) -> None:
+        """Initialise the backupset object.
+
+        Args:
+            instance_object (object): Instance object of the Virtual Server.
+            backupset_name  (str): Name of the backupset.
+            backupset_id    (str, optional): ID of the backupset. Defaults to None.
+        """
         self._blr_pair_details = None
         super().__init__(instance_object, backupset_name, backupset_id)
         self._application_groups = None
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh the properties of the Backupset."""
         super().refresh()
         self._application_groups = None
 
-
     @property
-    def application_groups(self):
-        """"""
+    def application_groups(self) -> ApplicationGroups:
+        """Returns the ApplicationGroups object associated with this backupset.
+
+        Returns:
+            ApplicationGroups: The ApplicationGroups object.
+
+        Usage:
+            ```
+            app_groups = k8s_backupset.application_groups
+            ```
+        """
         if self._application_groups is None:
             self._application_groups = ApplicationGroups(self)
         return self._application_groups

@@ -334,3 +334,108 @@ class nutanixsubclient(VirtualServerSubclient):
             disk_info['newName'] = ''
 
         return self._process_restore_response(request_json)
+
+    def attach_disk_restore(
+        self,
+        vm_name,
+        host=None,
+        host_user=None,
+        host_pass=None,
+        container=None,
+        proxy_client=None,
+        copy_precedence=0,
+        disk_uuids=None,
+        destination_vm=None,
+        destination_vm_guid=None):
+        """Attach restored disks from a protected VM to a destination AHV VM.
+            - Browse available VMs and their associated disks
+            - Attach one or more disks from backup to a specified target VM
+        Args:
+            vm_name (str): Name of the protected VM
+            host (str): AHV host name.
+            host_user (str): AHV host username.
+            host_pass (str): AHV host password.
+            container (str): AHV storage container where disks will be restord
+            proxy_client (str): Destination proxy client to use.
+            copy_precedence (int): Storage policy copy precedence for the restore.
+            disk_uuids (list): Specific disk names to attach.
+            destination_vm (str): Destination VM name 
+            destination_vm_guid (str): Destination VM GUID/UUID 
+        Returns:
+            Job: Instance of the Job class representing the running restore job.
+        Raises:
+            SDKException: If inputs are invalid, browse fails, or the restore
+                submission fails.
+        """
+        # Resolve VM ids/names from browse
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        _attach_disk_restore_option = {}
+    
+        # Normalize / validate inputs (mirror OpenStack implementation style)
+        if disk_uuids is None:
+            disk_uuids = []
+    
+        if copy_precedence:
+            _attach_disk_restore_option['copy_precedence_applicable'] = True
+    
+        # Fetch all disks available for the source VM
+        if vm_name not in vm_ids:
+            available_vms = list(vm_ids.keys())
+            raise SDKException(
+                'Subclient',
+                '101',
+                (f"VM '{vm_name}' was not found. "
+                 f"Available VMs: {available_vms}"))
+    
+        disk_list, disk_info_dict = self.disk_level_browse(f"\\{vm_ids[vm_name]}")
+    
+        # If no disk list provided, attach all; else validate requested names exist
+        if not disk_uuids:
+            for each_disk_path in disk_list:
+                disk_uuids.append(each_disk_path.split('\\')[-1])
+        else:
+            for each_disk in disk_uuids:
+                expected_path = f"\\{vm_name}\\{each_disk}"
+                if expected_path not in disk_list:
+                    available_disks = [p.split('\\')[-1] for p in disk_list]
+                    raise SDKException(
+                        'Subclient',
+                        '111',
+                        (f"Disk '{each_disk}' was not found for VM '{vm_name}'. "
+                         f"Available disks: {available_disks}"))
+        # Choose proxy client
+        if proxy_client is not None:
+            _attach_disk_restore_option['client'] = proxy_client
+        else:
+            _attach_disk_restore_option['client'] = (
+                self._backupset_object._instance_object.co_ordinator
+            )
+    
+        # Build source item list for the disks
+        src_item_list = []
+        for each_disk in disk_uuids:
+            disk_name = each_disk.split("\\")[-1]
+            src_item_list.append(f"\\{vm_ids[vm_name]}\\{disk_name}")
+        # Set options required by the attach-disk workflow
+        _attach_disk_restore_option['paths'] = src_item_list
+        _attach_disk_restore_option['newName'] = destination_vm
+        _attach_disk_restore_option['newGUID'] = destination_vm_guid
+        _attach_disk_restore_option['userName'] = host_user
+        _attach_disk_restore_option['password'] = host_pass
+    
+        self._set_restore_inputs(
+            _attach_disk_restore_option,
+            in_place=False,
+            copy_precedence=copy_precedence,
+            vm_to_restore=vm_name,
+            esxHost=host,
+            datastore=container,
+            paths=src_item_list,
+            volume_level_restore=6
+        )
+        # Prepare and submit the attach-disk restore
+        request_json = self._prepare_attach_disk_restore_json(
+            _attach_disk_restore_option
+        )
+        return self._process_restore_response(request_json)
+

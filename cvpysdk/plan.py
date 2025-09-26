@@ -60,6 +60,8 @@ Plans
 
     get_supported_solutions()   --  returns the supported solutions for plans
 
+    add_archiver_plan()         --  Adds a new archiver plan to the commcell
+
     add_exchange_plan()         --  Adds a new exchange plan to the commcell
 
     create_server_plan()        --  creates a new server plan to the commcell
@@ -154,6 +156,10 @@ Plan
 
     enable_data_aging()         --  Enable data aging for the copy of the plan
 
+    enable_log_backup_to_disk() --  Enables log backup to disk on the plan
+
+    disable_log_backup_to_disk()--  Disables log backup to disk on the plan
+
 Plan Attributes
 ----------------
     **plan_id**                 --  returns the id of the plan
@@ -202,12 +208,15 @@ Plan Attributes
 
     **all_copies**              --  returns all the copies for a plan
 
+    **is_log_backup_to_disk_enabled**  -- returns true if log backup to disk is enabled
+
 """
 from __future__ import unicode_literals
 
 import copy
 from enum import Enum
 from typing import List, Dict, Union, Any, Optional, TYPE_CHECKING
+import math
 
 from .exception import SDKException
 from .security.security_association import SecurityAssociation
@@ -218,6 +227,8 @@ from .policies.schedule_policies import SchedulePolicy
 if TYPE_CHECKING:
     from .commcell import Commcell
 
+from functools import reduce
+ARCHIVER_PLAN_MIN_RETENTION = 1825  # 5 years in days
 class PlanTypes(Enum):
     """Class Enum to represent different plan types
 
@@ -602,6 +613,7 @@ class Plans(object):
         self._V4_DC_PLANS = self._services['V4_DC_PLANS']
         self._V4_PLANS = self._services['V4_SERVER_PLANS']
         self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
+        self._V4_ARCHIVER_PLAN = self._services['V4_ARCHIVER_PLAN']
         self._plans = None
         self._plans_cache = None
         self.filter_query_count = 0
@@ -1222,7 +1234,254 @@ class Plans(object):
                     '102',
                     'No plan exists with name: {0}'.format(plan_name)
                 )
+    
+    def add_archiver_plan(self, plan_name: str, copy_dict: list[dict], archiving_rules: dict, plan_sub_type: str = 'Archiver',
+                          override_restrictions: dict = None, schedule_policy: dict = None):
+        """
+        Adds a new archiver plan to the commcell.
+        Args:
+            plan_name (str) -- name of the new plan to add
+            plan_sub_type (str) -- Type of plan to add - Archiver
+                Default: Archiver
+            copy_dict (list<dict>) -- List of Dictionaries containing the copy details
+                Example:
+                [
+                    {
+                        "copyName": "Primary",
+                        "retention": 6 (IN YEARS), (if not provided, Infinite is taken as default)
+                        "storagePool": storage_pool_name,
+                    }
+                ]
 
+            archiving_rules (dict) -- Dictionary containing archiving rules
+                Example:
+                {
+                    "Method": "LAST_MODIFIED" / "LAST_ACCESSED,
+                    "Duration": 91, (Last modified or last accessed duration)
+                    "DurationUnit": "DAYS" / "MONTHS" / "YEARS",
+                    "FileSize": 1024,
+                    "FileSizeUnit": "KB" / "MB" / "GB",
+                    "afterArchiving": "REPLACE_FILE_WITH_STUB" / "DELETE_THE_FILE"
+                }
+            override_restrictions (dict) <OPTIONAL> -- Dictionary containing override restrictions 
+            Example:
+            {
+                "storagePool": "OPTIONAL" / "MUST" / "NOT_ALLOWED",
+                "RPO": "OPTIONAL" / "MUST" / "NOT_ALLOWED",
+                "archivingRules": "OPTIONAL" / "MUST" / "NOT_ALLOWED",
+            }
+
+            schedule_policy (dict) <OPTIONAL> -- Dictionary containing schedule policy details
+            Example:
+            {
+                "frequency": "MINUTES" / "HOURS" / "DAYS",
+                "interval": 60, (Interval in minutes/hours/days) (if frequency is Minutes, it should be greater than 5)
+                "starttime": HH:MM:SS (optional, default is 21:00:00) NOTE: Applicable only for DAYS frequency
+            }
+        NOTE: The schedule Policy support is only given for Minutes/Hours/Days frequency. Weeks/Months/Years frequency is not supported.
+        Please use add_schedule function for the rest of the schedule configurations. Archive Window is also not supported.
+
+        Returns:
+            Plan object of the created plan
+        Raises:
+            SDKException:
+                if input parameters are incorrect
+
+                if Plan already exists
+
+                if error in creating the plan
+        """
+        if plan_sub_type.lower() != 'archiver':
+            raise SDKException('Plan', '101', "Plan subtype should be Archiver.")
+        if self.has_plan(plan_name):
+            raise SDKException('Plan', '102', 'Plan "{0}" already exists'.format(plan_name))
+        request_copy_dict = []
+        for copy in copy_dict:
+            if not isinstance(copy, dict):
+                raise SDKException('Plan', '101', 'Each copy should be a dictionary.')
+            if 'copyName' not in copy or 'storagePool' not in copy:
+                raise SDKException('Plan', '101', 'Each copy should contain copyName and storagePool.')
+            if not isinstance(copy['copyName'], str) or not isinstance(copy['storagePool'], str):
+                raise SDKException('Plan', '101', 'copyName and storagePool should be a string.')
+            if 'retention' in copy and not isinstance(copy['retention'], int):
+                raise SDKException('Plan', '101', 'retention should be an integer.')
+            if not self._commcell_object.storage_pools.has_storage_pool(copy['storagePool']):
+                raise SDKException('Plan', '102', 'Storage Pool does not exist in commcell.')
+            if 'retention' not in copy:
+                copy['retention'] = -1  # Infinite retention by default
+            else:
+                copy['retention'] = int(copy['retention'])*365
+            if copy['retention']!= -1 and (copy['retention'] < ARCHIVER_PLAN_MIN_RETENTION):
+                raise SDKException('Plan', '101', f'Retention period should be greater than 5 years.')
+            
+            storage_pool_obj = self._commcell_object.storage_pools.get(copy['storagePool'])
+            storage_pool_id = int(storage_pool_obj.storage_pool_id)
+            # Build new dictionary
+            new_copy = {
+                "backupDestinationName": copy["copyName"],
+                "retentionPeriodDays": copy["retention"],
+                "useExtendedRetentionRules": False,
+                "overrideRetentionSettings": True,
+                "backupStartTime": -1,
+                "storagePool": {
+                    "id": storage_pool_id,
+                    "name": copy["storagePool"]
+                }
+            }
+
+            request_copy_dict.append(new_copy)
+        if not isinstance(archiving_rules['Method'], str) or archiving_rules['Method'].upper() not in ['LAST_MODIFIED', 'LAST_ACCESSED']:
+            raise SDKException('Plan', '101', 'Method should be LAST_MODIFIED or LAST_ACCESSED.')
+        if not isinstance(archiving_rules['DurationUnit'], str) or archiving_rules['DurationUnit'].upper() not in ['DAYS', 'MONTHS', 'YEARS']:
+            raise SDKException('Plan', '101', 'DurationUnit should be DAYS, MONTHS or YEARS.')
+        if not isinstance(archiving_rules['FileSizeUnit'], str) or archiving_rules['FileSizeUnit'].upper() not in ['KB', 'MB', 'GB']:
+            raise SDKException('Plan', '101', 'FileSizeUnit should be KB, MB or GB.')
+        if not isinstance(archiving_rules['afterArchiving'], str) or archiving_rules['afterArchiving'].upper() not in ['REPLACE_FILE_WITH_STUB', 'DELETE_THE_FILE']:
+            raise SDKException('Plan', '101', 'afterArchiving should be REPLACE_FILE_WITH_STUB or DELETE_THE_FILE.')
+        if not isinstance(archiving_rules['Duration'], int) or archiving_rules['Duration'] < 0:
+            raise SDKException('Plan', '101', 'Duration should be a positive integer.')
+        if not isinstance(archiving_rules['FileSize'], int) or archiving_rules['FileSize'] < 0:
+            raise SDKException('Plan', '101', 'FileSize should be a positive integer.')
+        
+        if archiving_rules['DurationUnit'].upper() == 'YEARS':
+            duration = int(archiving_rules['Duration']) * 365
+        elif archiving_rules['DurationUnit'].upper() == 'MONTHS':
+            duration = math.floor(int(archiving_rules['Duration']) * 30.41)
+        else:
+            duration = int(archiving_rules['Duration'])
+        if archiving_rules['FileSizeUnit'].upper() == 'MB':
+            file_size = int(archiving_rules['FileSize']) * 1024
+        elif archiving_rules['FileSizeUnit'].upper() == 'GB':
+            file_size = int(archiving_rules['FileSize']) * 1024 * 1024
+        else:
+            file_size = int(archiving_rules['FileSize'])
+
+        request_archiving_rules = {
+            "fileTimestampMethod": archiving_rules['Method'].upper(),
+            "fileTimestamp": duration,
+            "fileSize": file_size,
+            "afterArchiving": archiving_rules['afterArchiving'].upper()
+        }
+        
+        if override_restrictions:
+            if not isinstance(override_restrictions, dict):
+                raise SDKException('Plan', '101', 'override_restrictions should be a dictionary.')
+            if not all(key in ['storagePool', 'RPO', 'archivingRules'] for key in override_restrictions.keys()):
+                raise SDKException('Plan', '101', 'Invalid keys in override_restrictions.')
+            if not all(value in ['OPTIONAL', 'MUST', 'NOT_ALLOWED'] for value in override_restrictions.values()):
+                raise SDKException('Plan', '101', 'Invalid values in override_restrictions.')
+            override_restrictions['backupContent'] = override_restrictions.get('backupContent', 'OPTIONAL')
+        
+        schedules = {
+                "backupType": "INCREMENTAL",
+                "forDatabasesOnly": False,
+                "scheduleOperation": "ADD",
+                "scheduleOption": {
+                        "daysBetweenAutoConvert": 7
+                }
+        }
+        if schedule_policy:
+            if not isinstance(schedule_policy, dict):
+                raise SDKException('Plan', '101', 'schedule_policy should be a dictionary.')
+            if 'frequency' not in schedule_policy or 'interval' not in schedule_policy:
+                raise SDKException('Plan', '101', 'schedule_policy should contain frequency and interval.')
+            if not isinstance(schedule_policy['frequency'], str) or schedule_policy['frequency'].upper() not in ['MINUTES', 'HOURS', 'DAYS']:
+                raise SDKException('Plan', '101', 'frequency should be MINUTES, HOURS or DAYS.')
+            if not isinstance(schedule_policy['interval'], int) or schedule_policy['interval'] <= 0:
+                raise SDKException('Plan', '101', 'interval should be a positive integer.')
+            if schedule_policy['frequency'].upper() == 'MINUTES' and schedule_policy['interval'] < 5:
+                raise SDKException('Plan', '101', 'Interval should be greater than 5 minutes for frequency MINUTES.')
+            
+            start_time = 75600  # 21:00:00 in seconds
+            if schedule_policy['frequency'].upper() == 'MINUTES':
+                schedule_frequency_type = 'MINUTES'
+                interval = schedule_policy['interval']
+            elif schedule_policy['frequency'].upper() == 'HOURS':
+                schedule_frequency_type = 'MINUTES'
+                interval = schedule_policy['interval'] * 60
+            else:  # DAYS
+                schedule_frequency_type = 'DAILY'
+                if schedule_policy.get('starttime'):
+                    h, m, s = map(int, schedule_policy['starttime'].split(':'))
+                    start_time = h * 3600 + m * 60 + s
+                interval = schedule_policy['interval']
+             
+            rpo = {
+                "archiveFrequency": {
+                    "scheduleFrequencyType": schedule_frequency_type,
+                    "startTime": start_time,  # 21:00:00 in seconds
+                    "frequency": interval
+                },
+                "archiveWindow": []
+            }
+            schedules['schedulePattern'] = {
+                "scheduleFrequencyType": schedule_policy['frequency'] if schedule_policy['frequency'] == 'HOURS' else schedule_frequency_type,
+                "startTime": start_time,  # 21:00:00 in seconds
+                "frequency": interval
+            }
+
+        else:
+            rpo = {
+                "archiveFrequency": {
+                "scheduleFrequencyType": "DAILY",
+                "startTime": 75600,
+                "frequency": 1
+                },
+                "archiveWindow": []
+            }
+            schedules['schedulePattern'] = {
+                "scheduleFrequencyType": "DAILY",
+                "startTime": 75600,  # 21:00:00 in seconds
+                "frequency": 1
+            }
+        
+        request_json = {   
+                "planName": plan_name,
+                "backupDestinations": request_copy_dict,
+                "rpo":  rpo,
+                "backupFrequency": {
+                    "schedules": [schedules]
+                },
+                "archivingRules": request_archiving_rules,
+                "allowPlanOverride": True if override_restrictions else False,
+            }
+        if override_restrictions:
+            request_json['overrideRestrictions'] = override_restrictions
+        
+        flag, response = self._cvpysdk_object.make_request('POST', self._V4_ARCHIVER_PLAN, request_json)
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = None
+
+                if 'errors' in response_value:
+                    error_code = response_value['errors'][0]['status']['errorCode']
+                    error_message = response_value['errors'][0]['status']['errorMessage']
+
+                if error_code and error_code > 1:
+                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Plan', '102', o_str)
+
+                if 'plan' in response_value:
+                    plan_name = response_value['plan']['name']
+                    # initialize the plans again
+                    self.refresh()
+
+                    return self.get(plan_name)
+                else:
+                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
+                                'Please check the documentation for '
+                                'more details on the error').format(error_code)
+
+                    raise SDKException('Plan', '102', o_str)
+            else:
+                raise SDKException('Response', 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def add_exchange_plan(self, plan_name: str, plan_sub_type: str = 'ExchangeUser', **kwargs) -> 'Plan':
         """Adds a new exchange plan to the commcell.
@@ -4966,3 +5225,57 @@ class Plan(object):
             raise SDKException('Plan', 102, 'Failed to update Applicable Solutions for Plan')
 
         self.refresh()
+
+
+    @property
+    def is_log_backup_to_disk_enabled(self):
+        """Returns true if log backup to disk is enabled for the plan"""
+        return self.get_schedule_properties(
+            {"backupType": "TRANSACTIONLOG"}).get('scheduleOption', {}).get('useDiskCacheForLogBackups', False)
+
+    def enable_log_backup_to_disk(self, commit_frequency=4):
+        """Enables log backup to disk
+
+        Args:
+            commit_frequency (int): Commit frequency for sweep job
+
+        Raises:
+            SDKException:
+                - If failed to enable log backup to disk
+
+        """
+        try:
+            schedule_options = {
+                "scheduleOption": {
+                    "commitFrequencyInHours": commit_frequency,
+                    "useDiskCacheForLogBackups": True
+                }
+            }
+
+            self.edit_schedule(schedule_options, {"backupType": "TRANSACTIONLOG"})
+        except Exception as e:
+            raise SDKException(
+                'Plan', 102, f"Failed to enable log backup to disk for plan '{self.plan_name}'")
+
+
+    def disable_log_backup_to_disk(self):
+        """Disables log backup to disk
+
+        Raises:
+            SDKException:
+                - If failed to disable log backup to disk
+
+        """
+        try:
+            schedule_options = {
+                "scheduleOption": {
+                    "commitFrequencyInHours": 4,
+                    "useDiskCacheForLogBackups": False
+                }
+            }
+
+            self.edit_schedule(schedule_options, {"backupType": "TRANSACTIONLOG"})
+        except Exception as e:
+            raise SDKException(
+                'Plan', 102, f"Failed to disable log backup to disk for plan '{self.plan_name}'")
+

@@ -24,7 +24,21 @@ TeamsConstants  -   Maintains constants for MS Teams subclient.
 
 
 class TeamsConstants:
-    """Class to maintain all the Teams subclient related constants."""
+    """
+    Container class for Teams subclient-related constants.
+
+    This class is designed to centralize and manage all constant values
+    used throughout the Teams subclient implementation. By storing constants
+    in a dedicated class, it promotes maintainability, consistency, and
+    ease of access across the codebase.
+
+    Key Features:
+        - Centralized storage for Teams subclient constants
+        - Improves code readability and maintainability
+        - Prevents duplication of constant values
+
+    #ai-gen-doc
+    """
 
     ADD_DISCOVER_TYPE = 12
     INDEX_APP_TYPE = 200128

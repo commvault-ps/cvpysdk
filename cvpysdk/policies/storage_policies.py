@@ -168,6 +168,10 @@ StoragePolicyCopy:
 
     _set_copy_properties()	                --	sets the properties of this storage policy copy
 
+    selective_copy_rules()                  --  Gets the selective copy rules on storage policy copy
+
+    selective_copy_rules()                  --  Sets the selective copy rules on storage policy copy
+
     set_copy_software_compression()         --  Sets the copy software compression setting
 
     is_parallel_copy()                      --  Gets the parallel copy setting on storage policy copy
@@ -281,6 +285,9 @@ class JobOperationsOnStorageCopy:
     PREVENT_COPY: str = 'DISALLOW_COPY'
     ALLOW_COPY: str = 'ALLOW_COPY'
     RECOPY: str = 'RECOPY'
+    PICK_FOR_VERIFICATION: str = 'pickForVerification'
+    MARK_JOBS_BAD: str = 'markJobsBad'
+    PICK_FOR_BACKUPCOPY: str = 'pickforbackupcopy'
 
 class StoragePolicies(object):
     """Class for getting all the storage policies associated with the commcell.
@@ -3890,6 +3897,77 @@ class StoragePolicyCopy(object):
         self._extended_flags['overRideGACPRetention'] = int(override)
         self._set_copy_properties()
 
+    @property
+    def selective_copy_rules(self) -> dict:
+        """
+        Returns the selective copy rules for this storage policy copy.
+
+        Returns:
+            dict: Selective copy rules if present, else None.
+        """
+        rules = self._copy_properties.get('selectiveCopyRules')
+        if not rules:
+            return {}
+        selective_rule_map = {
+            2: 'all',
+            4: 'weekly',
+            8: 'monthly',
+            16: 'quarterly',
+            32: 'halfyearly',
+            64: 'yearly',
+            262144: 'hourly',
+            524288: 'daily',
+            16777216: 'advanced'
+        }
+        selective_rule = rules['selectiveRule']
+        return {
+            'selectMostRecentJob': rules['selectMostRecentJob'],
+            'firstFullBackup': rules['firstFullBackup'],
+            'selectiveRule': selective_rule_map.get(selective_rule, selective_rule)
+        }
+
+    @selective_copy_rules.setter
+    def selective_copy_rules(self, selective_rules: tuple) -> None:
+        """
+        Sets the selective copy rules for this storage policy copy.
+
+        Args:
+            selective_rules (tuple):
+
+                tuple:
+                    **int** -   value to specify selectMostRecentJob
+                    **int** -   value to specify firstFullBackup
+                    **str** -   value to specify selectiveRule
+
+                    e.g. :
+                            storage_policy_copy.selective_copy_rules = (1, 0, 'monthly')
+
+
+        Raises:
+            SDKException: if failed to update selective copy rules on the copy
+        """
+        if not (isinstance(selective_rules, tuple) and len(selective_rules) == 3):
+            raise SDKException('Storage', '101')
+
+        selective_rule_map = {
+            'all': 2,
+            'weekly': 4,
+            'monthly': 8,
+            'quarterly': 16,
+            'halfyearly': 32,
+            'yearly': 64,
+            'hourly': 262144,
+            'daily': 524288,
+            'advanced': 16777216
+        }
+
+        rules = self._copy_properties.get('selectiveCopyRules', {})
+        rules['selectMostRecentJob'] = selective_rules[0]
+        rules['firstFullBackup'] = selective_rules[1]
+        rules['selectiveRule'] = selective_rule_map.get(selective_rules[2], selective_rules[2])
+
+        self._copy_properties['selectiveCopyRules'] = rules
+        self._set_copy_properties()
 
     @property
     def copy_retention(self) -> dict:
@@ -4615,7 +4693,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.pick_jobs_for_data_verification(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, JobOperationsOnStorageCopy.PICK_FOR_VERIFICATION)
+        self._mark_jobs_on_copy(job_id, 'pickForVerification')
 
 
     def do_not_verify_data(self, job_id: Union[int, str, list]) -> None:
@@ -4639,7 +4717,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.mark_jobs_bad(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, JobOperationsOnStorageCopy.MARK_JOBS_BAD)
+        self._mark_jobs_on_copy(job_id, 'markJobsBad')
 
 
     def pick_jobs_for_backupcopy(self, job_id: Union[int, str, list]) -> None:
@@ -4651,7 +4729,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.pick_jobs_for_backupcopy(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, JobOperationsOnStorageCopy.PICK_FOR_BACKUPCOPY)
+        self._mark_jobs_on_copy(job_id, 'pickforbackupcopy')
 
     @property
     def extended_retention_rules(self) -> tuple:

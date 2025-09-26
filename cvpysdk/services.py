@@ -355,6 +355,7 @@ SERVICES_DICT_TEMPLATE = {
     'V4_SERVER_PLAN': '{0}V4/ServerPlan/%s',
     'V4_SERVER_PLANS': '{0}V4/ServerPlan',
     'V4_GLOBAL_SERVER_PLANS': '{0}/V4/Global/ServerPlan',
+    'V4_ARCHIVER_PLAN': '{0}V4/ArchivePlan',
     'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
     'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
     'V4_DC_PLANS': '{0}V4/DCPlan',
