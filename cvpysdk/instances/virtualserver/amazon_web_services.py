@@ -28,9 +28,12 @@ AmazonInstance:
 
 """
 
-from ...agent import Agent
 from ...exception import SDKException
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AmazonInstance(VirtualServerInstance):
@@ -50,7 +53,7 @@ class AmazonInstance(VirtualServerInstance):
 
     #ai-gen-doc
     """
-    def __init__(self, agent: Agent, name: str, iid: str) -> None:
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
         """Initialize an AmazonInstance object with the specified agent, name, and instance ID.
 
         Args:

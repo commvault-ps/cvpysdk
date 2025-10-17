@@ -28,10 +28,11 @@ Classes:
                          provides methods to get and set instance properties.
 """
 
-from typing import List
-
-from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING, List
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class MorpheusInstance(VirtualServerInstance):
@@ -54,7 +55,7 @@ class MorpheusInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
         """Initialize a MorpheusInstance object.
 
         Args:

@@ -38,8 +38,11 @@ AzureStackInstance:         Derived class from VirtualServer
 
 """
 
-from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AzureStackInstance(VirtualServerInstance):
@@ -62,7 +65,7 @@ class AzureStackInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, name: str, iid: str) -> None:
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
         """Initialize the AzureStackInstance object for a given Virtual Server instance.
 
         Args:

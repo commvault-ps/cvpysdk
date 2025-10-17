@@ -185,6 +185,8 @@ StoragePolicyCopy:
     get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
 
     _run_job_operations_on_storage_copy()    -- Run different job operations for a Storage Copy
+    
+    _pick_job_for_backup_copy()             --  Method to pick jobs for backup copy
 
     delete_job()                            --  delete a job from storage policy copy node
 
@@ -268,6 +270,7 @@ from ..storage import MediaAgent
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
+    from .storage_policies import StoragePolicyCopy
 
 class JobOperationsOnStorageCopy:
     """Enum for different job operations on Storage Copy.
@@ -3247,7 +3250,7 @@ class StoragePolicy(object):
         self._commcell_object._qoperation_execute(request_xml)
 
 
-    def get_copy(self, copy_name: str) -> object:
+    def get_copy(self, copy_name: str) -> 'StoragePolicyCopy':
         """Returns a storage policy copy object if copy exists
 
         Args:
@@ -4569,6 +4572,72 @@ class StoragePolicyCopy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _pick_job_for_backup_copy(self, job_id: Union[int, str, list], operation: str) -> None:
+        """Method to pick jobs for backup copy
+
+        Args:
+            job_id    (int or str or list): Job Id(s) that needs to be marked
+            operation (str): Operation to be performed on the job(s)
+
+        Raises:
+            SDKException:
+                - if the job_id is not of type int, str or list of int/str
+                - if the operation is not a valid operation type
+                - if the response is empty or not successful
+                - if the error code in response is not 0
+
+        Usage:
+            This is a private method and should not be called directly.
+        """
+        plan_name = self._storage_policy_name + "_Plan"
+        plan_obj = self._commcell_object.plans.get(plan_name)
+        if plan_obj is None:
+            raise SDKException('Storage', '102', f"Plan '{plan_name}' not found for storage policy '{self._storage_policy_name}'")
+        plan_id = plan_obj.plan_id
+        payload_template = {
+            "operationType": operation,
+            "jobs": []
+        }
+        # Validate if the required service endpoint exists
+        if 'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS' not in self._services:
+            raise SDKException('Storage', '101', "Service endpoint 'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS' not found in services dictionary")
+        url = self._services['V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS'] % (plan_id, int(self.copy_id))
+
+        # Checking if job_id is a comma separated string
+        if isinstance(job_id, str) and ',' in job_id:
+            job_id = [j.strip() for j in job_id.split(',')]
+
+        if isinstance(job_id, (int, str)):
+            job_id = [int(job_id)]
+        elif isinstance(job_id, list):
+            job_id = [int(j) for j in job_id if j.isdigit()]
+        else:
+            raise SDKException('Storage', '101', 'job_id should be an int, str or a list of int/str')
+
+        if operation not in ['PICK']:
+            raise SDKException('Storage', '101', f'Invalid operation type: {operation}')
+        payload = payload_template.copy()
+        payload.update({
+            "jobs": [
+                {"jobId": jid, "commcellId": 2} for jid in job_id
+            ]
+        })
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            method='PUT',
+            url=url,
+            payload=payload
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                    if error_code != 0:
+                        error_message = response.json().get('errorMessage', '')
+                        raise SDKException('Storage', '102', error_message)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def delete_job(self, job_id: str) -> None:
         """Deletes a job on Storage Policy
@@ -4729,7 +4798,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.pick_jobs_for_backupcopy(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, 'pickforbackupcopy')
+        self._pick_job_for_backup_copy(job_id, 'PICK')
 
     @property
     def extended_retention_rules(self) -> tuple:

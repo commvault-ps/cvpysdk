@@ -127,6 +127,8 @@ Clients
     add_cassandra_client()                --  add cassandra client
 
     add_cockroachdb_client()              --  add cockroachdb client
+    
+    add_mongodb_client()              		--  add mongodb client
 
     add_azure_cosmosdb_client()             --  add client for azure cosmosdb cloud account
 
@@ -521,6 +523,7 @@ class Clients(object):
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_MONGODB_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -2190,24 +2193,27 @@ class Clients(object):
             self,
             client_name: str,
             api_server_endpoint: str,
-            service_account: str,
-            service_token: str,
-            encoded_service_token: str,
+            credential_id: int,
+            credential_name: str,
             access_nodes: Optional[Union[List[str], str]] = None
     ) -> 'Client':
-        """Add a new Kubernetes Cluster client to the Commcell.
+        """Adds a new Kubernetes Cluster client to the Commcell.
 
-        This method creates a Kubernetes client in the Commcell using the provided API server endpoint,
-        service account credentials, and optional access nodes (proxy clients). If a client with the
-        specified name already exists, an exception is raised.
+            This method creates a Kubernetes client in the Commcell using the provided API server endpoint,
+            service account credentials, and optional access nodes (proxy clients). If a client with the
+            specified name already exists, an exception is raised.
+            Args:
+                client_name         (str)   --  name of the new Kubernetes Cluster client
 
-        Args:
-            client_name: Name of the new Kubernetes Cluster client.
-            api_server_endpoint: Kubernetes API Server endpoint URL of the cluster.
-            service_account: Name of the Service Account for authentication.
-            service_token: Token fetched from the Service Account.
-            encoded_service_token: Base64 encoded Service Account Token.
-            access_nodes: Optional list of Virtual Server proxy client names, or a single client name as a string.
+                api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
+
+                credential_id       (int)   --  ID of the credential to be associated with this client
+
+                credential_name (str)   --  Name of the credential to be associated with this client
+
+                access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
+
+
 
         Returns:
             Client: Instance of the Client class representing the newly created Kubernetes client.
@@ -2257,12 +2263,12 @@ class Clients(object):
                 "virtualServerClientProperties": {
                     "virtualServerInstanceInfo": {
                         "vsInstanceType": 20,
+                        "virtualServerCredentialinfo":{
+                            "credentialId": credential_id,
+                            "credentialName": credential_name
+                        },
                         "k8s": {
-                            "secretName": service_account,
-                            "secretKey": service_token,
-                            "secretKeyV2": encoded_service_token,
                             "secretType": "ServiceAccount",
-                            "endpointurl": api_server_endpoint
                         },
                         "associatedClients": {},
                         "vmwareVendor": {
@@ -3112,7 +3118,7 @@ class Clients(object):
     def add_yugabyte_client(self,
                             instance_name: str,
                             db_host: str,
-                            api_token: str,
+                            yugabyte_credname: str,
                             universe_name: str,
                             config_name: str,
                             credential_name: str,
@@ -3129,9 +3135,10 @@ class Clients(object):
         configuration, credentials, content paths, plan association, and data access nodes.
 
         Args:
+
             instance_name: Name for the new Yugabyte instance.
             db_host: Hostname of the YugabyteAnywhere application.
-            api_token: API token for the YugabyteAnywhere user.
+            yugabyte_credname: yugabyte credential name.
             universe_name: Name of the Yugabyte universe to be backed up.
             config_name: Customer configuration name.
             credential_name: Credential name associated with the customer configuration.
@@ -3154,7 +3161,7 @@ class Clients(object):
             >>> client_obj = clients.add_yugabyte_client(
             ...     instance_name="YB_Instance01",
             ...     db_host="yugabyte.example.com",
-            ...     api_token="your_api_token",
+            ...     yugabyte_credname="ybcredname",
             ...     universe_name="TestUniverse",
             ...     config_name="CustomerConfig01",
             ...     credential_name="YB_Credential",
@@ -3178,7 +3185,11 @@ class Clients(object):
         for node in data_access_nodes:
             access_nodes.append({"clientName": node})
 
-        apitoken_temp = b64encode(api_token.encode()).decode()
+        yugabyte_credential = self._commcell_object.credentials.get(yugabyte_credname)
+        yugabyte_cred_id = yugabyte_credential.credential_id
+
+        s3_credential = self._commcell_object.credentials.get(credential_name)
+        s3_cred_id = s3_credential.credential_id
 
         request_json = {
             "createPseudoClientRequest": {
@@ -3203,7 +3214,10 @@ class Clients(object):
                         "clusterConfig": {
                             "yugabytedbConfig": {
                                 "dbHost": db_host,
-                                "apiToken": apitoken_temp,
+                                "yugaByteCredInfo": {
+                                    "credentialId": yugabyte_cred_id,
+                                    "credentialName": yugabyte_credname
+                                },
                                 "customer": {
                                     "name": "",
                                     "uuid": user_uuid
@@ -3222,6 +3236,7 @@ class Clients(object):
                                     "stagingType": 1,
                                     "stagingCredentials": {
                                         "credentialName": credential_name,
+                                        "credentialId": s3_cred_id
                                     }
                                 }
                             }
@@ -3271,14 +3286,14 @@ class Clients(object):
     def add_couchbase_client(self,
                              instance_name: str,
                              data_access_nodes: List[str],
-                             user_name: str,
-                             password: str,
+                             couchbase_credname: str,
                              port: Union[str, int],
                              staging_type: str,
                              staging_path: str,
                              credential_name: str,
                              service_host: str,
                              plan_name: str,
+                             db_host: str
                              ):
         """Add a new Couchbase client to the Commcell environment.
 
@@ -3289,20 +3304,21 @@ class Clients(object):
         Args:
             instance_name: Name for the new Couchbase instance.
             data_access_nodes: List of client names to be used as data access nodes.
-            user_name: Couchbase administrator username.
-            password: Couchbase administrator password.
+            couchbase_credname: Couchbase credential name.
             port: Couchbase database port (as string or integer).
             staging_type: Staging type, either "FileSystem" or "S3".
             staging_path: Path for staging data (filesystem path or S3 bucket path).
             credential_name: Name of the S3 credential (required for S3 staging).
             service_host: AWS service host (required for S3 staging).
             plan_name: Name of the plan to associate with the client.
+            db_host: Couchbase database host.
 
         Returns:
             Object representing the newly created Couchbase client.
 
         Raises:
             SDKException: If the client creation fails, the response is empty, or the response indicates an error.
+
 
         Example:
             >>> clients = Clients(commcell_object)
@@ -3326,9 +3342,14 @@ class Clients(object):
         access_nodes = []
         for node in data_access_nodes:
             access_nodes.append({"clientName": node})
-        pwd = b64encode(password.encode()).decode()
 
         port = int(port)
+
+        couchbase_credential = self._commcell_object.credentials.get(couchbase_credname)
+        couchbase_cred_id = couchbase_credential.credential_id
+
+        s3_credential = self._commcell_object.credentials.get(credential_name)
+        s3_cred_id = s3_credential.credential_id
 
         if staging_type == "FileSystem":
             request_json = {
@@ -3350,9 +3371,10 @@ class Clients(object):
                             "clusterConfig": {
                                 "couchbaseConfig": {
                                     "port": port,
-                                    "user": {
-                                        "userName": user_name,
-                                        "password": pwd
+                                    "dbHost": db_host,
+                                    "couchBaseCMCredInfo": {
+                                        "credentialId": couchbase_cred_id,
+                                        "credentialName": couchbase_credname
                                     },
                                     "staging": {
                                         "stagingType": 0,
@@ -3391,9 +3413,10 @@ class Clients(object):
                             "clusterConfig": {
                                 "couchbaseConfig": {
                                     "port": port,
-                                    "user": {
-                                        "userName": user_name,
-                                        "password": pwd
+                                    "dbHost": db_host,
+                                    "couchBaseCMCredInfo": {
+                                        "credentialId": couchbase_cred_id,
+                                        "credentialName": couchbase_credname
                                     },
                                     "staging": {
                                         "stagingType": 1,
@@ -3403,7 +3426,8 @@ class Clients(object):
                                         "cloudURL": "s3.amazonaws.com",
                                         "recordType": "AMAZON_S3",
                                         "stagingCredentials": {
-                                            "credentialName": credential_name
+                                            "credentialName": credential_name,
+                                            "credentialId": s3_cred_id
                                         }
                                     }
                                 }
@@ -5723,6 +5747,148 @@ class Clients(object):
                 '101',
                 self._update_response_(
                     response.text))
+
+    def add_mongodb_client(self,
+                           new_client_name,
+                           master_node,
+                           master_hostname,
+                           port,
+                           os_user,
+                           bin_path,
+                           plan,
+                           db_user = '',
+                           db_password ='',
+                           db_credential_id = None,
+                           ssl_credential_id = None):
+
+        """
+                Adds new mongodb  client after client name and plan validation
+
+                Args:
+                    new_client_name     (str)   --  New pseudo client name
+                    master_node         (str)   --  Master node name
+                    master_hostname     (str)   --  Master Node's Host name
+                    port                (int)   --  Mongodb Port on master node
+                    os_user             (str)   --  MongoDB OS user used for impersonation
+                    bin_path            (str)   --  Bin path for mongodb installation
+                    plan                (str)   --  Plan associated with the new client
+                    db_user             (str)   --  Db user if Authentication is Enabled on Cluster
+                    db_password         (str)   --  Db Password  corresponding to db_user
+
+
+                Returns:
+                    client_object       (obj)   --  Client object associated with the new MongoDB client
+
+
+                Raises:
+                    SDKException:
+                        if failed to add the client
+
+                        if response is empty
+
+                        if response is not success
+                """
+
+        if self._commcell_object.plans.has_plan(plan):
+            plan_object = self._commcell_object.plans.get(plan)
+            plan_id = int(plan_object.plan_id)
+            plan_type = int(plan_object.plan_type)
+            plan_subtype = int(plan_object.subtype)
+
+
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+        db_credential_id = int(db_credential_id)
+        ssl_credential_id = int(ssl_credential_id)
+        if self._commcell_object.clients.has_client(master_node):
+            master_client_id = int(self._commcell_object.clients.all_clients[master_node.lower()]['id'])
+        else:
+            raise SDKException('Client', '102', 'Provide Valid Master Client')
+        company_id = 0
+        if (company_id == 0 ):
+            company_name = "Commcell"
+        else:
+            company_name = ""
+        request_json= {
+            "clientInfo": {
+                "clientType": "DISTRIBUTED_IDA",
+                "distributedClusterInstanceProperties": {
+                    "instance": {
+                        "instanceId": 0,
+                        "instanceName": new_client_name,
+                        "applicationId": 64,
+                        "clientName": new_client_name
+                    },
+                    "opType": 2,
+                    "clusterType": "MONGODB",
+                    "clusterConfig": {
+                        "mdbConfig": {
+                        "sslCMCredInfo": {
+                            "credentialId": ssl_credential_id
+                        },
+                        "authCMCredInfo": {
+                            "credentialId": db_credential_id
+                        },
+                            "masterNode": {
+                                "client": {
+                                    "clientId": master_client_id,
+                                    "clientName": master_node
+                                },
+                                "hostName": master_hostname,
+                                "portNumber": port,
+                                "osUser": os_user,
+                                "binPath": bin_path
+                            }
+                        }
+                    }
+                },
+                "plan": {
+                    "planId": plan_id,
+                    "planName": plan,
+                    "planType": plan_type,
+                    "planSubtype": plan_subtype,
+                    "entityInfo": {
+                        "companyId": company_id,
+                        "companyName": company_name,
+                        "multiCommcellId": 0
+                    }
+                }
+            },
+            "entity": {
+                "clientName": new_client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_MONGODB_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(new_client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
 
     def add_azure_cosmosdb_client(
             self,

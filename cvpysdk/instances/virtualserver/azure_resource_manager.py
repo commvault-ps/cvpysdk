@@ -27,19 +27,23 @@ AzureResoureceManagerInstance: Derived class from VirtualServer
 
     __init__(self, agent,_name,iid)   	 -- 	initialize object of azure RM
                                             Instance object associated with the
-                                            VirtualServer Instance		
+                                            VirtualServer Instance
 
     _get_instance_properties()     --  VirtualServer Instance class method
                                         overwritten to get azure RM
                                         Specific instance properties as well
 
-	_get_instance_properties_json()			--  get the all instance related
-														properties of this subclient.
+    _get_instance_properties_json()			--  get the all instance related
+                                                        properties of this subclient.
 
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...agent import Agent
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AzureRMInstance(VirtualServerInstance):
@@ -61,7 +65,7 @@ class AzureRMInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, name: str, iid: str) -> None:
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
         """Initialize an AzureRMInstance object for the specified Virtual Server instance.
 
         Args:
@@ -98,9 +102,9 @@ class AzureRMInstance(VirtualServerInstance):
         if 'virtualServerInstance' in self._properties:
             if self._properties["virtualServerInstance"]["associatedClients"].get("memberServers"):
                 _member_servers = self._properties["virtualServerInstance"] \
-                                                ["associatedClients"]["memberServers"]
+                    ["associatedClients"]["memberServers"]
             else:
-                _member_servers=[]
+                _member_servers = []
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():
@@ -115,7 +119,7 @@ class AzureRMInstance(VirtualServerInstance):
         #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -123,9 +127,9 @@ class AzureRMInstance(VirtualServerInstance):
                     "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
-                    }
-                       }
-               }
+                }
+            }
+        }
         return instance_json
 
     def _get_application_properties(self) -> None:
@@ -146,7 +150,8 @@ class AzureRMInstance(VirtualServerInstance):
         if 'azureResourceManager' in self._application_properties:
             self._subscription_id = self._application_properties['azureResourceManager']['subscriptionId']
 
-    def _update_azure_credentials(self, credential_id: int, credential_name: str = None, usemanaged_identity: bool = False) -> None:
+    def _update_azure_credentials(self, credential_id: int, credential_name: str = None,
+                                  usemanaged_identity: bool = False) -> None:
         """Update the Azure credentials for the hypervisor instance.
 
         This method updates the credentials used by the Azure hypervisor, allowing you to specify a new credential ID,
@@ -170,7 +175,7 @@ class AzureRMInstance(VirtualServerInstance):
                 "name": credential_name
             },
             "subscriptionId": self._subscription_id,
-         "useManagedIdentity": usemanaged_identity
+            "useManagedIdentity": usemanaged_identity
         }
 
         super(AzureRMInstance, self)._update_hypervisor_credentials(self._credential_json)

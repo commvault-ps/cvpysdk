@@ -1041,6 +1041,59 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
+    def add_k8s_credentials(self, api_endpoint, ca_certificate, description, name, service_account, service_token):
+        """Creates k8s credential on this commcell
+            Args:
+
+                api_endpoint (str)   --  API endpoint of the k8s cluster
+
+                ca_certificate  (str)     --  CA certificate of the k8s cluster
+
+                description (str)       --  description of the credential
+
+                name (str)       --  name to be given to credential account
+
+                service_account (str)       --  service account name
+
+                service_token (str)       --  service account token
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        if self.has_credential(name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    name)
+            )
+        encoded_token = b64encode(service_token.encode()).decode()
+        create_credential = {
+            "accountType": "KUBERNETES_SERVICE_ACCOUNT",
+            "name": name,
+            "description": description,
+            "apiEndpoint": api_endpoint,
+            "caCertificate": ca_certificate,
+            "serviceAccount": service_account,
+            "serviceToken": encoded_token
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, name, id)
+
     def add_aws_s3_creds(
             self,
             credential_name: str,
@@ -1246,7 +1299,8 @@ class Credentials(object):
         Args:
             database_type: Type of database credential to be created.
                 Accepted values: "CASSANDRA_ACCOUNT", "CASSANDRA_JMX_ACCOUNT", "CASSANDRA_TRUSTSTORE_ACCOUNT",
-                "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS".
+                "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS",
+                "COUCHBASE_ACCOUNT","YUGABYTE_ACCOUNT".
             credential_name: Name to assign to the credential account.
             username: Username for the credential.
             password: Password for the credential.
@@ -1287,7 +1341,8 @@ class Credentials(object):
         """
         valid_types = {
             "CASSANDRA_ACCOUNT", "CASSANDRA_JMX_ACCOUNT", "CASSANDRA_TRUSTSTORE_ACCOUNT",
-            "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS"
+            "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS",
+            "COUCHBASE_ACCOUNT", "YUGABYTE_ACCOUNT"
         }
 
         if database_type not in valid_types:
@@ -1335,6 +1390,23 @@ class Credentials(object):
                 "sslCAFile": sslCAFile,
                 "sslPEMKeyFile": sslPEMKeyFile,
                 "username": username,
+                "password": password,
+                "description": description
+            }
+        elif database_type == "COUCHBASE_ACCOUNT":
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
+                "userName": username,
+                "password": password,
+                "description": description
+            }
+        elif database_type == "YUGABYTE_ACCOUNT":
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
                 "password": password,
                 "description": description
             }

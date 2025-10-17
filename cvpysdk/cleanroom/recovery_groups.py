@@ -37,6 +37,24 @@ from .recovery_entities import RecoveryEntities
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
 
+WORKLOADS = {
+    0: "GENERIC",
+    1: "O365",
+    2: "SALESFORCE",
+    3: "EXCHANGE",
+    4: "SHAREPOINT",
+    5: "ONEDRIVE",
+    6: "TEAMS",
+    7: "DYNAMICS_365",
+    8: "VIRTUAL SERVER",
+    9: "FILE SYSTEM"
+}
+
+INSTANCES = {
+    'AZURE_V2': 'Azure Resource Manager',
+    'AMAZON': 'Amazon Web Services'
+}
+
 class RecoveryGroups:
     """
     Manages and represents all cleanroom recovery groups within a CommCell environment.
@@ -620,6 +638,33 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         return self._properties['recoveryGroup']['powerOffDestinationVMPostRecoveryAndValidation']
+
+    # ---------------------------- DESTINATION ----------------------------
+
+    @property
+    def destination_client_object(self):
+        """Returns cvpysdk destination hypervisor client object"""
+        destination_client = self._recovery_target.destination_hypervisor
+        self._destination_client_object = self._commcell_object.clients.get(destination_client)
+        return self._destination_client_object
+
+    def destination_agent_object(self, workload):
+        """Returns cvpysdk destination agent(workload) object"""
+        destination_agent = WORKLOADS[workload]
+        self._destination_agent_object = self.destination_client_object.agents.get(destination_agent)
+        return self._destination_agent_object
+
+    def destination_instance_object(self, workload):
+        """Returns cvpysdk destination instance object"""
+        destination_instance = INSTANCES[self._recovery_target.target_instance]
+        self._destination_instance_object = self.destination_agent_object(workload).instances.get(
+            destination_instance)
+        return self._destination_instance_object
+
+    @property
+    def autoscale_enabled(self):
+        """Returns boolean if autoscale enabled or not"""
+        return self._properties['recoveryGroup']['useAutoScale']
 
     def _recover_entities(self, entity_ids: list, threat_scan: bool = False, win_defender_scan: bool = False) -> int:
         """Send a request to recover all entities with the specified IDs.

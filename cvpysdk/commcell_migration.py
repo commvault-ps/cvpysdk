@@ -51,10 +51,10 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from .client import Client
 from .exception import SDKException
+from .job import Job
 
 if TYPE_CHECKING:
     from .commcell import Commcell
-    from .job import Job
 
 class CommCellMigration(object):
     """

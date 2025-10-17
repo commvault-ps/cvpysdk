@@ -25,7 +25,7 @@ Commcell:
     __init__()                  --  initialize instance of the Commcell class
 
     __repr__()                  --  return the name of the commcell, user is connected to,
-    along with the user name of the connected user
+    along with the username of the connected user
 
     __enter__()                 --  returns the current instance, using the "with" context manager
 
@@ -34,7 +34,7 @@ Commcell:
     _update_response_()         --  returns only the relevant response for the response received
     from the server
 
-    _remove_attribs_()          --  removes all the attributs associated with the commcell
+    _remove_attribs_()          --  removes all the attributes associated with the commcell
     object upon call to the logout method
 
     _get_commserv_details()     --  gets the details of the commserv, the Commcell class instance
@@ -101,7 +101,7 @@ Commcell:
 
     is_commcell_registered()       -- checks if the commcell is registered
 
-    get_default_plan()                  -- Get the default plans associed with the commcell
+    get_default_plan()                  -- Get the default plans associated with the commcell
 
     get_security_associations()         -- Get the security associations associated with the commcell
 
@@ -115,9 +115,9 @@ Commcell:
 
     get_commcell_organization_properties()     -- Get the organization properties of commcell
 
-    enable_tfa()                           --   Enables two factor authentication on this commcell
+    enable_tfa()                           --   Enables two-factor authentication on this commcell
 
-    disable_tfa()                          --  Disables two factor authentication on this commcell
+    disable_tfa()                          --  Disables two-factor authentication on this commcell
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
@@ -159,12 +159,12 @@ Commcell:
 Commcell instance Attributes
 ============================
 
-    **commserv_guid**           --  returns the `CommServ` GUID, class instance is initalized for
+    **commserv_guid**           --  returns the `CommServ` GUID, class instance is initialized for
 
     **commserv_hostname**       --  returns the hostname of the `CommServ`, class instance is
     initalized for
 
-    **commserv_name**           --  returns the `CommServ` name, class instance is initalized for
+    **commserv_name**           --  returns the `CommServ` name, class instance is initialized for
 
     **commserv_timezone**       --  returns the time zone of the `CommServ`,
     class instance is initalized for
@@ -329,8 +329,8 @@ Commcell instance Attributes
 
     **index_pools**             --  Returns an instance of the IndexPools class
 
-    **deduplications_engines    --  Returnes the instance of the DeduplicationEngines class
-    to interact wtih deduplication enines available on the commcell
+    **deduplications_engines    --  Returns the instance of the DeduplicationEngines class
+    to interact with deduplication engines available on the commcell
 
     **two_factor_authentication**   --  Returns an instance of the TwoFactorAuthentication class.
 
@@ -369,6 +369,7 @@ import socket
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Union
 
+import requests
 import xmltodict
 
 from base64 import b64encode
@@ -569,7 +570,6 @@ class Commcell(object):
                 web_service.append(r'https://{0}/'.format(web_service_url))
                 if force_https is False:
                     web_service.append(r'http://{0}/'.format(web_service_url))
-                
 
         self._user = commcell_username
 
@@ -3156,7 +3156,7 @@ class Commcell(object):
         self._remove_attribs_()
         return output
 
-    def request(self, request_type: str, request_url: str, request_body: Optional[dict] = None) -> object:
+    def request(self, request_type: str, request_url: str, request_body: Optional[dict] = None) -> 'requests.Response':
         """Send an HTTP request of the specified type to the Commcell API.
 
         This method allows you to perform HTTP operations (such as GET, POST, PUT, DELETE) 

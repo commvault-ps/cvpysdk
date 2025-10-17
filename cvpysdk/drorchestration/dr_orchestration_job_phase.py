@@ -68,6 +68,7 @@ class DRJobPhases(Enum):
     SECURE_CONNECTION_DEPLOYMENT = 87
     SECURITY_SCAN = 88
     CLEANUP_DEPLOYED_RESOURCES = 90
+    CREATE_ACCESS_NODE = 83
 
 class DRJobPhaseToText(Enum):
     SCRIPT_EXECUTION = "Script Execution"
@@ -126,3 +127,4 @@ class DRJobPhaseToText(Enum):
     SECURE_CONNECTION_DEPLOYMENT = "Secure Connection Deployment"
     CLEANUP_DEPLOYED_RESOURCES = "Cleanup Deployed Resources"
     SECURITY_SCAN = "Security Scan"
+    CREATE_ACCESS_NODE = "Create Access Node"

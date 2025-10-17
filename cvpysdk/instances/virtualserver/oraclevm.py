@@ -26,12 +26,8 @@ OracleVMInstance:     Derived class from VirtualServer  Base class, representing
 
 OracleVMInstance:
 
-    __init__(
-        agent_object,
-        instance_name,
-        instance_id)                    --  initialize object of oraclevm Instance object
-                                                associated with the VirtualServer Instance
-
+    __init__()                    --  initialize object of oraclevm Instance object
+                                        associated with the VirtualServer Instance
 
     _get_instance_properties()          --  VirtualServer Instance class method overwritten
                                                 to get oraclevm specific instance properties
@@ -41,8 +37,11 @@ OracleVMInstance:
 
 """
 
-from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class OracleVMInstance(VirtualServerInstance):
@@ -61,7 +60,7 @@ class OracleVMInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: Agent, instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
         """Initialize an OracleVMInstance object for the specified Virtual Server instance.
 
         Args:

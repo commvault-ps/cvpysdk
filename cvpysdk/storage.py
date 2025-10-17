@@ -213,6 +213,16 @@ TapeLibrary:
 
      refresh()          --  Refresh the properties of this tape library.
 
+    verify_media_status()                     --  Verify media status
+    _process_media_details()                   --  fetch required details and sets media details class variable.
+    _get_all_media_details()                   --  fetch all media details. 
+    _get_media_id_list()                       --  return media Ids for the given barcode media names.
+    _perform_media_operations()                --  common function to perform media operations 
+
+    get_media_status()                        --  return media status for the given media barcode.
+    mark_media_appendable()                   --  mark the given list of media appendable.
+    mark_media_full()                         --  mark the given list of media full.
+
 
 """
 
@@ -3106,6 +3116,49 @@ class DiskLibrary(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def delete_media_agent_on_mount_path(self, device_id, media_agent_name, device_controller_id, mountPathId):
+        """
+        Method to delete media agent on mount path
+
+        Args:
+
+            device_id (int)         -- Device id
+
+            media_agent_name (str)  -- Media agent which is accessing the shared mount path
+
+            device_controller_id (int) -- Device controller id
+
+            mountPathId (int)       -- Mount path id of the mount path
+
+        """
+
+        request_json = {"infoList": [
+                {"deviceId": device_id,
+                 "deviceControllerId": device_controller_id,
+                 "mediaAgent": {"name": media_agent_name},
+                 "enabled": 1,
+                 "opType": 3,
+                 "accessible": True}
+            ],
+            "mountpathId": mountPathId
+            }
+
+        DELETE_DEVICE_CONTROLLER = self._commcell_object._services['DELETE_DEVICE_CONTROLLER']
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', DELETE_DEVICE_CONTROLLER, request_json)
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json().get('errorCode'))
+                    if error_code != 0:
+                        error_message = response.json().get('errorMessage')
+                        raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout = 'Failed to delete media agent on mount path with error: \n [{0}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(_stderr))
 
 class RPStores(object):
     """
@@ -3716,6 +3769,7 @@ class TapeLibrary(object):
         """
 
         self._commcell_object = commcell_object
+        self._services = self._commcell_object._services
         self._name = tape_library_name
         if tape_library_id:
             self._library_id = str(tape_library_id)
@@ -3728,6 +3782,9 @@ class TapeLibrary(object):
         self.library_properties = self._get_library_properties()
 
         self._name = self.library_properties['library']['libraryName']
+
+        self.media_details = None
+        self.latest_media_details = False
 
 
     def __str__(self) -> str:
@@ -3787,11 +3844,11 @@ class TapeLibrary(object):
         return libraries.get(self.library_name).library_id
 
 
-    def get_drive_list(self) -> list:
+    def get_drive_list(self) -> list[list]:
         """Retrieve the list of tape drives associated with this tape library.
 
         Returns:
-            list: A list containing the drives present in this tape library.
+            list: A 2D list containing the drives present in this tape library.
 
         Example:
             >>> tape_library = TapeLibrary()
@@ -3809,7 +3866,7 @@ class TapeLibrary(object):
 
         if 'DriveList' in self.library_properties:
             for drive in self.library_properties["DriveList"]:
-                drive_list.append(drive["driveName"])
+                drive_list.append([drive["driveName"], drive["driveId"]])
 
         return drive_list
 
@@ -3894,3 +3951,234 @@ class TapeLibrary(object):
         #ai-gen-doc
         """
         return self._library_id
+    
+    # === Media Handling Methods ===
+    def verify_media_status(self, barcode_list, verify_status=None):
+        """
+        Verify media status
+
+        Args:
+            barcode_list (list[str])   -   barcode that needs to check status.
+        """
+        for barcode in barcode_list:
+            if not self.media_details or not self.latest_media_details:
+                self._get_all_media_details()
+            
+            barcode_details = self.media_details.get(barcode, "")
+            if not barcode_details:
+                raise SDKException('Storage', '102', f"Failed to check media details for Media BarCode: {barcode}")
+            status = barcode_details.get("status")
+            if verify_status.lower() != status.lower():
+                raise SDKException('Storage', '102', f"Failed to verify media status {barcode}!")
+        return True
+
+    def _process_media_details(self, media_details_list):
+        """
+        Process media details for all media and set media details. 
+        """
+        self.media_details = {}
+        for obj in media_details_list:
+            media_barcode = obj.get("barcode")
+            if not media_barcode:
+                raise SDKException('Storage', '102', "API Response failure, empty BarCode is being returned!!")
+            
+            # Note - Other required details can be fetched as needed later and getter methods can be set. 
+            self.media_details[media_barcode] = {
+                "mediaId": obj.get("mediaId"),
+                "status": obj.get("status")
+            }
+        self.latest_media_details = True
+
+    # Getter Methods.
+    def _get_all_media_details(self, filter_media_type="all", is_exported="0"):
+        """
+        Calls v4 API to fetch all media details. 
+        Args:
+            **kwargs
+                -- filterMeidaType = [all, spare, cleaning, retired, overwirte_protected, assigned, exported]
+                -- isExported      = (0, 1) 
+        """
+        url = self._services['MEDIA_IN_TAPE'] % (self.library_id, filter_media_type, is_exported)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', url)
+        
+        if flag:
+            if response.json():
+                response = response.json()
+                if len(response.get("mediaDetailsList", [])) > 0:
+                    media_details = response.get("mediaDetailsList", [])
+                    self._process_media_details(media_details)
+                elif "errorCode" in response:
+                    error_message = response['errorMessage']
+                    o_str = 'Failed to fetch Media details\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '102', f"Unknown error - {response}")
+            else:
+                raise SDKException('Storage', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Storage', '102', f"v4 API error - {response_string}")
+
+    def get_media_status(self, barcode):
+        """
+        Returns media status
+
+        Args:
+            barcode (str)   -   barcode that needs to check status.
+        """
+        if not self.media_details or not self.latest_media_details:
+            self._get_all_media_details()
+        
+        barcode_details = self.media_details.get(barcode, "")
+        if not barcode_details:
+            raise SDKException('Storage', '102', f"Failed to check media details for Media BarCode: {barcode}. Please check if barcode is present in library.")
+        status = barcode_details.get("status")
+        if not status:
+            raise SDKException('Storage', '102', f"Could not get status for: {barcode} media!!!!")
+        return status
+    
+    def _get_media_id_list(self, barcode_list):
+        """
+        Returns list of media Ids.
+
+        Args:
+            barcode_list (list[int])   -   barcode ids to be fetched. 
+        """
+        if not self.media_details or not self.latest_media_details:
+            self._get_all_media_details()
+
+        media_id_list = []
+        for barcode in barcode_list:
+            if barcode not in self.media_details:
+                raise SDKException('Storage', '102', f"Media: {barcode} not in library. Please check manually.")
+            media_id_list.append(self.media_details.get(barcode).get("mediaId"))
+
+        return media_id_list
+            
+
+    def _perform_drive_operation(self, driveId: int, operation: int):
+        """
+        Common function to perform operation on drive. 
+        Supported Operations - 
+            - UNLOAD_DRIVE = 0
+            - GET_MEDIA_INFO_VALIDATE_DRIVE = 1
+            - RESET_DRIVE = 2
+            - REPLACE_DRIVE = 3
+            - MARK_DRIVE_CLEAN = 4
+            - MARK_DRIVE_FIXED = 5
+
+        Args: 
+            driveId(int)    -   drive Id to be unloaded.
+            operation(int)  -   valid operation to be performed. 
+        """
+        url = self._services['DRIVE_OPERATION']
+        
+        payload = {
+            "driveId": driveId,
+            "driveOperationType": operation
+            }
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', url, payload)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                if response.get("errorCode") == 0:
+                    return True
+
+                elif "errorCode" in response:
+                    error_message = response['errorMessage']
+                    o_str = f"Failed perform operation {operation} \nError: {error_message}"
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '102', f"Unable to perform media operation, Error - {response}")
+            else:
+                raise SDKException('Storage', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Storage', '102', f"Perform operation failed, Error - {response_string}")
+
+    def _perform_media_operations(self, media_id_list, operation):
+        """
+        Common function to perform media operations. 
+        Supported Operations - 
+            - DISCOVER_MEDIA
+            - MARK_MEDIA_GOOD
+            - MARK_MEDIA_BAD
+            - MARK_MEDIA_FULL
+            - MARK_MEDIA_ERASABLE
+            - MARK_MEDIA_APPENDABLE
+            - MARK_MEDIA_REUSABLE
+            - PREVENT_MEDIA_REUSE
+            - ALLOW_MEDIA_REUSE
+            - QUICK_ERASE_SELECTED_MEDIA
+            - FULL_ERASE_SELECTED_MEDIA
+            - DELETE_MEDIA
+            - DELETE_CONTENTS
+            - UPDATE_BARCODE
+            - MOVE_MEDIA
+
+        Args:
+            media_id_list (list[int])   -   list of media ids for which operation needs to be performed. 
+            operation (str)             -   operation name tag to be performed. 
+        """
+        url = self._services['MEDIA_OPERATION'] % (self.library_id)
+        
+        payload = {
+            "operationType": operation,
+            "mediaList": media_id_list
+            }
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', url, payload)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                if response.get("errorCode") == 0:
+                    return True
+
+                elif "errorCode" in response:
+                    error_message = response['errorMessage']
+                    o_str = f"Failed perform operation {operation} \nError: {error_message}"
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '102', f"Unable to perform media operation, Error - {response}")
+            else:
+                raise SDKException('Storage', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Storage', '102', f"Perform operation failed, Error - {response_string}")
+    
+    def unload_drive(self, drive_id):
+        """
+        Performs Unload drive operation.
+
+        Args:
+            drive Id (int)   -   drive Id for which operations is to be performed.
+        """
+        self._perform_drive_operation(drive_id, 0)
+
+    def mark_media_appendable(self, barcode_list):
+        """
+        Marks the barcodes appendable.
+
+        Args:
+            barcode_list (list[str])   -   barcodes that needs to be marked appendable.
+        """
+        media_id_list = self._get_media_id_list(barcode_list)
+        self._perform_media_operations(media_id_list, 'MARK_MEDIA_APPENDABLE')
+        self.latest_media_details = False
+        self.verify_media_status(barcode_list, 'Appendable Media')
+
+    def mark_media_full(self, barcode_list):
+        """
+        Marks the barcode full
+
+        Args:
+            barcode (list[str])   -   barcodes that needs to be marked full.
+        """
+        media_id_list = self._get_media_id_list(barcode_list)
+        self._perform_media_operations(media_id_list, 'MARK_MEDIA_FULL')
+        self.latest_media_details = False
+        self.verify_media_status(barcode_list, 'Full Media')
+    
+    # === Media Handling Methods Complete ===

@@ -685,21 +685,25 @@ class CleanroomTarget:
                                         .get('name', ''))
                         self._availability_zone = (
                             self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                            .get('availabilityZone', ''))
-                        self._iam_role = (self._cleanroom_old_target_properties.get('amazonPolicy', {})
+                                .get('availabilityZone', ''))
+                        self._iam_role = (self._cleanroom_old_target_properties.get('destinationOptions', {})
                                           .get('iamRole', {}).get('name', ''))
                         self._encryption_key = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
                                                 .get('encryptionKey', {}).get('name', ''))
-                        self._instance_type = (self._cleanroom_old_target_properties.get('amazonPolicy', {})
-                                               .get('vmInstanceTypes', [{}])[0]
-                                               .get('vmInstanceTypeName', ''))
+
+                        # Get the first instance type, or None if not defined or empty
+                        self._instance_type = (
+                                self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
+                                .get('instanceTypes') or [None]
+                        )[0]
                         self._security_group = (self._cleanroom_old_target_properties.get('securityOptions', {})
-                                                .get('securityGroup', [{}])[0]
+                                                .get('securityGroups', [{}])[0]
                                                 .get('name', ''))
                         self._network_subnet = (self._cleanroom_old_target_properties.get('networkOptions', {})
+                                                .get('networkCard', {})
                                                 .get('network', ''))
-                        self._volume_type = (self._cleanroom_old_target_properties.get('amazonPolicy', {})
-                                             .get('volumeType', {}).get('name', ''))
+                        self._volume_type = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
+                                             .get('volumeType', {}))
                         self._key_pair = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
                                           .get('keyPair', ''))
 

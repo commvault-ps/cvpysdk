@@ -36,7 +36,10 @@ AzureInstance:
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...agent import Agent
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AzureInstance(VirtualServerInstance):
@@ -55,7 +58,7 @@ class AzureInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, name: str, iid: str) -> None:
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
         """Initialize an AzureInstance object for the specified Virtual Server instance.
 
         Args:

@@ -41,7 +41,10 @@ ProxmoxVEInstance:
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...agent import Agent
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class ProxmoxVEInstance(VirtualServerInstance):
@@ -63,7 +66,7 @@ class ProxmoxVEInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
         """Initialize a ProxmoxVEInstance object for the specified Virtual Server instance.
 
         Args:

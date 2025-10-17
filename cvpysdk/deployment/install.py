@@ -37,19 +37,32 @@ from ..job import Job
 from ..exception import SDKException
 from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures, InstallUpdateOptions
 from ..schedules import SchedulePattern, Schedules
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from ..commcell import Commcell
 
 class Install(object):
-    """"class for installing software packages"""
+    """class for installing software packages
 
-    def __init__(self, commcell_object):
+    Attributes:
+        commcell_object (object): Instance of the Commcell class.
+        _services (dict): Dictionary of Commcell services.
+        _cvpysdk_object (object): Instance of the CVPySDK class.
+    
+    Usage:
+        install_obj = Install(commcell_object)
+    """
+
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize object of the Install class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Install class
+        Returns:
+            Install: instance of the Install class
 
         """
 
@@ -57,43 +70,32 @@ class Install(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
+
     def repair_software(self,
-                        client=None,
-                        client_group=None,
-                        username=None,
-                        password=None,
-                        reboot_client=False):
+                        client: Optional[str] = None,
+                        client_group: Optional[str] = None,
+                        username: Optional[str] = None,
+                        password: Optional[str] = None,
+                        reboot_client: bool = False) -> Job:
         """triggers Repair of the software for a specified client machine
 
-                Args:
-                    client (str)               -- Client machine to re-install service pack on
+        Args:
+            client (str, optional): Client machine to re-install service pack on. Defaults to None.
+            client_group (str, optional): Client group to re-install service pack on (eg : 'Media Agent'). Defaults to None.
+            username (str, optional): username of the machine to re-install features on. Defaults to None.
+            password (str, optional): base64 encoded password. Defaults to None.
+            reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
 
-                    client_group (str)         -- Client group to re-install service pack on
-                                                            (eg : 'Media Agent')
+        Returns:
+            Job: instance of the Job class for this download job
 
-                    username    (str)               -- username of the machine to re-install features on
+        Raises:
+            SDKException:
+                if re-install job failed
 
-                        default : None
+                if response is empty
 
-                    password    (str)               -- base64 encoded password
-
-                        default : None
-
-                    reboot_client (bool)            -- boolean to specify whether to reboot the client
-                    or not
-
-                        default: False
-
-                Returns:
-                    object - instance of the Job class for this download job
-
-                Raises:
-                        SDKException:
-                        if re-install job failed
-
-                        if response is empty
-
-                        if response is not success
+                if response is not success
 
         **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
                   client computer will be repaired
@@ -192,65 +194,46 @@ class Install(object):
         else:
             raise SDKException('Response', '101')
 
+
     def push_servicepack_and_hotfix(
             self,
-            client_computers=None,
-            client_computer_groups=None,
-            all_client_computers=False,
-            all_client_computer_groups=False,
-            reboot_client=False,
-            run_db_maintenance=True,
-            maintenance_release_only=False,
-            **kwargs):
+            client_computers: Optional[List[str]] = None,
+            client_computer_groups: Optional[List[str]] = None,
+            all_client_computers: bool = False,
+            all_client_computer_groups: bool = False,
+            reboot_client: bool = False,
+            run_db_maintenance: bool = True,
+            maintenance_release_only: bool = False,
+            **kwargs: Dict[str, Any]) -> Union[Job, Schedules]:
         """Installs the software packages on the clients
 
         Args:
-            client_computers (list)               -- Client machines to install service pack on
-
-            client_computer_groups (list)         -- Client groups to install service pack on
-
-            all_client_computers (bool)           -- boolean to specify whether to install on
-            all client computers or not
-
-                default: False
-
-            all_client _computer_groups (bool)    -- boolean to specify whether to install on all
-            client computer groups or not
-
-                default: False
-
-            reboot_client (bool)                  -- boolean to specify whether to reboot the
-            client or not
-
-                default: False
-
-            run_db_maintenance (bool)             -- boolean to specify whether to run db
-            maintenance not
-
-                default: True
-
-            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
-            maintenance release of that client FR, if present in cache
-
-            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            client_computers (list, optional): Client machines to install service pack on. Defaults to None.
+            client_computer_groups (list, optional): Client groups to install service pack on. Defaults to None.
+            all_client_computers (bool, optional): boolean to specify whether to install on all client computers or not. Defaults to False.
+            all_client_computer_groups (bool, optional): boolean to specify whether to install on all client computer groups or not. Defaults to False.
+            reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
+            run_db_maintenance (bool, optional): boolean to specify whether to run db maintenance not. Defaults to True.
+            maintenance_release_only (bool, optional): for clients of feature releases lesser than CS, this option maintenance release of that client FR, if present in cache. Defaults to False.
+            **kwargs (dict): Key value pairs for supporting conditional initializations
                 Supported -
                 schedule_pattern        (dict)      -- Request JSON for scheduling the operation
                 install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
 
         Returns:
-            object - instance of the Job/Task class for this download
+            Job or Schedules: instance of the Job/Schedules class for this download
 
         Raises:
-                SDKException:
-                    if schedule is not of type dictionary
+            SDKException:
+                if schedule is not of type dictionary
 
-                    if Download job failed
+                if Download job failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-                    if another download job is already running
+                if another download job is already running
 
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
@@ -404,62 +387,41 @@ class Install(object):
 
     def install_software(
             self,
-            client_computers=None,
-            windows_features=None,
-            unix_features=None,
-            username=None,
-            password=None,
-            install_path=None,
-            log_file_loc=None,
-            client_group_name=None,
-            storage_policy_name=None,
-            sw_cache_client=None,
-            **kwargs):
+            client_computers: list = None,
+            windows_features: list = None,
+            unix_features: list = None,
+            username: str = None,
+            password: str = None,
+            install_path: str = None,
+            log_file_loc: str = None,
+            client_group_name: list = None,
+            storage_policy_name: str = None,
+            sw_cache_client: str = None,
+            **kwargs) -> Job:
         """
         Installs the features selected on the given machines
         Args:
-
             client_computers    (list)      -- list of hostnames/IP address to install the
-            features on
-
-                default : None
-
+                                                features on
+                                                default : None
             windows_features (list of enum) -- list of windows features to be installed
-
-                default : None
-
+                                                default : None
             unix_features (list of enum)    -- list of unix features to be installed
-
-                default : None
-
+                                                default : None
             username    (str)               -- username of the machine to install features on
-
-                default : None
-
+                                                default : None
             password    (str)               -- base64 encoded password
-
-                default : None
-
+                                                default : None
             install_path (str)              -- Install to a specified path on the client
-
-                 default : None
-
+                                                 default : None
             log_file_loc (str)              -- Install to a specified log path on the client
-
-                 default : None
-
+                                                 default : None
             client_group_name (list)        -- List of client groups for the client
-
-                 default : None
-
+                                                 default : None
             storage_policy_name (str)       -- Storage policy for the default subclient
-
-                 default : None
-
+                                                 default : None
             sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
-
-                default : None (Use CS Cache by default)
-
+                                                default : None (Use CS Cache by default)
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
             commserv_name (str) - Name of the CommServe (if user doesn't have view permission on CommServe)
@@ -525,7 +487,7 @@ class Install(object):
 
 
         Returns:
-                object - instance of the Job class for this install_software job
+                Job - instance of the Job class for this install_software job
 
         Raises:
             SDKException:
@@ -551,7 +513,7 @@ class Install(object):
                                 unix_features=None,
                                 username='username',
                                 password='password',
-                                install_path='C:\\Temp,
+                                install_path='C:\\Temp',
                                 log_file_loc='/var/log',
                                 client_group_name=[My_Servers],
                                 storage_policy_name='My_Storage_Policy',

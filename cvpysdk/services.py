@@ -47,9 +47,11 @@ SERVICES_DICT_TEMPLATE = {
     'COMMSERV': '{0}CommServ',
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
     'WHO_AM_I': '{0}WhoAmI',
-    'CREATE_RC': '{0}V4/SoftwareCache',
+    'SOFTWARE_CACHE': '{0}V4/SoftwareCache',
+    'QUALIFIED_SERVERS_SW': '{0}v4/SoftwareCache/QualifiedServers',
     'DOWNLOAD_SOFTWARE': '{0}V4/DownloadSoftware',
     'UPGRADE_SOFTWARE': '{0}V4/UpgradeSoftware',
+    'AVAILABLE_PACKAGES': '{0}V4/commcell/available-packages',
 
     'TFA': '{0}Commcell/Properties/TwoFactorAuth',
     'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
@@ -80,6 +82,7 @@ SERVICES_DICT_TEMPLATE = {
     'READ_TRUEUP_RESULTS_CLIENT': '{0}Job/Office365/Results?subclientId=%s&clientId=%s&appTypeId=134&options=4',
     'READ_TRUEUP_RESULTS_USER': '{0}Job/Office365/Results?subclientId=%s&clientId=%s&options=3&appTypeId=134&userGUID=%s',
     'MONGODB_CHECK_READINESS': '{0}/clients/mongodb/status',
+    'MACHINE_BROWSE': '{0}Client/%s/Action/MachineBrowse',
     'CLIENT_BROWSE_FS': '{0}/client/%s/browsefs',
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
@@ -126,6 +129,7 @@ SERVICES_DICT_TEMPLATE = {
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
     'EDIT_CLOUD_CONTROLLER': '{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
     'GET_AGP_STORAGE': '{0}V4/Storage/Cloud?additionalProperties=true&storageSubType=4',
+    'DELETE_DEVICE_CONTROLLER': '{0}DriveController?action=deleteController',
 
     'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
     'MOVE_MOUNTPATH': '{0}MountPath/Move',
@@ -361,12 +365,16 @@ SERVICES_DICT_TEMPLATE = {
     'V4_DC_PLANS': '{0}V4/DCPlan',
     'V4_DC_PLAN': '{0}V4/DCPlan/%s',
     'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
+    'V5_SERVER_PLAN_COPY_CLONE': '{0}V5/ServerPlan/%s/BackupDestination/%s/Clone',
+    'V5_LAPTOP_PLAN_COPY_CLONE': '{0}V5/LaptopPlan/%s/BackupDestination/%s/Clone',
+    'V5_ARCHIVER_PLAN_COPY_CLONE': '{0}V5/ArchivePlan/%s/BackupDestination/%s/Clone',
     'SERVER_PLAN_REGIONS': '{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true',
     'SERVER_PLAN_RPO': '{0}V4/ServerPlan/%s/RPO',
     'SERVER_PLAN_RPO_RUN': '{0}V4/ServerPlan/%s/RPO/Run',
 
     # API Documentation: Manage > Plan Operations
     'V4_JOB_OPERATIONS_ON_STORAGE_COPY': '{0}V4/Plan/BackupDestination/JobOperations',
+    'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS': '{0}V4/Plan/%s/BackupDestination/%s/BackupCopy/Jobs',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -750,6 +758,12 @@ SERVICES_DICT_TEMPLATE = {
     'SET_ADDITIONAL_SETTINGS': '{0}v4/workload/AdditionalSettings',
 
     'GLOBAL_MONGODB_STATUS': '{0}/v4/globalmongodb/status',
+    
+    'MEDIA_IN_TAPE': '{0}/V4/Library/%s/Media?filterMediaType=%s&isExported=%s',
+
+    'MEDIA_OPERATION': '{0}/V4/Storage/Tape/%s/Media',
+    
+    'DRIVE_OPERATION': '{0}/DriveOperations'
 
 }
 

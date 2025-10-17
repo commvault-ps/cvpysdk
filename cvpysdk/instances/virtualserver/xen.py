@@ -41,7 +41,10 @@ XenInstance:
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...agent import Agent
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class Xen(VirtualServerInstance):
@@ -62,7 +65,7 @@ class Xen(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
         """Initialize the Xen Instance object for a given Virtual Server instance.
 
         Args:

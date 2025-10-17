@@ -23,7 +23,6 @@ KubernetesInstance is the only class defined in this file.
 KubernetesInstance:     Derived class from VirtualServer  Base class, representing a
                         Kubernetes instance, and to perform operations on that instance
 
-
 KubernetesInstance:
 
     __init__(
@@ -46,9 +45,11 @@ KubernetesInstance:
 
 """
 
-from typing import *
-
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class KubernetesInstance(VirtualServerInstance):
@@ -66,7 +67,7 @@ class KubernetesInstance(VirtualServerInstance):
 
     """
 
-    def __init__(self, agent_object: object, instance_name: str, instance_id: Optional[int] = None) -> None:
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: Optional[int] = None) -> None:
         """Initialize the Instance object for the given Virtual Server instance.
 
         Args:

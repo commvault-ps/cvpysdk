@@ -16,7 +16,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""File for operating on a Cloud Apps Instance.
+"""File for operating on Cloud Apps Instance.
 
 CloudAppsInstance is the only class defined in this file.
 
@@ -57,11 +57,45 @@ from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
+
 
 class CloudAppsInstance(Instance):
-    """Class for representing an Instance of the Cloud Apps agent."""
+    """
+    Represents an instance of the Cloud Apps agent.
 
-    def __new__(cls, agent_object, instance_name, instance_id):
+    This class is responsible for encapsulating the details of a Cloud Apps agent instance,
+    including its association with a specific agent object, instance name, and instance ID.
+    It provides a specialized constructor for creating new Cloud Apps agent instances.
+
+    Key Features:
+        - Represents a Cloud Apps agent instance
+        - Associates with an agent object, instance name, and instance ID
+        - Custom instantiation logic via __new__
+
+    #ai-gen-doc
+    """
+
+    def __new__(cls, agent_object: 'Agent', instance_name: str, instance_id: int) -> object:
+        """Create and return a new instance of the CloudAppsInstance class.
+
+        Args:
+            agent_object: The agent object associated with this instance.
+            instance_name: The name of the cloud application instance.
+            instance_id: The unique identifier for the instance.
+
+        Returns:
+            A new CloudAppsInstance object.
+
+        Example:
+            >>> instance = CloudAppsInstance(agent_object, "MyCloudApp", 101)
+            >>> print(instance)
+            <CloudAppsInstance object at 0x...>
+
+        #ai-gen-doc
+        """
         from .cloudapps.google_instance import GoogleInstance
         from .cloudapps.salesforce_instance import SalesforceInstance
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
@@ -79,23 +113,23 @@ class CloudAppsInstance(Instance):
             1: GoogleInstance,
             2: GoogleInstance,
             3: SalesforceInstance,
-            4: AmazonRDSInstance,     # Amazon RDS Instance
+            4: AmazonRDSInstance,  # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
-            7: OneDriveInstance,      # OneDrive Instance
+            7: OneDriveInstance,  # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
             21: CloudStorageInstance,  # azure data lake gen2
-            26: AmazonRedshiftInstance, # Amazon Redshift
-            27: AmazonDocumentDBInstance, # Amazon Document DB
-            25: CloudStorageInstance,   #AliBaba
-            24: CloudStorageInstance,   #IBM
-            22: AmazonDynamoDBInstance, # Amazon DynamoDB
-            35: MSDynamics365Instance,   #  MS Dynamics 365 Instance
-            36: TeamsInstance, # Office 365 Teams
-			37: GoogleSpannerInstance, # Google Cloud Spanner Instance
-            44: AzureCosmosDBInstance # Azure Cosmos DB Cloud Apps Instance
+            26: AmazonRedshiftInstance,  # Amazon Redshift
+            27: AmazonDocumentDBInstance,  # Amazon Document DB
+            25: CloudStorageInstance,  # AliBaba
+            24: CloudStorageInstance,  # IBM
+            22: AmazonDynamoDBInstance,  # Amazon DynamoDB
+            35: MSDynamics365Instance,  # MS Dynamics 365 Instance
+            36: TeamsInstance,  # Office 365 Teams
+            37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
+            44: AzureCosmosDBInstance  # Azure Cosmos DB Cloud Apps Instance
         }
 
         commcell_object = agent_object._commcell_object

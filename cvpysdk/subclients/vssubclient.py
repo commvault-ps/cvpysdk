@@ -443,6 +443,9 @@ class VirtualServerSubclient(Subclient):
                         temp['value'] = item['display_name']
                         temp['displayName'] = item['display_name']
                         temp['name'] = "Notes"
+                    if item['type'] == VSAObjects.Tag:
+                        temp['name'] = item['name']
+                        temp['displayName'] = item['name']
                     if (item['type'] ==
                             VSAObjects.VMPowerState and
                             item['state'] == 'true'):
@@ -1008,6 +1011,11 @@ class VirtualServerSubclient(Subclient):
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
+
+            # setting nics for Proxmox instance
+            if value.get('destination_instance').lower() == HypervisorType.PROXMOX.value.lower():
+                nics["networkName"] = network_card_dict['name']
+                nics["name"] = ''
 
             # setting nics for azureRM instance
             if value.get('destination_instance').lower() == HypervisorType.AZURE_V2.value.lower():

@@ -30,8 +30,11 @@ GoogleCloudInstance:
 
 """
 
-from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class GoogleCloudInstance(VirtualServerInstance):
@@ -50,7 +53,7 @@ class GoogleCloudInstance(VirtualServerInstance):
 
     #ai-gen-doc
     """
-    def __init__(self, agent: Agent, name: str, iid: str) -> None:
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
         """Initialize a GoogleCloudInstance object with the specified agent, name, and instance ID.
 
         Args:

@@ -689,22 +689,60 @@ class StoragePoolConstants:
 
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         "MICROSOFT AZURE STORAGE": {
-            "HOT": {
+            "FREQUENT ACCESS": {
                 "vendorId": 3,
                 "displayVendorId": 401,
             },
-
-            "COOL": {
+            "INFREQUENT ACCESS": {
                 "vendorId": 3,
                 "displayVendorId": 402,
             },
+            "ARCHIVE": {
+                "vendorId": 3,
+                "displayVendorId": 414,
+            }
         },
-
         "ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE": {
+            "FREQUENT ACCESS": {
+                "vendorId": 26,
+                "displayVendorId": 403,
+            },
             "INFREQUENT ACCESS": {
                 "vendorId": 26,
                 "displayVendorId": 404,
             },
+            "ARCHIVE": {
+                "vendorId": 26,
+                "displayVendorId": 444,
+            }
+        },
+        "GOOGLE CLOUD STORAGE": {
+            "FREQUENT ACCESS": {
+                "vendorId": 19,
+                "displayVendorId": 482,
+            },
+            "INFREQUENT ACCESS": {
+                "vendorId": 19,
+                "displayVendorId": 483,
+            },
+            "ARCHIVE": {
+                "vendorId": 19,
+                "displayVendorId": 484,
+            }
+        },
+        "AMAZON S3": {
+            "FREQUENT ACCESS": {
+                "vendorId": 2,
+                "displayVendorId": 451,
+            },
+            "INFREQUENT ACCESS": {
+                "vendorId": 2,
+                "displayVendorId": 452,
+            },
+            "ARCHIVE": {
+                "vendorId": 2,
+                "displayVendorId": 456,
+            }
         }
     }
 
@@ -855,4 +893,56 @@ workload_mapping = {
             "DB": "Database"
         }
 
-
+threat_detection_plan_json = {
+            "application": "",
+            "contentIndexing": {
+                "fileFilters": {
+                    "excludePaths": [],
+                    "includeDocTypes": "*",
+                    "maxDocSize": 50,
+                    "minDocSize": 0
+                }
+            },
+            "indexServer": {
+                "id": ""
+            },
+            "name": "",
+            "schedule": {
+                "name": "Run scan every 1 day at 9:00 PM",
+                "pattern": {
+                    "frequency": 1,
+                    "scheduleFrequencyType": "DAILY",
+                    "startTime": 75600
+                }
+            },
+            "threatIndicator": {
+                "accessNodesInfo": {},
+                "threatDetection": {
+                    "backupSize": False,
+                    "canaryFile": False,
+                    "fileActivity": False,
+                    "fileExtension": False,
+                    "fileType": False
+                },
+                "threatNexus": {
+                    "cspm_dspm": {
+                        "acante": False,
+                        "dasera": False
+                    },
+                    "networkAndDataSecurity": {
+                        "crowdstrike": False,
+                        "darktrace": False,
+                        "netskope": False
+                    },
+                    "soar": {
+                        "msSentinel": False,
+                        "paloAlto_XSOAR": False,
+                        "splunk": False
+                    }
+                },
+                "threatScan": {
+                    "fileDataAnalysis": False,
+                    "threatAnalysis": False
+                }
+            }
+        }

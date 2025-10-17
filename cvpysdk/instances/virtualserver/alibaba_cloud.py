@@ -41,8 +41,11 @@ AlibabaCloudInstance:
 
 """
 
-from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AlibabaCloudInstance(VirtualServerInstance):
@@ -62,7 +65,7 @@ class AlibabaCloudInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: Agent, instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
         """Initialize an AlibabaCloudInstance object for a specific Virtual Server instance.
 
         Args:

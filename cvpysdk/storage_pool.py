@@ -133,9 +133,9 @@ from enum import IntEnum, IntFlag
 
 if TYPE_CHECKING:
     from .commcell import Commcell
-    from .policies.storage_policies import StoragePolicyCopy
 
 from .exception import SDKException
+from .policies.storage_policies import StoragePolicyCopy
 
 from .storage import MediaAgent
 from .security.security_association import SecurityAssociation
@@ -628,6 +628,13 @@ class StoragePools:
         """
         license_type_dict = StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES
         error_message = ""
+
+        # to support backward compatibility
+        if storage_class.upper() == "HOT":
+            storage_class="FREQUENT ACCESS"
+        elif storage_class.upper() == "COOL":
+            storage_class="INFREQUENT ACCESS"
+
         if storage_type.upper() in license_type_dict:
             available_storage_classes = license_type_dict[storage_type.upper()]
             if storage_class.upper() in available_storage_classes:

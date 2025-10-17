@@ -617,9 +617,10 @@ class ClientGroups(object):
 
         client_group_cache = {}
         if response.json() and 'groups' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount',0)
+            self.filter_query_count = response.json().get('filterQueryCount', 0)
             for group in response.json()['groups']:
                 name = group.get('name')
+                company_name = None
                 client_group_config = {
                     'name': name,
                     'id': group.get('Id'),
@@ -627,11 +628,17 @@ class ClientGroups(object):
                 }
                 if 'clientGroup' in group:
                     if 'companyName' in group.get('clientGroup', {}).get('entityInfo', {}):
-                        client_group_config['companyName'] = group.get('clientGroup', {}).get('entityInfo', {}).get(
-                            'companyName')
+                        company_name = group.get('clientGroup', {}).get('entityInfo', {}).get('companyName')
+                        client_group_config['companyName'] = company_name
                     if 'tags' in group.get('clientGroup', {}):
                         client_group_config['tags'] = group.get('clientGroup', {}).get('tags')
-                client_group_cache[name] = client_group_config
+
+                # Ensure unique key
+                unique_name = name
+                if name in client_group_cache and company_name:
+                    unique_name = f"{name}_{company_name}"
+
+                client_group_cache[unique_name] = client_group_config
 
             return client_group_cache
         else:

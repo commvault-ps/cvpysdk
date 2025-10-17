@@ -47,7 +47,7 @@ INSTANCES = {
 
 RecoveryDestinationVendor = {
     7 : 'azure',
-    4 : 'amazon'
+    1 : 'amazon'
 }
 
 class RecoveryStatus(Enum):
@@ -297,6 +297,7 @@ class RecoveryEntity:
         self._destination_instance_object = None
 
         self._recovery_config_dict = None
+        self._recovery_image = None
 
         self._properties = None
 
@@ -386,6 +387,7 @@ class RecoveryEntity:
                 self._recovery_config_dict = {
                      self._properties['name']: self._properties['recoveryConfiguration']['configuration'][RecoveryDestinationVendor[self._recovery_target.policy_type]]
                 }
+                self._recovery_image = self._properties.get('recoveryConfiguration', {}).get('imageDetails', {}).get('vmTemplate', {}).get('name')
 
             except JSONDecodeError:
                 raise SDKException('Response', '101', 'Failed to decode JSON from the response.')
@@ -667,6 +669,23 @@ class RecoveryEntity:
         #ai-gen-doc
         """
         return self._recovery_config_dict
+
+    @property
+    def recovery_image(self) -> str:
+        """Get the recovery image associated with this recovery entity.
+
+        Returns:
+            str: The name of the recovery image used for this entity.
+
+        Example:
+            >>> entity = RecoveryEntity()
+            >>> image = entity.recovery_image
+            >>> print(f"Recovery image: {image}")
+
+        #ai-gen-doc
+        """
+        return self._recovery_image
+
 
     @property
     def check_entity_id(self) -> bool:

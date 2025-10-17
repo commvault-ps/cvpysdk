@@ -74,6 +74,8 @@ Plans
 
     get_plans_cache()           --  Returns plan cache in response
 
+     create_threat_detection_plan() --  Creates a new threat detection plan in the commcell
+
 Attributes
 ----------
 
@@ -136,6 +138,8 @@ Plan
 
     edit_copy()                 --  method to edit a copy of the plan
 
+    clone_copy()                --  method to clone a copy of the plan
+
     delete_copy()               --  method to delete a copy from the plan
 
     add_region()                --  method to add a region to the plan
@@ -159,6 +163,9 @@ Plan
     enable_log_backup_to_disk() --  Enables log backup to disk on the plan
 
     disable_log_backup_to_disk()--  Disables log backup to disk on the plan
+
+    update_threat_detection_plan() --  Update threat detection plan options
+
 
 Plan Attributes
 ----------------
@@ -218,6 +225,7 @@ from enum import Enum
 from typing import List, Dict, Union, Any, Optional, TYPE_CHECKING
 import math
 
+from .constants import threat_detection_plan_json
 from .exception import SDKException
 from .security.security_association import SecurityAssociation
 from .activateapps.constants import TargetApps, PlanConstants
@@ -226,6 +234,7 @@ from .policies.schedule_policies import SchedulePolicy
 
 if TYPE_CHECKING:
     from .commcell import Commcell
+    from .policies.storage_policies import StoragePolicyCopy
 
 from functools import reduce
 ARCHIVER_PLAN_MIN_RETENTION = 1825  # 5 years in days
@@ -259,6 +268,39 @@ class PlanTypes(Enum):
     DC = 7
     EDISCOVERY = 8
     ARCHIVER = 9
+
+class PlanSubTypes(Enum):
+    """Class Enum to represent different plan subtypes
+    
+    Attributes:
+        SERVER: Represents the Server plan subtype
+        SERVER_FS: Represents the Server plan File System subtype
+        SERVER_VSA: Represents the Server plan VSA subtyoe
+        LAPTOP: Represents the Laptop Plan subtype
+        DATABASE: Represents the Database Plan subtype
+        EXCHANGE_USER: Represents the Exchange Plan User subtype
+        EXCHANGE_JOUNRAL: Represents the Exchange Plan Journal subtype
+        OFFICE_365: Represents the Office 365 Plan subtype
+        DYNAMICS_365: Represents the Dynamics 365 Plan subtype
+        DATA_CLASSIFICATION: Represents the Data Classification Plan subtype
+        ARCHIVER: Represents the Archiver Plan subtype
+    
+    Usage:
+        >>> plan_subtype = PlanSubTypes.SERVER_FS
+        >>> print(plan_subtype.value)
+        50331655
+    """
+    SERVER = 33554437
+    SERVER_FS = 50331655
+    SERVER_VSA = 83886085
+    LAPTOP = 33554439
+    DATABASE = 33579013
+    EXCHANGE_USER = 100859907
+    EXCHANGE_JOURNAL = 100794372
+    OFFICE_365 = 100859937
+    DYNAMICS_365 = 100794391
+    DATA_CLASSIFICATION = 117506053
+    ARCHIVER = 150994951
 
 class _PayloadGeneratorPlanV4:
     """Class to provide payload for creating/modifying server plans using V4 API.
@@ -2491,6 +2533,124 @@ class Plans(object):
         self._all_plans_props = self._get_plans(full_response=True).get("plans",[])
         return self._all_plans_props
 
+    def create_threat_detection_plan(self, plan_name, index_server_name, access_nodes=None, storage_policy=None,
+                                     anomaly_detection_flag=False, FDA_flag=True, TA_flag=True, yara_rules=None,
+                                     **kwargs):
+        """Creates a Threat Detection Plan for Indexing
+
+        Args:
+            plan_name (str) : Name of the plan to be created
+            index_server_name (str) : Index server name
+            access_nodes (list) : List of access nodes to be added to the plan
+            storage_policy (str) : Storage policy name for the plan
+            anomaly_detection_flag (bool) : Flag to enable anomaly detection
+            FDA_flag (bool) : Flag to enable file data analysis(encryption detection)
+            TA_flag (bool) : Flag to enable threat analysis(malware detection)
+            yara_rules (list) : List of YARA rules to be added to the plan
+
+        Raises:
+            SDKException: If any of the input parameters are incorrect or if the plan creation fails
+            SDKException: If the index server does not exist
+            SDKException: If at least none of anomaly detection, FDA or TA is enabled
+
+        """
+        if not isinstance(plan_name, str):
+            raise SDKException('Plan', '102', 'Plan name should be passed as String')
+
+        if not isinstance(index_server_name, str):
+            raise SDKException('Plan', '102', 'Index server name should be passed as String')
+
+        if not anomaly_detection_flag and not FDA_flag and not TA_flag:
+            raise SDKException('Plan', '102', 'At least one of the anomaly detection, FDA or TA must be enabled')
+
+        index_server_id = self._commcell_object.index_servers.get(index_server_name).index_server_client_id
+        request_json = copy.deepcopy(threat_detection_plan_json)
+        request_json["application"] = PlanTypes.DC.value
+        request_json["name"] = plan_name
+        request_json["indexServer"]["id"] = index_server_id
+        if anomaly_detection_flag:
+            request_json["threatIndicator"]["threatDetection"]["backupSize"] = anomaly_detection_flag
+            request_json["threatIndicator"]["threatDetection"]["canaryFile"] = anomaly_detection_flag
+            request_json["threatIndicator"]["threatDetection"]["fileActivity"] = anomaly_detection_flag
+            request_json["threatIndicator"]["threatDetection"]["fileExtension"] = anomaly_detection_flag
+            request_json["threatIndicator"]["threatDetection"]["fileType"] = anomaly_detection_flag
+
+        if FDA_flag:
+            request_json["threatIndicator"]["threatScan"]["fileDataAnalysis"] = FDA_flag
+
+        if TA_flag:
+            request_json["threatIndicator"]["threatScan"]["threatAnalysis"] = TA_flag
+
+        request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
+            'include_docs', "*")
+        request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
+            'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
+        request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
+            'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
+        request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+
+        if access_nodes:
+            access_nodes_list = []
+            for access_node in access_nodes:
+                access_node_id = int(self._commcell_object.clients.get(access_node).client_id)
+                access_nodes_list.append({
+                    "id": access_node_id,
+                    "name": access_node,
+                    "selected": True
+                })
+            request_json["threatIndicator"]["accessNodesInfo"]["accessNodes"] = access_nodes_list
+
+        if storage_policy:
+            backup_copy_list = []
+            storage_policy_id = int(self._commcell_object.storage_policies.get(storage_policy).storage_policy_id)
+
+            backup_copy_list.append({
+                "storagePolicyId": storage_policy_id
+            })
+            request_json["contentIndexing"]["backupCopy"] = backup_copy_list
+
+        if yara_rules:
+            request_json["threatIndicator"]["threatScan"]["yaraRules"] = yara_rules
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._V4_DC_PLANS, request_json
+        )
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = 0
+
+                if 'errors' in response_value:
+                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
+                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
+
+                if error_code > 1:
+                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Plan', '102', o_str)
+
+                if 'plan' in response_value:
+                    plan_name = response_value['plan']['name']
+                    # initialize the plans again
+                    self.refresh()
+
+                    return self.get(plan_name)
+                else:
+                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
+                             'Please check the documentation for '
+                             'more details on the error').format(error_code)
+
+                    raise SDKException('Plan', '102', o_str)
+            else:
+                raise SDKException('Response', 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+
 class Plan(object):
     """Class for performing operations for a specific Plan.
 
@@ -2574,6 +2734,9 @@ class Plan(object):
         self._PLAN = self._services['PLAN'] % (self.plan_id)
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
         self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
+        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE'] 
+        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE'] 
+        self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services['V5_ARCHIVER_PLAN_COPY_CLONE'] 
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
         self._PLAN_RPO_RUN = self._services['SERVER_PLAN_RPO_RUN'] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
@@ -2735,7 +2898,7 @@ class Plan(object):
                                 self._storage_copies[
                                     copy['StoragePolicyCopy']['copyName']]['isSnapCopy'] = True
 
-                if self._subtype == 33554439:
+                if self._subtype == PlanSubTypes.LAPTOP.value:
                     if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
                         self._commcell_object.client_groups.refresh()
                         self._client_group = self._commcell_object.client_groups.get(
@@ -3057,7 +3220,7 @@ class Plan(object):
                 elif 1 in self._override_entities['privateEntities']:
                     request_json['plan']['definesStorage']['overrideEntity'] = 1
 
-            if self._subtype != 33554437:
+            if self._subtype != PlanSubTypes.SERVER.value:
                 temp_defines_key = {
                     'definesEntity': False
                 }
@@ -3077,7 +3240,7 @@ class Plan(object):
                 request_json['plan']['laptop']['content']['definesSubclientMac'] = temp_defines_key
                 request_json['plan']['laptop']['content']['definesSubclientWin'] = temp_defines_key
 
-            if self._subtype == 33554437 and 'snap' in self.addons and 'copy' \
+            if self._subtype == PlanSubTypes.SERVER.value and 'snap' in self.addons and 'copy' \
                     in request_json['plan']['storage']:
                 request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
                     'storagePolicyId': snap_copy_id
@@ -3278,26 +3441,36 @@ class Plan(object):
             # copy_details = plan_object.get_storage_copy_details('copy1', 'region1')
             pass
         """
-        backup_destinations = self._v4_plan_properties.get('backupDestinations', [])
+        if self.subtype == PlanSubTypes.SERVER.value: #Server Plan subtype, V4 Plan properties only work for Server plans. Other plans need to use default plan properties
+            backup_destinations = self._v4_plan_properties.get('backupDestinations', [])
 
-        # Filter by region name
-        if region_name:
-            backup_destinations = list(filter(lambda item: item.get('region', {}).get("name") == region_name, backup_destinations))
+            # Filter by region name
+            if region_name:
+                backup_destinations = list(filter(lambda item: item.get('region', {}).get("name") == region_name, backup_destinations))
 
-        # Filter by copy name
-        if copy_name:
-            backup_destinations = list(filter(lambda item: item.get('planBackupDestination', {}).get("name") == copy_name, backup_destinations))
+            # Filter by copy name
+            if copy_name:
+                backup_destinations = list(filter(lambda item: item.get('planBackupDestination', {}).get("name") == copy_name, backup_destinations))
 
-        if not backup_destinations:
-            raise SDKException('Plan', '102', f'No copy found with name: [{copy_name}] and region: [{region_name}]')
+            if not backup_destinations:
+                raise SDKException('Plan', '102', f'No copy found with name: [{copy_name}] and region: [{region_name}]')
 
-        if len(backup_destinations) > 1:
-            raise SDKException('Plan', '102', f'Multiple copies found with name: [{copy_name}] and region: [{region_name}]')
+            if len(backup_destinations) > 1:
+                raise SDKException('Plan', '102', f'Multiple copies found with name: [{copy_name}] and region: [{region_name}]')
 
-        copy_details = next(iter(backup_destinations), None)
+            copy_details = next(iter(backup_destinations), None)
+
+        else: #Any other subtype like Laptop and Archiver Plan
+            backup_destinations = self._properties.get('storage', {}).get('copy', [])
+            if copy_name:
+                backup_destinations = list(filter(lambda item: item.get('StoragePolicyCopy', {}).get("copyName") == copy_name, backup_destinations))
+            if not backup_destinations:
+                raise SDKException('Plan', '102', f'No copy found with name: [{copy_name}]')
+            if len(backup_destinations) > 1:
+                raise SDKException('Plan', '102', f'Multiple copies found with name: [{copy_name}]')
+            copy_details = next(iter(backup_destinations), None)
 
         return copy.deepcopy(copy_details) # return a deep copy to avoid modifying the original properties
-
 
     def get_storage_copy_id(self, copy_name: str, region_name: Optional[str] = None) -> int:
         """Gets the storage copy id of the given copy name
@@ -3318,6 +3491,8 @@ class Plan(object):
             pass
         """
         copy_details = self.get_storage_copy_details(copy_name, region_name)
+        if self.subtype != PlanSubTypes.SERVER.value: #For non-server plans
+            return copy_details.get('StoragePolicyCopy', {}).get('copyId', 0) if copy_details else 0
         return copy_details.get('planBackupDestination', {}).get('id', 0) if copy_details else 0
 
     def add_copy(self, copy_name: str, storage_pool: str, retention: int=30, extended_retention: dict=None, region: str=None) -> None:
@@ -3423,6 +3598,45 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to edit copy settings for the plan : [{self.plan_name}] Copy: [{copy_name}] Region: [{current_region_name}]')
 
+    def clone_copy(self, source_copy_name: str,  new_copy_name: str, storage_pool_name: str, source_region: str=None) -> 'StoragePolicyCopy':
+        """
+        Method to clone an existing copy in the plan
+
+        Args:
+            source_copy_name (str)   -   name of the copy that is being cloned
+            new_copy_name (str)      -   name of the new copy that is being created
+            storage_pool_name (str)  -   name of the storage pool that is to be used for the new copy
+            source_region (str)      -   name of the region from which the copy needs to be cloned  
+        """
+        source_copy_id = self.get_storage_copy_id(source_copy_name, source_region)
+        storage_pool_id = self._commcell_object.storage_pools.get(storage_pool_name).storage_pool_id
+        api_storage_pool_name = self._commcell_object.storage_pools.get(storage_pool_name).storage_pool_name
+        request_json = {
+                "backupDestinationName": new_copy_name,
+                "storage": {
+                    "id": int(storage_pool_id),
+                    "name": api_storage_pool_name
+            },
+                "cloneFromBackupDestination": {
+                    "id": source_copy_id,
+                    "name": source_copy_name
+            }
+        }
+        if self.plan_type == int(PlanTypes.ARCHIVER.value):
+            flag, response = self._cvpysdk_object.make_request('POST', self._V5_ARCHIVER_PLAN_COPY_CLONE % (self.plan_id, source_copy_id), request_json)
+        elif self.plan_type == int(PlanTypes.MSP.value):
+            if self.subtype in (PlanSubTypes.SERVER_VSA.value, PlanSubTypes.SERVER.value): #Server Plan subtypes
+                flag, response = self._cvpysdk_object.make_request('POST', self._V5_SERVER_PLAN_COPY_CLONE % (self.plan_id, source_copy_id), request_json)
+            elif self.subtype == PlanSubTypes.LAPTOP.value: #Laptop Plan subtype
+                flag, response = self._cvpysdk_object.make_request('POST', self._V5_LAPTOP_PLAN_COPY_CLONE % (self.plan_id, source_copy_id), request_json)
+            else:
+                raise SDKException('Plan', '102', f'Clone copy not supported for the plan subtype: [{PlanSubTypes(self.subtype).name}]')
+        else:
+            raise SDKException('Plan', '102', f'Clone copy not supported for the plan type: [{PlanTypes(self.plan_type).name}]')
+        
+        self.__handle_response(flag, response, custom_error_message=f'Failed to clone copy for the plan : [{self.plan_name}] Source Copy: [{source_copy_name}]')
+        self.refresh()
+        return self.storage_policy.get_copy(new_copy_name)
 
     def delete_copy(self, copy_name: str, region_name: str=None) -> None:
         """Method to remove a copy from the plan
@@ -3916,7 +4130,7 @@ class Plan(object):
             plan.plan_name = "New Plan Name"
         """
         # use v4 API for server plans
-        if self.subtype == 33554437:
+        if self.subtype == PlanSubTypes.SERVER.value:
             req_json = {
                 "newName": value
             }
@@ -4499,7 +4713,7 @@ class Plan(object):
         self._properties = self._get_plan_properties()
 
         # fetch v4 properties for server plans
-        if self.subtype == 33554437:
+        if self.subtype == PlanSubTypes.SERVER.value:
             self._v4_plan_properties = self._get_v4_plan_properties()
 
         # lazy loading of properties
@@ -5279,3 +5493,35 @@ class Plan(object):
             raise SDKException(
                 'Plan', 102, f"Failed to disable log backup to disk for plan '{self.plan_name}'")
 
+    def update_threat_detection_plan(self, malware_detection = True, encryption_detection = True, anomaly_detection = True):
+        """Update the threat detection plan
+        Args:
+            malware_detection (bool) : Enable or disable malware detection
+            encryption_detection (bool) : Enable or disable encryption detection
+            anomaly_detection (bool) : Enable or disable anomaly detection
+
+            Set True to enable and False to disable the respective detection
+        """
+        if not malware_detection and not encryption_detection and not anomaly_detection:
+            raise SDKException('Plan', '102', 'At least one detection type must be enabled')
+        request_json = {
+            "threatIndicator": {
+                "threatScan": {
+                    "threatAnalysis": malware_detection,
+                    "fileDataAnalysis": encryption_detection
+                },
+                "threatDetection": {
+                    "fileActivity": anomaly_detection,
+                    "backupSize": anomaly_detection,
+                    "fileType": anomaly_detection,
+                    "canaryFile": anomaly_detection,
+                    "fileExtension": anomaly_detection
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_DC_PLAN, request_json)
+
+        self.__handle_response(flag, response,
+                               custom_error_message='Failed to update threat detection plan : '
+                                                    f'[{self.plan_name}]')

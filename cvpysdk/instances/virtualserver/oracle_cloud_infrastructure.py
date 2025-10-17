@@ -13,7 +13,6 @@ VMwareInstance is the only class defined in this file.
 VMwareInstance:     Derived class from VirtualServer  Base class, representing a
                         VMware instance, and to perform operations on that instance
 
-
 VMwareInstance:
 
     __init__(
@@ -31,8 +30,11 @@ VMwareInstance:
 
 """
 
-from ...agent import Agent
 from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class OracleCloudInfrastructureInstance(VirtualServerInstance):
@@ -53,7 +55,7 @@ class OracleCloudInfrastructureInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: Agent, instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
         """Initialize an OracleCloudInfrastructureInstance object for a Virtual Server instance.
 
         Args:
