@@ -137,7 +137,8 @@ EXCEPTION_DICT = {
         '104': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
         '105': 'Invalid days/cycles value. Please provide an integer value >= 2.',
         '106': 'IndexServer value should be a client object',
-        '107': 'No result found for the given input'
+        '107': 'No result found for the given input',
+        '108': 'No data found at the path specified',
     },
     'Instance': {
         '101': 'Data type of the input(s) is not valid',

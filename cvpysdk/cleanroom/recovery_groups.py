@@ -662,6 +662,26 @@ class RecoveryGroup:
         return self._destination_instance_object
 
     @property
+    def is_post_recovery_actions_configured(self) -> bool:
+        """Check if post recovery actions are configured at the recovery group level.
+
+        Returns:
+            True if one or more post recovery actions are configured, False otherwise.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> if rg.is_post_recovery_actions_configured:
+            ...     print("Post recovery actions are configured.")
+            ... else:
+            ...     print("No post recovery actions configured.")
+
+        #ai-gen-doc
+        """
+        post_actions = self._properties['recoveryGroup'].get('postRecoveryActions', [])
+        return bool(post_actions)  # True if list is non-empty
+
+
+    @property
     def autoscale_enabled(self):
         """Returns boolean if autoscale enabled or not"""
         return self._properties['recoveryGroup']['useAutoScale']

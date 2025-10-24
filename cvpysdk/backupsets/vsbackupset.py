@@ -289,7 +289,7 @@ class VSBackupset(Backupset):
                         return [], {}
 
                 if not result_set:
-                    raise SDKException('Backupset', '110', "Failed to browse for subclient backup content")
+                    raise SDKException('Backupset', '108', "Failed to browse for subclient backup content")
 
                 if 'all_versions' in options['operation']:
                     return self._process_browse_all_versions_response(result_set,options)

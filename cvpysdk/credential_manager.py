@@ -354,7 +354,7 @@ class Credentials(object):
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "User {0} already exists on this commcell.".format(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
                     credential_name)
             )
         password = b64encode(user_password.encode()).decode()

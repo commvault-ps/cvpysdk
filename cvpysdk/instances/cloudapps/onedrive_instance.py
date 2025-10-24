@@ -490,6 +490,7 @@ class OneDriveInstance(CloudAppsInstance):
             restore_as_copy (bool, optional): If True, restore files as copies if they already exist.
             skip_file_permissions (bool, optional): If True, skip restoring file permissions.
             include_deleted_items (bool, optional): If True, include deleted items in the restore.
+            restore_to_blob (bool, optional):  If True, performs restore to azure blob storage
 
         Returns:
             dict: The request JSON for the restore job.
@@ -519,6 +520,7 @@ class OneDriveInstance(CloudAppsInstance):
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', True)
         include_deleted_items = kwargs.get('include_deleted_items', False)
+        restore_to_blob = kwargs.get('restore_to_blob', False)
 
 
         if destination_client:

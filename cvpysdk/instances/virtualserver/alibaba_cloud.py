@@ -109,8 +109,12 @@ class AlibabaCloudInstance(VirtualServerInstance):
             self._server_host_name = [self._virtualserverinstance['vmwareVendor'][
                 'virtualCenter']['domainName']]
 
-            self._username = self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['userName']
+            self._username = (
+                self._virtualserverinstance
+                .get('vmwareVendor', {})
+                .get('virtualCenter', {})
+                .get('userName', None)
+            )
 
         for _each_client in self._asscociatedclients['memberServers']:
             client = _each_client['client']
