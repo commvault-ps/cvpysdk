@@ -399,7 +399,8 @@ EXCEPTION_DICT = {
         '106': 'Export Set not found',
         '107': 'Invalid Application type provided',
         '108': 'Invalid export type provided',
-        '109': 'CosmosDB file download fail'
+        '109': 'CosmosDB file download fail',
+        '110': 'Missing fileName or requestId in response'
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',

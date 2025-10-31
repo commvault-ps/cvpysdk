@@ -1019,13 +1019,15 @@ class EdiscoveryClientOperations():
         # if called from EdiscoveryDatasource, then no association check needed as sharing is not possible at this level
         from ..activateapps.file_storage_optimization import FsoServerGroup
         from ..activateapps.request_manager import Request
+        from ..activateapps.sensitive_data_governance import Projects
         if isinstance(
                 self._class_obj,
                 Request) or isinstance(
                 self._class_obj,
                 EdiscoveryDatasource) or isinstance(
                 self._class_obj,
-                FsoServerGroup):
+                FsoServerGroup) or isinstance(
+                self._class_obj, Projects):
             return {}
         association_request_json = copy.deepcopy(EdiscoveryConstants.SHARE_REQUEST_JSON)
         del association_request_json['securityAssociations']

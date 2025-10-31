@@ -1212,6 +1212,25 @@ class ComplianceConstants:
     FILE_TYPES = [AppTypes.FILE_SYSTEM, AppTypes.SHAREPOINT, AppTypes.ONEDRIVE, AppTypes.TEAMS]
     EMAIL_TYPES = [AppTypes.EXCHANGE, AppTypes.EXCHANGE_JOURNAL]
 
+    COMMON_FILTER = "commonFilter"
+    COMMON_FILTERS = [
+        {
+            "filter": {
+                "filters": [
+                    {
+                        "field": "CI_STATUS",
+                        "fieldValues": {
+                            "values": [
+                                "1"
+                            ]
+                        },
+                        "intraFieldOp": 0
+                    }
+                ]
+            }
+        }
+    ]
+
     FILE_FILTERS_KEY = "fileFilter"
     FILE_FILTERS = [
         {
@@ -1312,6 +1331,10 @@ class ComplianceConstants:
                            "TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,"
                            "TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,"
                            "TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,APPTYPE,APPID")
+
+    RESPONSE_FIELD_LIST_SHAREPOINT = ("FAST_URL,BACKUPTIME,CLIENTNAME,IdxMetadata,ownerID,SIZEINKB,MODIFIEDTIME,"
+                                      "CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,"
+                                      "Version,APPTYPE,METADATA,CLIENT_ID,APPID")
 
     COMPLIANCE_SEARCH_JSON = {
         "mode": 2,

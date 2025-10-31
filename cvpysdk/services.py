@@ -253,7 +253,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_INSTANCE': '{0}Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
-    'DO_COMPLIANCE_SEARCH': '{0}doWebSearch',
+    'DO_COMPLIANCE_SEARCH': '{0}Search',
     'GET_EXPORT_SETS': '{0}GetContainers',
     'GET_EXPORTS': '{0}getContainerItems',
     'ADD_EXPORT_SET': '{0}PerformContainerOperation',
