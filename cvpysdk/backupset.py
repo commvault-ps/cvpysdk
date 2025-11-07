@@ -1802,6 +1802,82 @@ class Backupset(object):
                 }
             }
 
+
+        if options.get('threatAnalysisRequest',False):
+            request_json['options']['showMaliciousFiles'] = True
+            request_json['options']['includeMetadata'] = True
+            request_json['advOptions']['stubAsData'] = True
+            request_json['advOptions']['advConfig'] = {
+                'threatAnalysisRequest': True
+            }
+            request_json['queries'] = [
+        {
+            "type": 0,
+            "queryId": "threatsList",
+            "dataParam":
+            {
+                "sortParam":
+                {
+                    "ascending": True,
+                    "sortBy":
+                    [
+                        38,
+                        0
+                    ]
+                },
+                "paging":
+                {
+                    "firstNode": 0,
+                    "pageSize": int(options['page_size']),
+                    "skipNode": int(options['skip_node'])
+                }
+            },
+            "isFacet": 1,
+            "fileOrFolder": 0,
+            "whereClause":
+            [
+                {
+                    "connector": 0,
+                    "criteria":
+                    {
+                        "field": 38,
+                        "dataOperator": 9,
+                        "values":
+                        [
+                            "file"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "queryId": "threatsListCount",
+            "aggrParam":
+            {
+                "field": 0,
+                "aggrType": 4
+            },
+            "isFacet": 1,
+            "fileOrFolder": 0,
+            "whereClause":
+            [
+                {
+                    "connector": 0,
+                    "criteria":
+                    {
+                        "field": 38,
+                        "dataOperator": 9,
+                        "values":
+                        [
+                            "file"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+
         if options['include_aged_data']:
             request_json['options']['includeAgedData'] = True
 

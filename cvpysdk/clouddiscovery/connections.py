@@ -54,6 +54,7 @@ from typing import Dict, Optional, TYPE_CHECKING, List
 
 from .constants import AssetProvider
 from .resources import DiscoveredResource
+from ..exception import SDKException
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
@@ -89,6 +90,9 @@ class Connection:
         self._asset_provider = asset_provider
         credential = self._commcell.credentials.get(self._credential_name)
         self._credential_id = credential.credential_id if credential is not None else None
+        self._cvpysdk_object = self._commcell._cvpysdk_object
+        self._services = self._commcell._services
+        self._update_response_ = self._commcell._update_response_
 
 
 
@@ -100,6 +104,15 @@ class Connection:
             The unique credential identifier
         """
         return self._credential_id
+
+    @property
+    def credential_name(self) -> int:
+        """Get the credential Name for this connection.
+
+        Returns:
+            The credential name
+        """
+        return self._credential_name
 
     @property
     def asset_provider(self) -> AssetProvider:
@@ -117,7 +130,8 @@ class Connection:
             Dictionary containing configuration key-value pairs
             
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> connection = Connections().get_connection("cred123")
@@ -128,7 +142,18 @@ class Connection:
             >>> print(configs)
             [{'subscription': 'sub-123'}, {'subscription': 'sub-456'}]
         """
-        raise NotImplementedError("get_configs method is not yet implemented")
+        url = self._services['CLOUD_DISCOVERY_CRITERIA'] % (self._credential_id, 34)
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        if flag:
+            if response.json():
+                if not response.json().get('errorMessage', None):
+                    if response.json().get('discoveryCriteria', {}):
+                        return response.json().get('discoveryCriteria')
+                    else:
+                        raise SDKException("Discovery", "102")
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get_resources(self) -> List[DiscoveredResource]:
         """Get all resources discovered by this connection as name-value pairs.
@@ -175,21 +200,58 @@ class Connection:
         """
         raise NotImplementedError("update_connection method is not yet implemented")
 
-    def start_discovery(self) -> bool:
+    def start_discovery(self) -> int:
         """Start the discovery process for this connection.
         
         Returns:
-            True if discovery started successfully, False otherwise
+            int: discovery job id
             
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> connection = Connections().get_connection("cred123")
             >>> connection.start_discovery()
             True
         """
-        raise NotImplementedError("start_discovery method is not yet implemented")
+        url = self._services['START_DISCOVERY']
+        flag, response = self._cvpysdk_object.make_request('POST', url=url)
+        if flag:
+            if response.json():
+                errorcode = response.json().get('errorCode', 0)
+                if errorcode == 0:
+                    get_jobId = self.get_discovery_job()
+                    return get_jobId
+                else:
+                    raise SDKException('Discovery', '104')
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_discovery_job(self) -> int:
+        """Get discovery job ID for the given credential.
+
+        Returns:
+            int: The job ID of the discovery process.
+
+        Raises:
+            SDKException:
+                        Response was not success
+
+        """
+        url = self._services['GET_DISCOVERY_JOB']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        if flag:
+            if response.json():
+                if not response.json().get('errorMessage', None):
+                    if response.json().get('jobId', None):
+                        return response.json().get('jobId')
+                    else:
+                        raise SDKException("DISCOVERY", "101")
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
 
 class Connections:
@@ -208,33 +270,82 @@ class Connections:
         self._commcell = commcell
         self._connections: List[Connection] = []
         self._is_loaded = False
+        self._asset_provider = asset_provider
+        self._cvpysdk_object = self._commcell._cvpysdk_object
+        self._services = self._commcell._services
+        self._update_response_ = self._commcell._update_response_
 
     def add_connection(
-        self,
-        credential_name: str,
-        config_list: Dict[str, str],
-        start_discovery: bool = True
+            self,
+            credential_name: str,
+            config_list: Optional[List[str]] = None,
+            include_all_configs: bool = False,
     ) -> Connection:
         """Add a new connection with the specified credential and configuration.
 
         Args:
             credential_name: Unique identifier for the credential
-            config_list: Configuration parameters for the connection
-            start_discovery: Whether to start discovery immediately after adding
+            config_list: Configuration parameters for the connection (default: empty list)
+            include_all_configs: Whether to include all available configurations (default: False)
 
         Returns:
             The newly created Connection object
 
         Example:
             >>> instance = Connections()
-            >>> conn = instance.add_connection("cred_123", {"host": "localhost", "port": "5432"})
+            >>> conn = instance.add_connection("cred_123", config_list=["US East (N. Virginia)", "US East (Ohio)"])
             >>> print(conn.credential_id)
             123
 
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
         """
-        raise NotImplementedError("add_connection method is not yet implemented")
+        if not isinstance(credential_name, str):
+            raise SDKException('Connections', '101')
+        if self.has_connection(credential_name):
+            raise SDKException('Connections', '102', credential_name)
+        if not config_list and not include_all_configs:
+            raise SDKException('Connections', '104', "Either config_list or include_all_configs must be provided.")
+
+        self._connection = Connection(self._commcell, credential_name, self._asset_provider)
+
+        requests_json = {
+            "credentials": [
+                {
+                    "id": self._connection.credential_id,
+                    "operation": "ADD"
+                }
+            ]
+        }
+
+        if not include_all_configs:
+            discovery_criteria = self._connection.get_configs()
+            discovery_criteria_config = [
+                {"name": detail["name"], "value": detail["value"]}
+                for detail in discovery_criteria.get("details", [])
+                if detail["name"] in config_list
+            ]
+            requests_json["configProperties"] = [
+                {
+                    "credentialId": self._connection.credential_id,
+                    "discoveryCriteria": {"details": discovery_criteria_config},
+                }
+            ]
+
+        request = self._services['CONFIGURE_DISCOVERY']
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', request, requests_json
+        )
+        if flag:
+            if response.json():
+                errorCode = response.json().get('errorCode', 0)
+                if errorCode == 0:
+                    self.refresh()
+                    return self._connection
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def delete_connection(self, credential_name: str) -> bool:
         """Delete an existing connection by credential name.
@@ -252,9 +363,35 @@ class Connections:
             True
 
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
         """
-        raise NotImplementedError("delete_connection method is not yet implemented")
+        if not isinstance(credential_name, str):
+            raise SDKException('Connections', '101')
+        if self.has_connection(credential_name):
+            requests_json = {
+                "credentials": [
+                    {
+                        "id": self._commcell.credentials.get(credential_name).credential_id,
+                        "operation": "DELETE"
+                    }
+                ]
+            }
+            request = self._services['CONFIGURE_DISCOVERY']
+            flag, response = self._cvpysdk_object.make_request(
+                'PUT', request, requests_json
+            )
+            if flag:
+                if response.json():
+                    errorCode = response.json().get('errorCode', 0)
+                    if errorCode == 0:
+                        self.refresh()
+                        return True
+                raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        else:
+            raise SDKException('Connections', '103')
 
     def get_connection(self, credential_name: str) -> Optional[Connection]:
         """Get a connection by credential name.
@@ -266,7 +403,8 @@ class Connections:
             The Connection object if found, None otherwise
 
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> connection_manager = Connections()
@@ -275,7 +413,10 @@ class Connections:
             ...     print(conn.credential_id)
             123
         """
-        raise NotImplementedError("get_connection method is not yet implemented")
+        if not isinstance(credential_name, str):
+            raise SDKException('Connections', '101')
+        if self.has_connection(credential_name):
+            return Connection(self._commcell, credential_name, self._asset_provider)
 
     def has_connection(self, credential_name: str) -> bool:
         """Check if a connection exists for the given credential name.
@@ -287,7 +428,8 @@ class Connections:
             True if connection exists, False otherwise
 
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> connection_manager = Connections()
@@ -295,19 +437,25 @@ class Connections:
             >>> print(exists)
             True
         """
-        raise NotImplementedError("has_connection method is not yet implemented")
+        if not isinstance(credential_name, str):
+            raise SDKException('Connections', '101')
+        if any(connection.credential_name.lower() == credential_name.lower() for connection in self.all_connections):
+            return True
+        else:
+            return False
 
     def _get_all_connections(self) -> List[Connection]:
         """Internal method to retrieve all connections from the backend.
-        
+
         This is a private method that handles the actual data retrieval
         from the underlying storage or API.
-        
+
         Returns:
             List of Connection objects
-            
+
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> connection_manager = Connections()
@@ -317,7 +465,24 @@ class Connections:
             123
             456
         """
-        raise NotImplementedError("_get_all_connections method is not yet implemented")
+        request = self._services['CONFIGURE_DISCOVERY']
+        flag, response = self._cvpysdk_object.make_request('GET', request)
+        if flag:
+            if response.json():
+                errorCode = response.json().get('errorCode', 0)
+                if errorCode == 0:
+                    credentials = response.json().get('credentials', [])
+                    return [
+                        Connection(
+                            self._commcell,
+                            credential.get('name'),
+                            self._asset_provider
+                        )
+                        for credential in credentials
+                    ]
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def refresh(self) -> None:
         """Refresh the connections cache by fetching latest data.
@@ -326,14 +491,14 @@ class Connections:
         the most recent data from the backend.
         
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> connection_manager = Connections()
             >>> connection_manager.refresh()
         """
-        raise NotImplementedError("refresh method is not yet implemented")
-
+        self._connections = self._get_all_connections()
 
     @property
     def all_connections(self) -> List[Connection]:
@@ -352,4 +517,4 @@ class Connections:
         """
         if not self._is_loaded:
             self.refresh()
-        return self._connections.copy()
+        return self._connections

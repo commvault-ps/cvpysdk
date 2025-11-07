@@ -681,6 +681,17 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Time Value should be greater than current time',
         '104': 'Time Value entered is not of correct format'
+    },
+    'Discovery': {
+        '101': 'The response does not contain the discovery Job.Please verify the connection',
+        '102': 'The response does not contain the discovery criteria.Please verify the connection',
+        '103': 'Failed to get resources'
+    },
+    'Connections': {
+        '101': 'Invalid input(s) specified',
+        '102': 'Credential not found',
+        '103': 'Credential deletion failed',
+        '104': 'Failed to start discovery job'
     }
 }
 

@@ -57,6 +57,7 @@ Credentials:
 
     add_oracle_database_creds   --  Creates Oracle credential on this commcell
 
+    add_sybase_database_creds   --  Creates Sybase credential on this commcell
     add_oracle_catalog_creds    --  Creates Oracle Recovery Catalog credential on this commcell
 
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
@@ -586,7 +587,8 @@ class Credentials(object):
 
         Args:
             database_type: Type of database credential to be created.
-                Accepted values: "MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT", "SQL_SERVER_ACCOUNT".
+                Accepted values: "MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT",
+                 "SQL_SERVER_ACCOUNT","SYBASE".
             credential_name: Name to assign to the credential account.
             username: Database username for authentication.
             password: Database password for authentication.
@@ -613,7 +615,7 @@ class Credentials(object):
         #ai-gen-doc
         """
         if database_type not in ["MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT",
-                                 "SQL_SERVER_ACCOUNT"]:
+                                 "SQL_SERVER_ACCOUNT","SYBASE"]:
             raise SDKException(
                 'Credential', '102', "Invalid database Type provided."
             )
@@ -814,6 +816,32 @@ class Credentials(object):
         """
         return self.add_database_creds("ORACLE_CATALOG_ACCOUNT", credential_name, username, password, description,
                                        service_name)
+    def add_sybase_database_creds(self, credential_name, username, password, description=None):
+        """Create Sybase database credentials on the Commcell.
+
+        Args:
+            credential_name: Name to assign to the Sybase credential account.
+            username: Sybase database username.
+            password: Sybase database password.
+            description: Optional description for the credential.
+
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
+
+        Example:
+            >>> creds = Credentials()
+            >>> creds.add_sybase_database_creds(
+            ...     credential_name="SybaseProdCreds",
+            ...     username="dbadmin",
+            ...     password="securepass123",
+            ...     description="Production Sybase DB credentials"
+            ... )
+            >>> print("Sybase credentials added successfully")
+
+        #ai-gen-doc
+        """
+        return self.add_database_creds("SYBASE", credential_name, username, password, description)
+
 
     def add_azure_cloud_creds(self, credential_name: str, account_name: str, access_key_id: str, **kwargs: Any) -> None:
         """Create an Azure access key-based credential on this Commcell.

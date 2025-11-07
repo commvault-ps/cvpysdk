@@ -359,6 +359,10 @@ Commcell instance Attributes
 
     **cost_assessment**             -- Returns the instance of the CostAssessment class
 
+    **azure_discovery**          -- Returns the instance of the AzureDiscovery class
+
+    **aws_discovery**            -- Returns the instance of the AWSDiscovery class
+
 """
 
 from __future__ import absolute_import
@@ -382,6 +386,7 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from .activate import Activate
 from .activateapps.compliance_utils import ExportSets
+from .clouddiscovery.cloud_discovery import AzureDiscovery, AWSDiscovery
 from .constants import UserRole
 from .activateapps.tco import CostAssessment
 from .services import get_services
@@ -753,6 +758,8 @@ class Commcell(object):
         self._database_instances = None
         self._database_instant_clones = None
         self._cost_assessment = None
+        self._azure_discovery = None
+        self._aws_discovery = None
         self._commserv_details_loaded = False
         self._commserv_details_set = False
         self._job_logs_emails = []
@@ -2059,16 +2066,16 @@ class Commcell(object):
 
     @property
     def domains(self) -> 'Domains':
-        """Get the UserGroups instance associated with this Commcell.
+        """Get the Domains instance associated with this Commcell.
 
         Returns:
-            UserGroups: An instance for managing user groups and domain-related operations.
+            Domains: An instance for managing Domains and domain-related operations.
 
         Example:
             >>> commcell = Commcell('hostname', 'username', 'password')
-            >>> user_groups = commcell.domains  # Access the UserGroups property
-            >>> print(f"UserGroups object: {user_groups}")
-            >>> # The returned UserGroups object can be used for user group management
+            >>> domains = commcell.domains  # Access the Domains property
+            >>> print(f"Domains object: {user_groups}")
+            >>> # The returned Domains object can be used for Domains management
 
         #ai-gen-doc
         """
@@ -2195,17 +2202,17 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def activate(self) -> 'ContentAnalyzers':
-        """Get the ContentAnalyzers instance associated with this Commcell.
+    def activate(self) -> 'Activate':
+        """Get the Activate instance associated with this Commcell.
 
         Returns:
-            ContentAnalyzers: An instance for managing content analyzers within the Commcell.
+            Activate: An instance for managing activate within the Commcell.
 
         Example:
             >>> commcell = Commcell('hostname', 'username', 'password')
-            >>> analyzers = commcell.activate  # Access the ContentAnalyzers property
-            >>> print(analyzers)
-            >>> # The returned ContentAnalyzers object can be used for further analyzer operations
+            >>> activate = commcell.activate  # Access the Activate property
+            >>> print(activate)
+            >>> # The returned Activate object can be used for further activate operations
 
         #ai-gen-doc
         """
@@ -2845,16 +2852,16 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def cleanroom_targets(self) -> 'RecoveryTargets':
-        """Get the RecoveryTargets instance associated with this Commcell.
+    def cleanroom_targets(self) -> 'CleanroomTargets':
+        """Get the CleanroomTargets instance associated with this Commcell.
 
         Returns:
-            RecoveryTargets: An instance for managing cleanroom recovery targets.
+            CleanroomTargets: An instance for managing cleanroom recovery targets.
 
         Example:
             >>> commcell = Commcell('hostname', 'username', 'password')
             >>> targets = commcell.cleanroom_targets  # Access the property
-            >>> print(f"RecoveryTargets object: {targets}")
+            >>> print(f"CleanroomTargets object: {targets}")
 
         #ai-gen-doc
         """
@@ -6326,6 +6333,48 @@ class Commcell(object):
                 self._cost_assessment = CostAssessment(self)
 
             return self._cost_assessment
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def azure_discovery(self) -> 'AzureDiscovery':
+        """Get the AzureDiscovery instance associated with this Commcell.
+
+    Returns:
+        AzureDiscovery: An object for discovering and analyzing discovered Azure resources within the Commcell.
+
+    Example:
+        >>> commcell = Commcell()
+        >>> azure_discovery = commcell.azure_discovery  # Access the property using dot notation
+        >>> print(f"Azure Discovery object: {azure_discovery}")
+
+    """
+        try:
+            if self._azure_discovery is None:
+                self._azure_discovery = AzureDiscovery(self)
+
+            return self._azure_discovery
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def aws_discovery(self) -> 'AWSDiscovery':
+        """Get the AWSDiscovery instance associated with this Commcell.
+
+        Returns:
+            AWSDiscovery: An object for discovering and analyzing discovered AWS resources within the Commcell.
+
+        Example:
+            >>> commcell = Commcell()
+            >>> aws_discovery = commcell.aws_discovery  # Access the property using dot notation
+            >>> print(f"AWS Discovery object: {aws_discovery}")
+
+        """
+        try:
+            if self._aws_discovery is None:
+                self._aws_discovery = AWSDiscovery(self)
+
+            return self._aws_discovery
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

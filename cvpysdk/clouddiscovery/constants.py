@@ -99,6 +99,135 @@ class AssetCVProtectionStatus(IntEnum):
     """Enumeration for Commvault protection status of assets."""
     
     NONE = 0
-    PROTECTED = 1
+    NOT_AVAILABLE = 1
     NOT_PROTECTED = 2
     PROTECTION_CONFIGURED = 3
+    PROTECTED = 4
+    PROTECTION_FAILED = 5
+
+
+class AssetCVProtectedBY(IntEnum):
+    """Enumeration for Commvault protection status of assets."""
+
+    AZURE_MANAGED = 1
+    AWS_MANAGED = 2
+    COMMVAULT_PROTECTED = 6
+
+
+# Constants for Discovery payload
+QUERY = "*:*"
+RESPONSE_FORMAT = "json"
+START = 0
+ROWS = 100
+ITEM_STATE = "ItemState:1"
+ASSET_SUB_TYPE = ("AssetSubType:0 OR AssetSubType:38 OR AssetSubType:39 OR AssetSubType:40 OR AssetSubType:41 OR"
+                  " AssetSubType:42 OR AssetSubType:43")
+FILTER_QUERY = "Provider:1"
+FACET_JSON = {
+    "CredentialName": {
+        "field": "CredentialName",
+        "mincount": 1,
+        "sort": {"count": "desc"},
+        "type": "terms",
+        "facet": {
+            "Provider": {
+                "field": "Provider",
+                "mincount": 1,
+                "limit": 50,
+                "sort": {"count": "desc"},
+                "type": "terms"
+            }
+        }
+    },
+    "WorkloadType": {
+        "field": "WorkloadType",
+        "mincount": 1,
+        "limit": 50,
+        "sort": {"count": "desc"},
+        "type": "terms",
+        "facet": {
+            "Total_Size": {
+                "type": "query",
+                "domain": {"excludeTags": ["tag_group_Total"]},
+                "minCount": 1,
+                "q": "AssetSize:[* TO *]",
+                "facet": {"Sum_Size": "sum(AssetSize)"}
+            }
+        }
+    },
+    "AssetType": {
+        "field": "AssetType",
+        "mincount": 1,
+        "limit": 50,
+        "sort": {"count": "desc"},
+        "type": "terms"
+    },
+    "ProtectionStatus": {
+        "field": "ProtectionStatus",
+        "mincount": 1,
+        "limit": 50,
+        "sort": {"count": "desc"},
+        "type": "terms",
+        "facet": {
+            "ProtectedBy": {
+                "field": "ProtectedBy",
+                "mincount": 1,
+                "limit": 50,
+                "sort": {"count": "desc"},
+                "type": "terms"
+            }
+        }
+    },
+    "AssetRegion": {
+        "field": "AssetRegion",
+        "mincount": 1,
+        "sort": {"count": "desc"},
+        "type": "terms"
+    },
+    "SubscriptionName": {
+        "field": "SubscriptionName",
+        "mincount": 1,
+        "sort": {"count": "desc"},
+        "type": "terms"
+    },
+    "AssetGroup": {
+        "field": "AssetGroup",
+        "mincount": 1,
+        "sort": {"count": "desc"},
+        "type": "terms"
+    },
+    "EntityTags": {
+        "field": "EntityTags",
+        "mincount": 1,
+        "sort": {"count": "desc"},
+        "type": "terms"
+    },
+    "Total_Size": {
+        "type": "query",
+        "domain": {"excludeTags": ["tag_group_Total"]},
+        "minCount": 1,
+        "q": "AssetSize:[* TO *]",
+        "facet": {"Sum_Size": "sum(AssetSize)"}
+    },
+    "ProtectionStatusSize_Protected": {
+        "type": "query",
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
+        "minCount": 1,
+        "q": "ProtectionStatus:4 AND ProtectedBy:6",
+        "facet": {"Sum_Size": "sum(AssetSize)"}
+    },
+    "ProtectionStatusSize_Managed": {
+        "type": "query",
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
+        "minCount": 1,
+        "q": "ProtectionStatus:4 AND !ProtectedBy:6",
+        "facet": {"Sum_Size": "sum(AssetSize)"}
+    },
+    "ProtectionStatusSize_NotProtected": {
+        "type": "query",
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
+        "minCount": 1,
+        "q": "(ProtectionStatus:2 OR ProtectionStatus:5 OR ProtectionStatus:1)",
+        "facet": {"Sum_Size": "sum(AssetSize)"}
+    }
+}

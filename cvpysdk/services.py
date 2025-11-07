@@ -745,6 +745,16 @@ SERVICES_DICT_TEMPLATE = {
 
     'RUN_ASSESSMENT': '{0}/V4/TCO/Assessment',
 
+    'CLOUD_DISCOVERY_CRITERIA': '{0}Asset/Discovery/Criteria?credentialId=%s&pageSize=%s&offset=0&discoverProvider=true',
+
+    'CONFIGURE_DISCOVERY': '{0}Asset/Discovery/Configuration',
+
+    'GET_DISCOVERY_JOB': '{0}Asset/Discovery/Status',
+
+    'START_DISCOVERY': '{0}Asset/Discovery',
+
+    'GET_RESOURCES': '{0}Asset/Search',
+
     'SNMP': '{0}/V4/Snmp',
 
     'SNMP_CONFIG': '{0}CommServ/SNMPV3Configuration',

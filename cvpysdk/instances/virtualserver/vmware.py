@@ -160,7 +160,7 @@ class VMwareInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        return self._vmwarvendor.get("userName", "")
+        return self._vmwarvendor.get('userName') or self._credential.get('userName', '')
 
     @property
     def server_name(self) -> list:

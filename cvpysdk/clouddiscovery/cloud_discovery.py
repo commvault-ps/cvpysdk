@@ -57,8 +57,9 @@ Classes:
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, TYPE_CHECKING
 from .constants import AssetProvider
-from .connections import Connections
+from .connections import Connections, Connection
 from .resources import DiscoveredResources
+from ..exception import SDKException
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
@@ -81,9 +82,12 @@ class CloudDiscovery(ABC):
             commcell: The Commcell object for API operations
         """
         self._commcell = commcell
-        self._connections = Connections(commcell)
-        self._resources = DiscoveredResources(commcell)
+        self._connections = Connections(commcell, self.asset_provider)
+        self._resources = DiscoveredResources(commcell, self.asset_provider)
         self._credentials = commcell.credentials
+        self._cvpysdk_object = self._commcell._cvpysdk_object
+        self._services = self._commcell._services
+        self._update_response_ = self._commcell._update_response_
 
     @property
     @abstractmethod
@@ -122,7 +126,28 @@ class CloudDiscovery(ABC):
         """
         return self._credentials
 
+    def get_discovery_job(self) -> int:
+        """
+            Retrieve the discovery job ID for the given credential.
 
+            Returns:
+                int: The job ID of the discovery process.
+
+            Raises:
+                SDKException: If the job ID is not found or the response is invalid.
+        """
+        url = self._services['GET_DISCOVERY_JOB']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        if flag:
+            if response.json():
+                if not response.json().get('errorMessage', None):
+                    if response.json().get('jobId', None):
+                        return response.json().get('jobId')
+                    else:
+                        raise SDKException("Discovery", "101")
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     @abstractmethod
     def estimate_cost(self) -> Dict[str, Any]:
@@ -143,9 +168,6 @@ class CloudDiscovery(ABC):
             NotImplementedError: Must be implemented by derived classes
         """
         pass
-
-
-
 
 
 class AzureDiscovery(CloudDiscovery):
@@ -226,7 +248,6 @@ class AWSDiscovery(CloudDiscovery):
             AssetProvider.AWS
         """
         return AssetProvider.AWS
-
 
     def estimate_cost(self) -> Dict[str, Any]:
         """Estimate the cost of AWS resources and protection plans.

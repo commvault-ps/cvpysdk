@@ -716,11 +716,9 @@ class Instances(object):
                             'enable_auto_discovery': True,
                             'shared_memory_directory': '',
                             'storage_policy': '',
-                            'sa_username': '',
-                            'sa_password': '',
-                            'localadmin_username': '',
-                            'localadmin_password': '',
-                            'masterkey_password':''
+                            'credential_name':''
+                            'masterkey_credential_name':''
+                            'oscreds':''
                         }
             Raises:
                 SDKException:
@@ -751,9 +749,12 @@ class Instances(object):
                 'Storage Policy: "{0}" does not exist in the Commcell'.format(
                     sybase_options["storage_policy"])
             )
-
-        # encodes the plain text password using base64 encoding
-        sa_password = b64encode(sybase_options["sa_password"].encode()).decode()
+        if self._commcell_object.credentials.has_credential(sybase_options["credential_name"]):
+            credential = self._commcell_object.credentials.get(sybase_options["credential_name"])
+        else:
+            credential = self._commcell_object.credentials.add_sybase_database_creds(sybase_options["credential_name"],
+                                                                                     sybase_options["user_name"],
+                                                                                     sybase_options["password"])
 
         enable_auto_discovery = sybase_options["enable_auto_discovery"]
 
@@ -778,21 +779,28 @@ class Instances(object):
                     "configFile": sybase_options["config_file"],
                     "enableAutoDiscovery": enable_auto_discovery,
                     "sharedMemoryDirectory": sybase_options["shared_memory_directory"],
-                    "saUser": {"password": sa_password, "userName": sybase_options["sa_username"]},
+                    "saUser": {"savedCredential": {
+                        "credentialID": credential.credential_id,
+                        "credentialName": credential.credential_name
+                    }},
                     "localAdministrator": {
-                        "password": sybase_options["localadmin_password"],
-                        "userName": sybase_options["localadmin_username"]
+                        "savedCredential": {}
                     }
                 }
             }
         }
-        if "masterkey_password" in sybase_options.keys():
-            masterkey_password = b64encode(sybase_options["masterkey_password"].encode()).decode()
-            request_json["instanceProperties"]["sybaseInstance"]["masterKeyPwd"]=masterkey_password
+        if "masterkey_credential_name" in sybase_options.keys():
+            credential = self._commcell_object.credentials.get(sybase_options["masterkey_credential_name"])
+            request_json["instanceProperties"]["credentialEntity"] = {}
+            request_json["instanceProperties"]["credentialEntity"]["credentialId"] = credential.credential_id
+            request_json["instanceProperties"]["credentialEntity"]["credentialName"] = credential.credential_name
 
-        if "localadmin_password" in sybase_options.keys():
-            localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
-            request_json['instanceProperties']['sybaseInstance']['localAdministrator']['password'] = localadmin_password
+        if "oscreds" in sybase_options.keys():
+            credential = self._commcell_object.credentials.get(sybase_options["oscreds"])
+            request_json["instanceProperties"]["sybaseInstance"]["localAdministrator"]["savedCredential"][
+                "credentialId"] = credential.credential_id
+            request_json["instanceProperties"]["sybaseInstance"]["localAdministrator"]["savedCredential"][
+                "credentialName"] = credential.credential_name
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_INSTANCE'], request_json

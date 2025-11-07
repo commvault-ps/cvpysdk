@@ -57,11 +57,13 @@ Classes:
         Properties:
             resources               - Get the list of all discovered resources.
 """
-
+import json
 from typing import Dict, List, Optional, Union, TYPE_CHECKING
 from datetime import datetime
 
-from .constants import AssetProvider, WorkloadType, AssetType, AssetCVProtectionStatus
+from .constants import AssetProvider, WorkloadType, AssetType, AssetCVProtectionStatus, FACET_JSON, RESPONSE_FORMAT, \
+    START, ROWS, QUERY, AssetCVProtectedBY, ITEM_STATE, ASSET_SUB_TYPE
+from ..exception import SDKException
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
@@ -90,7 +92,8 @@ class DiscoveredResource:
         last_discovered_time: Optional[datetime] = None,
         tags: Optional[Dict[str, str]] = None,
         last_backup: Optional[datetime] = None,
-        recovery_points: Optional[int] = None
+        recovery_points: Optional[int] = None,
+        protected_by: Optional[AssetCVProtectedBY] = None,
     ) -> None:
         """Initialize a DiscoveredResource instance.
         
@@ -140,6 +143,7 @@ class DiscoveredResource:
         self._tags = tags or {}
         self._last_backup = last_backup
         self._recovery_points = recovery_points
+        self._protected_by = protected_by
 
 
     @property
@@ -277,6 +281,15 @@ class DiscoveredResource:
         """
         return self._recovery_points
 
+    @property
+    def protected_by(self) -> Optional[AssetCVProtectedBY]:
+        """Get the entity that protects the resource.
+
+        Returns:
+            The AssetCVProtectedBY enum value or None
+        """
+        return self._protected_by
+
 
 class DiscoveredResources:
     """Manager class for handling collections of discovered cloud resources.
@@ -285,7 +298,7 @@ class DiscoveredResources:
     objects, including resource lookup, filtering, and protection plan assignment.
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: 'Commcell', asset_provider: AssetProvider) -> None:
         """
         Initialize the DiscoveredResources manager.
 
@@ -303,9 +316,12 @@ class DiscoveredResources:
         self._commcell = commcell
         self._resources: List[DiscoveredResource] = []
         self._is_loaded = False
+        self._cvpysdk_object = self._commcell._cvpysdk_object
+        self._services = self._commcell._services
+        self._update_response_ = self._commcell._update_response_
+        self._asset_provider = asset_provider
 
     def has_resource(self, resource_name: str,
-                     asset_provider: AssetProvider,
                      workload_type: WorkloadType,
                      asset_type: AssetType) -> bool:
         """Check if a resource exists in the collection.
@@ -443,13 +459,73 @@ class DiscoveredResources:
             List of DiscoveredResource objects
         
         Raises:
-            NotImplementedError: This method is not yet
+            SDKException:
+                        Response was not success
 
         Example:
             >>> resources = self._get_resources()
         """
-        raise NotImplementedError("_get_resources method is not yet implemented")
+        url = self._services['GET_RESOURCES']
+        resources = []
+        start = START
+        rows = ROWS
 
+        while True:
+            payload = {
+                "searchParams": [
+                    {"key": "q", "value": QUERY},
+                    {"key": "wt", "value": RESPONSE_FORMAT},
+                    {"key": "start", "value": start},
+                    {"key": "rows", "value": rows},
+                    {"key": "fq", "value": ITEM_STATE},
+                    {"key": "fq", "value": ASSET_SUB_TYPE},
+                    {"key": "fq", "value": f"Provider:{self._asset_provider.value}"},
+                    {"key": "json.facet", "value": json.dumps(FACET_JSON)}
+                ]
+            }
+
+            flag, response = self._cvpysdk_object.make_request('POST', url, payload)
+            if flag:
+                if response.json():
+                    if not response.json().get('errorMessage', None):
+                        count = response.json().get('facets', {}).get('count', 0)
+                        resources_data = response.json()['response'].get('docs', [])
+                        resources.extend([
+                            DiscoveredResource(
+                                name=resource.get('AssetName'),
+                                asset_provider=self._asset_provider,
+                                workload_type=WorkloadType(resource.get('WorkloadType')),
+                                asset_type=AssetType(resource.get('AssetType')),
+                                region=resource.get('AssetRegion'),
+                                resource_group=resource.get('AssetGroup'),
+                                size=resource.get('AssetSize'),
+                                protection_status=AssetCVProtectionStatus(resource.get('ProtectionStatus')),
+                                protection_plan=resource.get('ProtectionPlan'),
+                                connection=resource.get('Connection'),
+                                connection_type=resource.get('ConnectionType'),
+                                last_discovered_time=datetime.fromisoformat(
+                                    resource.get('LastSyncedAt')) if resource.get('LastSyncedAt') else None,
+                                tags=resource.get('Tags', {}),
+                                last_backup=datetime.fromisoformat(resource.get('LastBackup')) if resource.get(
+                                    'LastBackup') else None,
+                                recovery_points=resource.get('RecoveryPoints'),
+                                protected_by=AssetCVProtectedBY(resource.get('ProtectedBy')[0]) if resource.get(
+                                    'ProtectionStatus') == 4 and resource.get('ProtectedBy') else None
+                            )
+                            for resource in resources_data
+                        ])
+                        if len(resources_data) < rows or start + rows >= count:
+                            break
+                        start += rows
+                        rows = min(ROWS, count - start)
+                    else:
+                        raise SDKException("DISCOVERY", "103")
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+
+        return resources
 
     def refresh(self) -> None:
         """Refresh the resources cache by fetching latest data.
@@ -458,13 +534,14 @@ class DiscoveredResources:
         the most recent data from the backend.
 
         Raises:
-            NotImplementedError: This method is not yet implemented
+            SDKException:
+                        Response was not success
 
         Example:
             >>> obj = DiscoveredResources()
             >>> obj.refresh()
         """
-        raise NotImplementedError("refresh method is not yet implemented")
+        self._resources = self._get_resources()
 
     def __len__(self) -> int:
         """Get the number of resources in the collection.
@@ -477,7 +554,7 @@ class DiscoveredResources:
         return len(self._resources)
 
     @property
-    def resources(self) -> List[DiscoveredResource]:
+    def all_resources(self) -> List[DiscoveredResource]:
         """Get the list of all discovered resources.
         
         Returns:
