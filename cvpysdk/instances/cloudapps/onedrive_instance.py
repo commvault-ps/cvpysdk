@@ -698,7 +698,7 @@ class OneDriveInstance(CloudAppsInstance):
         """
         folder = kwargs.get('folder', False)
         include_deleted_items = kwargs.get('include_deleted_items', False)
-        subclient_id = self.subclients['default']['id']
+        subclient_id = int(self.subclients['default']['id'])
 
         if isinstance(item_guids, str):
             source_item_list = [item_guids]

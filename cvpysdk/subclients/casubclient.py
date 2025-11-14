@@ -71,7 +71,8 @@ class CloudAppsSubclient(Subclient):
             35: MSDynamics365Subclient,  # Office 365 Apps -> MS Dynamics 365 Subclient
             36: TeamsSubclient,  # Office 365 Apps -> MS Teams
             37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
-            44: AzureCosmosDBSubclient # Azure Cosmos DB Cloud Apps Instance
+            44: AzureCosmosDBSubclient, # Azure Cosmos DB Cloud Apps Instance
+            51: AzureCosmosDBSubclient  # Azure Cosmos DB MongoDBAPI Instance
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

@@ -903,9 +903,6 @@ threat_detection_plan_json = {
                     "minDocSize": 0
                 }
             },
-            "indexServer": {
-                "id": ""
-            },
             "name": "",
             "schedule": {
                 "name": "Run scan every 1 day at 9:00 PM",

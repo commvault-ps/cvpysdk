@@ -31,6 +31,8 @@ Users:
 
     _get_users()                        --  gets all the users on this commcell
 
+    _get_v4_users()                     --  gets all the v4 users on this commcell
+
     _get_fl_parameters()                --  Returns the fl parameters to be passed in the mongodb caching api call
 
     _get_sort_parameters()              --  Returns the sort parameters to be passed in the mongodb caching api call
@@ -224,6 +226,51 @@ class Users(object):
                 for user in response.json()['users']:
                     temp_name = user['userEntity']['userName'].lower()
                     temp_id = user['userEntity']['userId']
+                    users_dict[temp_name] = temp_id
+
+                return users_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_v4_users(self, full_response: bool = False) -> dict:
+        """Returns the list of v4 users configured on this commcell
+
+        Args:
+            full_response (bool): Flag to return complete response.
+
+        Returns:
+            dict: Dictionary of all the users on this commcell
+                {
+                    'user_name_1': user_id_1
+                }
+
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+
+        Usage:
+            users = self._get_v4_users()
+            full_users = self._get_v4_users(full_response=True)
+        """
+        get_all_user_service = self._commcell_object._services['V4_USERS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', get_all_user_service
+        )
+
+        if flag:
+            if response.json() and 'users' in response.json():
+                if full_response:
+                    return response.json()
+                users_dict = {}
+
+                for user in response.json()['users']:
+                    temp_name = user['name'].lower()
+                    temp_id = user['id']
                     users_dict[temp_name] = temp_id
 
                 return users_dict
@@ -549,7 +596,7 @@ class Users(object):
         if error_code != 0:
             raise SDKException('User', '102', error_message)
 
-        self._users = self._get_users()
+        self._users = self._get_v4_users()
 
         return response.json()
 
@@ -561,7 +608,8 @@ class Users(object):
             password: Optional[str] = None,
             system_generated_password: bool = False,
             local_usergroups: Optional[List[str]] = None,
-            entity_dictionary: Optional[Dict[str, Any]] = None) -> 'User':
+            entity_dictionary: Optional[Dict[str, Any]] = None,
+            **kwargs) -> 'User':
         """Adds a local/external user to this commcell.
 
         Args:
@@ -573,6 +621,8 @@ class Users(object):
             system_generated_password     (bool): if set to true system defined password will be used.
             local_usergroups              (list): user can be member of these user groups.
             entity_dictionary   (dict): combination of entity_type, entity names and role.
+        Kwargs:
+            upn                            (str):  user principal name of the user to be created.
 
         Returns:
             User: The created user object.
@@ -603,6 +653,8 @@ class Users(object):
             }
             users.add(user_name='testuser', email='test@example.com', entity_dictionary=entity_dictionary)
         """
+        upn = kwargs.get("upn", email)
+
         if domain:
             username = "{0}\\{1}".format(domain, user_name)
             password = ""
@@ -642,6 +694,7 @@ class Users(object):
             "users": [{
                 "password": password,
                 "email": email,
+                "UPN": upn,
                 "fullName": full_name,
                 "systemGeneratePassword": system_generated_password,
                 "userEntity": {
@@ -774,7 +827,7 @@ class Users(object):
             error_message = 'Failed to delete user. Please check logs for further details.'
         if error_code != 0:
             raise SDKException('User', '102', error_message)
-        self._users = self._get_users()
+        self._users = self._get_v4_users()
 
 
     def _get_users_on_service_commcell(self) -> Dict[str, Any]:
@@ -846,7 +899,7 @@ class Users(object):
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
 
-        self._users = self._get_users()
+        self._users = self._get_v4_users()
         self._users_on_service = None
         if mongodb:
             self._users_cache = self.get_users_cache(hard=hard)
@@ -878,7 +931,7 @@ class Users(object):
         Usage:
             all_users_properties = users.all_users_prop
         """
-        self._all_users_prop = self._get_users(full_response=True).get('users', [])
+        self._all_users_prop = self._get_v4_users(full_response=True).get('users', [])
         return self._all_users_prop
 
 class User(object):

@@ -1982,6 +1982,7 @@ class Instance(object):
             self._agent_object._client_object.client_id
         )
         self._RESTORE = self._services['RESTORE']
+        self._DELETE = self._services['DELETE']
         self._SEARCH_DURING_RESTORE = self._services['DO_WEB_SEARCH']
         self._properties = None
         self._restore_association = None
@@ -2491,6 +2492,10 @@ class Instance(object):
             }
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
                 "qrOption"] = self._qr_restore_option
+
+        if restore_option.get("useAutoStreamCalculation", False):
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "useAutoStreamCalculation"] = True
 
         if "sync_restore" in restore_option:
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["syncOption"] = self._sync_restore_json

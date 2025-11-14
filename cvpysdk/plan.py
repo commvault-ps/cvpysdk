@@ -1907,7 +1907,7 @@ class Plans(object):
             is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
-        if plan_sub_type == "Laptop":
+        if plan_sub_type == "Laptop" and 'accessPolicies' in request_json['plan']['laptop']:
             del request_json['plan']['laptop']['accessPolicies']
 
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
@@ -2533,14 +2533,13 @@ class Plans(object):
         self._all_plans_props = self._get_plans(full_response=True).get("plans",[])
         return self._all_plans_props
 
-    def create_threat_detection_plan(self, plan_name, index_server_name, access_nodes=None, storage_policy=None,
-                                     anomaly_detection_flag=False, FDA_flag=True, TA_flag=True, yara_rules=None,
+    def create_threat_detection_plan(self, plan_name, access_nodes, storage_policy=None,
+                                     anomaly_detection_flag=True, FDA_flag=True, TA_flag=True, yara_rules=None,
                                      **kwargs):
         """Creates a Threat Detection Plan for Indexing
 
         Args:
             plan_name (str) : Name of the plan to be created
-            index_server_name (str) : Index server name
             access_nodes (list) : List of access nodes to be added to the plan
             storage_policy (str) : Storage policy name for the plan
             anomaly_detection_flag (bool) : Flag to enable anomaly detection
@@ -2557,17 +2556,16 @@ class Plans(object):
         if not isinstance(plan_name, str):
             raise SDKException('Plan', '102', 'Plan name should be passed as String')
 
-        if not isinstance(index_server_name, str):
-            raise SDKException('Plan', '102', 'Index server name should be passed as String')
+        if not isinstance(access_nodes, list) and access_nodes is not None:
+            raise SDKException('Plan', '102', 'Access nodes should be passed as list of strings')
 
         if not anomaly_detection_flag and not FDA_flag and not TA_flag:
             raise SDKException('Plan', '102', 'At least one of the anomaly detection, FDA or TA must be enabled')
 
-        index_server_id = self._commcell_object.index_servers.get(index_server_name).index_server_client_id
         request_json = copy.deepcopy(threat_detection_plan_json)
         request_json["application"] = PlanTypes.DC.value
         request_json["name"] = plan_name
-        request_json["indexServer"]["id"] = index_server_id
+
         if anomaly_detection_flag:
             request_json["threatIndicator"]["threatDetection"]["backupSize"] = anomaly_detection_flag
             request_json["threatIndicator"]["threatDetection"]["canaryFile"] = anomaly_detection_flag

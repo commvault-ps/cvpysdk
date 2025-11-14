@@ -1478,7 +1478,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         }})
         self._set_association_request(_assocaition_json_)
 
-    def set_o365group_asscoiations(self, subclient_content: dict) -> None:
+    def set_o365group_asscoiations(self, subclient_content: dict, use_policies: bool = True) -> None:
         """Create O365 Group associations for the UserMailboxSubclient.
 
         Associates the specified archive, cleanup, and retention policies with the O365 Group
@@ -1496,15 +1496,24 @@ class UsermailboxSubclient(ExchangeSubclient):
                         'cleanup_policy': "CIPLAN Clean-up policy",
                         'retention_policy': "CIPLAN Retention policy"
                     }
+            use_policies: If True, use policy-based association. If False, use plan-based association. Defaults to True.
 
         Example:
             >>> subclient_content = {
+                    'is_auto_discover_user': True,
             ...     'archive_policy': "CIPLAN Archiving policy",
             ...     'cleanup_policy': "CIPLAN Clean-up policy",
             ...     'retention_policy': "CIPLAN Retention policy"
             ... }
-            >>> subclient.set_o365group_asscoiations(subclient_content)
-            >>> print("O365 Group associations set successfully.")
+            >>> subclient.set_adgroup_associations(subclient_content)
+
+            >>> # For plan-based association:
+            >>> plan_content = {
+            ...     'plan_name': 'Exchange_Plan_01',
+            ...     'is_auto_discover_user': True,
+            ...     'plan_id': 1234
+            ... }
+            >>> subclient.set_adgroup_associations(plan_content, use_policies=False)
 
         #ai-gen-doc
         """
@@ -1517,8 +1526,14 @@ class UsermailboxSubclient(ExchangeSubclient):
                 }
             ]
         }
-        _assocaition_json_ = self._association_json(subclient_content, True)
+        if use_policies:
+            _assocaition_json_ = self._association_json(subclient_content)
+        else:
+            _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        _assocaition_json_["emailAssociation"].update({"advanceOptions": {
+            "enableAutoDiscovery": subclient_content.get("is_auto_discover_user", True)
+        }})
         self._set_association_request(_assocaition_json_)
 
     def delete_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:

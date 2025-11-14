@@ -2144,6 +2144,9 @@ class Backupset(object):
                         'deleted': deleted
                     }
 
+                    if "threatAnalysisRequest" in options and options["threatAnalysisRequest"] and 'flags' in result:
+                        paths_dict[path]['threatAnalysisData'] = result["flags"]
+
                     paths.append(path)
 
                 return paths, paths_dict

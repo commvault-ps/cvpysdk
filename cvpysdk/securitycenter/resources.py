@@ -82,8 +82,13 @@ class Resource(TAServer):
             from_time (int, optional): Start time for the scan in epoch format. Defaults to None.
             to_time (int, optional): End time for the scan in epoch format. Defaults to None.
 
+        Returns:
+            The job ID (int) of the launched scan job.
+
+        Raises:
+            SDKException: If the job fails to start or if input data types are invalid.
         ."""
-        self._commcell_object.threat_indicators.run_scan(
+        return self._commcell_object.threat_indicators.run_scan(
             self._server_name,
             anomaly_types,
             index_server_name,

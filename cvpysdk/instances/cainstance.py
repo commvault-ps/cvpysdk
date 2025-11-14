@@ -129,7 +129,8 @@ class CloudAppsInstance(Instance):
             35: MSDynamics365Instance,  # MS Dynamics 365 Instance
             36: TeamsInstance,  # Office 365 Teams
             37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
-            44: AzureCosmosDBInstance  # Azure Cosmos DB Cloud Apps Instance
+            44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
+            51: AzureCosmosDBInstance   # Azure Cosmos DB MongoDBAPI Instance
         }
 
         commcell_object = agent_object._commcell_object
