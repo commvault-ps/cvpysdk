@@ -248,7 +248,7 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
 
     @property
-    def all_credentials(self) -> List[Dict[str, Any]]:
+    def all_credentials(self) -> Dict[str, int]:
         """Get all credentials present in the Commcell.
 
         Returns:
@@ -260,8 +260,7 @@ class Credentials(object):
             >>> print(f"Total credentials found: {len(all_creds)}")
             >>> # Access details of the first credential
             >>> if all_creds:
-            >>>     first_cred = all_creds[0]
-            >>>     print(f"First credential details: {first_cred}")
+            >>>     print(f"First credential details: {all_creds}")
 
         #ai-gen-doc
         """

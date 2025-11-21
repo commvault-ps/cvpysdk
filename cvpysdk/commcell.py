@@ -4337,8 +4337,10 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def enable_privacy(self) -> None:
+    def enable_privacy(self, otp: str = None) -> None:
         """Enable data privacy on the Commcell.
+        Args:
+                otp (str): otp for two-factor authentication operation.
 
         This method activates data privacy features for the Commcell, enhancing the security of sensitive information.
 
@@ -4352,10 +4354,12 @@ class Commcell(object):
         if self.is_privacy_enabled is True:
             return
 
-        self.set_privacy(True)
+        self.set_privacy(True, otp=otp)
 
-    def disable_privacy(self) -> None:
+    def disable_privacy(self, otp: str = None) -> None:
         """Disable data privacy on the Commcell.
+        Args:
+                otp (str): otp for two-factor authentication operation.
 
         This method allows users to turn off data privacy features for the Commcell instance.
 
@@ -4369,13 +4373,14 @@ class Commcell(object):
         if self.is_privacy_enabled is False:
             return
 
-        self.set_privacy(False)
+        self.set_privacy(False, otp=otp)
 
-    def set_privacy(self, value: bool) -> None:
+    def set_privacy(self, value: bool, otp: str = None) -> None:
         """Enable or disable privacy settings for the Commcell.
 
         Args:
             value: Set to True to enable privacy, or False to disable privacy.
+            otp (str): otp for two-factor authentication operation.
 
         Raises:
             SDKException: If the response is empty, if disabling privacy fails, or if the response indicates failure.
@@ -4390,9 +4395,13 @@ class Commcell(object):
         url = self._services['PRIVACY_DISABLE']
         if value:
             url = self._services['PRIVACY_ENABLE']
+        headers = None
+        if otp:
+            headers = self._headers.copy()
+            headers["otp"] = otp
 
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', url
+            'PUT', url, headers=headers
         )
 
         if flag:
@@ -5441,7 +5450,8 @@ class Commcell(object):
         else:
             raise SDKException('Commcell', '101', 'Email servers should be a list')
 
-    def enable_tfa(self, user_groups: Optional[List[str]] = None, usernameless: bool = False, passwordless: bool = False) -> None:
+    def enable_tfa(self, user_groups: Optional[List[str]] = None, usernameless: bool = False,
+                   passwordless: bool = False, otp: str = None) -> None:
         """Enable two-factor authentication (TFA) on the Commcell.
 
         This method enables TFA for the Commcell, optionally restricting it to specific user groups.
@@ -5451,6 +5461,7 @@ class Commcell(object):
             user_groups: Optional list of user group names for which TFA should be enabled. If None, TFA is enabled for all applicable users.
             usernameless: If True, allows usernameless login as part of TFA.
             passwordless: If True, allows passwordless login as part of TFA.
+            otp (str): otp for two-factor authentication operation.
 
         Example:
             >>> commcell = Commcell()
@@ -5464,11 +5475,13 @@ class Commcell(object):
         #ai-gen-doc
         """
         self.two_factor_authentication.enable_tfa(
-            user_groups=user_groups, usernameless=usernameless, passwordless=passwordless
+            user_groups=user_groups, usernameless=usernameless, passwordless=passwordless, otp=otp
         )
 
-    def disable_tfa(self) -> None:
+    def disable_tfa(self, otp: str = None) -> None:
         """Disable two-factor authentication (TFA) on this Commcell.
+        Args:
+            otp (str): otp for two-factor authentication operation.
 
         This method turns off TFA for the Commcell, allowing users to log in without requiring a second authentication factor.
 
@@ -5479,7 +5492,7 @@ class Commcell(object):
 
         #ai-gen-doc
         """
-        self.two_factor_authentication.disable_tfa()
+        self.two_factor_authentication.disable_tfa(otp=otp)
 
     def _get_commserv_metadata(self) -> Dict[str, Any]:
         """Load and retrieve metadata for the CommServ associated with this Commcell instance.

@@ -1089,14 +1089,20 @@ class User(object):
             }]
         }
         new_username = kwargs.get("new_username", None)
+        otp = kwargs.get("otp", None)
         if new_username is not None:
             if not isinstance(new_username, str):
                 raise SDKException("USER", "101")
             request_json["users"][0]["userEntity"]["userName"] = new_username
         request_json['users'][0].update(properties_dict)
 
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._user, request_json
+            'POST', self._user, request_json, headers=headers
         )
 
         if flag:
@@ -1431,13 +1437,14 @@ class User(object):
         else:
             raise SDKException('User', '101')
 
-    def update_user_password(self, new_password: str, logged_in_user_password: str) -> None:
+    def update_user_password(self, new_password: str, logged_in_user_password: str, otp: str = None) -> None:
         """updates new passwords of user
 
         Args:
             new_password (str): New password for user.
             logged_in_user_password (str): Password of logged-in user (User who is changing
                 the password) for validation.
+            otp (str): otp for two-factor authentication operation.
 
         Usage:
             ```python
@@ -1454,7 +1461,7 @@ class User(object):
                 "passwordOperationType": 2
             }
         }
-        self._update_user_props(props_dict)
+        self._update_user_props(props_dict, otp=otp)
 
     def add_usergroups(self, usergroups_list: List[str]) -> None:
         """UPDATE the specified usergroups to this commcell user
@@ -1752,7 +1759,8 @@ class User(object):
                             token_type: int = None,
                             renewable_until_time: int = None,
                             token_expiry_time: int = None,
-                            api_endpoints: list = None) -> dict:
+                            api_endpoints: list = None,
+                            otp: str = None) -> dict:
         """
         Creates v4 Access token for the given User
 
@@ -1769,6 +1777,8 @@ class User(object):
             token_expiry_time    (int): Unix time stamp for Token expiry time
                                         applicable for Scopes ["Microsoft SCIM", "1-Touch"]. It will be ignored for other scopes.
             api_endpoints        (list): List of Commvault REST API to be considered in the custom scope
+
+            otp                 (str): One-Time Password for two-factor authentication.
 
         Returns:
             dict: Containing Access token details
@@ -1798,8 +1808,13 @@ class User(object):
         if api_endpoints:
             payload["apiEndpoints"] = api_endpoints
 
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_ACCESS_TOKEN'], payload
+            'POST', self._commcell_object._services['CREATE_ACCESS_TOKEN'], payload, headers=headers
         )
         if flag:
             if response.json():
@@ -1820,7 +1835,8 @@ class User(object):
                           token_type: int = None,
                           renewable_until_time: int = None,
                           token_expiry_time: int = None,
-                          api_endpoints: list = None) -> dict:
+                          api_endpoints: list = None,
+                          otp: str = None) -> dict:
         """
         update v4 Access token for the given token ID
 
@@ -1838,6 +1854,7 @@ class User(object):
             token_expiry_time    (int): Unix time stamp for Token expiry time
                                         applicable for Scopes ["Microsoft SCIM", "1-Touch"]. It will be ignored for other scopes.
             api_endpoints        (list): List of Commvault REST API to be considered in the custom scope
+            otp                  (str): One-Time Password for two-factor authentication.
 
         Returns:
             dict: Containing updated Access token details
@@ -1875,7 +1892,14 @@ class User(object):
             payload["apiEndpoints"] = api_endpoints
 
         update_token_api_url = self._commcell_object._services['UPDATE_ACCESS_TOKEN'] % access_token_id
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', update_token_api_url, payload)
+
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', update_token_api_url, payload,
+                                                                            headers=headers)
         if flag:
             if response.json():
                 error_code = response.json()['error']['errorCode']
@@ -1889,12 +1913,13 @@ class User(object):
         return response.json()["tokenInfo"]
 
 
-    def delete_access_token(self, access_token_id: int) -> dict:
+    def delete_access_token(self, access_token_id: int, otp: str = None) -> dict:
         """
         delete v4 Access token for the given token ID
 
         Args:
             access_token_id (int): Access token ID received in the create request
+            otp             (str): One-Time Password for two-factor authentication.
 
         Returns:
             dict: Containing error message and error code.
@@ -1908,7 +1933,14 @@ class User(object):
             result = user.delete_access_token(access_token_id=123)
         """
         revoke_token_api_url = self._commcell_object._services['REVOKE_ACCESS_TOKEN'] % access_token_id
-        flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', revoke_token_api_url)
+
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', revoke_token_api_url,
+                                                                            headers=headers)
         if flag:
             if response.json():
                 error_code = response.json()['errorCode']
@@ -2007,3 +2039,27 @@ class User(object):
         if self._additional_settings is None:
             self._additional_settings = AdditionalSettings(self)
         return self._additional_settings
+
+    def generate_otp(self):
+        """
+        Generates OTP for the user.
+
+        Raises:
+            SDKException:
+                - 'Response', '101': If the HTTP request fails.
+                - 'Response', '102': If the response is empty or invalid.
+
+        Usage:
+            user.generate_otp()
+        """
+        generate_otp_url = self._commcell_object._services['GENERATE_OTP']
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', generate_otp_url)
+        if not flag:
+            if response.json():
+                error_code = response.json().get('errorCode')
+                if error_code and error_code != 1133:
+                    error_string = response.json().get('errorMessage')
+                    raise SDKException('Response', '102', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

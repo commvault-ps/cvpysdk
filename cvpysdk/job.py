@@ -507,7 +507,7 @@ class JobController(object):
         return self._commcell_object.wrap_request(
             'POST', 'ACTIVE_JOBS_SUMMARY',
             req_kwargs={"payload": {}},
-            sdk_exception=('Job', '109')
+            error_check=False
         )
 
     def _get_jobs_list(self, **options: Any) -> Dict[str, Dict[str, Any]]:

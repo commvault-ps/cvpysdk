@@ -88,6 +88,8 @@ Role
 
     modify_capability()     --  modifying permissions of the role
 
+    get_all_permissions()  --  gets all permissions associated with the role
+
 """
 
 from ..exception import SDKException
@@ -633,6 +635,7 @@ class Role(object):
             self._role_id = role_id
 
         self._request_role = self._commcell_object._services['ROLE'] % (self._role_id)
+        self._request_permissions = self._commcell_object._services['PERMISSIONS']
         self._role_description = ''
         self._role_status = True
         self._security_associations = {}
@@ -1146,7 +1149,51 @@ class Role(object):
         Usage:
             permissions = role.permissions
         """
+        if self._role_id == 1:
+            self.get_all_permissions()
         return self._role_permissions
+
+    def get_all_permissions(self) -> None:
+        """Gets all the permissions associated with the role.
+
+        Raises:
+            SDKException: If the response is empty or not successful.
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._request_permissions
+        )
+        category_list = []
+        permission_list = []
+
+        if flag:
+            if response.json() and 'permissions' in response.json():
+                permissions = response.json()['permissions']
+                for item in permissions:
+                    if 'category' in item and 'name' in item['category']:
+                        category_list.append(item['category']['name'])
+                    if 'permissions' in item:
+                        for permission in item['permissions']:
+                            if 'name' in permission:
+                                permission_list.append(permission['name'])
+                    if 'categoryList' in item:
+                        for sub_category in item['categoryList']:
+                            if 'category' in sub_category and 'name' in sub_category['category']:
+                                category_list.append(sub_category['category']['name'])
+                            if 'permissions' in sub_category:
+                                for permission in sub_category['permissions']:
+                                    if 'name' in permission:
+                                        permission_list.append(permission['name'])
+
+                self._role_permissions = {
+                    'permission_list': permission_list,
+                    'category_list': category_list
+                }
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def refresh(self) -> None:
         """Refresh the properties of the Roles.

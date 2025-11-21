@@ -345,7 +345,7 @@ class ActivateEntities(object):
 
                         entity_regex (str)     --  Regex for the entity
 
-                        entity_keywords (str)  --  Keywords for the entity
+                        entity_keywords (str)  --  Keywords for the entity [For derived entity, pass this as None in case if you don't wish to add any keywords
 
                         entity_flag (int)      --  Sensitivity flag value for entity
                                                         5-Highly sensitive
@@ -372,19 +372,31 @@ class ActivateEntities(object):
 
                                 if input data type is not valid
                 """
-        if not isinstance(entity_name, str) or not isinstance(entity_regex, str) \
-                or not isinstance(entity_keywords, str):
-            raise SDKException('ActivateEntity', '101')
+        if is_derived:
+            if not isinstance(entity_name, str):
+                raise SDKException('ActivateEntity', '101')
+            if not isinstance(entity_regex, str) \
+                    and not isinstance(entity_keywords, str):
+                raise SDKException('ActivateEntity', '101')
+            if not entity_keywords:
+                entity_keywords = ''
+        else:
+            if not isinstance(entity_name, str) or not isinstance(entity_regex, str) \
+                    or not isinstance(entity_keywords, str):
+                raise SDKException('ActivateEntity', '101')
         if entity_flag not in [1, 3, 5]:
             raise SDKException('ActivateEntity', '102', 'Unsupported entity flag value')
         request_json = ActivateEntityConstants.REQUEST_JSON
-        request_json['regularExpression'] = "{\"entity_key\":\"" + \
-            entity_name + "\",\"entity_regex\":\"" + entity_regex + "\"}"
+        if not is_derived:
+            request_json['regularExpression'] = "{\"entity_key\":\"" + \
+                entity_name + "\",\"entity_regex\":\"" + entity_regex + "\"}"
+            request_json['entityXML']['keywords'] = entity_keywords
         request_json['flags'] = entity_flag
         request_json['entityName'] = entity_name
-        request_json['entityXML']['keywords'] = entity_keywords
         if is_derived:
-            request_json['regularExpression'] = "{\"entity_key\":\"" + entity_name + "\"}"
+            request_json['entityXML']['userDefinedKeywords'] = entity_keywords
+            request_json['regularExpression'] = "{\"entity_key\":\"" + entity_name + \
+                "\",\"entity_regex\":{\"entity_custom_derived_regex\":\"" + entity_regex + "\"}}"
             request_json['entityType'] = 3
             if isinstance(parent_entity, int):
                 request_json['parentEntityId'] = parent_entity

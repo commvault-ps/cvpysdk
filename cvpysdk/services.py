@@ -77,7 +77,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
                        '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
-                       '&applicationCheck=%s&additionalResources=%s',
+                       '&applicationCheck=%s&additionalResources=%s&ApplicationReadinessOption=%s',
     'RUN_TRUEUP': '{0}Office365/TrueUp',
     'READ_TRUEUP_RESULTS_CLIENT': '{0}Job/Office365/Results?subclientId=%s&clientId=%s&appTypeId=134&options=4',
     'READ_TRUEUP_RESULTS_USER': '{0}Job/Office365/Results?subclientId=%s&clientId=%s&options=3&appTypeId=134&userGUID=%s',
@@ -333,6 +333,7 @@ SERVICES_DICT_TEMPLATE = {
     'EDISCOVERY_REQUEST_DOCUMENT_MARKER': '{0}EDiscoveryClients/Tasks/%s/Documents',
     'EDISCOVERY_CONFIGURE_TASK': '{0}EDiscoveryClient/ConfigureTask',
     'EDICOVERY_TASK_WORKFLOW': '{0}EDiscoveryClients/Tasks/%s/Workflows',
+    'EDISCOVERY_TASK_AUDIT': '{0}V4/Activate/Entity/9515/%s/Audit',
     'ENTITY_BY_SENSITIVITY': '{0}dcube/entitiesbysensitivity',
     'GET_RESOURCE_POOLS': '{0}V4/ResourcePool',
     'GET_RESOURCE_POOL_DETAILS': '{0}ResourcePool/%s',
@@ -411,11 +412,13 @@ SERVICES_DICT_TEMPLATE = {
     'V4_USER': '{0}v4/user/%s',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
+    'GENERATE_OTP': '{0}user/otp/generate?dM2ClientType=AdminConsole',
 
     'UNLOCK': '{0}User/Unlock',
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',
+    'PERMISSIONS': '{0}V4/Permissions',
 
     'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=30',
     'ONE_CREDENTIAL': '{0}/CommCell/Credentials/%s?propertyLevel=30',
@@ -466,6 +469,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
+    'MANAGE_MEDIA_AGENTS_FOR_POOL': '{0}V4/StoragePool/%s/MediaAgent',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
     'GET_METALLIC_STORAGE_DETAILS': '{0}metallic/storage',
 

@@ -92,6 +92,10 @@ StoragePool
 
     hyperscale_add_nodes()      --  Add 3 new nodes to an existing storage pool
 
+    add_media_agent()           --  Adds a media agent to the storage pool
+
+    remove_media_agent()        --  Removes a media agent from the storage pool
+
 StoragePool instance attributes
 ================================
 
@@ -113,6 +117,14 @@ StoragePool instance attributes
 
     **storage_vendor**              --  returns the storage vendor id of the storage pool
 
+    **media_agents**                --  returns the list of media agents associated with the storage pool
+
+    **storage_media_agents**        --  returns the list of storage media agents associated with the storage pool
+
+    **ddb_media_agents**            --  returns the list of deduplication media agents associated with the storage pool
+
+    **media_agents_with_roles**     --  returns the list of media agents with their roles associated with the storage pool
+
     **is_worm_storage_lock_enabled**--  returns whether WORM storage lock is enabled
 
     **is_object_level_worm_lock_enabled** --  returns whether object level WORM lock is enabled
@@ -128,6 +140,7 @@ import copy
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 import xmltodict
+from enum import Enum
 from base64 import b64encode
 from enum import IntEnum, IntFlag
 
@@ -1205,6 +1218,27 @@ class StoragePoolType(IntEnum):
     NON_DEDUPLICATION = 3,
     SCALE_OUT = 4
 
+class ManageMediaAgentActionType(Enum):
+    """
+    Enumeration class to represent different actions for managing media agents in a storage pool.
+
+    This class inherits from Enum and is used to define and manage various media agent actions
+    in a type-safe manner. It enables clear and readable code when working with different media
+    agent operations, such as adding, removing, or updating media agents.
+
+    Key Features:
+        - Type-safe enumeration of media agent actions
+        - Improved code readability and maintainability
+        - Facilitates media agent action comparisons and assignments
+
+    #ai-gen-doc
+    """
+    ADD_DDB = "ADD_DDB_ROLE"
+    ADD_STORAGE = "ADD_STORAGE_ROLE"
+    ADD_DDB_STORAGE = "ADD_DDB_STORAGE_ROLE"
+    REMOVE_DDB = "REMOVE_DDB_ROLE"
+    REMOVE_STORAGE = "REMOVE_STORAGE_ROLE"
+    REMOVE_DDB_STORAGE = "REMOVE_DDB_STORAGE_ROLE"
 
 class WORMLockType(IntFlag):
     """
@@ -1332,6 +1366,47 @@ class StoragePool(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def _get_ddb_media_agents(self) -> list:
+        """Retrieve the list of DDB media agents associated with the storage pool.
+
+        This method fetches and returns a list of DDB media agents configured for the current StoragePool instance.
+
+        Returns:
+            list: A list of DDB media agents.
+
+        #ai-gen-doc
+        """
+        ddb_media_agents = []
+        try:
+            ma_info_list = self._storage_pool_properties["storagePoolDetails"]["mediaAgents"]
+            for ma_info in ma_info_list:
+                if ma_info.get('bDDBMA'):
+                    ddb_media_agents.append(ma_info['mediaAgent']['mediaAgentName'])
+        except KeyError:
+            pass
+        return ddb_media_agents
+
+    def _get_storage_media_agents(self) -> list:
+        """Retrieve the list of storage media agents associated with the storage pool.
+
+        This method fetches and returns a list of storage media agents configured for the current StoragePool instance.
+
+        Returns:
+            list: A list of storage media agents.
+
+        #ai-gen-doc
+        """
+        storage_media_agents = []
+        try:
+            ma_info_list = self._storage_pool_properties["storagePoolDetails"]["mediaAgents"]
+            for ma_info in ma_info_list:
+                if ma_info.get('bStorageMA'):
+                    storage_media_agents.append(ma_info['mediaAgent']['mediaAgentName'])
+        except KeyError:
+            pass
+        return storage_media_agents
+    
 
     @property
     def storage_pool_name(self) -> str:
@@ -1482,6 +1557,70 @@ class StoragePool(object):
         #ai-gen-doc
         """
         return self._storage_pool_properties["storagePoolDetails"]["libraryVendorId"]
+
+    @property
+    def ddb_media_agents(self) -> list:
+        """Get the list of deduplication media agents associated with this storage pool.
+
+        This property provides a read-only list of deduplication media agents configured for the storage pool.
+
+        Returns:
+            list: A list of deduplication media agents."""
+        return self._get_ddb_media_agents()
+
+    @property
+    def storage_media_agents(self) -> list:
+        """Get the list of storage media agents associated with this storage pool.
+
+        This property provides a read-only list of storage media agents configured for the storage pool.
+
+        Returns:
+            list: A list of storage media agents."""
+        return self._get_storage_media_agents()
+
+    @property
+    def media_agents(self) -> list:
+        """Get the list of all media agents associated with this storage pool.
+
+        This property provides a read-only list of all media agents configured for the storage pool.
+
+        Returns:
+            list: A list of all media agents associated with the storage pool.
+
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> all_media_agents = storage_pool.media_agents  # Access the media agents property
+            >>> print(f"All media agents: {all_media_agents}")
+
+        #ai-gen-doc
+        """
+        return list(set(self._get_storage_media_agents() + self._get_ddb_media_agents()))
+
+    @property
+    def media_agents_with_roles(self) -> dict:
+        """Get the dictionary of media agents associated with this storage pool, categorized by their roles.
+
+        This property provides a read-only dictionary of media agents configured for the storage pool,
+        categorized into 'storage' and 'DDB' roles.
+
+        Returns:
+            dict: A dictionary with two keys: 'storage' and 'DDB', each containing a list of corresponding media agents.
+
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> media_agents_dict = storage_pool.media_agents_with_roles  # Access the media agents with roles property
+            >>> print(media_agents_dict)
+            {
+                'storage': ['StorageMA1', 'StorageMA2'],
+                'DDB': ['DDBMA1', 'DDBMA2']
+            }
+
+        #ai-gen-doc
+        """
+        return {
+                "storage": self._get_storage_media_agents(),
+                "DDB": self._get_ddb_media_agents()
+            }
 
     @property
     def is_worm_storage_lock_enabled(self) -> bool:
@@ -1869,6 +2008,131 @@ class StoragePool(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+        self.refresh()
+    
+    def add_media_agent(self, media_agent, storage = True, ddb = False) -> None:
+        """Add a media agent to the storage pool.
+
+        This method associates a media agent with the storage pool, allowing it to be used for storage operations.
+        You can specify whether to add the media agent as a storage media agent, a DDB media agent, or both.
+
+        Args:
+            media_agent: The name or MediaAgent object of the media agent to be added.
+            storage: Set to True to add as a storage media agent. Default is True.
+            ddb: Set to True to add as a DDB media agent. Default is False.
+        
+        Raises:
+            SDKException: If the media agent is already associated with the storage pool in the specified role(s).
+        
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> storage_pool.add_media_agent("MediaAgent01", storage=True, ddb=False)
+            >>> log.info("Media agent added to storage pool.")
+        """
+
+        if isinstance(media_agent, str):
+            media_agent_obj = self._commcell_object.media_agents.get(media_agent)
+        elif isinstance(media_agent, MediaAgent):
+            media_agent_obj = media_agent
+        else:
+            raise SDKException('Storage', '101')
+        if not (storage or ddb):
+            raise SDKException('StoragePool', '104', 'At least one of storage or ddb must be True')
+
+        if storage and media_agent_obj.media_agent_name in self._get_storage_media_agents():
+            raise SDKException('StoragePool', '104', 'Media Agent already a storage media agent for this pool')
+        if ddb and media_agent_obj.media_agent_name in self._get_ddb_media_agents():
+            raise SDKException('StoragePool', '104', 'Media Agent already a DDB media agent for this pool')
+        
+        action = ManageMediaAgentActionType.ADD_STORAGE.value if storage and not ddb else \
+                 ManageMediaAgentActionType.ADD_DDB.value if ddb and not storage else \
+                 ManageMediaAgentActionType.ADD_DDB_STORAGE.value
+        self._manage_media_agents_for_pool_api = self._commcell_object._services['MANAGE_MEDIA_AGENTS_FOR_POOL'] % (self.storage_pool_id)
+
+        request_json = {
+            "mediaAgent": {
+                "id": int(media_agent_obj.media_agent_id)
+            },
+            "action": action
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._manage_media_agents_for_pool_api, request_json)
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if int(error_code) != 0:
+                    error_message = response.json().get('errorMessage', 'Unknown error occurred')
+                    o_str = 'Failed to add media agent to storage pool\nError: "{0}"'
+
+                    raise SDKException('StoragePool', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+    
+    def remove_media_agent(self, media_agent : Union[str, MediaAgent], storage : bool = True, ddb : bool = True) -> None:
+        """Remove a media agent from the storage pool.
+
+        This method disassociates a media agent from the storage pool, preventing it from being used for storage operations.
+        You can specify whether to remove the media agent as a storage media agent, a DDB media agent, or both.
+
+        Args:
+            media_agent: The name or MediaAgent object of the media agent to be removed.
+            storage: Set to True to remove as a storage media agent. Default is True.
+            ddb: Set to True to remove as a DDB media agent. Default is True.
+            
+        Raises:
+            SDKException: If the media agent is not associated with the storage pool in the specified role(s).
+
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> storage_pool.remove_media_agent("MediaAgent01", storage=True, ddb=False)
+            >>> log.info("Media agent removed from storage pool.")
+        """
+        if isinstance(media_agent, str):
+            media_agent_obj = self._commcell_object.media_agents.get(media_agent)
+        elif isinstance(media_agent, MediaAgent):
+            media_agent_obj = media_agent
+        else:
+            raise SDKException('Storage', '101')
+        if not (storage or ddb):
+            raise SDKException('StoragePool', '104', 'At least one of storage or ddb must be True')
+
+        if storage and media_agent_obj.media_agent_name not in self._get_storage_media_agents():
+            raise SDKException('StoragePool', '104', 'Media Agent is not a storage media agent for this pool')
+        if ddb and media_agent_obj.media_agent_name not in self._get_ddb_media_agents():
+            raise SDKException('StoragePool', '104', 'Media Agent is not a DDB media agent for this pool')
+        
+        action = ManageMediaAgentActionType.REMOVE_STORAGE.value if storage and not ddb else \
+                 ManageMediaAgentActionType.REMOVE_DDB.value if ddb and not storage else \
+                 ManageMediaAgentActionType.REMOVE_DDB_STORAGE.value
+        self._manage_media_agents_for_pool_api = self._commcell_object._services['MANAGE_MEDIA_AGENTS_FOR_POOL'] % (self.storage_pool_id)
+        request_json = {
+            "mediaAgent": {
+                "id": int(media_agent_obj.media_agent_id)
+            },
+            "action": action
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._manage_media_agents_for_pool_api, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if int(error_code) != 0:
+                    error_message = response.json().get('errorMessage', 'Unknown error occurred')
+                    o_str = 'Failed to remove media agent from storage pool\nError: "{0}"'
+
+                    raise SDKException('StoragePool', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
         self.refresh()
 
     def refresh(self) -> None:

@@ -412,6 +412,7 @@ class EdiscoveryConstants:
                 "datasourceName": "",
                 "properties": [],
                 "datasourceType": 5,
+                "credentialId": 0,
                 "accessNodes": [
                     {
                         "clientId": 0,
@@ -1036,7 +1037,8 @@ class ActivateEntityConstants:
         "entityName": "",
         "entityXML": {
             "keywords": "",
-            "isSystemDefinedEntity": False
+            "isSystemDefinedEntity": False,
+            "userDefinedKeywords" : ""
         }
     }
 

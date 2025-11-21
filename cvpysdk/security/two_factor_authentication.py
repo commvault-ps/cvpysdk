@@ -193,10 +193,11 @@ class TwoFactorAuthentication:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def disable_tfa(self) -> None:
+    def disable_tfa(self, otp: str = None) -> None:
         """
          Disables two factor authentication at commcell/organization level
-
+        Args:
+            otp (str): otp for two-factor authentication operation.
          Returns:
              None
 
@@ -210,12 +211,18 @@ class TwoFactorAuthentication:
         url = self._services['TFA_DISABLE']
         if self._org_id:
             url = self._services['ORG_TFA_DISABLE'] % self._org_id
+        headers = None
+        if otp:
+            headers = self._commcell._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', url
+            'PUT', url, headers=headers
         )
         self._process_response(flag=flag, response=response)
 
-    def enable_tfa(self, user_groups: Optional[list] = None, usernameless: bool = False, passwordless: bool = False) -> None:
+    def enable_tfa(self, user_groups: Optional[list] = None, usernameless: bool = False, passwordless: bool = False,
+                   otp: str = None) -> None:
         """
         Enables two factor authentication at commcell/organization level.
 
@@ -223,6 +230,7 @@ class TwoFactorAuthentication:
             user_groups  (list, optional):  user group names on which two factor authentication needs to be enabled. Defaults to None.
             usernameless (bool, optional):  allow usernameless login if True. Defaults to False.
             passwordless (bool, optional):  allow passwordless login if True. Defaults to False.
+            otp (str): otp for two-factor authentication operation.
 
         Returns:
             None
@@ -268,8 +276,13 @@ class TwoFactorAuthentication:
                 }
             }
 
+        headers = None
+        if otp:
+            headers = self._commcell._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', url, payload
+            'PUT', url, payload, headers=headers
         )
         self._process_response(flag=flag, response=response)
 

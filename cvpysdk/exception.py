@@ -483,6 +483,7 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'No storage pool exists with the given name',
+        '104': 'Failed to add/remove media agent to storage pool',
     },
     'Monitoring': {
         '101': 'Data type of the input(s) is not valid',

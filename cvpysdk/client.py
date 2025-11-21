@@ -7541,7 +7541,7 @@ class Client(object):
         return self._client_hostname
 
     @property
-    def os_info(self) -> Dict[str, Any]:
+    def os_info(self) -> str:
         """Get the operating system information for the client as a read-only property.
 
         Returns:
@@ -7550,9 +7550,7 @@ class Client(object):
         Example:
             >>> client = Client(...)
             >>> os_details = client.os_info  # Access as a property
-            >>> print(f"OS Name: {os_details.get('name')}")
-            >>> print(f"OS Version: {os_details.get('version')}")
-            >>> print(f"Architecture: {os_details.get('architecture')}")
+            >>> print(f"OS Name: {os_details}")
         #ai-gen-doc
         """
         return self._os_info
@@ -10784,7 +10782,7 @@ class _Readiness:
         self._detail = None
         self._status = None
         self._dict = None
-        self._response = None
+        self._mongodb_dict = None
 
     def __fetch_readiness_details(
             self,
@@ -10794,6 +10792,7 @@ class _Readiness:
             cs_cc_network_check: bool = False,
             application_check: bool = False,
             additional_resources: bool = False,
+            application_readiness_option: bool = False
         ):
         """Perform readiness checks on the client with configurable options.
 
@@ -10804,6 +10803,7 @@ class _Readiness:
             cs_cc_network_check: If True, performs network readiness check between CommServe and client only. Default is False.
             application_check: If True, performs application readiness check. Default is False.
             additional_resources: If True, includes additional resources in the readiness check. Default is False.
+            application_readiness_option: If True, includes application readiness option in the check. Default is False.
 
         Raises:
             SDKException: If the response is empty or not successful.
@@ -10831,7 +10831,8 @@ class _Readiness:
                 disabled_clients,
                 cs_cc_network_check,
                 application_check,
-                additional_resources)
+                additional_resources,
+                int(application_readiness_option))
         )
 
         if flag:
@@ -10845,8 +10846,16 @@ class _Readiness:
         else:
             raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network: bool = True, resource: bool = False, disabled_clients: bool = False, cs_cc_network_check: bool = False,
-                 application_check: bool = False, additional_resources: bool = False) -> bool:
+    def is_ready(
+            self,
+            network: bool = True,
+            resource: bool = False,
+            disabled_clients: bool = False,
+            cs_cc_network_check: bool = False,
+            application_check: bool = False,
+            additional_resources: bool = False,
+            application_readiness_option = False
+    ) -> bool:
         """Perform a readiness check on the client with configurable options.
 
         Args:
@@ -10856,6 +10865,7 @@ class _Readiness:
             cs_cc_network_check: If True, performs a network readiness check between CommServe (CS) and client only. Default is False.
             application_check: If True, performs an application readiness check. Default is False.
             additional_resources: If True, includes additional resources in the readiness check. Default is False.
+            application_readiness_option: If True, includes application readiness option in the check. Default is False.
 
         Returns:
             True if the client is ready based on the selected checks, otherwise False.
@@ -10872,7 +10882,7 @@ class _Readiness:
         #ai-gen-doc
         """
         self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check,
-                                       application_check, additional_resources)
+                                       application_check, additional_resources, application_readiness_option)
         return self._status == "Ready."
 
     def is_mongodb_ready(self) -> bool:
@@ -10896,18 +10906,13 @@ class _Readiness:
             ...     print("MongoDB is not ready.")
         #ai-gen-doc
         """
-        flag, response = self.__commcell._cvpysdk_object.make_request(
-            "GET",self.__commcell._services["MONGODB_CHECK_READINESS"])
-        if flag:
-            self._response = response.json()
-            if response.json():
-                if not (self._response.get('response', [])[0].get('errorString', '') and
-                        self._response.get('response', [])[0].get('errorCode', None)):
-                    return True
-            else:
-                raise SDKException('Response', '102')
-        else:
-            raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
+        self.__fetch_readiness_details(application_readiness_option=True)
+        for entityName in self._dict.get('summary',[]):
+            if entityName.get('entity', {}).get('entityName', "") == 'MongoDB':
+                self._mongodb_dict = entityName
+                status = entityName.get('status', "")
+                return status.strip() == "Ready."
+        return False
 
     def __check_reason(self) -> None:
         """Extract and set the reason for readiness from the internal summary dictionary.
@@ -11039,6 +11044,6 @@ class _Readiness:
 
         #ai-gen-doc
         """
-        if not self._response:
+        if not self._mongodb_dict:
             self.is_mongodb_ready()
-        return self._response
+        return self._mongodb_dict.get('reason', "")

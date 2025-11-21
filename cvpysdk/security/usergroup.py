@@ -1007,18 +1007,19 @@ class UserGroup(object):
         """
         return self._allow_multiple_company_members
 
-    @allow_multiple_company_members.setter
-    def allow_multiple_company_members(self, flag: bool = True) -> None:
+    def set_allow_multiple_company_members(self, flag: bool = True, otp: str = None) -> None:
         """
         Allows Multiple Company Members to be part of this commcell user group
         Args:
             flag(bool)      -   True if multiple company members to be allowed,
                                 False otherwise
+            otp (str): otp for two-factor authentication operation.
+
         """
         if not isinstance(flag, bool):
             raise SDKException('UserGroup', '101')
         request_json = {"allowMultipleCompanyMembers": flag}
-        self._v4_update_usergroup_props(request_json)
+        self._v4_update_usergroup_props(request_json, otp=otp)
 
     @property
     def users(self) -> list:
@@ -1050,11 +1051,13 @@ class UserGroup(object):
         """Returns two factor authentication status (True/False)"""
         return self._properties.get('enableTwoFactorAuthentication') == 1
 
-    def enable_tfa(self) -> None:
+    def enable_tfa(self, otp: str = None) -> None:
         """
         enables two factor authentication on this group
+        Args:
+            otp (str): otp for two-factor authentication operation.
 
-            Note: tfa will not get enabled for this user group if global tfa is disabled
+        Note: tfa will not get enabled for this user group if global tfa is disabled
 
         Returns:
              None
@@ -1064,11 +1067,13 @@ class UserGroup(object):
                 "enableTwoFactorAuthentication": 1
             }]
         }
-        self._update_usergroup_props(request_json)
+        self._update_usergroup_props(request_json, otp=otp)
 
-    def disable_tfa(self) -> None:
+    def disable_tfa(self, otp: str = None) -> None:
         """
         disables two factor authentication for this group
+        Args:
+            otp (str): otp for two-factor authentication operation.
 
         Returns:
             None
@@ -1078,7 +1083,7 @@ class UserGroup(object):
                 "enableTwoFactorAuthentication": 0
             }]
         }
-        self._update_usergroup_props(request_json)
+        self._update_usergroup_props(request_json, otp=otp)
 
     def update_security_associations(self, entity_dictionary: dict, request_type: str) -> None:
         """handles three way associations (role-usergroup-entities)
@@ -1292,11 +1297,12 @@ class UserGroup(object):
 
         self._update_usergroup_props(request_json)
 
-    def _v4_update_usergroup_props(self, properties_dict: dict) -> None:
+    def _v4_update_usergroup_props(self, properties_dict: dict, otp: str = None) -> None:
         """Updates the properties of this usergroup
 
             Args:
                 properties_dict (dict)  --  user property dict which is to be updated
+                otp (str): otp for two-factor authentication operation.
 
             Raises:
                 SDKException:
@@ -1308,9 +1314,13 @@ class UserGroup(object):
         if not isinstance(properties_dict, dict):
             raise SDKException('UserGroup', '101')
         usergroup_request = self._commcell_object._services['USERGROUP_V4'] % (self._user_group_id)
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', usergroup_request, properties_dict
+            'PUT', usergroup_request, properties_dict, headers=headers
         )
         if flag:
             if response.json():
@@ -1322,11 +1332,12 @@ class UserGroup(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def _update_usergroup_props(self, request_json: dict) -> None:
+    def _update_usergroup_props(self, request_json: dict, otp: str = None) -> None:
         """Updates the properties of this usergroup
 
             Args:
                 request_json (dict)  --  user property dict which is to be updated
+                otp (str): otp for two-factor authentication operation.
 
             Raises:
                 SDKException:
@@ -1338,9 +1349,13 @@ class UserGroup(object):
         if not isinstance(request_json, dict):
             raise SDKException('UserGroup', '101')
         usergroup_request = self._commcell_object._services['USERGROUP'] % (self._user_group_id)
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', usergroup_request, request_json
+            'PUT', usergroup_request, request_json, headers=headers
         )
         if flag:
             if response.json():
@@ -1352,11 +1367,12 @@ class UserGroup(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def _update_usergroup_props(self, properties_dict: dict) -> None:
+    def _update_usergroup_props(self, properties_dict: dict, otp: str = None ) -> None:
         """Updates the properties of this usergroup
 
         Args:
             properties_dict (dict): user property dict which is to be updated
+            otp (str): otp for two-factor authentication operation.
 
         Raises:
             SDKException:
@@ -1365,9 +1381,13 @@ class UserGroup(object):
                 if response is not success
         """
         usergroup_request = self._commcell_object._services['USERGROUP'] % (self._user_group_id)
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', usergroup_request, properties_dict
+            'POST', usergroup_request, properties_dict, headers=headers
         )
         if flag:
             if response.json():

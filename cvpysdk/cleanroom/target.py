@@ -753,7 +753,7 @@ class CleanroomTarget:
                     # infrastructure advanced settings
 
                     self._infra_server_group_name = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                     .get('advancedSettings', {}).get('serverGroup', {})
+                                                     .get('networkTopologySettings', {}).get('infrastructureServerGroup', {})
                                                      .get('name', ''))
                     self._infra_resourceGroup = (self._cleanroom_target_properties.get('infrastructure', {})
                                                  .get('advancedSettings', {}).get('resourceGroup', {}).get('name', ''))
@@ -1265,7 +1265,7 @@ class CleanroomTarget:
         """Get the address space configuration for the virtual network and its subnets.
 
         Returns:
-            dict: A dictionary containing address space details for the vnet and subnets, 
+            dict: A dictionary containing address space details for the vnet and subnets,
             including recovery entity, infrastructure, and bastion subnets.
 
         Example:

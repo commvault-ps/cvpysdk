@@ -214,6 +214,7 @@ import copy
 import time
 import json
 import os
+import re
 
 from ..activateapps.entity_manager import EntityManagerTypes
 
@@ -548,6 +549,7 @@ class EdiscoveryClientOperations():
         self._API_DOC_TASK = self._services['EDISCOVERY_REQUEST_DOCUMENT_MARKER']
         self._API_CONFIGURE_TASK = self._services['EDISCOVERY_CONFIGURE_TASK']
         self._API_TASK_WORKFLOW = self._services['EDICOVERY_TASK_WORKFLOW']
+        self._API_TASK_AUDIT = self._services['EDISCOVERY_TASK_AUDIT']
         from .file_storage_optimization import FsoServer, FsoServerGroup
         from .sensitive_data_governance import Project, Projects
         from .request_manager import Request
@@ -1550,6 +1552,17 @@ class EdiscoveryClientOperations():
                         f"Something wrong while invoking task workflow operation - {response.json()['errorMessage']}")
                 if 'jobId' in response.json():
                     return response.json()['jobId']
+                else:
+                    flag, response = self._cvpysdk_object.make_request('GET', self._API_TASK_AUDIT % self._client_id)
+                    if flag:
+                        if response.json() and 'auditDetails' in response.json():
+                            audit_records = response.json()['auditDetails']
+                            for record in audit_records:
+                                for message in record.get("messages", []):
+                                    match = re.search(r"ApprovalWorkflowJobId: Set to \[(\d+)\]", message)
+                                    if match:
+                                        return int(match.group(1))
+                    raise SDKException('EdiscoveryClients', '102', f"Workflow job fetch fails from Audit")
             raise SDKException('EdiscoveryClients', '102', f"Workflow task failed")
         self._response_not_success(response)
 
@@ -1828,9 +1841,7 @@ class EdiscoveryDataSources():
 
                     country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    user_name           (str)       --  User name who has access to UNC path
-
-                    password            (str)       --  base64 encoded password to access unc path
+                    credential_name     (str)       --  Credential name to use for UNC crawl path
 
                     enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 
@@ -1876,8 +1887,8 @@ class EdiscoveryDataSources():
         if not is_server_group:
             is_commvault_client = self._commcell_object.clients.has_client(server_name)
             if not is_commvault_client:
-                if ('access_node' not in kwargs or 'user_name' not in kwargs or 'password' not in kwargs):
-                    raise SDKException('EdiscoveryClients', '102', "Access node information is missing")
+                if ('access_node' not in kwargs or 'credential_name' not in kwargs):
+                    raise SDKException('EdiscoveryClients', '102', "Access node/Credential information is missing")
                 if not self._commcell_object.clients.has_client(kwargs.get("access_node")):
                     raise SDKException('EdiscoveryClients', '102', "Access node client is not present")
             inventory_resp = inv_obj.data_source.ds_handlers.get(
@@ -1971,14 +1982,11 @@ class EdiscoveryDataSources():
                 "propertyValue": str(EdiscoveryConstants.CrawlType.LIVE.value)
             })
             if not is_commvault_client or 'access_node' in kwargs:
-                request_json['datasources'][0]['properties'].append({
-                    "propertyName": "username",
-                    "propertyValue": kwargs.get('user_name', '')
-                })
-                request_json['datasources'][0]['properties'].append({
-                    "propertyName": "password",
-                    "propertyValue": kwargs.get('password', '')
-                })
+                credential_name = kwargs.get('credential_name', '')
+                if not self._commcell_object.credentials.has_credential(credential_name):
+                    raise SDKException('EdiscoveryClients', '102', 'Invalid credential name')
+                request_json['datasources'][0]['credentialId'] = self._commcell_object.credentials.get(
+                    credential_name).credential_id
                 request_json['datasources'][0]['properties'].append({
                     "propertyName": "domainName",
                     "propertyValue": inventory_resp['domainName']
