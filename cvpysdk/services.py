@@ -150,6 +150,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
     'DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK': '{0}V4/StoragePolicy/%s/Copy/%s/ComplianceLock/Disable',
+    'ENABLE_RETENTION_LOCK': '{0}V4/StoragePolicy/%s/Copy/%s/DataRetentionLock/Enable',
     'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
     'RECOVERY_ENABLERS': '{0}MediaAgent/RecoveryEnabler?osType=CLIENT_PLATFORM_OSTYPE_UNIX ',
     'GET_ALL_ALERTS': '{0}AlertRule',

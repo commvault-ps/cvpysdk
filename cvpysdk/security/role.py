@@ -221,7 +221,7 @@ class Roles(object):
             'roleName': 'roleProperties.role.roleName',
             'roleId': 'roleProperties.role.roleId',
             'description': 'roleProperties.description',
-            'status': 'roleProperties.role.flags.disabled',
+            'disabled': 'roleProperties.role.flags.disabled',
             'company': 'companyName'
         }
         default_columns = 'roleProperties.role.roleName'
@@ -309,7 +309,7 @@ class Roles(object):
                               Default ['0', '100']
                 search (str): Contains the string to search in the commcell entity cache.
                 fq (list): Contains the columnName, condition and value.
-                           e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]
+                           e.g. fq = [['roleName', 'contains', 'test'], ['disabled', 'eq', True]]
 
         Returns:
             dict: Dictionary of all the properties present in response.
@@ -319,7 +319,7 @@ class Roles(object):
 
         Usage:
             >>> roles_cache = self.get_roles_cache()
-            >>> roles_cache = self.get_roles_cache(hard=True, fl=['roleName', 'status'], sort=['roleName', '1'], limit=['0', '50'], search='admin', fq=[['status', 'eq', 'Enabled']])
+            >>> roles_cache = self.get_roles_cache(hard=True, fl=['roleName', 'status'], sort=['roleName', '1'], limit=['0', '50'], search='admin', fq=[['disabled', 'eq', True]])
         """
         # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl'))
@@ -362,7 +362,7 @@ class Roles(object):
                     'roleName': name,
                     'roleId': role.get('role', {}).get('roleId'),
                     'description': role.get('description', ''),
-                    'status': role.get('role', {}).get('flags', {}).get('disabled'),
+                    'disabled': role.get('role', {}).get('flags', {}).get('disabled'),
                     'company': company
                 }
                 roles_cache[unique_name] = roles_config
@@ -637,7 +637,7 @@ class Role(object):
         self._request_role = self._commcell_object._services['ROLE'] % (self._role_id)
         self._request_permissions = self._commcell_object._services['PERMISSIONS']
         self._role_description = ''
-        self._role_status = True
+        self._role_status = None
         self._security_associations = {}
         self._role_permissions = {}
         self._company_name = ''
@@ -687,7 +687,7 @@ class Role(object):
                 self._role_description = role_properties.get('description')
                 self._role_id = role_properties['role'].get('roleId')
                 self._role_name = role_properties['role'].get('roleName')
-                self._role_status = role_properties['role']['flags'].get('disabled')
+                self._role_status = not role_properties['role']['flags'].get('disabled')
 
                 self._company_name = role_properties.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName', None)
 

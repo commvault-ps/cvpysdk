@@ -75,6 +75,8 @@ Class: ApplicationGroups:                Derived class from Subclients Base
 
         create_application_group()       --       creates application group
 
+        create_etcd_subclient()          --       creates etcd subclient
+
 
 """
 
@@ -1706,6 +1708,92 @@ class ApplicationGroups(Subclients):
             app_create_json['subClientProperties']['vmFilterOperationType'] = 'ADD'
             app_create_json['subClientProperties']['vmDiskFilterOperationType'] = 'ADD'
             app_create_json['subClientProperties']['vmFilter'] = { 'children' : filter_children}
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_SUBCLIENT'],
+                                                           app_create_json)
+        if flag == False:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def create_etcd_subclient(self,plan_name):
+        """
+        Create subclient for ETCD application group
+
+        Args:
+            plan_name (str) -- Plan name
+
+        Returns:
+            None
+
+        Raises:
+            SDKException: If the subclient creation fails.
+
+        Example:
+            >>> app_groups.create_etcd_subclient(plan_name='Bronze')
+
+        """
+
+        plan_id = int(self._commcell_object.plans[str(plan_name.lower())])
+
+        app_create_json = {
+                "subClientProperties": {
+                    "commonProperties": {
+                        "isETCDSubclient": True,
+                        "isSnapBackupEnabled": False,
+                        "numberOfBackupStreams": 5,
+                        "enableBackup": True,
+                        "snapCopyInfo": {
+                            "isSnapBackupEnabled": False,
+                            "transportModeForVMWare": 0,
+                            "snapToTapeSelectedEngine": {
+                                "snapShotEngineId": 82,
+                                "snapShotEngineName": "Kubernetes CSI Snap"
+                            }
+                        }
+                    },
+                    "planEntity": {
+                        "planId": plan_id,
+                        "planName": plan_name,
+                        "type": "MSP"
+                    },
+                    "vmContentOperationType": 2,
+                    "vmFilterOperationType": 1,
+                    "vmDiskFilterOperationType": 1,
+                    "vmContent": {
+                        "children": [
+                            {
+                                "allOrAnyChildren": True,
+                                "displayName": "Application:k8s-app=etcd -n openshift-etcd",
+                                "equalsOrNotEquals": True,
+                                "guestCredentialAssocId": 0,
+                                "name": "Selector",
+                                "path": "",
+                                "type": "Selector",
+                                "value": "Application:k8s-app=etcd -n openshift-etcd"
+                            },
+                            {
+                                "allOrAnyChildren": True,
+                                "displayName": "Application:component=etcd -n kube-system",
+                                "equalsOrNotEquals": True,
+                                "guestCredentialAssocId": 0,
+                                "name": "Selector",
+                                "path": "",
+                                "type": "Selector",
+                                "value": "Application:component=etcd -n kube-system"
+                            }
+                        ]
+                    },
+                    "vsaSubclientProp": {
+                        "quiesceGuestFileSystemAndApplications": True,
+                        "autoDetectVMOwner": False
+                    },
+                    "subClientEntity": {
+                        "subclientName": "etcd (system generated)",
+                        "applicationId": 106,
+                        "appName": "Virtual Server",
+                        "clientId": int(self._client_object.client_id),
+                    }
+                }
+            }
 
         flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_SUBCLIENT'],
                                                            app_create_json)

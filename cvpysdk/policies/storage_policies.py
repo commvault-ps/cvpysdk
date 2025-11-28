@@ -228,9 +228,13 @@ StoragePolicyCopy:
 
     disable_compliance_lock()               -- Unsets compliance lock (wormCopy flag)
 
+    enable_retention_lock()                 -- Enables retention lock on the copy
+
     is_media_refresh_enabled()              -- Checks whether Media Refresh on copy is enabled or not
 
     update_media_refresh()                  -- update media refresh (enable/disable) on storage pool/policy copy property.
+
+    is_primary_copy()                       --  Checks whether this copy is primary copy or not
 
 Attributes
 ----------
@@ -245,6 +249,12 @@ Attributes
     **source_copy**                             --  Returns the source copy associated with the copy
 
     **source_copy.setter**                      --  Sets the source copy for the copy
+
+    **associations**                            --  Returns the associations of the copy
+
+    **selective_copy_rules**                     --  Returns the selective copy rules on storage policy copy
+
+    **multiplexing_factor**                    --  Returns the multiplexing factor for the storage policy copy
 
     **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
 
@@ -4922,7 +4932,41 @@ class StoragePolicyCopy(object):
             raise SDKException('Storage', '110')
 
         self._set_copy_properties()
+    
+    @property
+    def associations(self) -> dict:
+        """Returns the associations of the storage policy copy.
 
+        Returns:
+            dict: A dictionary containing the associations of the storage policy copy.
+        """
+        return self._copy_properties.get('associations', {})
+    
+    @property
+    def selective_copy_rules(self) -> dict:
+        """Returns the selective copy rules of the storage policy copy.
+
+        Returns:
+            dict: A dictionary containing the selective copy rules of the storage policy copy.
+        """
+        return self._copy_properties.get('selectiveCopyRules', {})
+    
+    @property
+    def multiplexing_factor(self) -> int:
+        """Treats the multiplexing factor setting as a read-only attribute.
+
+        Returns:
+            int: The multiplexing factor value.
+        """
+        return int(self._copy_properties.get('multiplexingFactor', 0))
+
+    def is_primary_copy(self) -> bool:
+        """Checks if the copy is a primary copy.
+
+        Returns:
+            bool: True if the copy is a primary copy, False otherwise.
+        """
+        return self._copy_properties.get('copyPrecedence', 0) == 1
 
     @property
     def copy_retention_managed_disk_space(self) -> bool:
@@ -5515,6 +5559,51 @@ class StoragePolicyCopy(object):
 
         if self.is_compliance_lock_enabled:
             raise SDKException('Response', '101', 'Failed to unset compliance lock')
+    
+    def enable_retention_lock(self, retention_lock_days: int) -> None:
+        """Enables retention lock on the copy
+
+        Args:
+            retention_days (int): Number of days for which retention lock is to be enabled
+
+        Raises:
+            SDKException:
+                if response is not success.
+                if response is empty.
+
+        Usage:
+            storage_policy_copy.enable_retention_lock(30)
+        """
+        enable_retention_lock_url = self._services['ENABLE_RETENTION_LOCK'] % (
+            self.storage_policy_id, self.copy_id)
+
+        request_json = {
+            "retentionDays": retention_lock_days
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', enable_retention_lock_url, request_json
+        )
+
+        if flag:
+            if response.json():
+                if "errorCode" in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        if "errorMessage" in response.json():
+                            error_message = response.json()
+                        raise SDKException('Storage', '111', error_message)
+            else:
+                raise SDKException('Response', '101')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        # Adding a refresh to ensure we have the latest properties to verify if the retention lock is enabled.
+        self.refresh()
+
+        if not int(self._copy_properties.get('dataRetentionLockDays', 0)) == retention_lock_days:
+            raise SDKException('Response', '101', 'Failed to enable retention lock')
 
 
     def is_media_refresh_enabled(self) -> bool:

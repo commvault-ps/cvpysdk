@@ -231,6 +231,7 @@ from .security.security_association import SecurityAssociation
 from .activateapps.constants import TargetApps, PlanConstants
 from .policies.storage_policies import StoragePolicy
 from .policies.schedule_policies import SchedulePolicy
+from .storage_pool import StorageType
 
 if TYPE_CHECKING:
     from .commcell import Commcell
@@ -371,7 +372,7 @@ class _PayloadGeneratorPlanV4:
                 "id": int(storage_pool.storage_pool_id),
                 "name": storage_pool.storage_pool_name
             }
-            payload['storageType'] = storage_pool.storage_pool_properties['storagePoolDetails']['libraryList'][0]['model'].upper()
+            payload['storageType'] = StorageType(storage_pool.storage_pool_properties['storagePoolDetails']['storageType']).name
 
         # Add aux copy specific properties
         if is_aux_copy:

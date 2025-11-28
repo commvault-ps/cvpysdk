@@ -92,6 +92,8 @@ StoragePool
 
     hyperscale_add_nodes()      --  Add 3 new nodes to an existing storage pool
 
+    enable_retention_lock()     --  Enables retention lock on Storage Pool Copy 
+
     add_media_agent()           --  Adds a media agent to the storage pool
 
     remove_media_agent()        --  Removes a media agent from the storage pool
@@ -1784,6 +1786,45 @@ class StoragePool(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def enable_retention_lock(self, retention_lock_days: int) -> None:
+        """Enable retention lock on the storage pool copy.
+
+        This method activates the retention lock feature for the storage pool copy, 
+        ensuring that data within the pool is retained for the specified number of days.
+
+        Args:
+            retention_lock_days: The number of days to retain data in the storage pool copy.
+        Raises:
+            SDKException: If the operation fails or the response is empty.
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> storage_pool.enable_retention_lock(retention_days=60)
+            >>> print("Retention lock enabled on the storage pool copy for 60 days.")
+        """
+        _RETENTION_LOCK = self._commcell_object._services['ENABLE_RETENTION_LOCK'] % (
+            self._storage_pool_id, str(self.copy_id))
+        request_json = {
+            "retentionDays": retention_lock_days
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', _RETENTION_LOCK, request_json)
+        if flag:
+            if response.json():
+                response = response.json()
+                if "errorCode" in response and response.get("errorCode") != 0:
+                    error_message = response.get("errorMessage")
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '101')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+        
+        if not int(self.storage_pool_properties['storagePoolDetails']['copyInfo']['dataRetentionLockDays']) == retention_lock_days:
+            raise SDKException('Storage', '102', 'Failed to set retention lock on storage pool copy.')
 
     def hyperscale_add_nodes(self, media_agents: list) -> None:
         """Add three new nodes to an existing storage pool using the specified media agents.

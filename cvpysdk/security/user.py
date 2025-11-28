@@ -429,7 +429,7 @@ class Users(object):
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
 
         # Search operation can only be performed on limited columns, so filtering out the columns on which search works
-        searchable_columns = ["userName","email","fullName","company","description"]
+        searchable_columns = ["userName", "email", "fullName", "company", "description"]
         search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
                             f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
 
@@ -446,7 +446,7 @@ class Users(object):
         if self._commcell_object.is_global_scope():
             params.append("&fq=users.isExtendedUser%3Aeq%3Afalse")
 
-        request_url = f"{self._commcell_object._services['USERS']}?" + "".join(params)
+        request_url = f"{self._commcell_object._services['V4_USERS']}?" + "".join(params)
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
@@ -455,24 +455,24 @@ class Users(object):
 
         users_cache = {}
         if response.json() and 'users' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount',0)
+            self.filter_query_count = response.json().get('numberOfUsers', 0)
             for user in response.json()['users']:
-                name = user.get('userEntity', {}).get('userName')
+                name = user.get('name', '')
                 users_config = {
                     'userName': name,
-                    'userId': user.get('userEntity', {}).get('userId'),
+                    'userId': user.get('id'),
                     'email': user.get('email'),
                     'fullName': user.get('fullName'),
-                    'description': user.get('description',''),
-                    'UPN': user.get('UPN'),
-                    'enableUser': user.get('enableUser'),
-                    'isAccountLocked': user.get('isAccountLocked'),
-                    'numDevices': user.get('numDevices'),
-                    'company': user.get('userEntity', {}).get('entityInfo', {}).get('companyName'),
-                    'lastLogIntime': user.get('lastLogIntime')
+                    'description': user.get('description', ''),
+                    'UPN': user.get('userPrincipalName'),
+                    'enableUser': user.get('enabled'),
+                    'isAccountLocked': user.get('lockInfo', {}).get('isLocked'),
+                    'numDevices': user.get('numberOfLaptops'),
+                    'company': user.get('company', {}).get('name'),
+                    'lastLogIntime': user.get('lastLoggedIn', 0)
                 }
                 if self._commcell_object.is_global_scope():
-                    users_config['commcell'] = user.get('userEntity', {}).get('entityInfo', {}).get('multiCommcellName')
+                    users_config['commcell'] = user.get('commcell', {}).get('name')
 
                     # Handle duplicate names for different commcells
                     unique_name = name
