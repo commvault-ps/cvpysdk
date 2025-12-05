@@ -318,7 +318,7 @@ class _PayloadGeneratorPlanV4:
         """Initialize the _PayloadGeneratorPlanV4 class instance"""
         self.__commcell = commcell
 
-    def get_copy_payload(self, copy_details: dict, is_aux_copy: bool = False) -> dict:
+    def get_copy_payload(self, copy_details: dict, is_aux_copy: bool = False, gacp: bool = False, worm: bool = False) -> dict:
         """
         Method to get single copy details payload based on the provided configuration.
 
@@ -331,6 +331,8 @@ class _PayloadGeneratorPlanV4:
                                      - 'region_name' (str, optional): Name of the region
                                      - 'storageTemplateTags' (dict): To indentify storage based on tags (Needed only for Global Plans)
             is_aux_copy  (bool): Indicates if the copy is an aux copy. Default: False
+            gacp        (bool): Indicates if the plan is a tape pool plan. Default: False
+            worm        (bool): Indicates if the plan is a WORM storage plan. Default: False
 
         Returns:
             dict: Copy details as a dictionary.
@@ -364,6 +366,12 @@ class _PayloadGeneratorPlanV4:
             "overrideRetentionSettings": True,
             "backupStartTime": -1,
         }
+        if gacp or worm:
+            if copy_details.get("retentionPeriodDays") is not None:
+                payload["retentionPeriodDays"] = copy_details.get("retentionPeriodDays")
+            else:
+                payload.update({'overrideRetentionSettings': False})
+                del payload['retentionPeriodDays']
 
         # If storage_name is provided, update the payload with storage details
         if 'storage_name' in copy_details:
@@ -377,6 +385,8 @@ class _PayloadGeneratorPlanV4:
         # Add aux copy specific properties
         if is_aux_copy:
             payload["backupsToCopy"] = copy_details.get("backupsToCopy", "All_JOBS")
+            if full_backup_types_to_copy := copy_details.get("fullBackupTypesToCopy"):
+                payload["fullBackupTypesToCopy"] = full_backup_types_to_copy
 
         # Add region if available
         if region_name := copy_details.get("region_name"):
@@ -3494,7 +3504,7 @@ class Plan(object):
             return copy_details.get('StoragePolicyCopy', {}).get('copyId', 0) if copy_details else 0
         return copy_details.get('planBackupDestination', {}).get('id', 0) if copy_details else 0
 
-    def add_copy(self, copy_name: str, storage_pool: str, retention: int=30, extended_retention: dict=None, region: str=None) -> None:
+    def add_copy(self, copy_name: str, storage_pool: str, retention: int=0, extended_retention: dict=None, region: str=None) -> None:
         """Method to add an aux copy to the plan
 
         Args:
@@ -3516,16 +3526,38 @@ class Plan(object):
         copy_details = {
             "backupDestinationName": copy_name,
             "storage_name": storage_pool,
-            "retentionPeriodDays": retention
         }
-
+        #Make changes for defaults if its Tape pool 
+        storage_pool_obj = self._commcell_object.storage_pools.get(storage_pool)
+        gacp = False; worm = False
+        if storage_pool_obj.storage_type == StorageType.TAPE.value:
+            gacp = True
+            if retention: # If retention is provided, use it
+                copy_details['retentionPeriodDays'] = retention
+            else:
+                copy_details['retentionPeriodDays'] = None  # Default retention -> inherit from tape pools
+            copy_details['backupsToCopy'] = "MONTHLY_FULLS" # Default backups to copy for tape pools
+            copy_details['fullBackupTypesToCopy'] = "LAST"  # Default full backup types to copy for tape pools
+        else:
+            if retention:
+                copy_details['retentionPeriodDays'] = retention
+            else:
+                copy_details['retentionPeriodDays'] = 30  # Default retention for non-tape pools
+        if storage_pool_obj.is_worm_storage_lock_enabled: #copies inhering worm pools should not be overriding pool retention
+            worm= True
+            copy_details['retentionPeriodDays'] = None
         if extended_retention:
+            if (storage_pool_obj.storage_type == StorageType.TAPE.value or storage_pool_obj.is_worm_storage_lock_enabled) and retention is None:
+                raise SDKException('Plan', '102', 'Retention period days must be specified when adding extended retention rules for Tape storage pool')
             copy_details['useExtendedRetentionRules'] = True
             copy_details["extendedRetentionRules"] = extended_retention
 
         request_json = {
-            'destinations': [self.plan_v4_helper.get_copy_payload(copy_details, is_aux_copy=True)]
+            'destinations': [self.plan_v4_helper.get_copy_payload(copy_details, is_aux_copy=True, gacp=gacp, worm=worm)]
         }
+        for key in list(request_json['destinations'][0].keys()):
+            if request_json['destinations'][0][key] is None:
+                del request_json['destinations'][0][key]
         # during add copy, region should be specified as the separate blob
         if region:
             request_json['region'] = {"id": int(self._commcell_object.regions.get(region).region_id)}
