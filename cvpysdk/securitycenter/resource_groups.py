@@ -81,7 +81,8 @@ from enum import Enum
 from cvpysdk.clientgroup import ClientGroup, ClientGroups
 from cvpysdk.exception import SDKException
 from cvpysdk.securitycenter.constants import FQ_PARAMETERS, UPDATE_TI_PLAN_JSON, RESOURCE_GROUP_PAYLOAD_MANUAL, \
-    RESOURCE_GROUP_PAYLOAD_AUTOMATIC
+    RESOURCE_GROUP_PAYLOAD_AUTOMATIC, FL_PARAMETERS
+
 
 class ResourceTypes(Enum):
     """Class to represent different FSO types(Server/ServerGroup/Project)"""
@@ -163,7 +164,7 @@ class ResourceGroups():
         Raises:
             SDKException: If response is empty or unsuccessful.
         """
-        request_url = f"{self._SERVICEGROUPS}?" + FQ_PARAMETERS[self._configtype.name]
+        request_url = f"{self._SERVICEGROUPS}?" + FQ_PARAMETERS[self._configtype.name] + FL_PARAMETERS[self._configtype.name]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', request_url)
 

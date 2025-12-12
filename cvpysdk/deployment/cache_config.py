@@ -324,11 +324,13 @@ class RemoteCache(object):
         else:
             raise SDKException('Response', '102')
 
-    def configure_remotecache(self, cache_path: str) -> None:
+    def configure_remotecache(self, cache_path: str, cs_version: Optional[int] = None) -> None:
         """Configures client as remote cache
 
         Args:
             cache_path (str): Remote cache path.
+            cs_version (int, optional): CS SP version. Defaults to None.
+                        (This parameter should be passed if tennat admin is configuring RC)
 
         Raises:
             SDKException:
@@ -338,9 +340,11 @@ class RemoteCache(object):
         Usage:
             >>> remote_cache.configure_remotecache(cache_path='/opt/remote_cache')
         """
+        if cs_version is None:
+            cs_version = self.commcell.commserv_version
 
         # using API to configure RC from SP34
-        if self.commcell.commserv_version >= 34:
+        if cs_version >= 34:
             request_json = {
                 "cacheDirectory": cache_path,
                 "associations": [],

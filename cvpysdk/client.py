@@ -9758,7 +9758,7 @@ class Client(object):
         """Release a license from the client.
 
         If a specific license name is provided, releases that license from the client.
-        If no license name is given, releases all licenses associated with the client.
+        If no license name is given, releases all licenses associated with the client except mediaagent license.
 
         Args:
             license_name: Name of the license to be released. If None, all licenses will be released.
@@ -9777,16 +9777,19 @@ class Client(object):
         license_type_id = 0
         app_type_id = 0
         platform_type = 1
-
+        is_client_level_operation = True
+        
         if license_name is not None:
             if self.consumed_licenses.get(license_name):
                 license_type_id = self.consumed_licenses[license_name].get('licenseType')
                 app_type_id = self.consumed_licenses[license_name].get('appType')
                 platform_type = self.consumed_licenses[license_name].get('platformType')
+                is_client_level_operation = False
             else:
                 raise Exception(
                     "Provided license name is not configured in the client")
         request_json = {
+            "isClientLevelOperation": is_client_level_operation,
             "licensesInfo": [{
                 "platformType": platform_type,
                 "license": {

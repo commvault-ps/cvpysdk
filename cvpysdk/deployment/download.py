@@ -198,7 +198,7 @@ class Download(object):
                                       }) if version >= 36 else client_groups.append({"clientName": cache})
         elif sync_cache and not sync_cache_list:
             if direct_download:
-                flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['CREATE_RC'])
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['SOFTWARE_CACHE'])
                 cache_list = []
                 for obj in response_1.json().get('softwareCacheDetailList', []):
                     if obj['cache']['id'] != 2:
@@ -389,7 +389,7 @@ class Download(object):
                                               "id": self.commcell_object.clients.get(cache).client_id
                                               })
                 else:
-                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['CREATE_RC'])
+                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['SOFTWARE_CACHE'])
                     cache_list = []
                     for obj in response_1.json()['softwareCacheDetailList']:
                         if obj['cache']['id'] != 2:

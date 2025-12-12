@@ -707,6 +707,73 @@ class CleanroomTarget:
                         self._key_pair = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
                                           .get('keyPair', ''))
 
+                # Parse new AWS properties from recovery section
+                if self._policy_type == 1:
+                    self._region = (self._cleanroom_target_properties.get('recovery', {})
+                                    .get('region', {}).get('guid', ''))
+                    self._availability_zone = (self._cleanroom_target_properties.get('recovery', {})
+                                               .get('availabilityZone', {}).get('guid', ''))
+                    self._key_pair = (self._cleanroom_target_properties.get('recovery', {})
+                                      .get('keyPair', {}).get('name', ''))
+                    self._iam_role = (self._cleanroom_target_properties.get('recovery', {})
+                                      .get('iamRole', {}).get('guid', ''))
+                    self._encryption_key = (self._cleanroom_target_properties.get('recovery', {})
+                                            .get('encryptionKey', {}).get('name', ''))
+                    self._volume_type = (self._cleanroom_target_properties.get('recovery', {})
+                                         .get('volumeType', ''))
+                    self._vpc = (self._cleanroom_target_properties.get('recovery', {})
+                                 .get('vpc', {}).get('name', ''))
+                    self._security_groups = (self._cleanroom_target_properties.get('recovery', {})
+                                             .get('securityGroups', []))
+                    self._instance_type = (self._cleanroom_target_properties.get('recovery', {})
+                                           .get('instanceType', {}).get('guid', ''))
+                    self._create_public_ip = (self._cleanroom_target_properties.get('recovery', {})
+                                              .get('createPublicIPAddress', False))
+                    
+                    # Infrastructure network settings
+                    self._maxNoOfAccessNodes = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                .get('maxNoOfAccessNodes', ''))
+                    self._infra_virtual_network = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                   .get('networkSettings', {}).get('virtualNetwork', {})
+                                                   .get('name', ''))
+                    self._infra_security_groups = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                   .get('networkSettings', {}).get('securityGroups', []))
+                    self._infra_create_public_ip = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                    .get('networkSettings', {}).get('infrastructurePublicIPSettings', {})
+                                                    .get('createPublicIPAddress', False))
+                    
+                    # Infrastructure network topology settings
+                    self._workload_server_group = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                   .get('networkTopologySettings', {}).get('workloadServerGroup', {})
+                                                   .get('name', ''))
+                    self._infra_server_group_name = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                     .get('networkTopologySettings', {}).get('infrastructureServerGroup', {})
+                                                     .get('name', ''))
+                    self._infra_network_gateway = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                   .get('networkTopologySettings', {}).get('infrastructureNetworkGateway', ''))
+                    
+                    # Infrastructure advanced settings
+                    self._infra_iam_role = (self._cleanroom_target_properties.get('infrastructure', {})
+                                            .get('advancedSettings', {}).get('iamRole', {}).get('guid', ''))
+                    self._infra_vm_size = (self._cleanroom_target_properties.get('infrastructure', {})
+                                           .get('advancedSettings', {}).get('vmSize', {}).get('guid', ''))
+                    self._custom_images = (self._cleanroom_target_properties.get('infrastructure', {})
+                                           .get('advancedSettings', {}).get('customImages', []))
+                    
+                    # Advanced network address space
+                    self._networkAddressSpace = (self._cleanroom_target_properties.get('advanced', {})
+                                                 .get('networkAddressSpace', {}))
+                    self._endpointSubnet = (self._cleanroom_target_properties.get('advanced', {})
+                                            .get('networkAddressSpace', {}).get('endpointSubnet', ''))
+                    self._publicSubnet = (self._cleanroom_target_properties.get('advanced', {})
+                                          .get('networkAddressSpace', {}).get('publicSubnet', ''))
+                    
+                    # Security group rules
+                    self._recovery_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
+                                                    .get('securityGroupRules', {}).get('recoveredEntity', []))
+                    self._infra_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
+                                                 .get('securityGroupRules', {}).get('infrastructure', []))
+
                 if self._policy_type == 7:
                     self._region = (self._cleanroom_target_properties.get('recovery', {})
                                     .get('region', {})
@@ -1372,6 +1439,150 @@ class CleanroomTarget:
         #ai-gen-doc
         """
         return self._key_pair
+
+    @property
+    def vpc(self) -> str:
+        """Get the AWS VPC name for the cleanroom target.
+
+        Returns:
+            The VPC name as a string for AWS cleanroom target.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> vpc_name = target.vpc
+            >>> print(f"VPC: {vpc_name}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_vpc', None)
+
+    @property
+    def security_groups(self) -> list:
+        """Get the list of AWS security groups for the cleanroom target.
+
+        Returns:
+            List of security groups for AWS cleanroom target.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> sgs = target.security_groups
+            >>> print(f"Security groups: {sgs}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_security_groups', [])
+
+    @property
+    def workload_server_group(self) -> str:
+        """Get the AWS workload server group name for the cleanroom target.
+
+        Returns:
+            The workload server group name as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> wsg = target.workload_server_group
+            >>> print(f"Workload server group: {wsg}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_workload_server_group', None)
+
+    @property
+    def infra_network_gateway(self) -> str:
+        """Get the AWS infrastructure network gateway for the cleanroom target.
+
+        Returns:
+            The infrastructure network gateway as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> gateway = target.infra_network_gateway
+            >>> print(f"Infrastructure network gateway: {gateway}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_infra_network_gateway', '')
+
+    @property
+    def infra_iam_role(self) -> str:
+        """Get the AWS infrastructure IAM role for the cleanroom target.
+
+        Returns:
+            The infrastructure IAM role as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> role = target.infra_iam_role
+            >>> print(f"Infrastructure IAM role: {role}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_infra_iam_role', None)
+
+    @property
+    def infra_security_groups(self) -> list:
+        """Get the list of AWS infrastructure security groups for the cleanroom target.
+
+        Returns:
+            List of infrastructure security groups.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> infra_sgs = target.infra_security_groups
+            >>> print(f"Infrastructure security groups: {infra_sgs}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_infra_security_groups', [])
+
+    @property
+    def infra_create_public_ip(self) -> bool:
+        """Get whether to create public IP for AWS infrastructure.
+
+        Returns:
+            Boolean indicating if public IP should be created for infrastructure.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> create_ip = target.infra_create_public_ip
+            >>> print(f"Create infrastructure public IP: {create_ip}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_infra_create_public_ip', False)
+
+    @property
+    def endpoint_subnet(self) -> str:
+        """Get the AWS endpoint subnet for the cleanroom target.
+
+        Returns:
+            The endpoint subnet CIDR as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> subnet = target.endpoint_subnet
+            >>> print(f"Endpoint subnet: {subnet}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_endpointSubnet', '')
+
+    @property
+    def public_subnet(self) -> str:
+        """Get the AWS public subnet for the cleanroom target.
+
+        Returns:
+            The public subnet CIDR as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> subnet = target.public_subnet
+            >>> print(f"Public subnet: {subnet}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_publicSubnet', '')
 
     def refresh(self) -> None:
         """Reload the properties of the cleanroom target.

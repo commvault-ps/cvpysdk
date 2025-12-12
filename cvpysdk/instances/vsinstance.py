@@ -143,9 +143,11 @@ class VirtualServerInstance(Instance):
         if 'credentialEntity' in self._properties:
             self._credential = self._properties['credentialEntity']
             if self._credential.get('credentialName', None):
-                credential_obj = self._commcell_object.credentials.get(self._credential['credentialName'])
-                if credential_obj:
+                try:
+                    credential_obj = self._commcell_object.credentials.get(self._credential['credentialName'])
                     self._credential['userName'] = credential_obj.credential_user_name
+                except SDKException:
+                    self._credential['userName'] = ''
 
     def _get_instance_proxies(self) -> list:
         """Retrieve the list of all proxies associated with the selected virtual server instance.

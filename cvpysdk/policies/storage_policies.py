@@ -184,6 +184,8 @@ StoragePolicyCopy:
 
     get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
 
+    get_jobs_on_copy_v2()                   --  Fetches the Details of jobs on Storage Policy Copy (API based)
+
     _run_job_operations_on_storage_copy()    -- Run different job operations for a Storage Copy
     
     _pick_job_for_backup_copy()             --  Method to pick jobs for backup copy
@@ -242,6 +244,12 @@ Attributes
 
     **override_pool_retention.setter**          --  Sets/Unsets the override Pool Retention Flag
 
+    **use_round_robin_for_data_paths**          --  Returns if Round Robin for Data Paths flag is set or not
+
+    **use_last_full_for_selective**             --  Returns if Last Full for Selective Copy Rules flag is set or not
+
+    **enable_data_aging**                       --  Returns if Data Aging is enabled or not
+
     **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
     **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
@@ -264,16 +272,20 @@ Attributes
 
     ***network_throttle_bandwidth***            --  Returns/Sets the value of Network Throttle Bandwidth
 
+    **storage_pool**                            --  Returns the storage pool ID and name for storage pool associated with the copy
+
     ***is_compliance_lock_enabled***            --  Checks whether compliance lock on copy is enabled or not
 """
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+import time
 from typing import TYPE_CHECKING, Dict, Optional, Union, List
 
 from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules, SchedulePattern
+from ..client import Client
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
@@ -3716,6 +3728,7 @@ class StoragePolicyCopy(object):
         self._copy_properties = None
         self._STORAGE_POLICY_COPY = self._services['STORAGE_POLICY_COPY'] % (
             self.storage_policy_id, self.copy_id)
+        self._V4_PLAN_COPY_JOBS = self._services['V4_PLAN_BACKUPDESTINATION_JOBS'] % (self.copy_id)
         self.refresh()
 
 
@@ -4348,6 +4361,8 @@ class StoragePolicyCopy(object):
         Returns:
             str: The encryption setting ("True" or "False") based on the copy flags.
         """
+        encryption_setting = "False"
+
         if 'auxCopyReencryptData' in self._copy_flags:
             if self._copy_flags['auxCopyReencryptData'] == 1:
                 encryption_setting = "True"
@@ -4511,6 +4526,91 @@ class StoragePolicyCopy(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def get_jobs_on_copy_v2(self, view: str = 'last24Hours', aged_data: int = None, backup_level: int = None, clients: Union[List[Client], List[str], Client, str] = None, copy_state: Union[List[int], int] = None, startTime: int = None, endTime: int = None) -> list:
+        """
+        Get jobs on a copy through V4 API
+        Args:
+            view (str): View type for the jobs. Default is 'last24Hours'.
+                        Valid values: 'last24Hours', 'lastWeek', 'lastMonth', 'last3Months', 'All'.
+            aged_data (int): Aged data in days to filter jobs. Default is None.
+                        Valid values: 0 to exclude aged jobs, 1 to show only aged jobs, 2 to include aged jobs
+            backup_level (int): Backup level to filter jobs. Default is None.
+                        Valid values: 1=Full, 2=Incremental, 4=Differential, 8=All, 64=Synthetic full
+            clients (List[Client], List[str], str, Client): Client name or Client object to filter jobs. Default is None.
+            copy_state (Union[int, List[int]]): Copy state to filter jobs. Default is None.
+                        Valid values: 0  = show all, 1  = show available, 4  = show to be copied, 8  = show not to be copied, 16 = show extended retained
+                        Pass as list for multiple states. [e.g., [1, 4]]
+            startTime (int): Start time in epoch to filter jobs. Default is None.
+            endTime (int): End time in epoch to filter jobs. Default is None.
+        Returns:
+            list: List of dict's with each dict containing details of a job
+        Raises:
+            SDKException: if the response/fetch operation failed
+        """
+        client_string = None
+        params = '?'
+        if view not in ['last24Hours', 'lastWeek', 'lastMonth', 'last3Months', 'All']:
+            raise SDKException('Storage', '101', f'Invalid view type: {view}')
+        if aged_data is not None and aged_data not in [0, 1, 2]:
+            raise SDKException('Storage', '101', f'Invalid aged data value: {aged_data}')
+        if backup_level is not None and backup_level not in [1, 2, 4, 8, 64]:
+            raise SDKException('Storage', '101', f'Invalid backup level: {backup_level}')
+        if clients is not None and not isinstance(clients, (list, str, Client)):
+            raise SDKException('Storage', '101', f'Invalid client type: {type(clients)}')
+        if copy_state is not None:
+            if isinstance(copy_state, int):
+                if copy_state not in [0, 1, 4, 8, 16]:
+                    raise SDKException('Storage', '101', f'Invalid copy state value: {copy_state}')
+            elif isinstance(copy_state, list):
+                if not all(state in [0, 1, 4, 8, 16] for state in copy_state):
+                    raise SDKException('Storage', '101', f'Invalid copy state value(s): {copy_state}')
+            else:
+                raise SDKException('Storage', '101', f'Invalid copy state type: {type(copy_state)}')
+        if view != 'All' and (startTime is not None or endTime is not None):
+            raise SDKException('Storage', '101', 'startTime and endTime can only be used with view type "All"')
+        if clients is not None:
+            if isinstance(clients, Client):
+                client_string = clients.client_id
+            elif isinstance(clients, str):
+                client_string = self._commcell_object.clients.get(clients).client_id
+            else:
+                client_string = ','.join([str(client.client_id) if isinstance(client, Client) else str(self._commcell_object.clients.get(client).client_id) for client in clients])
+        if aged_data is not None:
+            params += f'&agedData={aged_data}'
+        if backup_level is not None:
+            params += f'&backupLevel={backup_level}'
+        if client_string is not None:
+            params += f'&clients={client_string}'
+        if copy_state is not None:
+            if isinstance(copy_state, int):
+                params += f'&copyState={copy_state}'
+            else:
+                params += f'&copyState={sum(copy_state)}'
+        if view == 'All':
+            params += '&view=custom'
+            if startTime is None and endTime is None:
+                params += f'&startTime={1}&endTime={int(time.time())}'
+            if startTime is not None:
+                params += f'&startTime={startTime}'
+            if endTime is not None:
+                params += f'&endTime={endTime}'
+        else:
+            params += f'&view={view}'
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._V4_PLAN_COPY_JOBS+params)
+        if flag:
+            if response.json() and 'jobs' in response.json():
+                jobs = response.json().get('jobs', [])
+                return jobs
+            else:
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage', '')
+                    raise SDKException('Storage', '102', error_message)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string) 
 
 
     def _run_job_operations_on_storage_copy(self, job_id: Union[int, str, list], operation: str) -> None:
@@ -5036,6 +5136,35 @@ class StoragePolicyCopy(object):
 
         self._set_copy_properties()
 
+    @property
+    def use_round_robin_between_data_paths(self) -> bool:
+        """Checks whether round robin data path flag is enabled for the storage policy copy.
+
+        Returns:
+            bool: True if round robin data path flag is enabled, False otherwise.
+        """
+        return 'roundRobbinDataPath' in self._copy_flags and self._copy_flags['roundRobbinDataPath'] == 1
+
+    @property
+    def use_last_full_for_selective(self) -> bool:
+        """Checks whether last full flag in case of selective copy is enabled for the storage policy copy.
+
+        Returns:
+            bool: True if last full flag is enabled, False otherwise.
+        """
+        return 'lastFull' in self._copy_flags and self._copy_flags['lastFull'] == 1
+
+    @property
+    def enable_data_aging(self) -> bool:
+        """Checks whether data aging is enabled for the storage policy copy.
+
+        Returns:
+            bool: True if data aging is enabled, False otherwise.
+        """
+        retention_rules = self._retention_rules
+        retention_flags = retention_rules.get('retentionFlags', {})
+        enable_data_aging_flag = retention_flags.get('enableDataAging', 0)
+        return enable_data_aging_flag == 1
 
     @property
     def space_optimized_auxillary_copy(self) -> bool:
@@ -5135,6 +5264,20 @@ class StoragePolicyCopy(object):
         self._copy_properties['throttleNetworkBandWidthMBHR'] = value
         self._set_copy_properties()
 
+    @property
+    def storage_pool(self) -> tuple[int, str]:
+        """Retrieves the storage pool details associated with this copy.
+
+            Returns:
+                tuple: A tuple containing the storage pool ID and name.
+
+            Remarks:
+                Returns (0, "") if storage pool association is not present.
+        """
+        storage_pool_details = self._copy_properties.get('storagePool', {})
+        storage_pool_id = storage_pool_details.get('storagePoolId', 0)
+        storage_pool_name = storage_pool_details.get('storagePoolName', "")
+        return storage_pool_id, storage_pool_name
 
     def add_svm_association(self, src_array_id: int, source_array: str, tgt_array_id: int,
                             target_array: str, **kwargs) -> None:

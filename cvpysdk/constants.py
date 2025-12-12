@@ -844,6 +844,7 @@ class VsInstanceType:
 
     VSINSTANCE_TYPE = {
         101: "vmware",
+        103: "vcloud_director",
         201: "xen",
         102: "hyperv",
         301: "amazon_web_services",

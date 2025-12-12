@@ -219,6 +219,8 @@ class Install(object):
                 Supported -
                 schedule_pattern        (dict)      -- Request JSON for scheduling the operation
                 install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
+                cs_version              (int)       -- cs sp version should be passed if push install is triggered
+                                                        by tenant admin
 
         Returns:
             Job or Schedules: instance of the Job/Schedules class for this download
@@ -238,7 +240,7 @@ class Install(object):
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         """
-        version = self.commcell_object.commserv_version
+        version = kwargs["cs_version"] if kwargs.get("cs_version") else self.commcell_object.commserv_version
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get('schedule_pattern', None)

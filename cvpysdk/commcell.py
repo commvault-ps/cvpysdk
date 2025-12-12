@@ -3216,6 +3216,7 @@ class Commcell(object):
         Args:
             method: The HTTP method to use for the request (e.g., 'GET', 'POST').
             service_key: The key to access the request URL from the services.py dictionary.
+                         (You can give the endpoint URL also directly)
             fill_params: Optional tuple of parameters to fill in the service URL if it contains %s formatting.
             req_kwargs: Optional dictionary of keyword arguments to pass to the request. Example keys include:
                 - 'payload': dict or str, the request payload.
@@ -3289,7 +3290,7 @@ class Commcell(object):
             if erc != 0:
                 error_callback(erc, erm)
 
-        api_url = self._services[service_key]
+        api_url = self._services.get(service_key, service_key)
         if fill_params:
             api_url = api_url % fill_params
         flag, response = self._cvpysdk_object.make_request(method, api_url, **req_kwargs)

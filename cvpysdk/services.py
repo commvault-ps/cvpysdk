@@ -377,6 +377,7 @@ SERVICES_DICT_TEMPLATE = {
     # API Documentation: Manage > Plan Operations
     'V4_JOB_OPERATIONS_ON_STORAGE_COPY': '{0}V4/Plan/BackupDestination/JobOperations',
     'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS': '{0}V4/Plan/%s/BackupDestination/%s/BackupCopy/Jobs',
+    'V4_PLAN_BACKUPDESTINATION_JOBS': '{0}V4/Plan/BackupDestination/%s/Jobs',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',

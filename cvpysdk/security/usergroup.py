@@ -1051,6 +1051,19 @@ class UserGroup(object):
         """Returns two factor authentication status (True/False)"""
         return self._properties.get('enableTwoFactorAuthentication') == 1
 
+    @property
+    def azure_guid(self) -> str:
+        """Returns the Azure GUID of the user group"""
+        return self._properties.get('azureGUID', '')
+
+    @azure_guid.setter
+    def azure_guid(self, new_guid: str) -> None:
+        """Sets the Azure GUID for this user group"""
+        if not isinstance(new_guid, str):
+            raise SDKException('UserGroup', '101')
+        request_json = {"azureGUID": new_guid}
+        self._v4_update_usergroup_props(request_json)
+
     def enable_tfa(self, otp: str = None) -> None:
         """
         enables two factor authentication on this group
@@ -1284,12 +1297,14 @@ class UserGroup(object):
             "localUserGroupsOperationType": update_usergroup_request[request_type.upper()],
             "usersOperationType": update_usergroup_request[request_type.upper()],
             "externalUserGroupsOperationType": update_usergroup_request[request_type.upper()],
-            "securityAssociations": security_association_request,
             "localUserGroups": local_group_blob,
             "users": users_blob
         }
         if external_group_blob is not None:
             group_json.update({"associatedExternalUserGroups": external_group_blob})
+
+        if security_association_request:
+            group_json.update({"securityAssociations": security_association_request})
 
         request_json = {
             "groups": [group_json]

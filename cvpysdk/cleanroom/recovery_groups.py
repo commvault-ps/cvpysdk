@@ -489,11 +489,33 @@ class RecoveryGroup:
         return entity_list_id
 
     @property
-    def security_group(self) -> str:
-        """Get the name of the Azure security group associated with this recovery group.
+    def vendor_type(self) -> str:
+        """Detect the cloud vendor type from the recovery configuration.
 
         Returns:
-            The security group name as a string.
+            'azure' if Azure configuration is present, 'amazon' if AWS configuration is present.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> vendor = rg.vendor_type
+            >>> print(f"Vendor: {vendor}")
+
+        #ai-gen-doc
+        """
+        config = self.entities[0]['recoveryConfiguration']['configuration']
+        if 'azure' in config:
+            return 'azure'
+        elif 'amazon' in config:
+            return 'amazon'
+        else:
+            raise SDKException('RecoveryGroup', '102', 'Unknown vendor type in recovery configuration')
+
+    @property
+    def security_group(self) -> str:
+        """Get the name of the security group associated with this recovery group.
+
+        Returns:
+            The security group name/id as a string for Azure, or list of security groups for AWS.
 
         Example:
             >>> rg = RecoveryGroup()
@@ -502,14 +524,20 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['overrideReplicationOptions']['securityGroup']['id']
+        vendor = self.vendor_type
+        config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
+        
+        if vendor == 'azure':
+            return config['overrideReplicationOptions']['securityGroup']['id']
+        elif vendor == 'amazon':
+            return config['overrideReplicationOptions'].get('securityGroups', [])
 
     @property
     def virtual_network(self) -> str:
-        """Get the name of the Azure virtual network associated with this recovery group.
+        """Get the name of the virtual network associated with this recovery group.
 
         Returns:
-            The name of the Azure virtual network as a string.
+            The name of the virtual network as a string (Azure VNet or AWS VPC/Subnet).
 
         Example:
             >>> recovery_group = RecoveryGroup()
@@ -518,15 +546,20 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['overrideReplicationOptions'][
-            'virtualNetwork']['networkName']
+        vendor = self.vendor_type
+        config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
+        
+        if vendor == 'azure':
+            return config['overrideReplicationOptions']['virtualNetwork']['networkName']
+        elif vendor == 'amazon':
+            return config['overrideReplicationOptions']['network'].get('name', '')
 
     @property
     def resource_group(self) -> str:
         """Get the Azure resource group name associated with this RecoveryGroup.
 
         Returns:
-            The name of the Azure resource group as a string.
+            The name of the Azure resource group as a string, or None for AWS.
 
         Example:
             >>> rg = RecoveryGroup()
@@ -535,14 +568,18 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['resourceGroup']
+        vendor = self.vendor_type
+        if vendor == 'azure':
+            return self.entities[0]['recoveryConfiguration']['configuration']['azure']['resourceGroup']
+        elif vendor == 'amazon':
+            return None  # AWS doesn't have resource groups
 
     @property
     def storage_account(self) -> str:
         """Get the Azure storage account name used for deploying the VM's storage.
 
         Returns:
-            The name of the Azure storage account as a string.
+            The name of the Azure storage account as a string, or None for AWS.
 
         Example:
             >>> rg = RecoveryGroup()
@@ -551,7 +588,166 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self.entities[0]['recoveryConfiguration']['configuration']['azure']['storageAccount']
+        vendor = self.vendor_type
+        if vendor == 'azure':
+            return self.entities[0]['recoveryConfiguration']['configuration']['azure']['storageAccount']
+        elif vendor == 'amazon':
+            return None  # AWS doesn't use storage accounts
+
+    @property
+    def instance_type(self) -> str:
+        """Get the AWS instance type for the recovery group.
+
+        Returns:
+            The AWS instance type as a string, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> instance = rg.instance_type
+            >>> print(f"Instance type: {instance}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon'].get('instanceType')
+        return None
+
+    @property
+    def datacenter(self) -> str:
+        """Get the AWS datacenter/region for the recovery group.
+
+        Returns:
+            The AWS datacenter/region as a string, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> dc = rg.datacenter
+            >>> print(f"Datacenter: {dc}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon'].get('datacenter')
+        return None
+
+    @property
+    def availability_zone(self) -> str:
+        """Get the AWS availability zone for the recovery group.
+
+        Returns:
+            The AWS availability zone as a string, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> az = rg.availability_zone
+            >>> print(f"Availability zone: {az}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon'].get('availabilityZone')
+        return None
+
+    @property
+    def subnet_id(self) -> str:
+        """Get the subnet ID for the recovery group.
+
+        Returns:
+            The subnet ID as a string (Azure subnet_id or AWS subnetId).
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> subnet = rg.subnet_id
+            >>> print(f"Subnet ID: {subnet}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
+        
+        if vendor == 'azure':
+            return config['overrideReplicationOptions']['virtualNetwork'].get('subnetId', '')
+        elif vendor == 'amazon':
+            return config['overrideReplicationOptions']['network'].get('subnetId', '')
+
+    @property
+    def iam_role(self) -> dict:
+        """Get the AWS IAM role for the recovery group.
+
+        Returns:
+            The IAM role dictionary, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> role = rg.iam_role
+            >>> print(f"IAM role: {role}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('IAMRole', {})
+        return None
+
+    @property
+    def key_pair(self) -> str:
+        """Get the AWS key pair for the recovery group.
+
+        Returns:
+            The AWS key pair name as a string, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> kp = rg.key_pair
+            >>> print(f"Key pair: {kp}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('keyPair')
+        return None
+
+    @property
+    def encryption_key(self) -> str:
+        """Get the AWS encryption key for the recovery group.
+
+        Returns:
+            The AWS encryption key as a string, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> key = rg.encryption_key
+            >>> print(f"Encryption key: {key}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('encryptionKey')
+        return None
+
+    @property
+    def volume_type(self) -> str:
+        """Get the AWS volume type for the recovery group.
+
+        Returns:
+            The AWS volume type as a string, or None for Azure.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> vol_type = rg.volume_type
+            >>> print(f"Volume type: {vol_type}")
+
+        #ai-gen-doc
+        """
+        vendor = self.vendor_type
+        if vendor == 'amazon':
+            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('volumeType', '')
+        return None
 
     @property
     def get_new_target_name(self) -> str:

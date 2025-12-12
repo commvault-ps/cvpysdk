@@ -3241,13 +3241,13 @@ class Organization:
         """
         return self.tfa.tfa_enabled_user_groups
 
-    def enable_tfa(self, user_groups: list = None) -> None:
+    def enable_tfa(self, user_groups: list = None, otp: str = None) -> None:
         """
         Enables two factor authentication for the oganization.
 
         Args:
              user_groups (list): list of user group names for which tfa needs to be enabled.
-
+             otp (str): otp for two-factor authentication operation.
         Returns:
             None
 
@@ -3255,11 +3255,14 @@ class Organization:
             org.enable_tfa()
             org.enable_tfa(user_groups=['group1', 'group2'])
         """
-        self.tfa.enable_tfa(user_groups=user_groups)
+        self.tfa.enable_tfa(user_groups=user_groups, otp=otp)
 
-    def disable_tfa(self) -> None:
+    def disable_tfa(self, otp: str = None) -> None:
         """
         Disables two factor authentication for the organization
+
+        Args:
+            otp (str): otp for two-factor authentication operation.
 
         Returns:
             None
@@ -3267,7 +3270,7 @@ class Organization:
         Usage:
             org.disable_tfa()
         """
-        self.tfa.disable_tfa()
+        self.tfa.disable_tfa(otp=otp)
 
     @property
     def client_groups(self) -> dict:

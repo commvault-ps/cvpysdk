@@ -1267,12 +1267,12 @@ class User(object):
         """
         self._update_user_props("", new_username=value)
 
-    @email.setter
-    def email(self, value: str) -> None:
-        """Sets the description for this commcell user
+    def edit_email(self, value: str, otp: str = None) -> None:
+        """updates the email for this commcell user
 
         Args:
             value (str): The email address to set.
+            otp (str): otp for two-factor authentication operation.
 
         Usage:
             ```python
@@ -1283,7 +1283,7 @@ class User(object):
         props_dict = {
             "email": value
         }
-        self._update_user_props(props_dict)
+        self._update_user_props(props_dict, otp=otp)
 
     @description.setter
     def description(self, value: str) -> None:
@@ -2054,7 +2054,7 @@ class User(object):
         """
         generate_otp_url = self._commcell_object._services['GENERATE_OTP']
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST', generate_otp_url)
-        if not flag:
+        if flag:
             if response.json():
                 error_code = response.json().get('errorCode')
                 if error_code and error_code != 1133:

@@ -63,6 +63,7 @@ TeamsSubclient:
     find_teams()                                --  Method to find the list of files and their metadata
     preview_backed_file()                       --  Method to preview the backed up content
     run_restore_for_chat_to_onedrive()  -- Restore user chats to onedrive.
+    restore_to_azure_blob()                     --  Restore teams/users to azure blob
 """
 
 from __future__ import unicode_literals
@@ -1511,6 +1512,36 @@ class TeamsSubclient(CloudAppsSubclient):
             }
         }
 
+        return self._process_restore(request_json)
+
+    def restore_to_azure_blob(self, teams: list, blob_name: str) -> 'Job':
+        """
+        Restore to Azure Blob
+        Args:
+            teams : Team's Email Id
+            blob_name: Name of the Azure Blob credential to which the restore will be performed.
+
+        Returns:
+            Job: A Job object representing the restore operation.
+        """
+        discovered_teams = self.discover()
+        teams = [discovered_teams[team] for team in teams]
+        credential = self._commcell_object.credentials.get(blob_name)
+        request_json = {
+            "taskInfo": {
+                "task": const.RESTORE_TASK_JSON,
+                "associations": [
+                    self._json_association()
+                ],
+                "subTasks": [
+                    {
+                        "subTask": const.RESTORE_SUBTASK_JSON,
+                        "options":self._json_restore_options(
+                            teams, restorePostsAsHtml=True, restoreToTeams=False, restoreToBlob=True, blobContainerId=credential.credential_id)
+                    }
+                ]
+            }
+        }
         return self._process_restore(request_json)
 
     def refresh_retention_stats(self) -> None:

@@ -165,6 +165,11 @@ class VsaLiveSync:
             from .vcloud_live_sync import vCloudLiveSync
             return object.__new__(vCloudLiveSync)
 
+        if instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
+            from .oracle_live_sync import OCILiveSync
+            return  object.__new__(OCILiveSync)
+
+
         raise SDKException(
             'LiveSync',
             '102',

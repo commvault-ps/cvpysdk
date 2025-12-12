@@ -1,4 +1,5 @@
 FQ_PARAMETERS = {"THREAT_DETECTION" :"fq=groups.clientGroup.clientGroupName%3Aneq%3AIndex+Servers&fq=groups.configurationGroupType%3Aeq%3A1"}
+FL_PARAMETERS = {"THREAT_DETECTION" : "&fl=groups.clientGroup,groups.discoverRulesInfo,groups.groupAssocType,groups.Id,groups.name,groups.isCompanySmartClientGroup,groups.description,groups.clientCount,groups.tiPlan&hardRefresh=true"}
 
 UPDATE_TI_PLAN_JSON ={
           "clientGroupOperationType": "Update",

@@ -1567,16 +1567,26 @@ class GoogleSubclient(CloudAppsSubclient):
             'POST', refresh_retention, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
-                if error_code != 0:
-                    error_message = response.json().get('errorMessage')
-                    raise SDKException('Subclient', '102', error_message)
+            if response and response.text.strip():
+                try:
+                    resp_json = response.json()
+                except ValueError:
+                    raise SDKException('Response', '102', 'Invalid JSON in response')
+
+                if 'errorCode' in resp_json:
+                    error_code = resp_json.get('errorCode')
+                    if error_code != 0:
+                        error_message = resp_json.get('errorMessage', 'Unknown error')
+                        raise SDKException('Subclient', '102', error_message)
             else:
-                raise SDKException('Response', '102')
+                # Response is empty
+                raise SDKException('Response', '102', 'Empty response from server')
         else:
             raise SDKException('Response', '101',
-                               self._update_response_(response.text))
+                               self._update_response_(response.text if response else ''))
+
+        # Return empty dict if response is empty
+        return response.json() if response and response.text.strip() else {}
 
     def refresh_stats_status(self, user_level: bool) -> None:
         """Refresh the statistics status at the client or user level for the client.
@@ -1610,16 +1620,23 @@ class GoogleSubclient(CloudAppsSubclient):
             'POST', refresh_backup_stats, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
-                if error_code != 0:
-                    error_message = response.json().get('errorMessage')
-                    raise SDKException('Subclient', '102', error_message)
+            if response and response.text.strip():
+                try:
+                    resp_json = response.json()
+                except ValueError:
+                    raise SDKException('Response', '102', 'Invalid JSON in response')
+
+                if 'errorCode' in resp_json:
+                    error_code = resp_json.get('errorCode')
+                    if error_code != 0:
+                        error_message = resp_json.get('errorMessage', 'Unknown error')
+                        raise SDKException('Subclient', '102', error_message)
             else:
-                raise SDKException('Response', '102')
+                # Response is empty
+                raise SDKException('Response', '102', 'Empty response from server')
         else:
             raise SDKException('Response', '101',
-                               self._update_response_(response.text))
+                               self._update_response_(response.text if response else ''))
 
     def get_client_level_stats(self) -> dict:
         """Retrieve client-level statistics for the current client.
@@ -1640,18 +1657,26 @@ class GoogleSubclient(CloudAppsSubclient):
             'GET', get_backup_stats)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
-                if error_code != 0:
-                    error_message = response.json().get('errorMessage')
-                    raise SDKException('Subclient', '102', error_message)
+            if response and response.text.strip():
+                try:
+                    resp_json = response.json()
+                except ValueError:
+                    raise SDKException('Response', '102', 'Invalid JSON in response')
+
+                if 'errorCode' in resp_json:
+                    error_code = resp_json.get('errorCode')
+                    if error_code != 0:
+                        error_message = resp_json.gt('errorMessage', 'Unknown error')
+                        raise SDKException('Subclient', '102', error_message)
             else:
-                raise SDKException('Response', '102')
+                # Response is empty
+                raise SDKException('Response', '102', 'Empty response from server')
         else:
             raise SDKException('Response', '101',
-                               self._update_response_(response.text))
+                               self._update_response_(response.text if response else ''))
 
-        return response.json()
+        # Return empty dict if response is empty
+        return response.json() if response and response.text.strip() else {}
 
     def get_user_level_stats(self) -> dict:
         """Retrieve user-level statistics for the Google subclient.
@@ -1689,18 +1714,26 @@ class GoogleSubclient(CloudAppsSubclient):
             'POST', get_backup_stats, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
-                if error_code != 0:
-                    error_message = response.json().get('errorMessage')
-                    raise SDKException('Subclient', '102', error_message)
+            if response and response.text.strip():
+                try:
+                    resp_json = response.json()
+                except ValueError:
+                    raise SDKException('Response', '102', 'Invalid JSON in response')
+
+                if 'errorCode' in resp_json:
+                    error_code = resp_json.get('errorCode')
+                    if error_code != 0:
+                        error_message = resp_json.get('errorMessage', 'Unknown error')
+                        raise SDKException('Subclient', '102', error_message)
             else:
-                raise SDKException('Response', '102')
+                # Response is empty
+                raise SDKException('Response', '102', 'Empty response from server')
         else:
             raise SDKException('Response', '101',
-                               self._update_response_(response.text))
+                               self._update_response_(response.text if response else ''))
 
-        return response.json()
+        # Return empty dict if response is empty
+        return response.json() if response and response.text.strip() else {}
 
     def browse_folders(self, folder_id: str) -> dict:
         """Browse and retrieve folders for a user based on the provided folder ID.
