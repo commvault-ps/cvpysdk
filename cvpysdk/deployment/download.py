@@ -583,12 +583,12 @@ class Download(object):
                     return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
 
                 else:
-                    raise SDKException('Download', '101')
+                    raise SDKException('Download', '101', self._update_response_(response.text))
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException('Response', '102', self._update_response_(response.text))
         else:
-            raise SDKException('Response', '101')
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get_packages(self) -> list:
         """

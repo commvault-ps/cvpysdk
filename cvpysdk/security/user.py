@@ -48,6 +48,8 @@ Users:
 
     add()                               --  adds local/external user to commcell
 
+    v4_add()                            --  adds local/external user to commcell using v4 api
+
     has_user()                          --  checks if user with specified user exists
                                             on this commcell
 
@@ -55,6 +57,8 @@ Users:
                                             specified user name
 
     delete()                            --  deletes the user on this commcell
+
+    v4_delete()                         --  deletes the user on this commcell using v4 api
 
     refresh()                           --  refreshes the list of users on this
                                             commcell
@@ -77,11 +81,20 @@ User
     _get_user_properties()              --  gets all the properties associated with
                                             this user
 
+    _get_v4_user_properties()           --  gets all the properties associated with
+                                            this user using v4 api
+
+    _update_v4_user_props()             --  updates the properties associated with
+                                            this user using v4 api
+
     _update_user_props()                --  updates the properties associated with
                                             this user
 
     _update_usergroup_request()         --  makes the request to update usergroups
                                             associated with this user
+
+    _update_v4_usergroup_request()      --  makes the request to update usergroups
+                                            associated with this user using v4 api
 
     user_name()                         --  returns the name of this user
 
@@ -118,6 +131,8 @@ User
     status()                            --  returns the status of user
 
     update_user_password()              --  Updates new passwords of user
+
+    update_v4_user_password()           --  Updates new passwords of user using v4 api
 
     user_guid()                         --  returns user GUID
 
@@ -530,6 +545,153 @@ class Users(object):
             self._users_cache = self.get_users_cache()
         return self._users_cache
 
+    def v4_add(self,
+            user_name: str,
+            email: str,
+            full_name: Optional[str] = None,
+            domain: Optional[str] = None,
+            password: Optional[str] = None,
+            system_generated_password: bool = False,
+            local_usergroups: Optional[List[str]] = None,
+            entity_dictionary: Optional[Dict[str, Any]] = None,
+            **kwargs) -> 'User':
+        """Adds a local/external user to this commcell.
+
+        Args:
+            user_name                     (str):  name of the user to be created.
+            full_name                     (str):  full name of the user to be created.
+            email                         (str):  email of the user to be created.
+            domain                        (str):  Needed in case you are adding external user.
+            password                      (str):  password of the user to be created.
+            system_generated_password     (bool): if set to true system defined password will be used.
+            local_usergroups              (list): user can be member of these user groups.
+            entity_dictionary   (dict): combination of entity_type, entity names and role.
+        Kwargs:
+            upn                            (str):  user principal name of the user to be created.
+
+        Returns:
+            User: The created user object.
+
+        Raises:
+            SDKException:
+                if data type of input is invalid.
+                if user with specified name already exists.
+                if password or system_generated_password are not set.
+                if failed to add user to commcell.
+
+        Usage:
+            users.v4_add(user_name='testuser', email='test@example.com')
+            users.v4_add(user_name='testuser', email='test@example.com', password='password')
+            users.v4_add(user_name='testuser', email='test@example.com', domain='domain')
+            users.v4_add(user_name='testuser', email='test@example.com', local_usergroups=['group1', 'group2'])
+            entity_dictionary = {
+                'assoc1': {
+                    'entity_type': ['entity_name'],
+                    'entity_type': ['entity_name', 'entity_name'],
+                    'role': ['role1']
+                },
+                'assoc2': {
+                    'mediaAgentName': ['networktestcs', 'standbycs'],
+                    'clientName': ['Linux1'],
+                    'role': ['New1']
+                }
+            }
+            users.v4_add(user_name='testuser', email='test@example.com', entity_dictionary=entity_dictionary)
+        """
+        upn = kwargs.get("upn", email)
+
+        if domain:
+            username = "{0}\\{1}".format(domain, user_name)
+            password = ""
+            system_generated_password = False
+        else:
+            username = user_name
+            if not password:
+                system_generated_password = True
+
+        if not (isinstance(username, str) and
+                isinstance(email, str)):
+            raise SDKException('User', '101')
+
+        if self.has_user(username):
+            raise SDKException('User', '103', 'User: {0}'.format(username))
+
+        if password is not None:
+            password = b64encode(password.encode()).decode()
+        else:
+            password = ''
+
+        if local_usergroups:
+            groups_json = [{"name": lname} for lname in local_usergroups]
+        else:
+            groups_json = [{}]
+
+        create_user_request = {
+            "users": [{
+                "password": password,
+                "email": email,
+                "userPrincipalName": upn,
+                "fullName": full_name,
+                "useSystemGeneratePassword": system_generated_password,
+                "name": username,
+                "userGroups": groups_json
+            }]
+        }
+        add_user = self._commcell_object._services['V4_USERS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_user, create_user_request)
+        if flag:
+            if response.json():
+                response_json = response.json()
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        created_user_username = response_json.get("users", [{}])[0].get("name")
+        created_user_id = response_json.get("users", [{}])[0].get("id")
+
+        if entity_dictionary:
+            security_request = SecurityAssociation._security_association_json(
+                entity_dictionary=entity_dictionary)
+            security_json = {
+                "users": [{
+                    "securityAssociations": {
+                        "associationsOperationType": "ADD",
+                        "associations": security_request
+                    }
+                }]
+            }
+            security_asssociation_url = self._commcell_object._services['USER'] % created_user_id
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', security_asssociation_url, security_json
+            )
+            if flag:
+                if response.json():
+                    if 'response' in response.json():
+                        response_json = response.json()['response'][0]
+                        error_code = response_json.get('errorCode', 0)
+                        error_message = response_json.get('errorString', '')
+                    elif 'errorCode' in response.json():
+                        error_code = response.json().get('errorCode', 0)
+                        error_message = response.json().get('errorMessage', '')
+                    if not error_code == 0:
+                        raise SDKException('Response', '101', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+        return self.get(created_user_username)
+
     def _process_add_or_delete_response(self, flag: bool, response: object) -> tuple:
         """Processes the flag and response received from the server during add delete request
 
@@ -692,7 +854,7 @@ class Users(object):
 
         create_user_request = {
             "users": [{
-                "password": password,
+                **({"password": password} if domain is None else {}),
                 "email": email,
                 "UPN": upn,
                 "fullName": full_name,
@@ -706,6 +868,99 @@ class Users(object):
         }
         response_json = self._add_user(create_user_request)
 
+
+        created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
+
+        return self.get(created_user_username)
+
+    def add_service_account(self,
+                           user_name: str,
+                           full_name: Optional[str] = None,
+                           local_usergroups: Optional[List[str]] = None,
+                           entity_dictionary: Optional[Dict[str, Any]] = None) -> 'User':
+        """Creates a service account in the commcell.
+
+        Service accounts are special users designed for API access and automation purposes.
+        They don't require email, password, or UPN, and use token-based authentication.
+
+        Args:
+            user_name            (str):  name of the service account to be created.
+            full_name            (str):  full name of the service account.
+            local_usergroups     (list): user groups the service account should be member of.
+            entity_dictionary    (dict): combination of entity_type, entity names and role.
+
+        Returns:
+            User: The created service account object.
+
+        Raises:
+            SDKException:
+                if data type of input is invalid.
+                if service account with specified name already exists.
+                if failed to create service account.
+
+        Usage:
+            # Create basic service account
+            users.add_service_account(user_name='api_service_account')
+
+            # Create service account with full name
+            users.add_service_account(
+                user_name='automation_sa',
+                full_name='Automation Service Account'
+            )
+
+            # Create service account with usergroups
+            users.add_service_account(
+                user_name='backup_sa',
+                full_name='Backup Service Account',
+                local_usergroups=['API Users', 'Backup Operators']
+            )
+
+            # Create service account with security associations
+            entity_dictionary = {
+                'assoc1': {
+                    'clientName': ['client1', 'client2'],
+                    'role': ['View']
+                }
+            }
+            users.add_service_account(
+                user_name='readonly_sa',
+                full_name='Read Only Service Account',
+                entity_dictionary=entity_dictionary
+            )
+        """
+        if not isinstance(user_name, str):
+            raise SDKException('User', '101')
+
+        if self.has_user(user_name):
+            raise SDKException('User', '103', 'User: {0}'.format(user_name))
+
+        if local_usergroups:
+            groups_json = [{"userGroupName": lname} for lname in local_usergroups]
+        else:
+            groups_json = [{}]
+
+        security_json = {}
+        if entity_dictionary:
+            security_request = SecurityAssociation._security_association_json(
+                entity_dictionary=entity_dictionary)
+            security_json = {
+                "associationsOperationType": "ADD",
+                "associations": security_request
+            }
+
+        create_user_request = {
+            "users": [{
+                "fullName": full_name,
+                "isServiceAccount": True,
+                "userEntity": {
+                    "userName": user_name
+                },
+                "securityAssociations": security_json,
+                "associatedUserGroups": groups_json
+            }]
+        }
+
+        response_json = self._add_user(create_user_request)
 
         created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
 
@@ -829,6 +1084,83 @@ class Users(object):
             raise SDKException('User', '102', error_message)
         self._users = self._get_v4_users()
 
+    def v4_delete(self,
+               user_name: str,
+               new_user: Optional[str] = None,
+               new_usergroup: Optional[str] = None) -> None:
+        """Deletes the specified user from the existing commcell users.
+
+        Args:
+            user_name       (str): name of the user which has to be deleted.
+            new_user        (str): name of the target user, whom the ownership of entities should be transferred.
+            new_usergroup   (str): name of the user group, whom the ownership of entities should be transferred.
+
+        Raises:
+            SDKException:
+                if user doesn't exist.
+                if new user and new usergroup any of these is passed and these doesn't exist on commcell.
+                if both user and usergroup is passed for ownership transfer.
+                if both user and usergroup is not passed for ownership transfer.
+                if response is not success.
+
+        Usage:
+            users.delete(user_name='testuser')
+            users.delete(user_name='testuser', new_user='newuser')
+            users.delete(user_name='testuser', new_usergroup='newusergroup')
+        """
+        if not self.has_user(user_name):
+            raise SDKException(
+                'User', '102', "User {0} doesn't exists on this commcell.".format(
+                    user_name)
+            )
+        if new_user and new_usergroup:
+            raise SDKException(
+                'User', '102', "{0} and {1} both can not be set as owner!! "
+                "please send either new_user or new_usergroup".format(new_user, new_usergroup)
+            )
+        else:
+            if new_user:
+                if not self.has_user(new_user):
+                    raise SDKException(
+                        'User', '102', "User {0} doesn't exists on this commcell.".format(
+                            new_user)
+                    )
+                new_user_id = self._users[new_user.lower()]
+                new_group_id = 0
+            else:
+                if new_usergroup:
+                    if not self._commcell_object.user_groups.has_user_group(new_usergroup):
+                        raise SDKException(
+                            'UserGroup', '102', "UserGroup {0} doesn't exists "
+                            "on this commcell.".format(new_usergroup)
+                        )
+                else:
+                    raise SDKException(
+                        'User', '102',
+                        "Ownership transfer is mondatory!! Please provide new owner information"
+                    )
+                new_group_id = self._commcell_object.user_groups.get(new_usergroup).user_group_id
+                new_user_id = 0
+
+        delete_user = self._commcell_object._services['V4_DELETE_USER'] %(
+            self._users[user_name.lower()], new_user_id, new_group_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'DELETE', delete_user
+        )
+        if flag:
+            if response.json():
+                response_json = response.json()
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self._users = self._get_v4_users()
 
     def _get_users_on_service_commcell(self) -> Dict[str, Any]:
         """gets the userspace from service commcell
@@ -986,7 +1318,7 @@ class User(object):
         self._upn = None
         self._num_devices = None
         self._additional_settings = None
-        self._get_user_properties()
+        self._get_v4_user_properties()
 
     def __repr__(self) -> str:
         """String representation of the instance of this class.
@@ -1053,6 +1385,124 @@ class User(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_v4_user_properties(self) -> None:
+        """Gets the properties of this user
+
+        Raises:
+            SDKException:
+                if response is not success
+                if response is empty
+
+        Usage:
+            user._get_v4_user_properties()
+        """
+        request_url = self._commcell_object._services['V4_USER'] % self._user_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', request_url)
+
+        if flag:
+            if response.json():
+                self._properties = response.json()
+                if 'enabled' in self._properties:
+                    self._user_status = self._properties['enabled']
+
+                if 'email' in self._properties:
+                    self._email = self._properties['email']
+
+                if 'description' in self._properties:
+                    self._description = self._properties['description']
+
+                if 'associatedUserGroups' in self._properties:
+                    self._associated_usergroups = self._properties['associatedUserGroups']
+
+                if 'userPrincipalName' in self._properties:
+                    self._upn = self._properties.get('userPrincipalName')
+
+                if 'numDevices' in self._properties:
+                    self._num_devices = self._properties.get('numDevices')
+
+                security_associations_url = (self._commcell_object._services['USER_SECURITY_ASSOCIATION'] %
+                                             self._user_id)
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    'GET', security_associations_url)
+                if flag:
+                    if response.json():
+                        security_properties = response.json().get('associations', {})
+                        self._security_associations = SecurityAssociation.fetch_security_association(
+                            security_dict=security_properties)
+                    else:
+                        self._security_associations = {}
+                else:
+                    response_string = self._commcell_object._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _update_v4_user_props(self, properties_dict: Dict, **kwargs: Dict) -> None:
+        """Updates the properties of this user
+
+        Args:
+            properties_dict (dict): User property dict which is to be updated.
+                e.g.: {
+                        "description": "My description"
+                    }
+            **kwargs (dict): Key value pairs for supported arguments.
+                Supported arguments values:
+                    new_username (str): New login name for the user.
+
+        Raises:
+            SDKException:
+                If invalid type arguments are passed.
+                If response was not success.
+                If response was empty.
+
+        Usage:
+            ```python
+            # Update user description
+            user._update_user_props({"description": "New description"})
+
+            # Update user name
+            user._update_user_props({}, new_username="new_user_name")
+            ```
+        """
+        request_json = {
+            "newName": self.user_name
+        }
+        new_username = kwargs.get("new_username", None)
+        otp = kwargs.get("otp", None)
+        if new_username is not None:
+            if not isinstance(new_username, str):
+                raise SDKException("USER", "101")
+            request_json["newName"] = new_username
+        request_json.update(properties_dict)
+
+        headers = None
+        if otp:
+            headers = self._commcell_object._headers.copy()
+            headers["otp"] = otp
+
+        request_url = self._commcell_object._services['V4_USER'] % self._user_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', request_url, request_json, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                response_json = response.json()
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
 
     def _update_user_props(self, properties_dict: Dict, **kwargs: Dict) -> None:
         """Updates the properties of this user
@@ -1178,6 +1628,63 @@ class User(object):
 
         self._update_user_props(update_usergroup_dict)
 
+    def _update_v4_usergroup_request(self, request_type: str, usergroups_list: Optional[List[str]] = None) -> None:
+        """Updates the usergroups this user is associated to
+
+        Args:
+            usergroups_list (list, optional): List of usergroups to be updated. Defaults to None.
+            request_type (str): Type of request to be done.
+
+        Raises:
+            SDKException:
+                If failed to update usergroups.
+                If usergroup is not list.
+                If usergroup doesn't exist on this commcell.
+
+        Usage:
+            ```python
+            # Update usergroups for the user
+            user.add_usergroups(['usergroup1', 'usergroup2'])
+
+            # Remove usergroups from the user
+            user.remove_usergroups(['usergroup1'])
+
+            # Overwrite usergroups for the user
+            user.overwrite_usergroups(['usergroup3'])
+            ```
+        """
+        update_usergroup_request = {
+            "NONE": 0,
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3,
+        }
+
+        if not isinstance(usergroups_list, list):
+            raise SDKException('USER', '101')
+
+        for usergroup in usergroups_list:
+            if not self._commcell_object.user_groups.has_user_group(usergroup):
+                raise SDKException(
+                    'UserGroup', '102', "UserGroup {0} doesn't "
+                    "exists on this commcell".format(usergroup)
+                )
+
+        associated_usergroups = []
+        if usergroups_list:
+            for usergroup in usergroups_list:
+                temp = {
+                    "name": usergroup
+                }
+                associated_usergroups.append(temp)
+
+        update_usergroup_dict = {
+            "userGroupOperation": update_usergroup_request[request_type.upper()],
+            "userGroups": associated_usergroups
+        }
+
+        self._update_v4_user_props(update_usergroup_dict)
+
     @property
     def name(self) -> str:
         """Returns the User display name
@@ -1185,7 +1692,7 @@ class User(object):
         Returns:
             str: The display name of the user.
         """
-        return self._properties['userEntity']['userName']
+        return self._properties.get('name', '')
 
     @property
     def full_name(self) -> str:
@@ -1265,7 +1772,7 @@ class User(object):
             user.user_name = "new_username"
             ```
         """
-        self._update_user_props("", new_username=value)
+        self._update_v4_user_props("", new_username=value)
 
     def edit_email(self, value: str, otp: str = None) -> None:
         """updates the email for this commcell user
@@ -1283,7 +1790,7 @@ class User(object):
         props_dict = {
             "email": value
         }
-        self._update_user_props(props_dict, otp=otp)
+        self._update_v4_user_props(props_dict, otp=otp)
 
     @description.setter
     def description(self, value: str) -> None:
@@ -1301,7 +1808,7 @@ class User(object):
         props_dict = {
             "description": value
         }
-        self._update_user_props(props_dict)
+        self._update_v4_user_props(props_dict)
 
     @property
     def associated_usergroups(self) -> List[str]:
@@ -1313,7 +1820,8 @@ class User(object):
         usergroups = []
         if self._associated_usergroups is not None:
             for usergroup in self._associated_usergroups:
-                usergroups.append(usergroup['userGroupName'])
+                if not usergroup.get('provider'):
+                    usergroups.append(usergroup.get('name', ''))
         return usergroups
 
     @property
@@ -1324,9 +1832,11 @@ class User(object):
             list: List of associated external usergroups.
         """
         usergroups = []
-        if self._associated_external_usergroups is not None:
-            for usergroup in self._associated_external_usergroups:
-                usergroups.append(usergroup['externalGroupName'])
+        if self._associated_usergroups is not None:
+            for usergroup in self._associated_usergroups:
+                provider = usergroup.get('provider')
+                if provider:
+                    usergroups.append(f"{provider['name']}\\{usergroup['name']}")
         return usergroups
 
     @property
@@ -1368,35 +1878,17 @@ class User(object):
             user.status = False
             ```
         """
-        request_json = {
-            "users": [{
-                "enableUser": value
-            }]
+        props_dict = {
+            "enabled": value
         }
-        usergroup_request = self._commcell_object._services['USER'] % (self._user_id)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', usergroup_request, request_json
-        )
-        if flag:
-            if response.json():
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
-                    if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        self._update_v4_user_props(props_dict)
 
     @property
     def user_guid(self) -> Optional[str]:
         """
         returns user guid
         """
-        return self._properties.get('userEntity', {}).get('userGUID')
+        return self._properties.get('GUID')
 
     @property
     def age_password_days(self) -> Optional[int]:
@@ -1410,7 +1902,7 @@ class User(object):
         """
         returns user associated company name
         """
-        return self._properties.get('companyName', '').lower()
+        return self._properties.get('company', {}).get('name', '').lower()
 
     @age_password_days.setter
     def age_password_days(self, days: int) -> None:
@@ -1463,6 +1955,29 @@ class User(object):
         }
         self._update_user_props(props_dict, otp=otp)
 
+    def update_v4_user_password(self, new_password: str, logged_in_user_password: str, otp: str = None) -> None:
+        """updates new passwords of user
+
+        Args:
+            new_password (str): New password for user.
+            logged_in_user_password (str): Password of logged-in user (User who is changing
+                the password) for validation.
+            otp (str): otp for two-factor authentication operation.
+
+        Usage:
+            ```python
+            # Update the user's password
+            user.update_user_password("new_password", "current_user_password")
+            ```
+        """
+        password = b64encode(new_password.encode()).decode()
+        validation_password = b64encode(logged_in_user_password.encode()).decode()
+        props_dict = {
+            "newPassword": password,
+            "validationPassword": validation_password
+        }
+        self._update_v4_user_props(props_dict, otp=otp)
+
     def add_usergroups(self, usergroups_list: List[str]) -> None:
         """UPDATE the specified usergroups to this commcell user
 
@@ -1475,7 +1990,7 @@ class User(object):
             user.add_usergroups(['usergroup1', 'usergroup2'])
             ```
         """
-        self._update_usergroup_request('UPDATE', usergroups_list)
+        self._update_v4_usergroup_request('UPDATE', usergroups_list)
 
     def remove_usergroups(self, usergroups_list: List[str]) -> None:
         """DELETE the specified usergroups to this commcell user
@@ -1489,7 +2004,7 @@ class User(object):
             user.remove_usergroups(['usergroup1', 'usergroup2'])
             ```
         """
-        self._update_usergroup_request('DELETE', usergroups_list)
+        self._update_v4_usergroup_request('DELETE', usergroups_list)
 
     def overwrite_usergroups(self, usergroups_list: List[str]) -> None:
         """OVERWRITE the specified usergroups to this commcell user
@@ -1503,12 +2018,12 @@ class User(object):
             user.overwrite_usergroups(['usergroup1', 'usergroup2'])
             ```
         """
-        self._update_usergroup_request('OVERWRITE', usergroups_list)
+        self._update_v4_usergroup_request('OVERWRITE', usergroups_list)
 
     def refresh(self) -> None:
         """Refresh the properties of the User."""
         self._additional_settings = None
-        self._get_user_properties()
+        self._get_v4_user_properties()
 
     def update_security_associations(self, entity_dictionary: Dict, request_type: str) -> None:
         """handles three way associations (role-user-entities)
@@ -1668,9 +2183,10 @@ class User(object):
             }
         """
         lock_info = dict()
-        lock_info['isAccountLocked'] = self._properties.get('isAccountLocked', False)
-        lock_info['lockStartTime'] = self._properties.get('lockStartTime', 0)
-        lock_info['lockEndTime'] = self._properties.get('lockEndTime', 0)
+        lock_data = self._properties.get('lockInfo', {})
+        lock_info['isAccountLocked'] = lock_data.get('isLocked', False)
+        lock_info['lockStartTime'] = lock_data.get('startTime', 0)
+        lock_info['lockEndTime'] = lock_data.get('endTime', 0)
         return lock_info
 
     def unlock(self) -> tuple[str, str]:
@@ -1760,7 +2276,8 @@ class User(object):
                             renewable_until_time: int = None,
                             token_expiry_time: int = None,
                             api_endpoints: list = None,
-                            otp: str = None) -> dict:
+                            service_account_id: int = None,
+                            ip_allowlist: list = None) -> dict:
         """
         Creates v4 Access token for the given User
 
@@ -1772,13 +2289,25 @@ class User(object):
                                                          2: All Scope
                                                          3: Custom
                                                          4: 1-Touch
+                                                         5: Hyperscale
             renewable_until_time (int): Unix time stamp for renewable until time applicable
                                         for Scopes ["All Scope", "custom"]. It will be ignored for other scopes.
             token_expiry_time    (int): Unix time stamp for Token expiry time
                                         applicable for Scopes ["Microsoft SCIM", "1-Touch"]. It will be ignored for other scopes.
             api_endpoints        (list): List of Commvault REST API to be considered in the custom scope
 
-            otp                 (str): One-Time Password for two-factor authentication.
+            service_account_id  (int): User ID of service account for which access token will be created.
+                                       If not provided, token is created for current user.
+
+            ip_allowlist        (list): List of IP addresses to add to the IP allowlist.
+                                        Supports IPv4, IPv6, CIDR ranges, and IP ranges.
+                                        Examples:
+                                          - IPv4: '192.168.1.1'
+                                          - IPv6: '2001:db8::1'
+                                          - IPv4 CIDR: '192.168.1.0/24'
+                                          - IPv6 CIDR: '2001:db8::/32'
+                                          - IPv4 Range: '192.168.1.1-192.168.1.255'
+                                        If None, no IP allowlist is configured.
 
         Returns:
             dict: Containing Access token details
@@ -1792,10 +2321,20 @@ class User(object):
             token_info = user.create_access_token(token_name='my_token')
             token_info = user.create_access_token(token_name='scim_token', token_type=1, token_expiry_time=1678886400)
             token_info = user.create_access_token(token_name='custom_token', token_type=3, renewable_until_time=1678886400, api_endpoints=['/client', '/v4/servergroup'])
+            token_info = user.create_access_token(token_name='service_token', service_account_id=123)
+            token_info = user.create_access_token(token_name='secure_token', ip_allowlist=['192.168.1.1', '10.0.0.0/24'])
         """
+        # Validate inputs for custom token type
+        if token_type == 3 and (not api_endpoints or len(api_endpoints) == 0):
+            raise SDKException('User', '105', "API endpoints must be provided for custom token type")
+
         payload = {
                 "tokenName": token_name
         }
+
+        if service_account_id:
+            payload["userId"] = service_account_id
+
         if token_type:
             payload["tokenType"] = token_type
 
@@ -1808,13 +2347,11 @@ class User(object):
         if api_endpoints:
             payload["apiEndpoints"] = api_endpoints
 
-        headers = None
-        if otp:
-            headers = self._commcell_object._headers.copy()
-            headers["otp"] = otp
+        if ip_allowlist:
+            payload["allowedIPs"] = ip_allowlist
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_ACCESS_TOKEN'], payload, headers=headers
+            'POST', self._commcell_object._services['CREATE_ACCESS_TOKEN'], payload
         )
         if flag:
             if response.json():
@@ -1836,7 +2373,7 @@ class User(object):
                           renewable_until_time: int = None,
                           token_expiry_time: int = None,
                           api_endpoints: list = None,
-                          otp: str = None) -> dict:
+                          ip_allowlist: list = None) -> dict:
         """
         update v4 Access token for the given token ID
 
@@ -1849,12 +2386,22 @@ class User(object):
                                                          2: All Scope
                                                          3: Custom
                                                          4: 1-Touch
+                                                         5: Hyperscale
             renewable_until_time (int): Unix time stamp for renewable until time applicable
                                         for Scopes ["All Scope", "custom"]. It will be ignored for other scopes.
             token_expiry_time    (int): Unix time stamp for Token expiry time
                                         applicable for Scopes ["Microsoft SCIM", "1-Touch"]. It will be ignored for other scopes.
             api_endpoints        (list): List of Commvault REST API to be considered in the custom scope
-            otp                  (str): One-Time Password for two-factor authentication.
+
+            ip_allowlist        (list): List of IP addresses to set for the IP allowlist.
+                                        Supports IPv4, IPv6, CIDR ranges, and IP ranges.
+                                        Examples:
+                                          - IPv4: '192.168.1.1'
+                                          - IPv6: '2001:db8::1'
+                                          - IPv4 CIDR: '192.168.1.0/24'
+                                          - IPv6 CIDR: '2001:db8::/32'
+                                          - IPv4 Range: '192.168.1.1-192.168.1.255'
+                                        If provided, replaces the existing IP allowlist.
 
         Returns:
             dict: Containing updated Access token details
@@ -1869,11 +2416,15 @@ class User(object):
             updated_token_info = user.edit_access_token(access_token_id=123, token_name='new_token_name')
             updated_token_info = user.edit_access_token(access_token_id=456, token_type=1, token_expiry_time=1678972800)
             updated_token_info = user.edit_access_token(access_token_id=789, renewable_until_time=1679059200, api_endpoints=['/client', '/v4/job'])
+            updated_token_info = user.edit_access_token(access_token_id=789, ip_allowlist=['192.168.1.1', '10.0.0.0/24'])
         """
 
-        if not any([token_name, renewable_until_time, token_expiry_time, api_endpoints]):
-            if token_type is None:
-                raise SDKException('User', '105', "At least one input is required for update token operation")
+        if not any([token_name, renewable_until_time, token_expiry_time, token_type, ip_allowlist]):
+            raise SDKException('User', '105', "At least one input is required for update token operation")
+
+        # Validate inputs for custom token type
+        if token_type == 3 and (not api_endpoints or len(api_endpoints) == 0):
+            raise SDKException('User', '105', "API endpoints must be provided for custom token type")
 
         payload = {}
         if token_name:
@@ -1891,15 +2442,12 @@ class User(object):
         if api_endpoints:
             payload["apiEndpoints"] = api_endpoints
 
+        if ip_allowlist:
+            payload["allowedIPs"] = ip_allowlist
+
         update_token_api_url = self._commcell_object._services['UPDATE_ACCESS_TOKEN'] % access_token_id
 
-        headers = None
-        if otp:
-            headers = self._commcell_object._headers.copy()
-            headers["otp"] = otp
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', update_token_api_url, payload,
-                                                                            headers=headers)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', update_token_api_url, payload)
         if flag:
             if response.json():
                 error_code = response.json()['error']['errorCode']
@@ -1913,13 +2461,12 @@ class User(object):
         return response.json()["tokenInfo"]
 
 
-    def delete_access_token(self, access_token_id: int, otp: str = None) -> dict:
+    def delete_access_token(self, access_token_id: int) -> dict:
         """
         delete v4 Access token for the given token ID
 
         Args:
             access_token_id (int): Access token ID received in the create request
-            otp             (str): One-Time Password for two-factor authentication.
 
         Returns:
             dict: Containing error message and error code.
@@ -1934,13 +2481,7 @@ class User(object):
         """
         revoke_token_api_url = self._commcell_object._services['REVOKE_ACCESS_TOKEN'] % access_token_id
 
-        headers = None
-        if otp:
-            headers = self._commcell_object._headers.copy()
-            headers["otp"] = otp
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', revoke_token_api_url,
-                                                                            headers=headers)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', revoke_token_api_url)
         if flag:
             if response.json():
                 error_code = response.json()['errorCode']
@@ -1954,15 +2495,16 @@ class User(object):
         return response.json()
 
 
-    def get_access_tokens(self) -> dict:
+    def get_access_tokens(self, user_id: int = None) -> dict:
         """
-        get v4 Access token for the current user
+        get v4 Access token for the specified user or current user
 
         Args:
-            None
+            user_id (int, optional): User ID for which to retrieve access tokens.
+                                    If not provided, uses current user's ID.
 
         Returns:
-            dict: Containing List of all Access tokens available for the current user.
+            dict: Containing List of all Access tokens available for the specified user.
 
         Raises:
             SDKException:
@@ -1971,8 +2513,10 @@ class User(object):
 
         Usage:
             tokens = user.get_access_tokens()
+            tokens = user.get_access_tokens(user_id=123)
         """
-        get_tokens_api_url = self._commcell_object._services['GET_ACCESS_TOKENS'] % self._user_id
+        target_user_id = user_id if user_id is not None else self._user_id
+        get_tokens_api_url = self._commcell_object._services['GET_ACCESS_TOKENS'] % target_user_id
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', get_tokens_api_url)
         if flag:
             if response.json():

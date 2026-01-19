@@ -137,6 +137,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             kubernetes_client: Optional[str] = None,
             storage_class: Optional[str] = None,
             overwrite: bool = True,
+            skip_disk_override: bool = False,
+            restore_empty_for_filtered_disks: bool = False,
             copy_precedence: int = 0,
             proxy_client: Optional[str] = None,
     ) -> Any:
@@ -162,6 +164,12 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
             overwrite         (bool): overwrite the existing Applications if exists
                                         default: True
+
+            skip_disk_override (bool): Skip overwriting the PVCs which already exists.
+                                        default: False
+
+            restore_empty_for_filtered_disks (bool): restore empty PVCs for PVCs filtered during backup
+                                                     default: False
 
             copy_precedence   (int): copy precedence value
                                       default: 0
@@ -199,6 +207,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         """
 
         restore_option = {}
+        restore_option["skip_disk_override"] = skip_disk_override
+        restore_option["restore_empty_for_filtered_disks"] = restore_empty_for_filtered_disks
 
         # check mandatory input parameters are correct
         if apps_to_restore and not isinstance(apps_to_restore, list):
@@ -1621,10 +1631,77 @@ class ApplicationGroups(Subclients):
 
         return self.__do_browse(browse_type=browse_type, namespace=namespace, ns_guid=ns_guid)
 
+    def _build_pvc_disk_filters(self, pvc_filters: list) -> list:
+        """Build vmDiskFilter rules for PVC name / label filtering.
+         Args:
+            pvc_filters (list): list of pvc filters using application labels or pvc name patterns
+        """
+
+        KIND_RULE = {
+            "filter": "equal",
+            "filterType": 10,
+            "name": "Kind",
+            "type": "Kind",
+            "equalsOrNotEquals": True,
+            "isRule": True,
+            "label": "persistentvolumeclaim",
+            "value": "persistentvolumeclaim",
+            "category": "Kind",
+            "categotyType": "DiskFilter_Rule",
+            "filterSubResource": False
+        }
+
+        RULE_META = {
+            "name": ("Name", 2, "Kind & Name"),
+            "label": ("Label", 14, "Kind & Label")
+        }
+
+        def rule(name, value, filter_id):
+            return {
+                "filter": "equal",
+                "filterType": filter_id,
+                "name": name,
+                "type": name,
+                "equalsOrNotEquals": True,
+                "isRule": True,
+                "label": value,
+                "value": value,
+                "category": name,
+                "categotyType": "DiskFilter_Rule",
+                "filterSubResource": False
+            }
+
+        filters = []
+
+        for f in pvc_filters:
+            f_type = f.get("type")
+            value = f.get("value")
+
+            if f_type not in RULE_META:
+                continue
+
+            rule_name, filter_id, group_type = RULE_META[f_type]
+
+            filters.append({
+                "children": [
+                    rule(rule_name, value, filter_id),
+                    KIND_RULE
+                ],
+                "name": group_type,
+                "type": group_type,
+                "equalsOrNotEquals": True,
+                "label": f"pvc & {value}",
+                "value": f"pvc & {value}",
+                "category": group_type,
+                "categotyType": "DiskFilter_Rule"
+            })
+        return filters
+
     def create_application_group(self,
                                  content: list,
                                  plan_name: str = None,
                                  filter: list = None,
+                                 pvc_filters: list = None,
                                  subclient_name: str = "automation") -> None:
         """Create application / Kubernetes Subclient.
 
@@ -1643,6 +1720,7 @@ class ApplicationGroups(Subclients):
                     If not specified, default is 'Namespaces'
             plan_name (str): Plan name. Defaults to None.
             filter (list): Filter for subclient content. See 'content' for format and examples. Defaults to None.
+            pvc_filters (list): list of pvc filters using application labels or pvc name patterns
             subclient_name (str): Subclient name you want to create Subclient. Defaults to "automation".
 
         Raises:
@@ -1709,6 +1787,11 @@ class ApplicationGroups(Subclients):
             app_create_json['subClientProperties']['vmDiskFilterOperationType'] = 'ADD'
             app_create_json['subClientProperties']['vmFilter'] = { 'children' : filter_children}
 
+        if pvc_filters:
+            app_create_json['subClientProperties']['vmDiskFilterOperationType'] = 'ADD'
+            app_create_json['subClientProperties']['vmDiskFilter'] = {
+                "filters": self._build_pvc_disk_filters(pvc_filters)
+            }
         flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_SUBCLIENT'],
                                                            app_create_json)
         if flag == False:

@@ -302,6 +302,10 @@ Client
 
     enable_owner_privacy()                  --  Enables the privacy option for client
 
+    add_http_proxy()                    --  Adds HTTP proxy for the client
+
+    remove_http_proxy()                 --  Removes HTTP proxy for the client
+
 Client Attributes
 -----------------
 
@@ -2663,7 +2667,6 @@ class Clients(object):
                 - cloud_region (int): Cloud region for the SharePoint client (default is 1).
                 - shared_jr_directory (dict): Shared job results directory configuration.
                 - is_modern_auth_enabled (bool): Enable modern authentication (default is False).
-                - credential_id (str):  Credential ID for given credential
                 - credential_name(str):  Credential
         Returns:
             Client: Instance of the Client class representing the newly created SharePoint pseudo client.
@@ -2861,13 +2864,15 @@ class Clients(object):
             if kwargs.get('is_modern_auth_enabled'):
                 azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
 
-                if "credential_id" in kwargs and "credential_name" in kwargs:
+                if kwargs.get("credential_name", None):
+                    credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+                    credential_id = credential_properties.credential_id
                     azure_app_dict = {
                         "appStatus": 1,
                         "azureAppType": 1,
                         "certificate": {},
                         "credentialEntity": {
-                            "credentialId": kwargs.get("credential_id"),
+                            "credentialId": credential_id,
                             "credentialName": kwargs.get("credential_name")
                         }
                     }
@@ -3485,10 +3490,10 @@ class Clients(object):
             job_result_dir: str,
             exchange_servers: List[Any],
             service_accounts: List[Dict[str, Any]],
-            azure_app_key_secret: str,
-            azure_tenant_name: str,
-            azure_app_key_id: str,
-            environment_type: int,
+            azure_app_key_secret: str = "",
+            azure_tenant_name: str = "",
+            azure_app_key_id: str = "",
+            environment_type: int = 0,
             backupset_type_to_create: int = 1,
             **kwargs: Any
         ) -> Any:
@@ -3527,7 +3532,6 @@ class Clients(object):
             **kwargs: Additional optional arguments.
                 - is_modern_auth_enabled (bool): Whether to enable modern authentication for Exchange Online. Default is True.
                 - credential_name (str): Credential name for Azure authentication.
-                - credential_id (str): Credential ID for Azure authentication.
 
         Returns:
             Instance of the Client class representing the newly created Exchange Mailbox Client.
@@ -3646,7 +3650,6 @@ class Clients(object):
                         "accounts": {
                             "adminAccounts": account_list
                         }
-
                     },
                     "memberServers": {
                         "memberServers": member_servers
@@ -3661,14 +3664,16 @@ class Clients(object):
                 "clientName": client_name
             }
         }
-        if kwargs.get("credential_id", None) and kwargs.get("credential_name", None):
+        if kwargs.get("credential_name", None):
+            credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+            credential_id = credential_properties.credential_id
             azure_app_dict = {
                 "azureApps": [
                     {
                         "appStatus": 1,
                         "azureAppType": 1,
                         "credentialEntity": {
-                            "credentialId": kwargs.get("credential_id"),
+                            "credentialId": credential_id,
                             "credentialName": kwargs.get("credential_name")
                         }
                     }
@@ -4587,7 +4592,6 @@ class Clients(object):
                 - shared_jr_directory (str): Path to shared job results directory (required for multi-access node clients).
                 - cloud_region (int): Cloud region identifier (default: 1).
                 - credential_name (str): Name of the credential to use.
-                - credential_id (int): ID of the credential to use.
 
         Returns:
             Instance of the Client class representing the newly added Teams client.
@@ -4769,14 +4773,16 @@ class Clients(object):
             }
         }
 
-        if kwargs.get("credential_id", None) and kwargs.get("credential_name", None):
+        if kwargs.get("credential_name", None):
+            credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+            credential_id = credential_properties.credential_id
             azure_app_dict = {
                 "azureApps": [
                     {
                         "appStatus": 1,
                         "azureAppType": 2,
                         "credentialEntity": {
-                            "credentialId": kwargs.get("credential_id"),
+                            "credentialId": credential_id,
                             "credentialName": kwargs.get("credential_name")
                         }
                     }
@@ -4844,7 +4850,6 @@ class Clients(object):
                 user_password (str): Service account password for shared job results.
                 shared_jr_directory (str): Path to the shared job results directory.
                 cloud_region (int): Cloud region identifier (default: 1).
-                credential_id(str):  Credential ID for given credential
                 credential_name(str):  Credential
         Returns:
             Instance of the Client class representing the newly created OneDrive for Business client.
@@ -5019,14 +5024,16 @@ class Clients(object):
             }
         }
 
-        if kwargs.get("credential_id", None) and kwargs.get("credential_name", None):
+        if kwargs.get("credential_name", None):
+            credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+            credential_id = credential_properties.credential_id
             azure_app_dict = {
                 "azureApps": [
                     {
                         "appStatus": 1,
                         "azureAppType": 1,
                         "credentialEntity": {
-                            "credentialId": kwargs.get("credential_id"),
+                            "credentialId": credential_id,
                             "credentialName": kwargs.get("credential_name")
                         }
                     }
@@ -10726,6 +10733,118 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_http_proxy(self, use_client_os_proxy_settings=False, proxy_server="", proxy_port=0,
+                       use_authentication=False, use_with_network_topology=False,
+                       proxy_credential_name=None, proxy_credential_id=None, proxy_bypass_list="") -> None:
+        """Add an HTTP proxy configuration to the client
+
+        Args:
+            use_client_os_proxy_settings (bool): Use the client OS proxy settings.
+
+            proxy_server (str): The proxy server address.
+
+            proxy_port (int): The proxy server port.
+
+            use_authentication (bool): Use authentication for the proxy.
+
+            use_with_network_topology (bool): Use the proxy with network topology.
+
+            proxy_credential_name (str): The name of the proxy credential.
+
+            proxy_credential_id (int): The ID of the proxy credential.
+
+            proxy_bypass_list (str): Comma-separated list of addresses to bypass the proxy.
+
+        """
+
+        proxy_type = "GLOBAL" if use_client_os_proxy_settings else "EXPLICIT"
+
+        if proxy_type == "EXPLICIT":
+            if not proxy_server or not isinstance(proxy_server, str):
+                raise SDKException( 'Client', 102,
+                    "proxy_server is required and must be a non-empty string when using EXPLICIT proxy."
+                )
+            if not isinstance(proxy_port, int) or not (1 <= proxy_port <= 65535):
+                raise SDKException( 'Client', 102,
+                    "proxy_port must be an integer between 1 and 65535 when using EXPLICIT proxy."
+                )
+
+        request_json = {
+            "entity": {
+                "clientId": int(self.client_id)
+            },
+            "httpProxy": {
+                "server": proxy_server,
+                "port": proxy_port,
+                "useForNetworkRoutes": use_with_network_topology,
+                "proxyBypassList": proxy_bypass_list,
+                "configureHTTPProxy": True,
+                "useAuthentication": use_authentication,
+                "proxyType": proxy_type
+            }
+        }
+
+        if proxy_credential_id and proxy_credential_name:
+            request_json["httpProxy"]["credentials"] = {
+                "credentialId": proxy_credential_id,
+                "credentialName": proxy_credential_name
+            }
+        else:
+            request_json["httpProxy"]["selectedCredential"] = None
+
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message ="Failed to add HTTP proxy configuration to the client group."
+                if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('Client', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def remove_http_proxy(self) -> None:
+        """Remove the HTTP proxy configuration from the client."""
+
+        request_json = {
+            "entity": {
+                "clientId": int(self.client_id)
+            },
+            "httpProxy": {
+                "configureHTTPProxy": False
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message ="Failed to remove HTTP proxy configuration from the client."
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('Client', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def additional_settings(self) -> 'AdditionalSettings':
         """Get the AdditionalSettings instance associated with this Client.
@@ -10744,6 +10863,140 @@ class Client(object):
         if self._additional_settings is None:
             self._additional_settings = AdditionalSettings(self)
         return self._additional_settings
+
+    def send_logs(self, email_ids: Optional[List[str]], **kwargs) -> bool:
+        """Send logs for this client to specified email addresses.
+
+        This method creates a send logs task for the current client and sends the logs to the
+        provided list of email addresses. It waits for the log sending task to complete and
+        returns True if successful.
+
+        Args:
+            email_ids: list of email addresses to which the client logs should be sent.
+            **kwargs: Additional keyword arguments for the operation.
+                email_subject: (str) Subject line for the email containing the logs.
+
+        Returns:
+            True if the logs were sent successfully.
+
+        Raises:
+            SDKException: If the log sending operation fails or the response contains an error.
+
+        Example:
+            >>> client = Client(commcell_object, "Client01")
+            >>> success = client.send_logs(['admin@example.com', 'support@example.com'])
+            >>> print(f"Logs sent successfully: {success}")
+            >>> # Send logs with job results included
+            >>> client.send_logs(['admin@example.com'], include_job_results=True)
+
+        #ai-gen-doc
+        """
+        if isinstance(email_ids, str):
+            email_ids = [email_ids]
+
+        email_subject = kwargs.get('email_subject',
+                                   f"{self._commcell_object.commserv_name} : Logs for Client '{self.client_name}'")
+
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 5010
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "sendLogFilesOption": {
+                                    "actionLogsEndJobId": 0,
+                                    "emailSelected": True,
+                                    "jobid": 0,
+                                    "tsDatabase": False,
+                                    "galaxyLogs": False,
+                                    "getLatestUpdates": False,
+                                    "actionLogsStartJobId": 0,
+                                    "computersSelected": True,
+                                    "csDatabase": False,
+                                    "otherDatabases": False,
+                                    "crashDump": False,
+                                    "isNetworkPath": False,
+                                    "saveToFolderSelected": False,
+                                    "notifyMe": True,
+                                    "includeJobResults": False,
+                                    "doNotIncludeLogs": True,
+                                    "machineInformation": False,
+                                    "scrubLogFiles": False,
+                                    "emailSubject": email_subject,
+                                    "osLogs": False,
+                                    "allUsersProfile": False,
+                                    "splitFileSizeMB": 512,
+                                    "actionLogs": False,
+                                    "includeIndex": False,
+                                    "databaseLogs": True,
+                                    "includeDCDB": False,
+                                    "collectHyperScale": False,
+                                    "logFragments": False,
+                                    "uploadLogsSelected": True,
+                                    "useDefaultUploadOption": True,
+                                    "enableChunking": True,
+                                    "collectRFC": False,
+                                    "collectUserAppLogs": False,
+                                    "impersonateUser": {
+                                        "useImpersonation": False
+                                    },
+                                    "clients": [
+                                        {
+                                            "clientId": int(self.client_id),
+                                            "clientName": self.client_name
+                                        }
+                                    ],
+                                    "recipientTo": {
+                                        "emailids": email_ids,
+                                        "users": [],
+                                        "userGroups": []
+                                    },
+                                    "sendLogsOnJobCompletion": False,
+                                    "emailDescription": f"Client logs for {self.client_name}"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    error_message = response.json().get('errorMessage', 'nil')
+                    raise SDKException(
+                        'Client', '102', 'Sending logs failed\nError: "{0}"'.format(error_message)
+                    )
+                else:
+                    # Wait for the send logs job to complete
+                    from .job import Job
+                    send_logs_job = Job(self._commcell_object, response.json()['jobIds'][0])
+                    try:
+                        send_logs_job.wait_for_completion()
+                    except Exception:
+                        pass
+                return True
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', response.text)
 
 class _Readiness:
     """

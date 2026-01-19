@@ -202,12 +202,16 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
     'SERVERGROUPS_V4': '{0}V4/ServerGroup',
+    'HTTP_PROXY': '{0}HttpProxySettings',
 
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=%s',
+    'V4_USERGROUPS': '{0}V4/UserGroup?includeSystemCreated=%s',
     'USERGROUP': '{0}UserGroup/%s',
     'USERGROUP_V4': '{0}V4/UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
+    'V4_DELETE_USERGROUP': '{0}V4/UserGroup/%s?newUserId=%s&newUserGroupId=%s',
     'COMPANY_USERGROUP': '{0}UserGroup?parentProvider/providerId=%s',
+    'USERGROUP_SECURITY_ASSOCIATION': '{0}UserGroup/%s/Security',
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
@@ -412,7 +416,9 @@ SERVICES_DICT_TEMPLATE = {
     'V4_USERS': '{0}v4/user?additionalProperties=true',
     'USER': '{0}User/%s?Level=50',
     'V4_USER': '{0}v4/user/%s',
+    'USER_SECURITY_ASSOCIATION': '{0}User/%s/Security',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
+    'V4_DELETE_USER': '{0}v4/User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
     'GENERATE_OTP': '{0}user/otp/generate?dM2ClientType=AdminConsole',
 
@@ -420,6 +426,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',
+    'V4_ROLES': '{0}V4/Role',
+    'V4_ROLE': '{0}V4/Role/%s',
     'PERMISSIONS': '{0}V4/Permissions',
 
     'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=30',
@@ -428,6 +436,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_RECORD': '{0}/Commcell/Credentials/action/delete',
 
     'ADD_CREDENTIALS': '{0}V4/Credential',
+    'V5_CREDENTIAL': '{0}V5/credential/%s',
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
@@ -455,6 +464,7 @@ SERVICES_DICT_TEMPLATE = {
     'ORGANIZATION_THEME': '{0}V2/Organization/%s/Customization',
     'GET_ORGANIZATION_THEME': '{0}Organization/%s/Customization',
     'EXTEND_ORGANIZATION': '{0}ThirdParty/App/Company/Extend',
+    'SET_COMPANY_COUNTRY': '{0}wapi/SetCompanyCountryAssociation',
     'ORGANIZATION_TAGS': '{0}Tags',
     'GET_ORGANIZATION_TAGS': '{0}Tags/PROVIDER_ENTITY/%s',
     'COMPANY_PASSKEY': '{0}Company/%s/Passkey',
@@ -658,6 +668,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_OR_GET_SAML': '{0}/v4/SAML',
     'EDIT_SAML': '{0}/v4/SAML/%s',
     'GET_SAML_PROP': '{0}/ThirdParty/SAML/App?isOpenAPISpec=true',
+    'V4_IDENTITY_SERVERS' : '{0}/V4/IdentityServers',
 
     'REGIONS': '{0}/v4/Regions',
     'REGION': '{0}/v4/Regions/%s',

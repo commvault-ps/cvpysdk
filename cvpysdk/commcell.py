@@ -6110,7 +6110,8 @@ class Commcell(object):
         failed_login_attempt_limit: int = 5,
         failed_login_attempts_within: int = 3600,
         account_lock_duration: int = 86400,
-        lock_duration_increment_by: int = 3600
+        lock_duration_increment_by: int = 3600,
+        otp: str = None
     ) -> None:
         """Enable the feature to limit user logon attempts on the Commcell.
 
@@ -6123,6 +6124,7 @@ class Commcell(object):
             failed_login_attempts_within: The time window (in seconds) within which failed attempts are counted. Default is 3600 seconds (1 hour).
             account_lock_duration: The duration (in seconds) for which a locked account remains inaccessible. Default is 86400 seconds (24 hours).
             lock_duration_increment_by: The increment (in seconds) added to the lock duration after each consecutive account lock. Default is 3600 seconds (1 hour).
+            otp (str): otp for two-factor authentication operation.
 
         Raises:
             SDKException: If the response from the Commcell is empty, unsuccessful, or if enabling the feature fails.
@@ -6133,7 +6135,8 @@ class Commcell(object):
             ...     failed_login_attempt_limit=3,
             ...     failed_login_attempts_within=1800,
             ...     account_lock_duration=7200,
-            ...     lock_duration_increment_by=1200
+            ...     lock_duration_increment_by=1200,
+            ...     otp="otp"
             ... )
             >>> print("User logon attempt limits enabled successfully.")
 
@@ -6145,8 +6148,14 @@ class Commcell(object):
             'accountLockDuration': account_lock_duration,
             'accountLockDurationIncrements': lock_duration_increment_by
         }
+        
+        headers = None
+        if otp:
+            headers = self._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._services['ACCOUNT_lOCK_SETTINGS'], req_json
+            'PUT', self._services['ACCOUNT_lOCK_SETTINGS'], req_json, headers=headers
         )
         if flag:
             if response and response.json():
@@ -6166,11 +6175,14 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def disable_limit_user_logon_attempts(self) -> None:
+    def disable_limit_user_logon_attempts(self, otp: str = None) -> None:
         """Disable the feature that limits user logon attempts on the Commcell.
 
         This method turns off the restriction that limits the number of failed user logon attempts,
         allowing users to attempt logon without being blocked after multiple failures.
+
+        Args:
+            otp (str): otp for two-factor authentication operation.
 
         Raises:
             SDKException: If the response from the Commcell is empty, unsuccessful, or if disabling
@@ -6178,7 +6190,7 @@ class Commcell(object):
 
         Example:
             >>> commcell = Commcell()
-            >>> commcell.disable_limit_user_logon_attempts()
+            >>> commcell.disable_limit_user_logon_attempts(otp="otp")
             >>> print("User logon attempt limit has been disabled.")
 
         #ai-gen-doc
@@ -6186,7 +6198,8 @@ class Commcell(object):
         self.enable_limit_user_logon_attempts(failed_login_attempt_limit=-1,
                                               failed_login_attempts_within=-1,
                                               account_lock_duration=-1,
-                                              lock_duration_increment_by=-1)
+                                              lock_duration_increment_by=-1,
+                                              otp=otp)
 
     def get_navigation_settings(self, org_id: int = 0) -> Dict[str, Dict[str, List[str]]]:
         """Retrieve the navigation preference list for all user roles in Command Center.

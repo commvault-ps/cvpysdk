@@ -176,7 +176,7 @@ class RecoveryGroups:
     def refresh(self) -> None:
         """Reload the recovery group information from the Commcell.
 
-        This method refreshes the internal state of the RecoveryGroups object, ensuring that 
+        This method refreshes the internal state of the RecoveryGroups object, ensuring that
         any changes to recovery groups on the Commcell are reflected in this instance.
 
         Example:
@@ -191,7 +191,7 @@ class RecoveryGroups:
     def __str__(self) -> str:
         """Return a string representation of all recovery groups.
 
-        This method provides a human-readable string that lists all recovery groups 
+        This method provides a human-readable string that lists all recovery groups
         managed by this RecoveryGroups instance.
 
         Returns:
@@ -433,6 +433,24 @@ class RecoveryGroup:
         return self.entities[0]['target']['name']
 
     @property
+    def is_rescued_cs(self):
+        """Check if the recovery group is a rescued cleanroom.
+
+        Returns:
+            True if the recovery group is a rescued cleanroom, False otherwise.
+
+        Example:
+            >>> rg = RecoveryGroup()
+            >>> if rg.is_Rescued_cs:
+            ...     print("This recovery group is a rescued cleanroom.")
+            ... else:
+            ...     print("This recovery group is not a rescued cleanroom.")
+
+        #ai-gen-doc
+        """
+        return self._properties['recoveryGroup']['recoveryExpirationOptions']['isRescuedCommServe']
+
+    @property
     def entities(self) -> List[Dict[str, Any]]:
         """Get all entity properties in the recovery group.
 
@@ -526,7 +544,7 @@ class RecoveryGroup:
         """
         vendor = self.vendor_type
         config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
-        
+
         if vendor == 'azure':
             return config['overrideReplicationOptions']['securityGroup']['id']
         elif vendor == 'amazon':
@@ -548,7 +566,7 @@ class RecoveryGroup:
         """
         vendor = self.vendor_type
         config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
-        
+
         if vendor == 'azure':
             return config['overrideReplicationOptions']['virtualNetwork']['networkName']
         elif vendor == 'amazon':
@@ -667,7 +685,7 @@ class RecoveryGroup:
         """
         vendor = self.vendor_type
         config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
-        
+
         if vendor == 'azure':
             return config['overrideReplicationOptions']['virtualNetwork'].get('subnetId', '')
         elif vendor == 'amazon':
@@ -1119,7 +1137,7 @@ class RecoveryGroup:
     def cleanup_recovered_entities(self) -> int:
         """Perform cleanup of all recovered entities in the recovery group.
 
-        This method initiates a cleanup operation for all entities that have been recovered 
+        This method initiates a cleanup operation for all entities that have been recovered
         within the recovery group. It returns the job ID associated with the cleanup process.
 
         Returns:

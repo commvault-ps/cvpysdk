@@ -677,6 +677,9 @@ class CleanroomTarget:
                 self._instance = (
                     self._cleanroom_target_properties.get("general", {}).get("target", {}).get("vendor", ""))
                 self._set_policy_type(self._instance)
+                self._is_automatic_site = (
+                    self._cleanroom_target_properties.get("general", {}).get("deployCleanroomResources", {}).get("isEnabled", False)
+                )
                 if response_old.json():
                     self._cleanroom_old_target_properties = response_old.json()
                     if self.policy_type == 1:
@@ -716,7 +719,7 @@ class CleanroomTarget:
                     self._key_pair = (self._cleanroom_target_properties.get('recovery', {})
                                       .get('keyPair', {}).get('name', ''))
                     self._iam_role = (self._cleanroom_target_properties.get('recovery', {})
-                                      .get('iamRole', {}).get('guid', ''))
+                                      .get('iamRole', {}).get('name', ''))
                     self._encryption_key = (self._cleanroom_target_properties.get('recovery', {})
                                             .get('encryptionKey', {}).get('name', ''))
                     self._volume_type = (self._cleanroom_target_properties.get('recovery', {})
@@ -729,7 +732,7 @@ class CleanroomTarget:
                                            .get('instanceType', {}).get('guid', ''))
                     self._create_public_ip = (self._cleanroom_target_properties.get('recovery', {})
                                               .get('createPublicIPAddress', False))
-                    
+
                     # Infrastructure network settings
                     self._maxNoOfAccessNodes = (self._cleanroom_target_properties.get('infrastructure', {})
                                                 .get('maxNoOfAccessNodes', ''))
@@ -741,7 +744,7 @@ class CleanroomTarget:
                     self._infra_create_public_ip = (self._cleanroom_target_properties.get('infrastructure', {})
                                                     .get('networkSettings', {}).get('infrastructurePublicIPSettings', {})
                                                     .get('createPublicIPAddress', False))
-                    
+
                     # Infrastructure network topology settings
                     self._workload_server_group = (self._cleanroom_target_properties.get('infrastructure', {})
                                                    .get('networkTopologySettings', {}).get('workloadServerGroup', {})
@@ -751,7 +754,7 @@ class CleanroomTarget:
                                                      .get('name', ''))
                     self._infra_network_gateway = (self._cleanroom_target_properties.get('infrastructure', {})
                                                    .get('networkTopologySettings', {}).get('infrastructureNetworkGateway', ''))
-                    
+
                     # Infrastructure advanced settings
                     self._infra_iam_role = (self._cleanroom_target_properties.get('infrastructure', {})
                                             .get('advancedSettings', {}).get('iamRole', {}).get('guid', ''))
@@ -759,7 +762,7 @@ class CleanroomTarget:
                                            .get('advancedSettings', {}).get('vmSize', {}).get('guid', ''))
                     self._custom_images = (self._cleanroom_target_properties.get('infrastructure', {})
                                            .get('advancedSettings', {}).get('customImages', []))
-                    
+
                     # Advanced network address space
                     self._networkAddressSpace = (self._cleanroom_target_properties.get('advanced', {})
                                                  .get('networkAddressSpace', {}))
@@ -767,7 +770,7 @@ class CleanroomTarget:
                                             .get('networkAddressSpace', {}).get('endpointSubnet', ''))
                     self._publicSubnet = (self._cleanroom_target_properties.get('advanced', {})
                                           .get('networkAddressSpace', {}).get('publicSubnet', ''))
-                    
+
                     # Security group rules
                     self._recovery_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
                                                     .get('securityGroupRules', {}).get('recoveredEntity', []))
@@ -777,7 +780,7 @@ class CleanroomTarget:
                 if self._policy_type == 7:
                     self._region = (self._cleanroom_target_properties.get('recovery', {})
                                     .get('region', {})
-                                    .get('name', ''))
+                                    .get('guid', ''))
                     self._availability_zone = (self._cleanroom_target_properties.get('recovery', {})
                                                .get('availabilityZone', {}).get('guid', ''))
                     self._storage_account = (self._cleanroom_target_properties.get("recovery", {})
@@ -1033,6 +1036,20 @@ class CleanroomTarget:
         #ai-gen-doc
         """
         return self._vm_suffix
+
+    @property
+    def is_automatic_site(self) -> bool:
+        """Get the status of the resource provisioning option for this CleanroomTarget
+        Returns:
+            The status of the resource provisioning option,
+            if create new returns True if it is manually managed returns False
+        Example:
+            >>> target = CleanroomTarget()
+            >>> deploy_status = target.is_automatic_site
+            >>> print(f"Deploy cleanroom resources: {deploy_status}")
+        #ai-gen-doc
+        """
+        return self._is_automatic_site
 
     @property
     def storage_account(self) -> str:

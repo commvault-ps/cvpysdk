@@ -164,6 +164,10 @@ class VsaLiveSync:
         if instance_name == hv_type.VCLOUD.value.lower():
             from .vcloud_live_sync import vCloudLiveSync
             return object.__new__(vCloudLiveSync)
+        
+        if instance_name == hv_type.GOOGLE_CLOUD.value.lower():
+            from .google_cloud_live_sync import GCPLiveSync
+            return object.__new__(GCPLiveSync)
 
         if instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
             from .oracle_live_sync import OCILiveSync

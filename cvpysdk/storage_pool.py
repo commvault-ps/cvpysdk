@@ -127,6 +127,10 @@ StoragePool instance attributes
 
     **media_agents_with_roles**     --  returns the list of media agents with their roles associated with the storage pool
 
+    **store_id**                   --  returns the list of store IDs associated with the storage pool
+
+    **library_id**                 --  returns the library ID associated with the storage pool
+
     **is_worm_storage_lock_enabled**--  returns whether WORM storage lock is enabled
 
     **is_object_level_worm_lock_enabled** --  returns whether object level WORM lock is enabled
@@ -1623,6 +1627,45 @@ class StoragePool(object):
                 "storage": self._get_storage_media_agents(),
                 "DDB": self._get_ddb_media_agents()
             }
+
+    @property
+    def store_id(self) -> list:
+        """Get the list of store IDs associated with this storage pool.
+
+        This property provides a read-only list of store IDs configured for the storage pool.
+
+        Returns:
+            list: A list of store IDs associated with the storage pool.
+
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> store_ids = storage_pool.store_id  # Access the store ID property
+            >>> print(f"Store IDs: {store_ids}")
+
+        #ai-gen-doc
+        """
+        store_ids = []
+        DDB_details_list = self._storage_pool_properties.get("storagePoolDetails", {}).get("dedupDBDetailsList", [])
+        for store in DDB_details_list:
+            store_ids.append(store.get("storeId"))
+        return store_ids
+
+    @property
+    def library_id(self) -> int:
+        """Get the library ID associated with this storage pool.
+
+        This property provides a read-only integer value representing the library ID configured for the storage pool.
+
+        Returns:
+            int: The library ID associated with the storage pool.
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> library_id = storage_pool.library_id  # Access the library ID property
+            >>> print(f"Library ID: {library_id}")"""
+        
+        library_list = self._storage_pool_properties.get("storagePoolDetails", {}).get("libraryList")
+        if library_list:
+            return library_list[0].get("library", {}).get("libraryId")
 
     @property
     def is_worm_storage_lock_enabled(self) -> bool:

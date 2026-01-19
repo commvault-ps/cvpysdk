@@ -48,6 +48,8 @@ IdentityManagementApps
 
     delete_saml_app()               --  deletes the specified saml app
 
+    get_saml_apps()                 --  get the list of all the saml apps in the commcell
+
     get_saml()                      --  returns instance of SamlApp class
 
     configure_saml_app()            --  creates a saml app
@@ -139,6 +141,7 @@ class IdentityManagementApps(object):
         self._ADD_SAML = commcell_object._services['ADD_OR_GET_SAML']
         self._SAML = commcell_object._services['EDIT_SAML']
         self._LOCAL_APP = commcell_object._services['LOCAL_APP']
+        self._V4_IDENTITY_SERVERS = commcell_object._services['V4_IDENTITY_SERVERS']
         self._apps = None
         self._local_app = None
         self.refresh()
@@ -243,6 +246,46 @@ class IdentityManagementApps(object):
                 )
 
             raise SDKException('IdentityManagement', '102')
+
+    def get_saml_apps(self):
+        """Returns a list of all SAML apps in the commcell
+
+            Returns:
+                list    -   List containing dicts for all SAML apps
+
+                    [
+                        {
+                            'id': 1097,
+                            'name': 'c1',
+                            'type': 'SAML',
+                            'samlType': 'ADFS',
+                            'company': {'id': 384, 'name': 'c1'},
+                            'configured': True
+                        },
+                        ...
+                    ]
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._V4_IDENTITY_SERVERS
+        )
+
+        if flag:
+            saml_apps = []
+            if response.json() and 'identityServers' in response.json():
+                identity_servers = response.json()['identityServers']
+
+                for server in identity_servers:
+                    if server.get('type') == 'SAML':
+                        saml_apps.append(server)
+
+            return saml_apps
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def get_saml(self, app_name):
         """Returns a SamlApp object of the specified app name
@@ -673,14 +716,15 @@ class IdentityManagementApps(object):
 
         """
         third_party_json = {
-            "App_SetClientThirdPartyAppPropReq": {
                 "opType": 1,
                 "clientThirdPartyApps": [
                     {
+                        "appDescription": "",
+                        "appDisplayName": appname,
                         "appName": appname,
                         "flags": 0,
                         "appType": 5,
-                        "isEnabled": 1,
+                        "isEnabled": True,
                         "props": {
                             "nameValues": props
                         },
@@ -692,19 +736,26 @@ class IdentityManagementApps(object):
                         ]
                     }
                 ]
-            }
+
         }
 
-        response_json = self._commcell_object.qoperation_execute(third_party_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._APPS, third_party_json
+        )
 
-        if response_json.get('errorCode', 0) != 0:
-            raise SDKException(
-                'IdentityManagement',
-                '103',
-                'Error: "{}"'.format(response_json['errorMessage'])
-            )
+        if flag:
+            if response.json() and 'error' in response.json():
+                if response.json()['error']['errorCode'] == 0:
+                    self.refresh()
+                else:
+                    raise SDKException(
+                        'IdentityManagement',
+                        '103',
+                        ' - error {0}'.format(response.json()['error']['errorString'])
+                    )
         else:
-            self.refresh()
+            response_string = self._update_response_(response.text)
+            raise SDKException('IdentityManagement', '103', response_string)
 
     def has_identity_app(self, app_name):
         """Checks if an identity app exits in the commcell
@@ -925,11 +976,8 @@ class SamlApp(object):
                 SDKException:
                     if response is not success
         """
-        req_json = {
-            "appKeys": [self._properties['appKey']],
-            "propLevel": 30
-        }
-        flag, response = self._cvpysdk_object.make_request('POST', self._SAML_PROP, req_json)
+        req_url = self._APPS+ '?appName=%s' % self._appname
+        flag, response = self._cvpysdk_object.make_request('GET', req_url)
         if flag:
             if response.json() and 'clientThirdPartyApps' in response.json():
                 return response.json()['clientThirdPartyApps'][0]

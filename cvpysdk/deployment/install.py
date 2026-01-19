@@ -592,6 +592,7 @@ class Install(object):
         index_cache_location = kwargs.get('index_cache_location', None)
         firewall_inputs = kwargs.get('firewall_inputs', {})
         web_console_input = kwargs.get('webconsole_inputs', {})
+        dataDirectory = kwargs.get("dataDirectory", None)
 
         request_json = {
             "taskInfo": {
@@ -637,6 +638,7 @@ class Install(object):
                                             "ignoreJobsRunning": False,
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
+                                            "dataDirectory": dataDirectory,
                                             "preferredIPFamily": install_flags.get('preferredIPFamily',
                                                                                    1) if install_flags else 1,
                                             "firewallInstall": {

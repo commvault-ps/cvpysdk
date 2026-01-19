@@ -2408,7 +2408,10 @@ class Instance(object):
 
         self._restore_browse_option_json(restore_option)
         self._restore_common_options_json(restore_option)
-        self._impersonation_json(restore_option)
+        if 'credentialName' in restore_option:
+            self._impersonation_savedcred_json(restore_option)
+        else:
+            self._impersonation_json(restore_option)
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
         self._restore_virtual_rst_option_json(restore_option)
@@ -3037,6 +3040,24 @@ class Instance(object):
             "user": {
                 "userName": value.get("impersonate_user", ""),
                 "password": value.get("impersonate_password", "")
+            }
+        }
+
+    def _impersonation_savedcred_json(self, value):
+        """setter of Impersonation Json entity of Json"""
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        use_impersonate = bool(value.get("impersonate_user"))
+
+        self._impersonation_json_ = {
+            "useImpersonation": use_impersonate,
+            "user": {
+                "savedCredential":{
+                    "credentialName": value.get("credentialName", "")
+                }
+
             }
         }
 

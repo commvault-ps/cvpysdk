@@ -861,7 +861,12 @@ class Organizations:
             default_plans: Optional[List[str]] = None,
             enable_auto_discover: bool = False,
             service_commcells: Optional[List[str]] = None,
-            send_email: bool = False) -> 'Organization':
+            send_email: bool = False,
+            address: Optional[str] = None,
+            city: Optional[str] = None,
+            country: Optional[str] = None,
+            state_or_region: Optional[str] = None,
+            postal_code: Optional[str] = None) -> 'Organization':
         """Adds a new organization with the given name to the Commcell.
 
         Args:
@@ -875,6 +880,11 @@ class Organizations:
             enable_auto_discover (bool): enable auto discover for the organization
             service_commcells (list): list of service commmcells to be associated with the organization
             send_email       (bool): If set to true, a welcome email is sent to the primary contact user.
+            address          (str): Address of the organization.
+            city             (str): City where the organization is located.
+            country          (str): Country where the organization is located.
+            state_or_region  (str): State or region where the organization is located.
+            postal_code      (str): Postal code of the organization's location.
 
         Returns:
             Organization: instance of the Organization class, for the newly created organization
@@ -897,6 +907,7 @@ class Organizations:
             organizations.add(name='MyOrg', email='test@example.com', contact_name='Test User', company_alias='My Company', default_plans=['DefaultPlan'])
             organizations.add(name='MyOrg', email='test@example.com', contact_name='Test User', company_alias='My Company', service_commcells=['ServiceCommcell'])
             organizations.add(name='MyOrg', email='test@example.com', contact_name='Test User', company_alias='My Company', send_email=True)
+            organizations.add(name='MyOrg', email='test@example.com', contact_name='Test User', company_alias='My Company', address='123 Main St', city='New York', country='USA', state_or_region='NY', postal_code='10001')
         """
         if self.has_organization(name):
             raise SDKException('Organization', '106')
@@ -915,6 +926,21 @@ class Organizations:
 
         if primary_domain is None:
             primary_domain = ''
+
+        if address is None:
+            address = ''
+
+        if city is None:
+            city = ''
+
+        if country is None:
+            country = ''
+
+        if state_or_region is None:
+            state_or_region = ''
+
+        if postal_code is None:
+            postal_code = ''
 
         plans_list = []
 
@@ -946,6 +972,15 @@ class Organizations:
 
         request_json = {
             'organizationInfo': {
+                "tenantInfo": {
+                    "address": {
+                        "address": address,
+                        "city": city,
+                        "postalCode": postal_code,
+                        "state": state_or_region,
+                        "country": country
+                    }
+                },
                 'organization': {
                     'connectName': name,
                     'emailDomainNames': email_domain,
@@ -3032,6 +3067,49 @@ class Organization:
                         'Organization', '113', 'Error: "{0}"'.format(
                             response.json()['error']['errorMessage']
                         )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def set_country(self, country_name: str) -> None:
+        """Sets the country association for this organization.
+
+        Args:
+            country_name (str): Name of the country to associate with the organization
+                               (e.g., 'United States', 'Canada', etc.)
+
+        Raises:
+            SDKException:
+                if failed to set country for the organization
+                if response is empty
+                if response is not success
+
+        Usage:
+            org.set_country('United States')
+            org.set_country('Canada')
+        """
+        request_json = {
+            'companyId': int(self.organization_id),
+            'countryName': country_name
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['SET_COMPANY_COUNTRY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                error_code = response_data.get('errorCode', 0)
+
+                if error_code != 0:
+                    error_message = response_data.get('errorMessage', 'Unknown error')
+                    raise SDKException(
+                        'Organization', '102', f'Error: "{error_message}"'
                     )
             else:
                 raise SDKException('Response', '102')

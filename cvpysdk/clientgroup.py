@@ -154,6 +154,10 @@ ClientGroup:
 
     refresh_clients()               -- force refreshes clients in a client group
 
+    add_http_proxy()                -- adds http proxy settings to client group
+
+    remove_http_proxy()             -- removes http proxy settings from client group
+
 ClientGroup Attributes
 -----------------------
 
@@ -2999,6 +3003,118 @@ class ClientGroup(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    def add_http_proxy(self, use_client_os_proxy_settings=False, proxy_server="", proxy_port=0,
+                       use_authentication=False, use_with_network_topology=False,
+                       proxy_credential_name=None, proxy_credential_id=None, proxy_bypass_list="") -> None:
+        """Add an HTTP proxy configuration to the client group
+
+        Args:
+            use_client_os_proxy_settings (bool): Use the client OS proxy settings.
+
+            proxy_server (str): The proxy server address.
+
+            proxy_port (int): The proxy server port.
+
+            use_authentication (bool): Use authentication for the proxy.
+
+            use_with_network_topology (bool): Use the proxy with network topology.
+
+            proxy_credential_name (str): The name of the proxy credential.
+
+            proxy_credential_id (int): The ID of the proxy credential.
+
+            proxy_bypass_list (str): Comma-separated list of addresses to bypass the proxy.
+
+        """
+
+        proxy_type = "GLOBAL" if use_client_os_proxy_settings else "EXPLICIT"
+
+        if proxy_type == "EXPLICIT":
+            if not proxy_server or not isinstance(proxy_server, str):
+                raise SDKException( 'ClientGroup', 102,
+                    "proxy_server is required and must be a non-empty string when using EXPLICIT proxy."
+                )
+            if not isinstance(proxy_port, int) or not (1 <= proxy_port <= 65535):
+                raise SDKException( 'ClientGroup', 102,
+                    "proxy_port must be an integer between 1 and 65535 when using EXPLICIT proxy."
+                )
+
+        request_json = {
+            "entity": {
+                "clientGroupId": int(self.clientgroup_id)
+            },
+            "httpProxy": {
+                "server": proxy_server,
+                "port": proxy_port,
+                "useForNetworkRoutes": use_with_network_topology,
+                "proxyBypassList": proxy_bypass_list,
+                "configureHTTPProxy": True,
+                "useAuthentication": use_authentication,
+                "proxyType": proxy_type
+            }
+        }
+
+        if proxy_credential_id and proxy_credential_name:
+            request_json["httpProxy"]["credentials"] = {
+                "credentialId": proxy_credential_id,
+                "credentialName": proxy_credential_name
+            }
+        else:
+            request_json["httpProxy"]["selectedCredential"] = None
+
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message ="Failed to add HTTP proxy configuration to the client group."
+                if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('ClientGroup', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def remove_http_proxy(self) -> None:
+        """Remove the HTTP proxy configuration from the client group."""
+
+        request_json = {
+            "entity": {
+                "clientGroupId": int(self.clientgroup_id)
+            },
+            "httpProxy": {
+                "configureHTTPProxy": False
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = "Failed to remove HTTP proxy configuration to the client group."
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('ClientGroup', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def additional_settings(self) -> dict:

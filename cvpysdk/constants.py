@@ -537,6 +537,7 @@ class HypervisorType(Enum):
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
     OPENSHIFT = "Red Hat OpenShift"
     PROXMOX = "Proxmox ve"
+    NUTANIX_PRISM_CENTRAL = "nutanix prism central"
     MORPHEUS = "HPE Morpheus VM Essentials"
 
 
@@ -853,6 +854,7 @@ class VsInstanceType:
         403: "azure_stack",
         501: "red_hat_virtualization",
         601: "nutanix_ahv",
+        602: "nutanix_prism_central",
         701: "oraclevm",
         801: "fusioncompute",
         901: "openstack",

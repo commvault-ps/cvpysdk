@@ -1088,7 +1088,10 @@ class VirtualServerSubclient(Subclient):
             "registerWithFailoverCluster": value.get("add_to_failover", False),
             "userPassword": {"userName": vcenter_userpwd or "admin"},
             "redirectWritesToDatastore": value.get("redirectWritesToDatastore") or "",
-            "delayMigrationMinutes": value.get("delayMigrationMinutes") or 0
+            "delayMigrationMinutes": value.get("delayMigrationMinutes") or 0,
+            "skipDiskOverride": value.get("skip_disk_override", False),
+            "restoreEmptyForFilteredDisks": value.get("restore_empty_for_filtered_disks", False)
+
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
