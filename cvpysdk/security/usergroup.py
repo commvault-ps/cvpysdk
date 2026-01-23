@@ -271,7 +271,7 @@ class UserGroups(object):
             user_groups = self._get_v4_user_groups()
             user_groups = self._get_v4_user_groups(system_created=False, full_response=True)
         """
-        request_url = f'{self._commcell_object._services['V4_USERGROUPS'] % str(system_created).lower()}&level=10'
+        request_url = f"{self._commcell_object._services['V4_USERGROUPS'] % str(system_created).lower()}&level=10"
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', request_url)
 

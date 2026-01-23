@@ -518,7 +518,7 @@ class Clients(object):
         self._LAPTOP_CLIENTS = self._services['GET_LAPTOP_CLIENTS']
         self._VIRTUAL_MACHINES = self._services['GET_VIRTUAL_MACHINES']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
-            self._ADD_GOOGLE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+            self._ADD_GOOGLE_CLIENT = self._ADD_OKTA_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_COCKROACHDB_CLIENT = self._services['COCKROACHDB']
         self._ADD_CASSANDRA_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -2627,6 +2627,232 @@ class Clients(object):
                     raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_okta_client(
+            self,
+            client_name: str,
+            server_plan: str,
+            index_server: str,
+            access_nodes_list: List[Any]=[],
+            **kwargs: Any
+    ) -> 'Client':
+        """Add a new Okta Pseudo Client to the Commcell.
+
+        This method creates a okta pseudo client, associating it with the specified server plan,
+        index server, and access nodes. Additional configuration can be provided via keyword arguments for authentication,
+        okta app integration and certificate details.
+
+        Args:
+            client_name: Name of the new SharePoint pseudo client.
+            server_plan: Name of the server plan to associate with the client.
+            index_server: Name of the index server for the virtual client.
+            access_nodes_list: List of client names (str) or Client objects to be added as access nodes.
+            **kwargs: Additional configuration options, such as:
+                - organization_url (str): URL of the Okta organization.
+                - app_id (str): application ID for Okta.
+                - cloud_region (int): Cloud region for the Okta client (default is 1).
+                - shared_jr_directory (dict): Shared job results directory configuration.
+                - credential_name(str): Credential name for Okta credential
+        Returns:
+            Client: Instance of the Client class representing the newly created Okta pseudo client.
+
+        Raises:
+            SDKException: If the client with the given name already exists, index server or server plan is not found,
+                failed to add the client, or if the response is empty or unsuccessful.
+
+        Example:
+            >>> service_type = {
+            ...     "Okta Global Administrator": 4,
+            ...     "Okta Online": 2,
+            ...     "Okta Azure Storage": 3
+            ... }
+            >>> access_nodes = ["client1", "client2"]
+            >>> client = clients.add_okta_client(
+            ...     client_name="OktaPseudo01",
+            ...     server_plan="O365Plan",
+            ...     service_type=service_type,
+            ...     index_server="IndexServer01",
+            ...     access_nodes_list=access_nodes,
+            ...     tenant_url="https://tenant.okta.com",
+            ...     user_username="user@domain.com",
+            ...     user_password="password",
+            ...     cloud_region=1
+            ... )
+            >>> print(f"Created Okta client: {client.client_name}")
+        #ai-gen-doc
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        index_server_dict = {}
+
+        if index_server:
+            if self.has_client(index_server):
+                index_server_cloud = self.get(index_server)
+
+                if index_server_cloud.agents.has_agent(AppIDAName.BIG_DATA_APPS.value):
+                    index_server_dict = {
+                        "mediaAgentId": int(index_server_cloud.client_id),
+                        "_type_": 11,
+                        "mediaAgentName": index_server_cloud.client_name
+                    }
+            else:
+                raise SDKException('IndexServers', '102', f"Index server {index_server} not found")
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id),
+                "planType": int(server_plan_object.plan_type)
+            }
+        else:
+            raise SDKException('Storage', '102', f"Server Plan {server_plan} not found")
+
+        member_servers = []
+        proxy_servers = []
+        number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
+
+        for client in access_nodes_list:
+            if isinstance(client, str):
+                client = client.strip().lower()
+
+                if self.has_client(client):
+                    client_dict = {
+                        "client": {
+                            "clientName": client,
+                            "clientId": int(self.all_clients[client]['id']),
+                            "_type_": 3
+                        }
+                    }
+                    member_servers.append(client_dict)
+
+            elif isinstance(client, Client):
+                client_dict = {
+                    "client": {
+                        "clientName": client.client_name,
+                        "clientId": int(client.client_id),
+                        "_type_": 3
+                    }
+                }
+                member_servers.append(client_dict)
+
+        server_resource_pool_map = server_plan_object._properties.get('storageResourcePoolMap', [])
+        if server_resource_pool_map:
+            server_plan_resources = server_resource_pool_map[0].get('resources', None)
+        else:
+            server_plan_resources = None
+
+        # use resource pool only if resource pool type is Office365 or Sharepoint
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resource in server_plan_resources:
+                if resource.get('appType', 0) in (ResourcePoolAppType.O365.value, ResourcePoolAppType.SHAREPOINT.value):
+                    is_resource_pool_enabled = True
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 51,
+                "lookupPlanInfo": False,
+                "cloudClonnectorProperties": {
+                    "instance": {
+                        "cloudAppsInstance": {
+                            "generalCloudProperties": {
+                                "indexServer": index_server_dict,
+                                "numberOfBackupStreams": number_of_backup_streams,
+                                "jobResultsDir": {},
+                                "memberServers": member_servers,
+                                "proxyServers": proxy_servers
+                            },
+                            "instanceType": 59,
+                            "oktaInstance": {
+                                "blobPath": {},
+                                "infraStructurePoolEnabled": False,
+                                "isAutoDiscoveryEnabled": False,
+                                "oktaAppList": {
+                                    "oktaApps": []
+                                },
+                                "oktaOrganisationUrl": ""
+                            }
+                        },
+                        "instance": {
+                            "applicationId": 0,
+                            "clientId": 0,
+                            "clientName": client_name,
+                            "instanceId": 0,
+                            "instanceName": f"{client_name}_Instance001"
+                        }
+                    },
+                    "instanceType": 59
+                },
+                "environmentType": 0,
+                "plan": server_plan_dict,
+                "resourcePoolAppType": -1,
+                "setKeyForMultiTenantApp": False,
+                "useResourcePoolInfo": False
+            },
+            "entity": {
+                "clientName": client_name
+            },
+            "metaInfo": None
+        }
+
+        credential_name = kwargs.get("credential_name", "")
+        if credential_name:
+            credential_properties = self._commcell_object.credentials.get(credential_name)
+            credential_id = credential_properties.credential_id
+            okta_app_dict = {
+                "isCVCreated": True,
+                "oktaAppType": 1,
+                "credentialEntity": {
+                    "credentialId": credential_id,
+                    "credentialName": kwargs.get("credential_name")
+                }
+            }
+
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"][
+                "cloudAppsInstance"]["oktaInstance"]["oktaAppList"]["oktaApps"].append(okta_app_dict)
+
+        if len(access_nodes_list) > 1:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"][
+                "cloudAppsInstance"]["generalCloudProperties"]["jobResultsDir"] = {
+                "path": kwargs.get('shared_jr_directory').get('Path')
+            }
+
+        if is_resource_pool_enabled:
+            request_json["clientInfo"]["useResourcePoolInfo"] = is_resource_pool_enabled
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_OKTA_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+
+                else:
+                    raise SDKException('Response', '102', 'Response/Error message not found')
+            else:
+                raise SDKException('Response', '102', 'Response is not json serializable')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
