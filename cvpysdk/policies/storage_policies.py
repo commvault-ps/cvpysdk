@@ -156,6 +156,8 @@ StoragePolicyCopy:
 
     copy_name()                         --  Gets the name of the storage policy copy
 
+    copy_type()                         --  Gets the type of the storage policy copy
+
     get_copy_id()		                    --	Gets the storage policy id asscoiated with the storage policy
 
     get_copy_Precedence()                   --  Gets the copy precendence associated with the storage policy copy
@@ -281,6 +283,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import time
 from typing import TYPE_CHECKING, Dict, Optional, Union, List
+from enum import IntEnum
 
 from ..exception import SDKException
 from ..job import Job
@@ -313,6 +316,28 @@ class JobOperationsOnStorageCopy:
     PICK_FOR_VERIFICATION: str = 'pickForVerification'
     MARK_JOBS_BAD: str = 'markJobsBad'
     PICK_FOR_BACKUPCOPY: str = 'pickforbackupcopy'
+
+class StoragePolicyCopyType(IntEnum):
+    """Enum for different storage policy copy types.
+    Attributes:
+        SYNCHRONOUS (int): Represents the 'SYNCHRONOUS' copy type.
+        SELECTIVE (int): Represents the 'SELECTIVE' copy type.
+        SNAP (int): Represents the 'SNAP' copy type.
+        VAULT (int): Represents the 'VAULT' copy type.
+        TRANSITIVE (int): Represents the 'TRANSITIVE' copy type.
+        SILO (int): Represents the 'SILO' copy type.
+        TAPE_IMPORT (int): Represents the 'TAPE_IMPORT' copy type.
+        BLOCK_REPLICATION (int): Represents the 'BLOCK_REPLICATION' copy type.
+        PRIMARY (int): Represents the 'PRIMARY' copy type."""
+    SYNCHRONOUS: int = 1
+    SELECTIVE: int = 2 
+    SNAP: int = 3
+    VAULT: int = 4
+    TRANSITIVE: int = 5
+    SILO: int = 6
+    TAPE_IMPORT: int = 7
+    BLOCK_REPLICATION: int = 8
+    PRIMARY: int = 100
 
 class StoragePolicies(object):
     """Class for getting all the storage policies associated with the commcell.
@@ -3906,6 +3931,11 @@ class StoragePolicyCopy(object):
         """Returns the name of the copy"""
         return self._copy_name
 
+    @property
+    def copy_type(self) -> int:
+        """Returns the type of the copy"""
+        return int(self._copy_properties.get('copyType', 0))
+
 
     @property
     def override_pool_retention(self) -> bool:
@@ -5594,7 +5624,6 @@ class StoragePolicyCopy(object):
             is_enabled = storage_policy_copy.is_compliance_lock_enabled
         """
         return 'wormCopy' in self._copy_flags
-
 
     def get_store_seal_frequency(self) -> dict:
         """Gets the store seal frequency for the copy

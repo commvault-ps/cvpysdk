@@ -790,7 +790,9 @@ SERVICES_DICT_TEMPLATE = {
 
     'MEDIA_OPERATION': '{0}/V4/Storage/Tape/%s/Media',
     
-    'DRIVE_OPERATION': '{0}/DriveOperations'
+    'DRIVE_OPERATION': '{0}/DriveOperations',
+
+    'VIEW_LOGS_BY_TRACE_ID': '{0}TraceId/%s/Logs',
 
 }
 

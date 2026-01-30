@@ -1200,7 +1200,7 @@ class UserGroup(object):
                                              self._user_group_id)
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     'GET', security_associations_url)
-                if flag and response.json():
+                if flag and response.json() is not None:
                     security_properties = response.json().get('associations', {})
                     self._security_associations = SecurityAssociation.fetch_security_association(
                         security_dict=security_properties)

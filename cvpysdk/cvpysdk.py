@@ -83,29 +83,38 @@ class CVPySDK(object):
         Also contains common method for running all HTTP requests.
     """
 
-    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True):
+    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True, trace_parent=None):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
 
 
-                certificate_path     (str)   --  path of the CA_BUNDLE or directory with
+                certificate_path    (str)       --  path of the CA_BUNDLE or directory with
                 certificates of trusted CAs (including trusted self-signed certificates)
 
                     default: None
 
-                verify_ssl           (str)   --  verify ssl while making requests
+                verify_ssl          (str)       --  verify ssl while making requests
                     default: True
 
-            Returns:
-                object  -   instance of the CVPySDK class
+                trace_parent        (str)       --  W3C Trace Context header string in the format:
+                    '00-<trace-id>-<span-id>-<trace-flags>'.
+                    - trace-id: 32-character lowercase hex identifier for the trace.
+                    - span-id: 16-character lowercase hex identifier for the span.
+                    - trace-flags: 2-character hex flags (e.g., '01' for sampled).
+                    Used to propagate distributed tracing context across services.
+                    default: None
 
-        """
+        Returns:
+            object  -   instance of the CVPySDK class
+
+    """
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
         self._response_headers = {}
+        self.trace_parent = trace_parent
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -431,6 +440,9 @@ class CVPySDK(object):
         try:
             if headers is None:
                 headers = self._commcell_object._headers.copy()
+
+            if self.trace_parent:
+                headers['traceParent'] = self.trace_parent
 
             if method == 'POST':
                 if isinstance(payload, (dict, list)):

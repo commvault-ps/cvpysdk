@@ -540,6 +540,7 @@ class Clients(object):
         self._virtual_machines = None
         self._client_cache = None
         self._all_clients_props = None
+        self._infra_clients = None
         self.filter_query_count = 0
         self.refresh()
 
@@ -6539,6 +6540,59 @@ class Clients(object):
         if mongodb:
             self._client_cache = self.get_clients_cache(hard=hard)
 
+    def _get_infrastructure_clients(self) -> Dict[str, Dict[str, str]]:
+        """Retrieve all infrastructure clients in the Commcell.
+        
+        This method scans through all clients in the Commcell cache and identifies those marked
+        as infrastructure clients. Infrastructure clients are typically CommServ, WebConsole,
+        WebServer, and other core Commvault infrastructure components.
+        
+        Returns:
+            dict: Dictionary with infrastructure client names (lowercase) as keys and their details as values.
+                  Each value contains client information including ID, hostname, and infrastructure flag.
+        
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> infra_clients = clients._get_infrastructure_clients()
+            >>> for client_name, client_info in infra_clients.items():
+            ...     print(f"Infrastructure client: {client_name}, ID: {client_info['id']}")
+        
+        #ai-gen-doc
+        """
+        all_clients = self.all_clients_cache
+        infrastructure_clients = {}
+        for client_name, client_info in all_clients.items():
+            if client_info.get('isInfrastructure', False):              
+                infrastructure_clients[client_name] = client_info
+        
+        return infrastructure_clients
+    
+    @property
+    def infrastructure_clients(self) -> Dict[str, Dict[str, str]]:
+        """Returns a dictionary containing information of all infrastructure clients in the Commcell.
+        
+        This property provides access to all infrastructure clients such as CommServ, WebConsole,
+        WebServer, and other core Commvault components. The data is cached after the first access
+        for improved performance.
+        
+        Returns:
+            dict: Dictionary with infrastructure client names (lowercase) as keys and their details as values.
+                  Each value contains client information including:
+                  - 'id': Client ID
+                  - 'hostName': Hostname of the client
+                  - 'isInfrastructure': Boolean flag (always True for this property)
+                  - Additional client metadata
+        
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> infra_clients = clients.infrastructure_clients
+            >>> print(f"Total infrastructure clients: {len(infra_clients)}")
+        
+        #ai-gen-doc
+        """
+        if not self._infra_clients:
+            self._infra_clients = self._get_infrastructure_clients()
+        return self._infra_clients
 
 class Client(object):
     """
@@ -6659,6 +6713,7 @@ class Client(object):
             self._client_type_id = _client_type['Hidden Client']
 
         self._CLIENT = self._services['CLIENT'] % (self.client_id)
+        self._SECURITY_ASSOCIATION = self._services['SECURITY_ASSOCIATION']
 
         self._instance = None
 
@@ -9558,7 +9613,43 @@ class Client(object):
         else:
             properties_dict['clientProps'] = {'securityAssociations': {'ownerAssociations': {
                 "ownersOperationType": 1, "owners": owners}}}
-        self.update_properties(properties_dict)
+
+        owner_dict = {"entityAssociated": {
+                        "entity": [
+                          {
+                            "_type_": 3,
+                            "clientId": int(self.client_id)
+                          }
+                        ]
+                      }
+                    }
+        owner_dict["securityAssociations"] = properties_dict['clientProps']['securityAssociations']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._SECURITY_ASSOCIATION, owner_dict
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    if response.json()['response'][0].get('errorCode', 0):
+                        error_message = response.json()['response'][0].get('errorMessage')
+                        if not error_message:
+                            error_message = response.json()['response'][0].get('errorString', '')
+
+                        if not error_message:
+                            error_message = response.json()['response'][0].get('warningMessage', '')
+
+                        if not error_message:
+                            o_str = 'Failed to add owner\nError: "{0}"'.format(error_message)
+                            raise SDKException('Client', '102', o_str)
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            error_message = self._update_response_(response.text)
+            if response.json():
+                error_message = response.json().get('errorMessage', '')
+            raise SDKException('Response', '101', error_message)
 
     def filter_clients_return_displaynames(self, filter_by: str = "OS", **kwargs: Any) -> List[str]:
         """Retrieve display names of clients filtered by operating system or other criteria.

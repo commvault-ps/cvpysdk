@@ -108,6 +108,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.spanner_instance import GoogleSpannerInstance
         from .cloudapps.onedrive_instance import OneDriveInstance
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
+        from .cloudapps.powerbi_instance import PowerBIInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -130,7 +131,8 @@ class CloudAppsInstance(Instance):
             36: TeamsInstance,  # Office 365 Teams
             37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
-            51: AzureCosmosDBInstance   # Azure Cosmos DB MongoDBAPI Instance
+            51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            60: PowerBIInstance     # Power Platform PowerBi Instance
         }
 
         commcell_object = agent_object._commcell_object

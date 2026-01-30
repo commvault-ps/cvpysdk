@@ -323,12 +323,12 @@ class Download(object):
                     return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
 
                 else:
-                    raise SDKException('Download', '101')
+                    raise SDKException('Download', '101', self._update_response_(response.text))
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException('Response', '102', self._update_response_(response.text))
         else:
-            raise SDKException('Response', '101')
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def copy_software(self, media_loc: str, username: Optional[str] = None, password: Optional[str] = None,
                       sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None,
@@ -397,7 +397,7 @@ class Download(object):
                     for client in cache_list:
                         client_groups.append({"type": "CLIENT_ENTITY",
                                               "clientName": client,
-                                              "id": int(self.commcell_object.clients.all_clients[client]['id'])})
+                                              "id": int(self.commcell_object.clients.all_clients[client.lower()]['id'])})
             request_json = {
                 "copyConfiguration": {
                     "downloadPath": media_loc

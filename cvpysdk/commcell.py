@@ -526,6 +526,8 @@ class Commcell(object):
                 - user_agent (str): User agent header for requests.
                 - master_commcell ('Commcell'): Instance of the master Commcell object (for multi-Commcell scenarios).
                 - master_hostname (str): Hostname of the master Commcell for authentication if master_commcell is not provided.
+                - trace_parent (str): W3C Trace Context header string in the format:
+                    '00-<trace-id>-<span-id>-<trace-flags>'.
 
         Raises:
             SDKException: If the web service is unreachable or no authentication token is received.
@@ -615,13 +617,14 @@ class Commcell(object):
         for service in web_service:
             self._web_service = service
             try:
+                trace_parent = kwargs.get('trace_parent')
                 if service.startswith("http:"):
                     # if force_https is false and if verify_ssl is true, we still allow HTTP calls to be made.
                     # since verify_ssl is set, the calls for http is failing. Below change allow http calls to be made
                     verify_ssl = False
-                    self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
+                    self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl, trace_parent=trace_parent)
                 else:
-                    self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
+                    self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl, trace_parent=trace_parent)
                 if self._cvpysdk_object._is_valid_service():
                     break
             except (RequestsConnectionError, SSLError, Timeout):
@@ -6496,3 +6499,32 @@ class Commcell(object):
         if comet_flag:
             self.reset_to_local()
         return environment_tile_dict
+    
+    def get_logs_by_trace_id(self, trace_id: str) -> List[Dict[str, Any]]:
+        """Retrieve logs associated with a specific trace ID.
+
+        Args:
+            trace_id: The trace ID for which to retrieve logs.
+
+        Returns:
+            A list of dictionaries, each representing a log entry associated with the given trace ID.
+
+        Example:
+            >>> commcell = Commcell()
+            >>> logs = commcell.get_logs_by_trace_id("trace-id-12345")
+            >>> for log in logs:
+            ...     print(log)
+
+        #ai-gen-doc
+        """
+        url = self._services['VIEW_LOGS_BY_TRACE_ID'] % trace_id
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+
+        if flag:
+            if response.json():
+                return response.json().get('logs', [])
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

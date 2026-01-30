@@ -50,6 +50,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
         from .cloudapps.onedrive_subclient import OneDriveSubclient
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
+        from .cloudapps.powerbi_subclient import PowerBISubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -72,7 +73,8 @@ class CloudAppsSubclient(Subclient):
             36: TeamsSubclient,  # Office 365 Apps -> MS Teams
             37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
             44: AzureCosmosDBSubclient, # Azure Cosmos DB Cloud Apps Instance
-            51: AzureCosmosDBSubclient  # Azure Cosmos DB MongoDBAPI Instance
+            51: AzureCosmosDBSubclient,  # Azure Cosmos DB MongoDBAPI Instance
+            60: PowerBISubclient    # Power Platform PowerBi Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

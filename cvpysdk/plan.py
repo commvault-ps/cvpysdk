@@ -231,7 +231,7 @@ from .security.security_association import SecurityAssociation
 from .activateapps.constants import TargetApps, PlanConstants
 from .policies.storage_policies import StoragePolicy
 from .policies.schedule_policies import SchedulePolicy
-from .storage_pool import StorageType
+from .storage_pool import StorageType, StoragePoolType
 
 if TYPE_CHECKING:
     from .commcell import Commcell
@@ -381,6 +381,8 @@ class _PayloadGeneratorPlanV4:
                 "name": storage_pool.storage_pool_name
             }
             payload['storageType'] = StorageType(storage_pool.storage_pool_properties['storagePoolDetails']['storageType']).name
+            if gacp:
+                payload['storagePool']['type'] = StoragePoolType.SECONDARY_COPY.value #To fetch maxstreamNums from the pool to inherit in copy
 
         # Add aux copy specific properties
         if is_aux_copy:
