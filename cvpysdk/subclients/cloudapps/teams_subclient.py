@@ -233,6 +233,8 @@ class TeamsSubclient(CloudAppsSubclient):
                 user_account_json = deepcopy(const.ADD_TEAM_JSON)
                 user_account_json['displayName'] = user['displayName']
                 user_account_json['smtpAddress'] = user['smtpAddress']
+                if 'teamsCreatedTime' in user_account_json['msTeamsInfo']:
+                    del user_account_json['msTeamsInfo']['teamsCreatedTime']
                 user_account_json['user'] = user_json
                 useraccounts.append(user_account_json)
             request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'] = useraccounts
@@ -303,7 +305,7 @@ class TeamsSubclient(CloudAppsSubclient):
             is_team_instance = True
             if isinstance(teams[0], str):
                 is_team_instance = False
-                discovered_teams = self.discover(refresh_cache=False)
+                discovered_teams = self.discover(refresh_cache=False, discovery_type=discovery_type)
                 teams = [discovered_teams[team] for team in teams]
 
             team_json_list = []
@@ -312,14 +314,17 @@ class TeamsSubclient(CloudAppsSubclient):
                 team_json = copy(const.BACKUP_TEAM_JSON)
                 team_json['displayName'] = team.name if is_team_instance else team['displayName']
                 team_json['smtpAddress'] = team.mail if is_team_instance else team['smtpAddress']
-                team_json['msTeamsInfo']['teamsCreatedTime'] = team.teamsCreatedTime if is_team_instance else \
-                    team['msTeamsInfo']['teamsCreatedTime']
+                if is_team_instance:
+                    team_json['msTeamsInfo']['teamsCreatedTime'] = team.teamsCreatedTime
+                else:
+                    if team.get('msTeamsInfo',{}).get('teamsCreatedTime'):
+                        team_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
                 team_json['user'] = {"userGUID": team.guid if is_team_instance else team['user']['userGUID']}
                 team_json_list.append(team_json)
                 selected_items_json.append({
-                    'selectedItems': {
-                        "itemName": team.name if is_team_instance else team['displayName'], "itemType": "Team"
-                    }
+
+                        "itemName": team.name if is_team_instance else team['displayName'], "itemType": "User" if discovery_type==7 else "Team"
+
                 })
             backup_subtask_json['options']['commonOpts']['jobMetadata'][0]['selectedItems'] = selected_items_json
             backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list

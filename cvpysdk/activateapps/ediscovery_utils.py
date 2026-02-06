@@ -1553,15 +1553,19 @@ class EdiscoveryClientOperations():
                 if 'jobId' in response.json():
                     return response.json()['jobId']
                 else:
-                    flag, response = self._cvpysdk_object.make_request('GET', self._API_TASK_AUDIT % self._client_id)
-                    if flag:
-                        if response.json() and 'auditDetails' in response.json():
-                            audit_records = response.json()['auditDetails']
-                            for record in audit_records:
-                                for message in record.get("messages", []):
-                                    match = re.search(r"ApprovalWorkflowJobId: Set to \[(\d+)\]", message)
-                                    if match:
-                                        return int(match.group(1))
+                    retry = 3
+                    while retry > 0 :
+                        flag, response = self._cvpysdk_object.make_request('GET', self._API_TASK_AUDIT % self._client_id)
+                        if flag:
+                            if response.json() and 'auditDetails' in response.json():
+                                audit_records = response.json()['auditDetails']
+                                for record in audit_records:
+                                    for message in record.get("messages", []):
+                                        match = re.search(r"ApprovalWorkflowJobId: Set to \[(\d+)\]", message)
+                                        if match:
+                                            return int(match.group(1))
+                        retry = retry - 1
+                        time.sleep(10)
                     raise SDKException('EdiscoveryClients', '102', f"Workflow job fetch fails from Audit")
             raise SDKException('EdiscoveryClients', '102', f"Workflow task failed")
         self._response_not_success(response)

@@ -57,7 +57,7 @@ Classes:
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, TYPE_CHECKING
 from .constants import AssetProvider
-from .connections import Connections, Connection
+from .connections import Connections, Connection, AWSConnections, AzureConnections
 from .resources import DiscoveredResources
 from ..exception import SDKException
 
@@ -82,7 +82,12 @@ class CloudDiscovery(ABC):
             commcell: The Commcell object for API operations
         """
         self._commcell = commcell
-        self._connections = Connections(commcell, self.asset_provider)
+        if self.asset_provider == AssetProvider.AWS:
+            self._connections = AWSConnections(commcell)
+        elif self.asset_provider == AssetProvider.AZURE:
+            self._connections = AzureConnections(commcell)
+        else:
+            raise SDKException('Discovery', '104')
         self._resources = DiscoveredResources(commcell, self.asset_provider)
         self._credentials = commcell.credentials
         self._cvpysdk_object = self._commcell._cvpysdk_object
@@ -125,6 +130,30 @@ class CloudDiscovery(ABC):
             The credential manager object or None
         """
         return self._credentials
+
+    def start_discovery(self) -> int:
+        """Start the discovery process for this connection.
+
+        Returns:
+            int: discovery job id
+
+        Raises:
+            SDKException:
+                        Response was not success
+        """
+        url = self._services['START_DISCOVERY']
+        flag, response = self._cvpysdk_object.make_request('POST', url=url)
+        if flag:
+            if response.json():
+                errorcode = response.json().get('errorCode', 0)
+                if errorcode == 0:
+                    get_jobId = self.get_discovery_job()
+                    return get_jobId
+                else:
+                    raise SDKException('Discovery', '101')
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get_discovery_job(self) -> int:
         """

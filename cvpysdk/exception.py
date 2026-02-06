@@ -686,13 +686,17 @@ EXCEPTION_DICT = {
     'Discovery': {
         '101': 'The response does not contain the discovery Job.Please verify the connection',
         '102': 'The response does not contain the discovery criteria.Please verify the connection',
-        '103': 'Failed to get resources'
+        '103': 'Failed to get resources',
+        '104': 'Unsupported cloud type'
     },
     'Connections': {
-        '101': 'Invalid input(s) specified',
-        '102': 'Credential not found',
-        '103': 'Credential deletion failed',
-        '104': 'Failed to start discovery job'
+        '101': '',
+        '102': 'Failed to delete the connection',
+        '103': 'Connection does not exists',
+        '104': 'Failed to start discovery job',
+        '105': 'Failed to validate account id',
+        '106': 'Failed to get connection details',
+        '107': 'Failed to add connection'
     }
 }
 

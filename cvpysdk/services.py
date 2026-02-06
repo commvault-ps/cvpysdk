@@ -772,6 +772,16 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_RESOURCES': '{0}Asset/Search',
 
+    'VALIDATE_AWS_CONNECTION': '{0}/V4/Cloud/CloudConnection/credentials/validate',
+
+    'ADD_EXPRESS_CONNECTION': '{0}/V4/Cloud/CloudConnection',
+
+    'GET_AWS_CLOUD_CONNECTIONS': '{0}/V4/Cloud/CloudConnection?vendor=aws',
+
+    'GET_AWS_CONNECTION_DETAILS': '{0}/V4/Cloud/CloudConnection/%s',
+
+    'GET_AWS_ORG_ACCOUNTS': '{0}/V4/Cloud/CloudConnection/%s/accounts',
+
     'SNMP': '{0}/V4/Snmp',
 
     'SNMP_CONFIG': '{0}CommServ/SNMPV3Configuration',

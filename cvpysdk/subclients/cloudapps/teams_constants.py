@@ -96,8 +96,8 @@ class TeamsConstants:
         "ParentWebGuid": "",
         "commonFlags": 0,
         "msTeamsInfo": {
-            "visibility": 1,
-            "teamsCreatedTime": None
+            "visibility": 1
+
         },
         "lastBackupJobRanTime": {},
         "IdxCollectionTime": {},
@@ -284,22 +284,15 @@ class TeamsConstants:
                             "filter": {
                               "interFilterOP": 2,
                               "filters": [
-                                {
-                                  "field": "TEAMS_ITEM_TYPE",
-                                  "intraFieldOp": 0,
-                                  "fieldValues": {
-                                    "values": [
-                                      "55"
-                                    ]
+                                  {
+                                      "field": "CV_OBJECT_GUID",
+                                      "intraFieldOp": 0,
+                                      "fieldValues": {
+                                          "values": [
+                                              ""
+                                          ]
+                                      }
                                   }
-                                },
-                                {
-                                  "field": "TEAMS_USER_ID",
-                                  "intraFieldOp": 0,
-                                  "fieldValues": {
-                                    "values": []
-                                  }
-                                }
                               ]
                             }
                           }

@@ -23,7 +23,7 @@ from enum import Enum, IntEnum
 
 class AssetProvider(IntEnum):
     """Enumeration for different asset providers."""
-    
+
     NONE = 0
     AZURE = 1
     AWS = 2
@@ -35,7 +35,7 @@ class AssetProvider(IntEnum):
 
 class WorkloadType(IntEnum):
     """Enumeration for different workload types."""
-    
+
     NONE = 0
     COMPUTE = 1
     STORAGE = 2
@@ -46,9 +46,9 @@ class WorkloadType(IntEnum):
 
 class AssetType(IntEnum):
     """Enumeration for different asset types across cloud providers."""
-    
+
     NONE = 0
-    
+
     # Azure Assets
     AZURE_VIRTUAL_MACHINE = 1
     AZURE_VM_SCALE_SET = 2
@@ -70,7 +70,7 @@ class AssetType(IntEnum):
     AZURE_MYSQL_SERVER_FLEXIBLE = 18
     AZURE_POSTGRESQL_SERVER_FLEXIBLE = 19
     AZURE_DATA_LAKE_STORAGE = 37
-    
+
     # Amazon AWS Assets
     AMAZON_EC2_VIRTUAL_MACHINE = 20
     AMAZON_S3_STORAGE = 21
@@ -79,13 +79,13 @@ class AssetType(IntEnum):
     AMAZON_DOCUMENT_DB = 24
     AMAZON_ELASTIC_KUBERNETES_SERVICE = 29
     AMAZON_FSX_FILE_SYSTEM = 30
-    
+
     # Microsoft 365 Assets
     M365_ONEDRIVE_APP = 25
     M365_EXCHANGE_APP = 26
     M365_TEAMS_APP = 27
     M365_SHAREPOINT_APP = 28
-    
+
     # Google Cloud Platform Assets
     GOOGLE_CLOUD_VIRTUAL_MACHINE = 31
     GOOGLE_CLOUD_SQL_DATABASE = 32
@@ -97,7 +97,7 @@ class AssetType(IntEnum):
 
 class AssetCVProtectionStatus(IntEnum):
     """Enumeration for Commvault protection status of assets."""
-    
+
     NONE = 0
     NOT_AVAILABLE = 1
     NOT_PROTECTED = 2
@@ -112,6 +112,13 @@ class AssetCVProtectedBY(IntEnum):
     AZURE_MANAGED = 1
     AWS_MANAGED = 2
     COMMVAULT_PROTECTED = 6
+
+
+class AzureConfigType(IntEnum):
+    """Enumeration for different Azure configuration types."""
+
+    EXPRESS = 0
+    CUSTOM = 1
 
 
 # Constants for Discovery payload
@@ -231,3 +238,40 @@ FACET_JSON = {
         "facet": {"Sum_Size": "sum(AssetSize)"}
     }
 }
+
+# Payloads
+
+AWS_EXPRESS_CONNECTION_PAYLOAD = {
+    "cloudType": "aws",
+    "connectionType": None,
+    "cloudSpecificConfiguration": {
+        "aws": {
+            "regions": "default",
+            "iamRoleAccountId": None
+        }
+    }
+}
+
+AZURE_EXPRESS_CONNECTION_PAYLOAD = {
+    "name": None,
+    "cloudType": "azure",
+    "credentials": {"credentialId": None},
+    "cloudSpecificConfiguration": {
+        "azure": {
+            "tenantId": None,
+            "tenantName": None,
+            "environment": "AzureCloud",
+            "discoverAllSubscription": True,
+            "assignReaderRole": False
+        }
+    }
+}
+
+# Constants for AWS Cloud Connection
+
+AWS_CLOUD_CONNECTION_CRED = "cloud-connection-%s-credential"
+AWS_CONNECTION_TYPE_ORG = "OrganizationLevel"
+AWS_CONNECTION_TYPE_SINGLE = "CloudAccountLevel"
+AZURE_CUSTOM = "azure_custom"
+AZURE = "azure"
+AWS = "aws"
