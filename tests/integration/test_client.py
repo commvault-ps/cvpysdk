@@ -7,7 +7,10 @@
 # license information.
 # --------------------------------------------------------------------------
 
-import testlib
+try:
+    from . import testlib
+except ImportError:
+    import testlib
 
 try:
     import unittest2 as unittest

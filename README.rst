@@ -32,6 +32,41 @@ After downloading, from within the ``cvpysdk`` directory, execute:
     >>> pip install .
 
 
+
+
+Testing
+-------
+
+The test suite is split into two categories:
+
+- ``tests/unit/``: offline tests that can run without a live Commcell.
+- ``tests/integration/``: live Commcell tests that require explicit opt-in and credentials.
+
+Run unit tests (default):
+
+    >>> python -m unittest discover -s tests/unit -p "test*.py"
+
+or
+
+    >>> python tests/test_all.py
+
+Run integration tests (opt-in):
+
+    >>> CVPYSKD_RUN_INTEGRATION=1 \
+    ... CVPYSDK_WEBCONSOLE_HOSTNAME=<webconsole-host> \
+    ... CVPYSDK_COMMCELL_USERNAME=<username> \
+    ... CVPYSDK_COMMCELL_PASSWORD=<password> \
+    ... python -m unittest discover -s tests/integration -p "test*.py"
+
+Run all tests through the test runner (unit + opted-in integration):
+
+    >>> CVPYSKD_RUN_INTEGRATION=1 \
+    ... CVPYSDK_WEBCONSOLE_HOSTNAME=<webconsole-host> \
+    ... CVPYSDK_COMMCELL_USERNAME=<username> \
+    ... CVPYSDK_COMMCELL_PASSWORD=<password> \
+    ... python tests/test_all.py
+
+
 Using CVPySDK
 -------------
 
