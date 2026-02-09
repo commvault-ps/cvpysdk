@@ -11,11 +11,18 @@
 import json
 import os
 import time
+import sys
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+
+TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(TESTS_DIR)
+
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 from cvpysdk import commcell
 from time import sleep
@@ -32,16 +39,25 @@ class SDKTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('input.json', 'r') as data_file:
+        with open(os.path.join(TESTS_DIR, 'input.json'), 'r') as data_file:
             cls.data = json.load(data_file)
+
+    def _has_commcell_credentials(self):
+        values = self.data.get('commcell', {}).values()
+        return all(value for value in values)
 
     def setUp(self):
         unittest.TestCase.setUp(self)
         self.test_json()
+
+        if not self._has_commcell_credentials():
+            self.skipTest('Commcell credentials are not configured in tests/input.json')
+
         self.commcell_object = commcell.Commcell(**self.data['commcell'])
 
     def tearDown(self):
-        self.commcell_object.logout()
+        if hasattr(self, 'commcell_object'):
+            self.commcell_object.logout()
 
     def test_json(self):
         self.assertIsInstance(self.data, dict)
@@ -49,7 +65,6 @@ class SDKTestCase(unittest.TestCase):
         self.assertIn('webconsole_hostname', self.data['commcell'].keys())
         self.assertIn('commcell_username', self.data['commcell'].keys())
         self.assertIn('commcell_password', self.data['commcell'].keys())
-        self.assertNotIn("", self.data['commcell'].values())
 
 
 if __name__ == "__main__":
