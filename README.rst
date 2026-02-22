@@ -1,6 +1,14 @@
 CVPySDK
 =======
 
+.. image:: https://github.com/commvault-ps/cvpysdk/actions/workflows/lint.yml/badge.svg
+   :target: https://github.com/commvault-ps/cvpysdk/actions/workflows/lint.yml
+   :alt: Lint
+
+.. image:: https://github.com/commvault-ps/cvpysdk/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/commvault-ps/cvpysdk/actions/workflows/test.yml
+   :alt: Tests
+
 CVPySDK is a Python Package for Commvault Software.
 
 CVPySDK uses REST APIs to perform CommCell operations.
