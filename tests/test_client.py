@@ -31,7 +31,9 @@ class ClientTest(testlib.SDKTestCase):
         self.assertIsInstance(self.commcell_object.clients.get(self.client_name), Client)
 
     def test_backup_activity(self):
-        if self.client.is_backup_enabled:
+        original = self.client.is_backup_enabled
+        self.addCleanup(self.client.enable_backup if original else self.client.disable_backup)
+        if original:
             self.assertIsNone(self.client.disable_backup())
             self.assertFalse(self.client.is_backup_enabled)
         else:
@@ -39,7 +41,9 @@ class ClientTest(testlib.SDKTestCase):
             self.assertTrue(self.client.is_backup_enabled)
 
     def test_restore_activity(self):
-        if self.client.is_restore_enabled:
+        original = self.client.is_restore_enabled
+        self.addCleanup(self.client.enable_restore if original else self.client.disable_restore)
+        if original:
             self.assertIsNone(self.client.disable_restore())
             self.assertFalse(self.client.is_restore_enabled)
         else:
@@ -47,7 +51,11 @@ class ClientTest(testlib.SDKTestCase):
             self.assertTrue(self.client.is_restore_enabled)
 
     def test_data_aging(self):
-        if self.client.is_data_aging_enabled:
+        original = self.client.is_data_aging_enabled
+        self.addCleanup(
+            self.client.enable_data_aging if original else self.client.disable_data_aging
+        )
+        if original:
             self.assertIsNone(self.client.disable_data_aging())
             self.assertFalse(self.client.is_data_aging_enabled)
         else:
