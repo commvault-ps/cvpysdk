@@ -22,7 +22,7 @@ requires-python = ">=3.6"
 keywords = ["commvault", "python", "sdk", "cv", "simpana", "commcell", "cvlt", "webconsole"]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.9", "pre-commit>=3.0"]
+dev = ["ruff>=0.9", "pre-commit>=3.0", "pytest>=7.0", "pytest-cov>=4.0"]
 
 [project.urls]
 "Home" = "https://github.com/Commvault/cvpysdk"
@@ -63,3 +63,17 @@ ignore = [
   "UP030",  # format-literals (unsafe fix only)
   "UP031",  # printf-string-formatting (unsafe fix only)
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: requires live CommCell connection",
+    "unit: pure unit tests, no network required",
+]
+
+[tool.coverage.run]
+source = ["cvpysdk"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
