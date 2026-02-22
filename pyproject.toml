@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "cvpysdk"
 description = "Commvault SDK for Python"
 authors = [{name = "Commvault Systems Inc.", email = "Dev-PythonSDK@commvault.com"}]
-readme = "README.rst"
+readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = [
   "Development Status :: 5 - Production/Stable",

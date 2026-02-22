@@ -35,8 +35,8 @@ def get_version():
 
 
 def readme():
-    """Reads the README.rst file and returns its contents."""
-    with open(os.path.join(ROOT, "README.rst")) as file_object:
+    """Reads the README.md file and returns its contents."""
+    with open(os.path.join(ROOT, "README.md")) as file_object:
         return file_object.read()
 
 
