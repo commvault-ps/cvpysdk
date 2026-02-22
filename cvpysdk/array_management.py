@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -47,14 +45,13 @@ ArrayManagement:
                                     for the given Array
 """
 
-from __future__ import unicode_literals
-import base64
 from typing import Any, Optional
 
-from .job import Job
 from .exception import SDKException
+from .job import Job
 
-class ArrayManagement(object):
+
+class ArrayManagement:
     """
     Manages array-related operations within the Commcell environment.
 
@@ -95,8 +92,8 @@ class ArrayManagement(object):
         """
 
         self._commcell_object = commcell_object
-        self._SNAP_OPS = self._commcell_object._services['SNAP_OPERATIONS']
-        self.storage_arrays = self._commcell_object._services['STORAGE_ARRAYS']
+        self._SNAP_OPS = self._commcell_object._services["SNAP_OPERATIONS"]
+        self.storage_arrays = self._commcell_object._services["STORAGE_ARRAYS"]
 
     def _snap_operation(
         self,
@@ -111,7 +108,7 @@ class ArrayManagement(object):
         user_credentials: Optional[dict] = None,
         server_name: Optional[str] = None,
         instance_details: Optional[dict] = None,
-        **kwargs
+        **kwargs,
     ) -> object:
         """Perform a snapshot operation such as mount, unmount, delete, or revert on specified volumes.
 
@@ -175,8 +172,8 @@ class ArrayManagement(object):
         else:
             server_type = 1
 
-        if kwargs.get('destclientid'):
-            destClientId = int(kwargs.get('destclientid'))
+        if kwargs.get("destclientid"):
+            destClientId = int(kwargs.get("destclientid"))
         else:
             destClientId = 0
 
@@ -193,9 +190,7 @@ class ArrayManagement(object):
                 "serverType": 0,
                 "operation": operation,
                 "userCredentials": {},
-                "scsiServer": {
-                    "_type_": 3
-                }
+                "scsiServer": {"_type_": 3},
             }
         else:
             request_json = {
@@ -205,38 +200,47 @@ class ArrayManagement(object):
                 "userCredentials": {},
                 "volumes": [],
                 "appId": instance_details,
-                "destClientId": destClientId
+                "destClientId": destClientId,
             }
             for i in range(len(volume_id)):
                 if i == 0:
-                    request_json['volumes'].append({'doVSSProtection': int(do_vssprotection),
-                                                    'destClientId': client_id,
-                                                    'destPath': mountpath,
-                                                    'serverType': server_type,
-                                                    'flags': flags,
-                                                    'serverName': server_name,
-                                                    'userCredentials': user_credentials,
-                                                    'volumeId':int(volume_id[i][0]),
-                                                    'CommCellId': self._commcell_object.commcell_id})
+                    request_json["volumes"].append(
+                        {
+                            "doVSSProtection": int(do_vssprotection),
+                            "destClientId": client_id,
+                            "destPath": mountpath,
+                            "serverType": server_type,
+                            "flags": flags,
+                            "serverName": server_name,
+                            "userCredentials": user_credentials,
+                            "volumeId": int(volume_id[i][0]),
+                            "CommCellId": self._commcell_object.commcell_id,
+                        }
+                    )
 
                 else:
-                    request_json['volumes'].append({'volumeId':int(volume_id[i][0]),
-                                                    'CommCellId': self._commcell_object.commcell_id})
+                    request_json["volumes"].append(
+                        {
+                            "volumeId": int(volume_id[i][0]),
+                            "CommCellId": self._commcell_object.commcell_id,
+                        }
+                    )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._SNAP_OPS, request_json)
+            "POST", self._SNAP_OPS, request_json
+        )
 
         if flag:
             if response.json():
                 if "jobId" in response.json():
-                    return Job(self._commcell_object, response.json()['jobId'])
+                    return Job(self._commcell_object, response.json()["jobId"])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'job for Snap Operation failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Snap', '102', o_str)
+                    o_str = f'job for Snap Operation failed\nError: "{error_message}"'
+                    raise SDKException("Snap", "102", o_str)
         else:
-            raise SDKException('Snap', '102')
+            raise SDKException("Snap", "102")
 
     def mount(
         self,
@@ -247,7 +251,7 @@ class ArrayManagement(object):
         user_credentials: Optional[dict] = None,
         server_name: Optional[str] = None,
         instance_details: Optional[dict] = None,
-        **kwargs: dict
+        **kwargs: dict,
     ) -> Any:
         """Mount a snapshot of the specified volume to a destination client.
 
@@ -285,13 +289,17 @@ class ArrayManagement(object):
 
         #ai-gen-doc
         """
-        return self._snap_operation(0, volume_id,
-                                    client_name,
-                                    mountpath,
-                                    do_vssprotection,
-                                    user_credentials=user_credentials,
-                                    server_name=server_name,
-                                    instance_details=instance_details, **kwargs)
+        return self._snap_operation(
+            0,
+            volume_id,
+            client_name,
+            mountpath,
+            do_vssprotection,
+            user_credentials=user_credentials,
+            server_name=server_name,
+            instance_details=instance_details,
+            **kwargs,
+        )
 
     def unmount(self, volume_id: int) -> object:
         """Unmount the snapshot associated with the specified volume ID.
@@ -383,15 +391,17 @@ class ArrayManagement(object):
         """
         return self._snap_operation(7, control_host=control_host, reconcile=True)
 
-    def add_array(self,
-                  vendor_name: str,
-                  array_name: str,
-                  credential_vault_name: str,
-                  vendor_id: int,
-                  config_data: list,
-                  control_host: str = None,
-                  array_access_node: list = None,
-                  is_ocum: bool = False) -> str:
+    def add_array(
+        self,
+        vendor_name: str,
+        array_name: str,
+        credential_vault_name: str,
+        vendor_id: int,
+        config_data: list,
+        control_host: str = None,
+        array_access_node: list = None,
+        is_ocum: bool = False,
+    ) -> str:
         """Add a new array entry to the array management system.
 
         This method registers a new storage array with the specified configuration and credentials.
@@ -435,38 +445,29 @@ class ArrayManagement(object):
         assocType = 0
         if config_data is not None:
             assocType = 3
-            request_json_service = self.storage_arrays + '/Vendors/{0}'.format(vendor_id)
+            request_json_service = self.storage_arrays + f"/Vendors/{vendor_id}"
             flag, snap_configs = self._commcell_object._cvpysdk_object.make_request(
-                'GET', request_json_service
+                "GET", request_json_service
             )
             snap_configs = snap_configs.json()
             for m_config, value in config_data.items():
-                for config in snap_configs['configs']['configList']:
-                    if int(config['masterConfigId']) == int(m_config):
-                        config['value'] = str(value)
+                for config in snap_configs["configs"]["configList"]:
+                    if int(config["masterConfigId"]) == int(m_config):
+                        config["value"] = str(value)
 
         else:
-            snap_configs['configs'] = {}
+            snap_configs["configs"] = {}
 
         selectedMAs = []
         if array_access_node is not None:
             for node in array_access_node:
                 client_id = int(self._commcell_object.clients.get(node).client_id)
                 node_dict = {
-                    "arrayControllerId":0,
-                    "mediaAgent":{
-                        "name": node,
-                        "id": client_id
-                        },
-                    "arrCtrlOptions":[
-                        {
-                            "isEnabled": True,
-                            "arrCtrlOption":{
-                                "name":"Pruning",
-                                "id": 262144
-                            }
-                        }
-                    ]
+                    "arrayControllerId": 0,
+                    "mediaAgent": {"name": node, "id": client_id},
+                    "arrCtrlOptions": [
+                        {"isEnabled": True, "arrCtrlOption": {"name": "Pruning", "id": 262144}}
+                    ],
                 }
                 selectedMAs.append(node_dict)
 
@@ -476,31 +477,25 @@ class ArrayManagement(object):
             "assocType": assocType,
             "copyId": 0,
             "appId": 0,
-            "selectedMAs":selectedMAs,
+            "selectedMAs": selectedMAs,
             "hostDG": {
                 "doNotMoveDevices": True,
                 "isOverridden": False,
                 "hostDGName": "",
                 "useOnlySpouseDevices": False,
                 "flags": 0,
-                "deviceGroupOption": 0
+                "deviceGroupOption": 0,
             },
             "arrayDG": {
                 "isOverridden": False,
                 "arrayDGName": "",
                 "flags": 0,
                 "disableDG": False,
-                "useDevicesFromThisDG": False
+                "useDevicesFromThisDG": False,
             },
-            "configs": snap_configs['configs'],
-            "array": {
-                "name": "",
-                "id": 0
-            },
-            "vendor": {
-                "name": "",
-                "id": 0
-            },
+            "configs": snap_configs["configs"],
+            "array": {"name": "", "id": 0},
+            "vendor": {"name": "", "id": 0},
             "info": {
                 "passwordEdit": False,
                 "offlineReason": "",
@@ -512,71 +507,44 @@ class ArrayManagement(object):
                 "isEnabled": True,
                 "arrayInfoType": 0,
                 "uniqueIdentifier": "",
-                "securityAssociations": {
-                    "processHiddenPermission": 0
-                },
-                "userPswd": {
-                    "userName": ""
-                },
+                "securityAssociations": {"processHiddenPermission": 0},
+                "userPswd": {"userName": ""},
                 "arraySecurity": {},
-                "arrayName": {
-                    "name": array_name,
-                    "id": 0
-                },
-                "vendor": {
-                    "name": vendor_name,
-                    "id": 0
-                },
-                "client": {
-                    "name": "",
-                    "id": 0
-                },
-                "savedCredential": {
-                    "credentialName": credential_vault_name
-                }
-            }
+                "arrayName": {"name": array_name, "id": 0},
+                "vendor": {"name": vendor_name, "id": 0},
+                "client": {"name": "", "id": 0},
+                "savedCredential": {"credentialName": credential_vault_name},
+            },
         }
-        array_type_dict1 = {
-            "info": {
-                "arrayType": 2
-            }
-        }
-        array_type_dict2 = {
-            "info": {
-                "arrayType": 1
-            }
-        }
-        array_type_dict3 = {
-            "info": {
-                "arrayType": 0
-            }
-        }
+        array_type_dict1 = {"info": {"arrayType": 2}}
+        array_type_dict2 = {"info": {"arrayType": 1}}
+        array_type_dict3 = {"info": {"arrayType": 0}}
         if vendor_name == "NetApp":
-            request_json["info"].update(array_type_dict1["info"]),
+            (request_json["info"].update(array_type_dict1["info"]),)
 
         if vendor_name == "NetApp" and is_ocum:
-            request_json["info"].update(array_type_dict2["info"]),
+            (request_json["info"].update(array_type_dict2["info"]),)
         else:
-            request_json["info"].update(array_type_dict3["info"]),
+            (request_json["info"].update(array_type_dict3["info"]),)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self.storage_arrays, request_json
+            "POST", self.storage_arrays, request_json
         )
 
-        if response.json() and 'errorCode' in response.json():
-            error_code = response.json()['errorCode']
-            error_message = response.json()['errorMessage']
+        if response.json() and "errorCode" in response.json():
+            error_code = response.json()["errorCode"]
+            error_message = response.json()["errorMessage"]
 
             if error_code != 0:
                 if error_code in [1, 10]:
-                    raise SDKException('StorageArray', '101')
+                    raise SDKException("StorageArray", "101")
 
-                error_message = response.json().get('errorMessage', '')
-                o_str = 'Error: "{0}"'.format(error_message)
-                raise SDKException('StorageArray', '102', o_str)
+                error_message = response.json().get("errorMessage", "")
+                o_str = f'Error: "{error_message}"'
+                raise SDKException("StorageArray", "102", o_str)
             return error_message
         else:
-            raise SDKException('StorageArray', '102')
+            raise SDKException("StorageArray", "102")
 
     def delete_array(self, control_host_array: str) -> str:
         """Delete an array from the array management system.
@@ -599,25 +567,27 @@ class ArrayManagement(object):
         #ai-gen-doc
         """
 
-        storagearrays_delete_service = self.storage_arrays + '/{0}'.format(control_host_array)
+        storagearrays_delete_service = self.storage_arrays + f"/{control_host_array}"
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'DELETE', storagearrays_delete_service
+            "DELETE", storagearrays_delete_service
         )
 
         if response.json():
-            error_code = response.json()['errorCode']
-            error_message = response.json()['errorMessage']
+            error_code = response.json()["errorCode"]
+            error_message = response.json()["errorMessage"]
 
             if error_code != 0:
-                raise SDKException('StorageArray', '103', error_message)
+                raise SDKException("StorageArray", "103", error_message)
             return error_message
 
-    def edit_array(self,
-                   control_host_id: int,
-                   config_data: dict,
-                   config_update_level: str,
-                   level_id: int,
-                   array_access_node: dict) -> None:
+    def edit_array(
+        self,
+        control_host_id: int,
+        config_data: dict,
+        config_update_level: str,
+        level_id: int,
+        array_access_node: dict,
+    ) -> None:
         """Update the Snap Configuration and Array access nodes for a specified array.
 
         This method allows you to modify the Snap configuration and manage array access nodes
@@ -653,32 +623,39 @@ class ArrayManagement(object):
 
         if config_update_level == "array":
             config_update_level = 3
-            request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+            request_json_service = self.storage_arrays + f"/{control_host_id}"
 
         elif config_update_level == "copy":
             config_update_level = 6
             copy_level_id = level_id
-            request_json_service = self.storage_arrays + '/{0}?copyId={1}&assocType={2}'.format(
-                control_host_id, copy_level_id, config_update_level)
+            request_json_service = (
+                self.storage_arrays
+                + f"/{control_host_id}?copyId={copy_level_id}&assocType={config_update_level}"
+            )
 
         elif config_update_level == "subclient":
             config_update_level = 9
             app_level_id = level_id
-            request_json_service = self.storage_arrays + '/{0}?appId={1}&assocType={2}'.format(
-                control_host_id, app_level_id, config_update_level)
+            request_json_service = (
+                self.storage_arrays
+                + f"/{control_host_id}?appId={app_level_id}&assocType={config_update_level}"
+            )
 
         elif config_update_level == "client":
             config_update_level = 8
             client_level_id = level_id
-            request_json_service = self.storage_arrays + '/{0}?clientId={1}&assocType={2}'.format(
-                control_host_id, client_level_id, config_update_level)
+            request_json_service = (
+                self.storage_arrays
+                + f"/{control_host_id}?clientId={client_level_id}&assocType={config_update_level}"
+            )
 
         else:
             config_update_level = 3
-            request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+            request_json_service = self.storage_arrays + f"/{control_host_id}"
 
         flag, request_json = self._commcell_object._cvpysdk_object.make_request(
-            'GET', request_json_service)
+            "GET", request_json_service
+        )
 
         request_json = request_json.json()
 
@@ -688,43 +665,40 @@ class ArrayManagement(object):
             "assocType": config_update_level,
             "copyId": copy_level_id,
             "appId": app_level_id,
-            "clientId": client_level_id
-            }
+            "clientId": client_level_id,
+        }
         request_json.update(update_dict)
 
         if config_data is not None:
             for m_config, value in config_data.items():
-                for config in request_json['configList']['configList']:
-                    if config['masterConfigId'] == int(m_config):
+                for config in request_json["configList"]["configList"]:
+                    if config["masterConfigId"] == int(m_config):
                         if isinstance(value, dict):
                             for alias, mode in value.items():
                                 if mode == "add":
-                                    config_values_dict = {
-                                        "name": str(alias),
-                                        "id": 0
-                                        }
+                                    config_values_dict = {"name": str(alias), "id": 0}
                                     aliasPresent = False
-                                    for alias_name in config['values']:
-                                        if alias_name['name'] == alias:
+                                    for alias_name in config["values"]:
+                                        if alias_name["name"] == alias:
                                             aliasPresent = True
                                     if not aliasPresent:
-                                        config['values'].append(config_values_dict)
+                                        config["values"].append(config_values_dict)
                                 if mode != "add" and mode != "delete":
-                                    for alias_name in config['values']:
-                                        if alias_name['name'] == mode:
-                                            alias_name['name'] = alias
+                                    for alias_name in config["values"]:
+                                        if alias_name["name"] == mode:
+                                            alias_name["name"] = alias
                                 if mode == "delete":
-                                    for alias_name in range(len(config['values'])):
-                                        if config['values'][alias_name]['name'] == alias:
-                                            del config['values'][alias_name]
+                                    for alias_name in range(len(config["values"])):
+                                        if config["values"][alias_name]["name"] == alias:
+                                            del config["values"][alias_name]
                                             break
                             if config_update_level != "array":
-                                config['isOverridden'] = True
+                                config["isOverridden"] = True
 
                         else:
-                            config['value'] = str(value)
+                            config["value"] = str(value)
                             if config_update_level != "array":
-                                config['isOverridden'] = True
+                                config["isOverridden"] = True
 
         if array_access_node is not None:
             for access_node, mode in array_access_node.items():
@@ -733,74 +707,64 @@ class ArrayManagement(object):
                     if "selectedMAs" in request_json:
                         update_dict = {
                             "arrayControllerId": 0,
-                            "mediaAgent": {
-                                "name": access_node,
-                                "id": client_id
-                                },
+                            "mediaAgent": {"name": access_node, "id": client_id},
                             "arrCtrlOptions": [
                                 {
                                     "isEnabled": True,
-                                    "arrCtrlOption": {
-                                        "name": "Pruning",
-                                        "id": 262144
-                                        }
-                                    }
-                                ]
-                            }
+                                    "arrCtrlOption": {"name": "Pruning", "id": 262144},
+                                }
+                            ],
+                        }
                         isNodePresent = False
-                        for nodes in request_json['selectedMAs']:
-                            if nodes['mediaAgent']['id'] == int(client_id):
-
+                        for nodes in request_json["selectedMAs"]:
+                            if nodes["mediaAgent"]["id"] == int(client_id):
                                 isNodePresent = True
                         if not isNodePresent:
-                            request_json['selectedMAs'].append(update_dict)
+                            request_json["selectedMAs"].append(update_dict)
 
                     else:
                         update_dict = {
                             "selectedMAs": [
                                 {
                                     "arrayControllerId": 0,
-                                    "mediaAgent": {
-                                        "name": access_node,
-                                        "id": client_id
-                                    },
+                                    "mediaAgent": {"name": access_node, "id": client_id},
                                     "arrCtrlOptions": [
                                         {
                                             "isEnabled": True,
-                                            "arrCtrlOption": {
-                                                "name": "Pruning",
-                                                "id": 262144
-                                            }
+                                            "arrCtrlOption": {"name": "Pruning", "id": 262144},
                                         }
-                                    ]
+                                    ],
                                 }
-                            ]}
+                            ]
+                        }
                         request_json.update(update_dict)
 
                 elif mode == "delete":
                     client_id = int(self._commcell_object.clients.get(access_node).client_id)
                     if "selectedMAs" in request_json:
-                        for controller in range(len(request_json['selectedMAs'])):
-                            if request_json['selectedMAs'][controller]['mediaAgent']['id'] == int(client_id):
-                                del request_json['selectedMAs'][controller]
+                        for controller in range(len(request_json["selectedMAs"])):
+                            if request_json["selectedMAs"][controller]["mediaAgent"]["id"] == int(
+                                client_id
+                            ):
+                                del request_json["selectedMAs"][controller]
                                 break
 
-        request_json['configs'] = request_json.pop('configList')
-        del request_json['info']['region']
+        request_json["configs"] = request_json.pop("configList")
+        del request_json["info"]["region"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self.storage_arrays, request_json
+            "PUT", self.storage_arrays, request_json
         )
 
-        if response.json() and 'errorCode' in response.json():
-            error_code = response.json()['errorCode']
+        if response.json() and "errorCode" in response.json():
+            error_code = response.json()["errorCode"]
 
             if error_code != 0:
                 if error_code == 1:
-                    raise SDKException('StorageArray', '101')
+                    raise SDKException("StorageArray", "101")
 
-                error_message = response.json().get('errorMessage', '')
-                o_str = 'Failed to update Snap Configs\nError: "{0}"'.format(error_message)
-                raise SDKException('StorageArray', '103', o_str)
+                error_message = response.json().get("errorMessage", "")
+                o_str = f'Failed to update Snap Configs\nError: "{error_message}"'
+                raise SDKException("StorageArray", "103", o_str)
         else:
-            raise SDKException('StorageArray', '103')
+            raise SDKException("StorageArray", "103")

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -90,17 +88,16 @@ GoogleSubclient:
     browse_files()                      --  Browse files of the user in the browse
 """
 
-from __future__ import unicode_literals
 import copy
 import time
 from typing import Any, Dict, List, Optional
 
-from ...exception import SDKException
+from cvpysdk.job import Job
+
 from ...constants import AppIDAType
+from ...exception import SDKException
 from ..casubclient import CloudAppsSubclient
 from . import google_constants as constants
-
-from cvpysdk.job import Job
 
 
 class GoogleSubclient(CloudAppsSubclient):
@@ -148,9 +145,9 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        super(GoogleSubclient, self)._get_subclient_properties()
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
+        super()._get_subclient_properties()
+        if "content" in self._subclient_properties:
+            self._content = self._subclient_properties["content"]
 
         content = []
         group_list = []
@@ -158,14 +155,14 @@ class GoogleSubclient(CloudAppsSubclient):
         for account in self._content:
             temp_account = account["cloudconnectorContent"]["includeAccounts"]
 
-            if temp_account['contentType'] == AppIDAType.CLOUD_APP.value:
+            if temp_account["contentType"] == AppIDAType.CLOUD_APP.value:
                 content_dict = {
-                    'SMTPAddress': temp_account["contentName"].split(";")[0],
-                    'display_name': temp_account["contentValue"]
+                    "SMTPAddress": temp_account["contentName"].split(";")[0],
+                    "display_name": temp_account["contentValue"],
                 }
 
                 content.append(content_dict)
-            if temp_account['contentType'] == 135:
+            if temp_account["contentType"] == 135:
                 group_list.append(temp_account["contentName"])
         self._ca_content = content
         self._ca_groups = group_list
@@ -185,7 +182,7 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
 
-        return {'subClientProperties': self._subclient_properties}
+        return {"subClientProperties": self._subclient_properties}
 
     @property
     def content(self) -> list[dict[str, Any]]:
@@ -251,16 +248,16 @@ class GoogleSubclient(CloudAppsSubclient):
                 temp_content_dict = {
                     "cloudconnectorContent": {
                         "includeAccounts": {
-                            "contentValue": account['display_name'],
+                            "contentValue": account["display_name"],
                             "contentType": AppIDAType.CLOUD_APP.value,
-                            "contentName": account['SMTPAddress']
+                            "contentName": account["SMTPAddress"],
                         }
                     }
                 }
 
                 content.append(temp_content_dict)
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
 
         self._set_subclient_properties("_content", content)
 
@@ -284,9 +281,11 @@ class GoogleSubclient(CloudAppsSubclient):
         """
         for params in req_payload["searchProcessingInfo"]["queryParams"]:
             if params["param"] == "RESPONSE_FIELD_LIST":
-                values_in_response = constants.GMAIL_BROWSE_FIELD_RESPONSE_FIELD_PARAMS if (
-                        self._instance_object.ca_instance_type == "GMAIL") \
+                values_in_response = (
+                    constants.GMAIL_BROWSE_FIELD_RESPONSE_FIELD_PARAMS
+                    if (self._instance_object.ca_instance_type == "GMAIL")
                     else constants.GDRIVE_BROWSE_FIELD_RESPONSE_FIELD_PARAMS
+                )
                 params.update({"value": values_in_response})
         _search_api = self._services["DO_WEB_SEARCH"]
         flag, response = self._cvpysdk_object.make_request("POST", _search_api, req_payload)
@@ -294,51 +293,51 @@ class GoogleSubclient(CloudAppsSubclient):
             try:
                 resp_json = response.json()
             except ValueError:
-                raise SDKException("Response", '102', 'Invalid or empty response JSON')
+                raise SDKException("Response", "102", "Invalid or empty response JSON")
             if not resp_json:
-                raise SDKException('Response', '102', 'Empty response json')
-            if resp_json and 'errorCode' in resp_json:
-                error_code = resp_json.get('errorCode')
+                raise SDKException("Response", "102", "Empty response json")
+            if resp_json and "errorCode" in resp_json:
+                error_code = resp_json.get("errorCode")
                 if error_code != 0:
-                    error_message = resp_json.get('errorMessage')
-                    raise SDKException('Subclient', '102', error_message)
+                    error_message = resp_json.get("errorMessage")
+                    raise SDKException("Subclient", "102", error_message)
             else:
                 count = int(resp_json.get("proccessingInfo", {}).get("totalHits", 0))
                 req_payload["searchProcessingInfo"]["pageSize"] = count
-                flag, response = self._cvpysdk_object.make_request("POST", _search_api, req_payload)
+                flag, response = self._cvpysdk_object.make_request(
+                    "POST", _search_api, req_payload
+                )
                 if flag:
                     try:
                         resp_json = response.json()
                     except ValueError:
-                        raise SDKException("Response", '102', 'Invalid or empty response JSON')
+                        raise SDKException("Response", "102", "Invalid or empty response JSON")
                     if not resp_json:
-                        raise SDKException('Response', '102', 'Empty response json')
-                    if resp_json and 'errorCode' in resp_json:
-                        error_code = resp_json.get('errorCode')
+                        raise SDKException("Response", "102", "Empty response json")
+                    if resp_json and "errorCode" in resp_json:
+                        error_code = resp_json.get("errorCode")
                         if error_code != 0:
-                            error_message = resp_json.get('errorMessage')
-                            raise SDKException('Subclient', '102', error_message)
+                            error_message = resp_json.get("errorMessage")
+                            raise SDKException("Subclient", "102", error_message)
                     else:
                         return count, resp_json
                 else:
-                    raise SDKException('Response', '102',
-                                       self._update_response_(response.text))
+                    raise SDKException("Response", "102", self._update_response_(response.text))
         else:
-            raise SDKException('Response', '101',
-                               self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            to_disk: bool = False
-    ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        to_disk: bool = False,
+    ) -> "Job":
         """Restore specified files or folders to a different client and/or location.
 
         This method restores the files or folders listed in `paths` to the specified `destination_path`
@@ -386,10 +385,10 @@ class GoogleSubclient(CloudAppsSubclient):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            to_disk=to_disk
+            to_disk=to_disk,
         )
 
-    def discover(self, discover_type: str = 'USERS') -> list:
+    def discover(self, discover_type: str = "USERS") -> list:
         """Discover users or groups on a Google GSuite Account or OneDrive.
 
         Args:
@@ -413,28 +412,29 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
 
-        if discover_type.upper() == 'USERS':
+        if discover_type.upper() == "USERS":
             disc_type = 10
-        elif discover_type.upper() == 'GROUPS':
+        elif discover_type.upper() == "GROUPS":
             disc_type = 5
-        _get_users = self._services['GET_CLOUDAPPS_USERS'] % (self._instance_object.instance_id,
-                                                              self._client_object.client_id,
-                                                              disc_type)
+        _get_users = self._services["GET_CLOUDAPPS_USERS"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            disc_type,
+        )
 
-        flag, response = self._cvpysdk_object.make_request('GET', _get_users)
+        flag, response = self._cvpysdk_object.make_request("GET", _get_users)
 
         if flag:
             if response.json() and "scDiscoveryContent" in response.json():
-                self._discover_properties = response.json()[
-                    "scDiscoveryContent"][0]
+                self._discover_properties = response.json()["scDiscoveryContent"][0]
 
                 if "contentInfo" in self._discover_properties:
                     self._contentInfo = self._discover_properties["contentInfo"]
                 return self._contentInfo
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def set_auto_discovery(self, value: list) -> None:
         """Set the auto discovery value for the subclient.
@@ -459,32 +459,30 @@ class GoogleSubclient(CloudAppsSubclient):
         """
 
         if not isinstance(value, list):
-            raise SDKException('Subclient', '116')
+            raise SDKException("Subclient", "116")
 
         if not self._instance_object.auto_discovery_status:
-            raise SDKException('Subclient', '117')
+            raise SDKException("Subclient", "117")
 
-        subclient_prop = self._subclient_properties['cloudAppsSubClientProp'].copy()
+        subclient_prop = self._subclient_properties["cloudAppsSubClientProp"].copy()
         if self._instance_object.auto_discovery_mode == 0:
             # RegEx based auto discovery is enabled on instance
 
-            if subclient_prop['instanceType'] == 7:
-                subclient_prop['oneDriveSubclient']['regularExp'] = value
+            if subclient_prop["instanceType"] == 7:
+                subclient_prop["oneDriveSubclient"]["regularExp"] = value
             else:
-                subclient_prop['GoogleSubclient']['regularExp'] = value
-            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']", subclient_prop)
+                subclient_prop["GoogleSubclient"]["regularExp"] = value
+            self._set_subclient_properties(
+                "_subclient_properties['cloudAppsSubClientProp']", subclient_prop
+            )
         else:
             # User group based auto discovery is enabled on instance
             grp_list = []
-            groups = self.discover(discover_type='GROUPS')
+            groups = self.discover(discover_type="GROUPS")
             for item in value:
                 for group in groups:
-                    if group['contentName'].lower() == item.lower():
-                        grp_list.append({
-                            "cloudconnectorContent": {
-                                "includeAccounts": group
-                            }
-                        })
+                    if group["contentName"].lower() == item.lower():
+                        grp_list.append({"cloudconnectorContent": {"includeAccounts": group}})
             self._content.extend(grp_list)
             self._set_subclient_properties("_subclient_properties['content']", self._content)
         self.refresh()
@@ -503,13 +501,15 @@ class GoogleSubclient(CloudAppsSubclient):
         """
 
         discover_type = 15
-        discover_users = self._services['GET_CLOUDAPPS_ONEDRIVE_USERS'] % (self._instance_object.instance_id,
-                                                                           self._client_object.client_id,
-                                                                           discover_type,
-                                                                           self.subclient_id)
-        flag, response = self._cvpysdk_object.make_request('GET', discover_users)
+        discover_users = self._services["GET_CLOUDAPPS_ONEDRIVE_USERS"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            discover_type,
+            self.subclient_id,
+        )
+        flag, response = self._cvpysdk_object.make_request("GET", discover_users)
         if response.status_code != 200 and response.status_code != 500:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def add_AD_group(self, value: list) -> None:
         """Add Active Directory (AD) user groups to the subclient when auto discovery type is set to AD group at the instance level.
@@ -525,46 +525,41 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         grp_list = []
-        groups = self.discover(discover_type='GROUPS')
+        groups = self.discover(discover_type="GROUPS")
         for item in value:
             for group in groups:
-                if group['contentName'].lower() == item.lower():
+                if group["contentName"].lower() == item.lower():
                     grp_list.append(group)
 
         contentinfo = []
 
         for grp in grp_list:
             info = {
-                "contentValue": grp['contentValue'],
-                "contentType": grp['contentType'],
-                "contentName": grp['contentName']
+                "contentValue": grp["contentValue"],
+                "contentType": grp["contentType"],
+                "contentName": grp["contentName"],
             }
             contentinfo.append(info)
 
         request_json = {
             "App_DiscoveryContent": {
                 "scDiscoveryContent": [
-                    {
-                        "scEntity": {
-                            "subclientId": self.subclient_id
-                        },
-                        "contentInfo": contentinfo
-                    }
+                    {"scEntity": {"subclientId": self.subclient_id}, "contentInfo": contentinfo}
                 ]
             }
         }
-        add_ADgroup = self._services['EXECUTE_QCOMMAND']
-        flag, response = self._cvpysdk_object.make_request('POST', add_ADgroup, request_json)
+        add_ADgroup = self._services["EXECUTE_QCOMMAND"]
+        flag, response = self._cvpysdk_object.make_request("POST", add_ADgroup, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
+            if response.json() and "errorCode" in response.json():
+                error_code = response.json().get("errorCode")
                 if error_code != 0:
-                    raise SDKException('Response', '101')
+                    raise SDKException("Response", "101")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def add_user(self, user_name: str) -> None:
         """Add a OneDrive user to the GoogleSubclient.
@@ -579,10 +574,10 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        users = self.discover(discover_type='USERS')
+        users = self.discover(discover_type="USERS")
 
         for user in users:
-            if user['contentName'].lower() == user_name.lower():
+            if user["contentName"].lower() == user_name.lower():
                 user_dict = user
                 break
 
@@ -590,35 +585,33 @@ class GoogleSubclient(CloudAppsSubclient):
             "App_DiscoveryContent": {
                 "scDiscoveryContent": [
                     {
-                        "scEntity": {
-                            "subclientId": self.subclient_id
-                        },
+                        "scEntity": {"subclientId": self.subclient_id},
                         "contentInfo": [
                             {
-                                "contentValue": user_dict['contentValue'],
-                                "contentType": user_dict['contentType'],
-                                "contentName": user_dict['contentName']
+                                "contentValue": user_dict["contentValue"],
+                                "contentType": user_dict["contentType"],
+                                "contentName": user_dict["contentName"],
                             }
-                        ]
+                        ],
                     }
                 ]
             }
         }
 
-        add_user = self._services['EXECUTE_QCOMMAND']
-        flag, response = self._cvpysdk_object.make_request('POST', add_user, request_json)
+        add_user = self._services["EXECUTE_QCOMMAND"]
+        flag, response = self._cvpysdk_object.make_request("POST", add_user, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
+            if response.json() and "errorCode" in response.json():
+                error_code = response.json().get("errorCode")
                 if error_code != 0:
-                    error_message = response.json().get('errorMessage')
+                    error_message = response.json().get("errorMessage")
                     output_string = 'Failed to user to the subclient\nError: "{0}"'
-                    raise SDKException('Subclient', '102', output_string.format(error_message))
+                    raise SDKException("Subclient", "102", output_string.format(error_message))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_subclient_users(self) -> list:
         """Retrieve the list of users associated with this subclient.
@@ -635,7 +628,7 @@ class GoogleSubclient(CloudAppsSubclient):
         users = []
         result = self.content
         for user in result:
-            users.append(user['SMTPAddress'])
+            users.append(user["SMTPAddress"])
         return users
 
     @property
@@ -677,7 +670,7 @@ class GoogleSubclient(CloudAppsSubclient):
         """
 
         if not (isinstance(users, list) and isinstance(plan_name, str)):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         # Get GoogleWorkspace plan
         plan_name = plan_name.strip()
@@ -700,33 +693,35 @@ class GoogleSubclient(CloudAppsSubclient):
                     "subclientId": int(self.subclient_id),
                     "clientId": client_id,
                     "instanceId": int(self._instance_object.instance_id),
-                    "applicationId": AppIDAType.CLOUD_APP.value
+                    "applicationId": AppIDAType.CLOUD_APP.value,
                 },
                 "cloudAppDiscoverinfo": {
                     # GDrive : 24 | GMail : 22
-                    "discoverByType": 22 if self._instance_object.ca_instance_type == 'GMAIL' else 24,
-                    "userAccounts": user_accounts
+                    "discoverByType": 22
+                    if self._instance_object.ca_instance_type == "GMAIL"
+                    else 24,
+                    "userAccounts": user_accounts,
                 },
-                "plan": {
-                    "planId": google_plan_id
-                }
-            }
+                "plan": {"planId": google_plan_id},
+            },
         }
 
-        user_associations = self._services[
-            'GMAIL_UPDATE_USERS'] if self._instance_object.ca_instance_type == 'GMAIL' else self._services[
-            'GDRIVE_UPDATE_USERS']
-        flag, response = self._cvpysdk_object.make_request('POST', user_associations, request_json)
+        user_associations = (
+            self._services["GMAIL_UPDATE_USERS"]
+            if self._instance_object.ca_instance_type == "GMAIL"
+            else self._services["GDRIVE_UPDATE_USERS"]
+        )
+        flag, response = self._cvpysdk_object.make_request("POST", user_associations, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
+            if response.json() and "errorCode" in response.json():
+                error_code = response.json().get("errorCode")
                 if error_code != 0:
-                    error_message = response.json().get('errorMessage')
-                    output_string = f'Failed to add user\nError: {error_message}'
-                    raise SDKException('Subclient', '102', output_string)
+                    error_message = response.json().get("errorMessage")
+                    output_string = f"Failed to add user\nError: {error_message}"
+                    raise SDKException("Subclient", "102", output_string)
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def add_shared_drives(self, shared_drives: list, plan_name: str) -> None:
         """Add the specified Shared Drives to the client and associate them with a Google Workspace plan.
@@ -748,7 +743,7 @@ class GoogleSubclient(CloudAppsSubclient):
         """
 
         if not (isinstance(shared_drives, list) and isinstance(plan_name, str)):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         # Get GoogleWorkspace plan
         plan_name = plan_name.strip()
@@ -762,10 +757,10 @@ class GoogleSubclient(CloudAppsSubclient):
 
         for drive in shared_drives:
             response = self.search_for_shareddrive(drive)
-            response['user'] = {}
-            response['displayName'] = response['folderTitle']
-            response['user']['userGUID'] = response['folderId']
-            response['isAutoDiscoveredUser'] = False
+            response["user"] = {}
+            response["displayName"] = response["folderTitle"]
+            response["user"]["userGUID"] = response["folderId"]
+            response["isAutoDiscoveredUser"] = False
             drives.append(response)
 
         request_json = {
@@ -776,30 +771,25 @@ class GoogleSubclient(CloudAppsSubclient):
                     "subclientId": int(self.subclient_id),
                     "clientId": client_id,
                     "instanceId": int(self._instance_object.instance_id),
-                    "applicationId": AppIDAType.CLOUD_APP.value
+                    "applicationId": AppIDAType.CLOUD_APP.value,
                 },
-                "cloudAppDiscoverinfo": {
-                    "discoverByType": 32,
-                    "userAccounts": drives
-                },
-                "plan": {
-                    "planId": google_plan_id
-                }
-            }
+                "cloudAppDiscoverinfo": {"discoverByType": 32, "userAccounts": drives},
+                "plan": {"planId": google_plan_id},
+            },
         }
 
-        user_associations = self._services['GDRIVE_UPDATE_USERS']
-        flag, response = self._cvpysdk_object.make_request('POST', user_associations, request_json)
+        user_associations = self._services["GDRIVE_UPDATE_USERS"]
+        flag, response = self._cvpysdk_object.make_request("POST", user_associations, request_json)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json().get('errorCode')
+            if response.json() and "errorCode" in response.json():
+                error_code = response.json().get("errorCode")
                 if error_code != 0:
-                    error_message = response.json().get('errorMessage')
-                    output_string = f'Failed to add user\nError: {error_message}'
-                    raise SDKException('Subclient', '102', output_string)
+                    error_message = response.json().get("errorMessage")
+                    output_string = f"Failed to add user\nError: {error_message}"
+                    raise SDKException("Subclient", "102", output_string)
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def browse_content(self, discovery_type: int) -> list:
         """Fetch discovered Google Workspace content based on the specified discovery type.
@@ -828,16 +818,28 @@ class GoogleSubclient(CloudAppsSubclient):
         # Wait for sometime unitl disco discovery completes before checking actual content.
         attempt = 0
         while attempt < 5:
-            flag, response = self._cvpysdk_object.make_request('GET', (
-                    self._services['GOOGLE_DISCOVERY_OVERVIEW'] % (self._backupset_object.backupset_id)))
-            if response.json()['office365ClientOverview']['summary']['discoverState']['discoveryProgress'] == 100:
+            flag, response = self._cvpysdk_object.make_request(
+                "GET",
+                (
+                    self._services["GOOGLE_DISCOVERY_OVERVIEW"]
+                    % (self._backupset_object.backupset_id)
+                ),
+            )
+            if (
+                response.json()["office365ClientOverview"]["summary"]["discoverState"][
+                    "discoveryProgress"
+                ]
+                == 100
+            ):
                 break
             attempt += 1
             time.sleep(10)
 
-        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
-                                                               self._client_object.client_id,
-                                                               AppIDAType.CLOUD_APP.value))
+        browse_content = self._services["CLOUD_DISCOVERY"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            AppIDAType.CLOUD_APP.value,
+        )
 
         # determines the number of accounts to return in response
         page_size = 500
@@ -845,31 +847,31 @@ class GoogleSubclient(CloudAppsSubclient):
 
         records = []
         while True:
-            discover_query = f'{browse_content}&pageSize={page_size}&offset={offset}&eDiscoverType={discovery_type}'
-            flag, response = self._cvpysdk_object.make_request('GET', discover_query)
+            discover_query = f"{browse_content}&pageSize={page_size}&offset={offset}&eDiscoverType={discovery_type}"
+            flag, response = self._cvpysdk_object.make_request("GET", discover_query)
             offset += 1
             if flag:
                 if response and response.json():
                     if discovery_type == 8:
-                        if 'userAccounts' in response.json():
-                            curr_records = response.json().get('userAccounts', [])
+                        if "userAccounts" in response.json():
+                            curr_records = response.json().get("userAccounts", [])
                             records.extend(curr_records)
                             if len(curr_records) < page_size:
                                 break
                     elif discovery_type == 25:
-                        if 'folders' in response.json():
-                            curr_records = response.json().get('folders', [])
+                        if "folders" in response.json():
+                            curr_records = response.json().get("folders", [])
                             records.extend(curr_records)
                             if len(curr_records) < page_size:
                                 break
                     elif discovery_type == 5:
-                        if 'groups' in response.json():
-                            curr_groups = response.json().get('groups', [])
+                        if "groups" in response.json():
+                            curr_groups = response.json().get("groups", [])
                             records.extend(curr_groups)
                             if len(curr_groups) < page_size:
                                 break
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         return records
 
     def verify_groups_discovery(self) -> tuple[bool, int]:
@@ -897,9 +899,11 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
-                                                               self._client_object.client_id,
-                                                               AppIDAType.CLOUD_APP.value))
+        browse_content = self._services["CLOUD_DISCOVERY"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            AppIDAType.CLOUD_APP.value,
+        )
 
         # determines the number of accounts to return in response
         page_size = 500
@@ -907,19 +911,21 @@ class GoogleSubclient(CloudAppsSubclient):
 
         groups = []
         while True:
-            discover_query = f'{browse_content}&pageSize={page_size}&offset={offset}&eDiscoverType=5'
-            flag, response = self._cvpysdk_object.make_request('GET', discover_query)
+            discover_query = (
+                f"{browse_content}&pageSize={page_size}&offset={offset}&eDiscoverType=5"
+            )
+            flag, response = self._cvpysdk_object.make_request("GET", discover_query)
             offset += 1
 
             if flag:
                 if response and response.json():
-                    if 'groups' in response.json():
-                        curr_groups = response.json().get('groups', [])
+                    if "groups" in response.json():
+                        curr_groups = response.json().get("groups", [])
                         groups.extend(curr_groups)
                         if len(curr_groups) < page_size:
                             break
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         return groups
 
     def verify_shareddrive_discovery(self) -> tuple[bool, int]:
@@ -948,27 +954,31 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
 
-        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
-                                                               self._client_object.client_id,
-                                                               AppIDAType.CLOUD_APP.value))
+        browse_content = self._services["CLOUD_DISCOVERY"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            AppIDAType.CLOUD_APP.value,
+        )
 
         # determines the number of accounts to return in response
         page_size = 500
-        discover_query = f'{browse_content}&pageSize={page_size}&eDiscoverType=25'  # for shared drive discovery
+        discover_query = (
+            f"{browse_content}&pageSize={page_size}&eDiscoverType=25"  # for shared drive discovery
+        )
 
-        flag, response = self._cvpysdk_object.make_request('GET', discover_query)
+        flag, response = self._cvpysdk_object.make_request("GET", discover_query)
 
         if flag:
             no_of_records = -1
             if response and response.json():
-                if 'pagingInfo' in response.json():
-                    no_of_records = response.json().get('pagingInfo', {}).get('totalRecords', -1)
+                if "pagingInfo" in response.json():
+                    no_of_records = response.json().get("pagingInfo", {}).get("totalRecords", -1)
                     if no_of_records > 0:
-                        shared_drives = response.json().get('folders', [])
+                        shared_drives = response.json().get("folders", [])
                         return True, shared_drives
             return False, []
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _association_users_json(self, users_list: List[str]) -> List[Dict[str, Any]]:
         """Generate a JSON-compatible list of user details for backup association.
@@ -990,15 +1000,13 @@ class GoogleSubclient(CloudAppsSubclient):
         users_json = []
         for user_smtp in users_list:
             user_details = self.search_for_user(user_smtp)
-            user_info = {
-                "user": {
-                    "userGUID": user_details.get('user', {}).get('userGUID')
-                }
-            }
+            user_info = {"user": {"userGUID": user_details.get("user", {}).get("userGUID")}}
             users_json.append(user_info)
         return users_json
 
-    def _task_json_for_google_backup(self, is_mailbox: bool, users_list: Optional[list] = None, **kwargs: dict) -> dict:
+    def _task_json_for_google_backup(
+        self, is_mailbox: bool, users_list: Optional[list] = None, **kwargs: dict
+    ) -> dict:
         """Generate the JSON payload for a Google backup task for selected users.
 
         Args:
@@ -1027,23 +1035,19 @@ class GoogleSubclient(CloudAppsSubclient):
         advanced_options_dict = None
         if users_list is not None:
             associated_users_json = self._association_users_json(users_list)
-            advanced_options_dict = {
-                'cloudAppOptions': {
-                    'userAccounts': associated_users_json
-                }
-            }
+            advanced_options_dict = {"cloudAppOptions": {"userAccounts": associated_users_json}}
 
             for user_smtp in users_list:
                 details = self.search_for_user(user_smtp)
                 item = {
-                    "itemName": details.get('displayName'),
-                    "itemType": "Mailbox" if is_mailbox else "User"
+                    "itemName": details.get("displayName"),
+                    "itemType": "Mailbox" if is_mailbox else "User",
                 }
                 selected_items.append(item)
         else:
             item = {
                 "itemName": "All mailboxes" if is_mailbox else "All users",
-                "itemType": "All mailboxes" if is_mailbox else "All users"
+                "itemType": "All mailboxes" if is_mailbox else "All users",
             }
             selected_items.append(item)
 
@@ -1052,24 +1056,25 @@ class GoogleSubclient(CloudAppsSubclient):
                 {
                     "selectedItems": selected_items,
                     "jobOptionItems": [
-                        {
-                            "option": "Total running time",
-                            "value": "Disabled"
-                        },
+                        {"option": "Total running time", "value": "Disabled"},
                         {
                             "option": "Convert job to full",
-                            "value": "Enabled" if kwargs.get('full_backup', False) else "Disabled"
-                        }
-                    ]
+                            "value": "Enabled" if kwargs.get("full_backup", False) else "Disabled",
+                        },
+                    ],
                 }
             ]
         }
-        task_json = self._backup_json(backup_level='INCREMENTAL', incremental_backup=False,
-                                      incremental_level='BEFORE_SYNTH', advanced_options=advanced_options_dict,
-                                      common_backup_options=common_options_dict)
+        task_json = self._backup_json(
+            backup_level="INCREMENTAL",
+            incremental_backup=False,
+            incremental_level="BEFORE_SYNTH",
+            advanced_options=advanced_options_dict,
+            common_backup_options=common_options_dict,
+        )
         return task_json
 
-    def run_user_level_backup(self, users_list: list, is_mailbox: bool, **kwargs: dict) -> 'Job':
+    def run_user_level_backup(self, users_list: list, is_mailbox: bool, **kwargs: dict) -> "Job":
         """Run a user-level backup for the specified users.
 
         Initiates a backup job for the provided list of user SMTP addresses. The backup can be performed
@@ -1097,13 +1102,13 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         task_json = self._task_json_for_google_backup(is_mailbox, users_list=users_list, **kwargs)
-        create_task = self._services['CREATE_TASK']
+        create_task = self._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_task, task_json
+            "POST", create_task, task_json
         )
         return self._process_backup_response(flag, response)
 
-    def run_client_level_backup(self, is_mailbox: bool, **kwargs: dict) -> 'Job':
+    def run_client_level_backup(self, is_mailbox: bool, **kwargs: dict) -> "Job":
         """Run a client-level backup for the GoogleSubclient.
 
         Args:
@@ -1126,9 +1131,9 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         task_json = self._task_json_for_google_backup(is_mailbox, **kwargs)
-        create_task = self._services['CREATE_TASK']
+        create_task = self._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_task, task_json
+            "POST", create_task, task_json
         )
         return self._process_backup_response(flag, response)
 
@@ -1165,33 +1170,35 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
-                                                               self._client_object.client_id,
-                                                               AppIDAType.CLOUD_APP.value))
+        browse_content = self._services["CLOUD_DISCOVERY"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            AppIDAType.CLOUD_APP.value,
+        )
 
-        search_query = f'{browse_content}&search={user_id}'
+        search_query = f"{browse_content}&search={user_id}"
 
-        flag, response = self._cvpysdk_object.make_request('GET', search_query)
+        flag, response = self._cvpysdk_object.make_request("GET", search_query)
 
         if flag:
             if response and response.json():
-                if 'userAccounts' in response.json():
-                    user_accounts = response.json().get('userAccounts', [])
+                if "userAccounts" in response.json():
+                    user_accounts = response.json().get("userAccounts", [])
                     if len(user_accounts) == 0:
-                        error_string = 'Either discovery is not complete or user is not available in discovered data'
-                        raise SDKException('Subclient', '102', error_string)
+                        error_string = "Either discovery is not complete or user is not available in discovered data"
+                        raise SDKException("Subclient", "102", error_string)
                     for user in user_accounts:
-                        if user['smtpAddress'] == user_id:
+                        if user["smtpAddress"] == user_id:
                             return user
                     else:
-                        error_string = 'User is not available in discovered data'
-                        raise SDKException('Subclient', '102', error_string)
+                        error_string = "User is not available in discovered data"
+                        raise SDKException("Subclient", "102", error_string)
                 else:
-                    raise SDKException('Response', '102', 'Check if the user provided is valid')
+                    raise SDKException("Response", "102", "Check if the user provided is valid")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def search_for_shareddrive(self, drive: str) -> list:
         """Search for details of a specific shared drive from the discovered list.
@@ -1234,36 +1241,45 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
-                                                               self._client_object.client_id,
-                                                               AppIDAType.CLOUD_APP.value))
+        browse_content = self._services["CLOUD_DISCOVERY"] % (
+            self._instance_object.instance_id,
+            self._client_object.client_id,
+            AppIDAType.CLOUD_APP.value,
+        )
 
-        search_query = f'{browse_content}&search={drive}&eDiscoverType=25'
+        search_query = f"{browse_content}&search={drive}&eDiscoverType=25"
 
-        flag, response = self._cvpysdk_object.make_request('GET', search_query)
+        flag, response = self._cvpysdk_object.make_request("GET", search_query)
 
         if flag:
             if response and response.json():
-                if 'folders' in response.json():
-                    folders = response.json().get('folders', [])
+                if "folders" in response.json():
+                    folders = response.json().get("folders", [])
                     if len(folders) == 0:
-                        error_string = 'Either discovery is not complete or Shared Drive is not available in discovered data'
-                        raise SDKException('Subclient', '102', error_string)
+                        error_string = "Either discovery is not complete or Shared Drive is not available in discovered data"
+                        raise SDKException("Subclient", "102", error_string)
                     for folder in folders:
-                        if folder['folderTitle'] == drive:
+                        if folder["folderTitle"] == drive:
                             return folder
                     else:
-                        error_string = 'Shared Drive is not available in discovered data'
-                        raise SDKException('Subclient', '102', error_string)
+                        error_string = "Shared Drive is not available in discovered data"
+                        raise SDKException("Subclient", "102", error_string)
                 else:
-                    raise SDKException('Response', '102', 'Check if the Shared Drive provided is valid')
+                    raise SDKException(
+                        "Response", "102", "Check if the Shared Drive provided is valid"
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def disk_restore(self, users: list, destination_client: str, destination_path: str,
-                     skip_file_permissions: bool = False) -> 'Job':
+    def disk_restore(
+        self,
+        users: list,
+        destination_client: str,
+        destination_path: str,
+        skip_file_permissions: bool = False,
+    ) -> "Job":
         """Run an out-of-place disk restore job for specified users to a destination client.
 
         This method initiates a restore operation for the provided list of users, restoring their data
@@ -1294,15 +1310,15 @@ class GoogleSubclient(CloudAppsSubclient):
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
         kwargs = {
-            'disk_restore': True,
-            'destination_path': destination_path,
-            'destination_client': destination_client,
-            'skip_file_permissions': skip_file_permissions
+            "disk_restore": True,
+            "destination_path": destination_path,
+            "destination_client": destination_client,
+            "skip_file_permissions": skip_file_permissions,
         }
         restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
 
-    def out_of_place_restore(self, users: list, destination_path: str, **kwargs) -> 'Job':
+    def out_of_place_restore(self, users: list, destination_path: str, **kwargs) -> "Job":
         """Run an out-of-place restore job for specified users on a OneDrive for Business client.
 
         This method restores data for the given list of users to a specified destination user (SMTP address).
@@ -1339,61 +1355,62 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        overwrite = kwargs.get('overwrite', False)
-        restore_as_copy = kwargs.get('restore_as_copy', False)
-        skip_file_permissions = kwargs.get('skip_file_permissions', False)
-        end_time = kwargs.get('end_time', None)
-        destination_label = kwargs.get('destination_label', "")
+        overwrite = kwargs.get("overwrite", False)
+        restore_as_copy = kwargs.get("restore_as_copy", False)
+        skip_file_permissions = kwargs.get("skip_file_permissions", False)
+        end_time = kwargs.get("end_time", None)
+        destination_label = kwargs.get("destination_label", "")
 
         if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+            raise SDKException(
+                "Subclient", "102", "Either select overwrite or restore as copy for file options"
+            )
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
         accountInfo = {}
         destination_type = kwargs.get("destination_type")
-        if destination_type == 'USER' or destination_type == 'MAILBOX':
+        if destination_type == "USER" or destination_type == "MAILBOX":
             destination_user_info = self.search_for_user(destination_path)
-            accountInfo['userDisplayName'] = destination_user_info.get('displayName', '')
-            accountInfo['userGUID'] = destination_user_info.get('user').get('userGUID', '')
-            accountInfo['userSMTP'] = destination_user_info.get('smtpAddress', '')
+            accountInfo["userDisplayName"] = destination_user_info.get("displayName", "")
+            accountInfo["userGUID"] = destination_user_info.get("user").get("userGUID", "")
+            accountInfo["userSMTP"] = destination_user_info.get("smtpAddress", "")
         else:
             destination_user_info = self.search_for_shareddrive(destination_path)
-            accountInfo['userDisplayName'] = destination_user_info.get('folderTitle', '')
-            accountInfo['userGUID'] = destination_user_info.get('folderId', '')
+            accountInfo["userDisplayName"] = destination_user_info.get("folderTitle", "")
+            accountInfo["userGUID"] = destination_user_info.get("folderId", "")
 
         kwargs = {
-            'out_of_place': True,
-            'overwrite': overwrite,
-            'restore_as_copy': restore_as_copy,
-            'skip_file_permissions': skip_file_permissions,
-            'accountInfo': accountInfo,
-            'destination_type': destination_type,
-            'destination_path': destination_path,
-            'destination_label': destination_label
+            "out_of_place": True,
+            "overwrite": overwrite,
+            "restore_as_copy": restore_as_copy,
+            "skip_file_permissions": skip_file_permissions,
+            "accountInfo": accountInfo,
+            "destination_type": destination_type,
+            "destination_path": destination_path,
+            "destination_label": destination_label,
         }
         restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         if end_time:
             adv_search_bkp_time_dict = {
                 "field": "BACKUPTIME",
-                "fieldValues": {
-                    "values": [
-                        "0",
-                        str(end_time)
-                    ]
-                },
-                "intraFieldOp": "FTOr"
+                "fieldValues": {"values": ["0", str(end_time)]},
+                "intraFieldOp": "FTOr",
             }
 
-            add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+            add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "browseOption"
+            ]
             add_to_time["timeRange"] = {"toTime": end_time}
-            add_backup_time = \
-                restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
-                    "googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+            add_backup_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "cloudAppsRestoreOptions"
+            ]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"][
+                "filters"
+            ]
             add_backup_time.append(adv_search_bkp_time_dict)
         return self._process_restore_response(restore_json)
 
-    def in_place_restore(self, users: list, **kwargs: dict) -> 'Job':
+    def in_place_restore(self, users: list, **kwargs: dict) -> "Job":
         """Run an in-place restore job for specified users on OneDrive for Business.
 
         This method initiates an in-place restore operation for the provided list of user SMTP addresses.
@@ -1423,41 +1440,42 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        overwrite = kwargs.get('overwrite', False)
-        restore_as_copy = kwargs.get('restore_as_copy', False)
-        skip_file_permissions = kwargs.get('skip_file_permissions', False)
-        include_deleted_items = kwargs.get('include_deleted_items', False)
-        end_time = kwargs.get('end_time', None)
+        overwrite = kwargs.get("overwrite", False)
+        restore_as_copy = kwargs.get("restore_as_copy", False)
+        skip_file_permissions = kwargs.get("skip_file_permissions", False)
+        include_deleted_items = kwargs.get("include_deleted_items", False)
+        end_time = kwargs.get("end_time", None)
 
         if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+            raise SDKException(
+                "Subclient", "102", "Either select overwrite or restore as copy for file options"
+            )
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
         kwargs = {
-            'overwrite': overwrite,
-            'restore_as_copy': restore_as_copy,
-            'skip_file_permissions': skip_file_permissions,
-            'include_deleted_items': include_deleted_items
+            "overwrite": overwrite,
+            "restore_as_copy": restore_as_copy,
+            "skip_file_permissions": skip_file_permissions,
+            "include_deleted_items": include_deleted_items,
         }
         restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         if end_time:
             adv_search_bkp_time_dict = {
                 "field": "BACKUPTIME",
-                "fieldValues": {
-                    "values": [
-                        "0",
-                        str(end_time)
-                    ]
-                },
-                "intraFieldOp": "FTOr"
+                "fieldValues": {"values": ["0", str(end_time)]},
+                "intraFieldOp": "FTOr",
             }
 
-            add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+            add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "browseOption"
+            ]
             add_to_time["timeRange"] = {"toTime": end_time}
-            add_backup_time = \
-                restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
-                    "googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+            add_backup_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "cloudAppsRestoreOptions"
+            ]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"][
+                "filters"
+            ]
             add_backup_time.append(adv_search_bkp_time_dict)
 
         return self._process_restore_response(restore_json)
@@ -1487,19 +1505,25 @@ class GoogleSubclient(CloudAppsSubclient):
         for user_id in users:
             try:
                 user = self.search_for_user(user_id)
-                if len(user) != 0 and user.get('user', {}).get('userGUID') is not None:
-                    user_guid_list.append(user.get('user').get('userGUID'))
+                if len(user) != 0 and user.get("user", {}).get("userGUID") is not None:
+                    user_guid_list.append(user.get("user").get("userGUID"))
                 else:
-                    raise SDKException('Subclient', '102', 'User details not found in discovered data')
+                    raise SDKException(
+                        "Subclient", "102", "User details not found in discovered data"
+                    )
             except SDKException:
                 user = self.search_for_shareddrive(user_id)
-                if len(user) != 0 and user.get('folderId') is not None:
-                    user_guid_list.append(user.get('folderId'))
+                if len(user) != 0 and user.get("folderId") is not None:
+                    user_guid_list.append(user.get("folderId"))
                 else:
-                    raise SDKException('Subclient', '102', 'User details not found in discovered data')
+                    raise SDKException(
+                        "Subclient", "102", "User details not found in discovered data"
+                    )
         return user_guid_list
 
-    def process_index_retention_rules(self, index_app_type_id: int, index_server_client_name: str) -> None:
+    def process_index_retention_rules(
+        self, index_app_type_id: int, index_server_client_name: str
+    ) -> None:
         """Process index retention rules for a specified index server.
 
         This method makes an API call to process index retention rules for the given index application type ID
@@ -1520,30 +1544,34 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         if self._commcell_object.clients.has_client(index_server_client_name):
-            index_server_client_id = int(self._commcell_object.clients[index_server_client_name.lower()]['id'])
+            index_server_client_id = int(
+                self._commcell_object.clients[index_server_client_name.lower()]["id"]
+            )
             request_json = {
                 "appType": index_app_type_id,
-                "indexServerClientId": index_server_client_id
+                "indexServerClientId": index_server_client_id,
             }
             flag, response = self._cvpysdk_object.make_request(
-                'POST', self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES'], request_json
+                "POST", self._services["OFFICE365_PROCESS_INDEX_RETENTION_RULES"], request_json
             )
             if flag:
                 if response.json():
                     if "resp" in response.json():
-                        error_code = response.json()['resp']['errorCode']
+                        error_code = response.json()["resp"]["errorCode"]
                         if error_code != 0:
-                            error_string = response.json()['response']['errorString']
-                            o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
-                            raise SDKException('Subclient', '102', o_str)
-                    elif 'errorMessage' in response.json():
-                        error_string = response.json()['errorMessage']
-                        o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
-                        raise SDKException('Subclient', '102', o_str)
+                            error_string = response.json()["response"]["errorString"]
+                            o_str = (
+                                f'Failed to process index retention rules\nError: "{error_string}"'
+                            )
+                            raise SDKException("Subclient", "102", o_str)
+                    elif "errorMessage" in response.json():
+                        error_string = response.json()["errorMessage"]
+                        o_str = f'Failed to process index retention rules\nError: "{error_string}"'
+                        raise SDKException("Subclient", "102", o_str)
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         else:
-            raise SDKException('IndexServers', '102')
+            raise SDKException("IndexServers", "102")
 
     def refresh_retention_stats(self) -> None:
         """Refresh the retention statistics for the Google subclient.
@@ -1559,31 +1587,33 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         request_json = {
-            "appType": constants.GMAIL_INDEX_APP_TYPE if self._instance_object.ca_instance_type == 'GMAIL' else constants.GDRIVE_INDEX_APP_TYPE,
-            "subclientId": int(self.subclient_id)
+            "appType": constants.GMAIL_INDEX_APP_TYPE
+            if self._instance_object.ca_instance_type == "GMAIL"
+            else constants.GDRIVE_INDEX_APP_TYPE,
+            "subclientId": int(self.subclient_id),
         }
-        refresh_retention = self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES']
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', refresh_retention, request_json)
+        refresh_retention = self._services["OFFICE365_PROCESS_INDEX_RETENTION_RULES"]
+        flag, response = self._cvpysdk_object.make_request("POST", refresh_retention, request_json)
 
         if flag:
             if response and response.text.strip():
                 try:
                     resp_json = response.json()
                 except ValueError:
-                    raise SDKException('Response', '102', 'Invalid JSON in response')
+                    raise SDKException("Response", "102", "Invalid JSON in response")
 
-                if 'errorCode' in resp_json:
-                    error_code = resp_json.get('errorCode')
+                if "errorCode" in resp_json:
+                    error_code = resp_json.get("errorCode")
                     if error_code != 0:
-                        error_message = resp_json.get('errorMessage', 'Unknown error')
-                        raise SDKException('Subclient', '102', error_message)
+                        error_message = resp_json.get("errorMessage", "Unknown error")
+                        raise SDKException("Subclient", "102", error_message)
             else:
                 # Response is empty
-                raise SDKException('Response', '102', 'Empty response from server')
+                raise SDKException("Response", "102", "Empty response from server")
         else:
-            raise SDKException('Response', '101',
-                               self._update_response_(response.text if response else ''))
+            raise SDKException(
+                "Response", "101", self._update_response_(response.text if response else "")
+            )
 
         # Return empty dict if response is empty
         return response.json() if response and response.text.strip() else {}
@@ -1601,42 +1631,44 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        if self._instance_object.ca_instance_type == 'GMAIL':
+        if self._instance_object.ca_instance_type == "GMAIL":
             request_json = {
                 "appType": constants.GMAIL_INDEX_APP_TYPE,
-                "gmailIdxStatsReq":
-                    [{
-                        "subclientId": int(self.subclient_id), "type": 1 if user_level else 0}]
+                "gmailIdxStatsReq": [
+                    {"subclientId": int(self.subclient_id), "type": 1 if user_level else 0}
+                ],
             }
         else:
             request_json = {
                 "appType": constants.GDRIVE_INDEX_APP_TYPE,
-                "googleDriveIdxStatsReq":
-                    [{
-                        "subclientId": int(self.subclient_id), "type": 1 if user_level else 0}]
+                "googleDriveIdxStatsReq": [
+                    {"subclientId": int(self.subclient_id), "type": 1 if user_level else 0}
+                ],
             }
-        refresh_backup_stats = self._services['OFFICE365_POPULATE_INDEX_STATS']
+        refresh_backup_stats = self._services["OFFICE365_POPULATE_INDEX_STATS"]
         flag, response = self._cvpysdk_object.make_request(
-            'POST', refresh_backup_stats, request_json)
+            "POST", refresh_backup_stats, request_json
+        )
 
         if flag:
             if response and response.text.strip():
                 try:
                     resp_json = response.json()
                 except ValueError:
-                    raise SDKException('Response', '102', 'Invalid JSON in response')
+                    raise SDKException("Response", "102", "Invalid JSON in response")
 
-                if 'errorCode' in resp_json:
-                    error_code = resp_json.get('errorCode')
+                if "errorCode" in resp_json:
+                    error_code = resp_json.get("errorCode")
                     if error_code != 0:
-                        error_message = resp_json.get('errorMessage', 'Unknown error')
-                        raise SDKException('Subclient', '102', error_message)
+                        error_message = resp_json.get("errorMessage", "Unknown error")
+                        raise SDKException("Subclient", "102", error_message)
             else:
                 # Response is empty
-                raise SDKException('Response', '102', 'Empty response from server')
+                raise SDKException("Response", "102", "Empty response from server")
         else:
-            raise SDKException('Response', '101',
-                               self._update_response_(response.text if response else ''))
+            raise SDKException(
+                "Response", "101", self._update_response_(response.text if response else "")
+            )
 
     def get_client_level_stats(self) -> dict:
         """Retrieve client-level statistics for the current client.
@@ -1652,28 +1684,30 @@ class GoogleSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        get_backup_stats = self._services['OFFICE365_OVERVIEW_STATS'] % self._backupset_object.backupset_id
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', get_backup_stats)
+        get_backup_stats = (
+            self._services["OFFICE365_OVERVIEW_STATS"] % self._backupset_object.backupset_id
+        )
+        flag, response = self._cvpysdk_object.make_request("GET", get_backup_stats)
 
         if flag:
             if response and response.text.strip():
                 try:
                     resp_json = response.json()
                 except ValueError:
-                    raise SDKException('Response', '102', 'Invalid JSON in response')
+                    raise SDKException("Response", "102", "Invalid JSON in response")
 
-                if 'errorCode' in resp_json:
-                    error_code = resp_json.get('errorCode')
+                if "errorCode" in resp_json:
+                    error_code = resp_json.get("errorCode")
                     if error_code != 0:
-                        error_message = resp_json.gt('errorMessage', 'Unknown error')
-                        raise SDKException('Subclient', '102', error_message)
+                        error_message = resp_json.gt("errorMessage", "Unknown error")
+                        raise SDKException("Subclient", "102", error_message)
             else:
                 # Response is empty
-                raise SDKException('Response', '102', 'Empty response from server')
+                raise SDKException("Response", "102", "Empty response from server")
         else:
-            raise SDKException('Response', '101',
-                               self._update_response_(response.text if response else ''))
+            raise SDKException(
+                "Response", "101", self._update_response_(response.text if response else "")
+            )
 
         # Return empty dict if response is empty
         return response.json() if response and response.text.strip() else {}
@@ -1694,43 +1728,42 @@ class GoogleSubclient(CloudAppsSubclient):
         """
         request_json = {
             "bIncludeDeleted": False,
-            "pagingInfo": {
-                "pageNumber": 0,
-                "pageSize": 100
-            },
-            "discoverByType": constants.GMAIL_DISCOVERY_TYPE if self._instance_object.ca_instance_type == 'GMAIL' else constants.GDRIVE_DISCOVERY_TYPE,
+            "pagingInfo": {"pageNumber": 0, "pageSize": 100},
+            "discoverByType": constants.GMAIL_DISCOVERY_TYPE
+            if self._instance_object.ca_instance_type == "GMAIL"
+            else constants.GDRIVE_DISCOVERY_TYPE,
             "cloudAppAssociation": {
                 "subclientEntity": {
                     "subclientId": int(self.subclient_id),
-                    "applicationId": AppIDAType.CLOUD_APP.value
+                    "applicationId": AppIDAType.CLOUD_APP.value,
                 }
-            }
+            },
         }
-        if self._instance_object.ca_instance_type == 'GMAIL':
-            get_backup_stats = self._services['GMAIL_GET_USERS']
+        if self._instance_object.ca_instance_type == "GMAIL":
+            get_backup_stats = self._services["GMAIL_GET_USERS"]
         else:
-            get_backup_stats = self._services['GDRIVE_GET_USERS']
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', get_backup_stats, request_json)
+            get_backup_stats = self._services["GDRIVE_GET_USERS"]
+        flag, response = self._cvpysdk_object.make_request("POST", get_backup_stats, request_json)
 
         if flag:
             if response and response.text.strip():
                 try:
                     resp_json = response.json()
                 except ValueError:
-                    raise SDKException('Response', '102', 'Invalid JSON in response')
+                    raise SDKException("Response", "102", "Invalid JSON in response")
 
-                if 'errorCode' in resp_json:
-                    error_code = resp_json.get('errorCode')
+                if "errorCode" in resp_json:
+                    error_code = resp_json.get("errorCode")
                     if error_code != 0:
-                        error_message = resp_json.get('errorMessage', 'Unknown error')
-                        raise SDKException('Subclient', '102', error_message)
+                        error_message = resp_json.get("errorMessage", "Unknown error")
+                        raise SDKException("Subclient", "102", error_message)
             else:
                 # Response is empty
-                raise SDKException('Response', '102', 'Empty response from server')
+                raise SDKException("Response", "102", "Empty response from server")
         else:
-            raise SDKException('Response', '101',
-                               self._update_response_(response.text if response else ''))
+            raise SDKException(
+                "Response", "101", self._update_response_(response.text if response else "")
+            )
 
         # Return empty dict if response is empty
         return response.json() if response and response.text.strip() else {}
@@ -1759,12 +1792,16 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         req_payload = copy.deepcopy(constants.WEB_SEARCH_PAYLOAD)
-        filters = req_payload.get("advSearchGrp").get("emailFilter")[0].get("filter").get("filters")
+        filters = (
+            req_payload.get("advSearchGrp").get("emailFilter")[0].get("filter").get("filters")
+        )
         for filter in filters:
             if filter.get("field") == "DATA_TYPE":
-                filter["fieldValues"]["values"] = [str(constants.GMAIL_FOLDER_DOCUMENT_TYPE)
-                                                   if self._instance_object.ca_instance_type == 'GMAIL'
-                                                   else str(constants.GDRIVE_FOLDER_DOCUMENT_TYPE)]
+                filter["fieldValues"]["values"] = [
+                    str(constants.GMAIL_FOLDER_DOCUMENT_TYPE)
+                    if self._instance_object.ca_instance_type == "GMAIL"
+                    else str(constants.GDRIVE_FOLDER_DOCUMENT_TYPE)
+                ]
                 break
         filter_field = constants.BROWSE_FIELD_FILTER_PAYLOAD
         filter_field["field"] = "PARENT_GUID"
@@ -1774,8 +1811,12 @@ class GoogleSubclient(CloudAppsSubclient):
         req_payload["advSearchGrp"]["galaxyFilter"][0]["appIdList"] = [int(self.subclient_id)]
         return self.__do_submit_browse_request(req_payload=req_payload)
 
-    def browse_mails(self, label_id: Optional[str] = None, client_level_browse: bool = False,
-                     facet_filters: Optional[dict] = None) -> dict:
+    def browse_mails(
+        self,
+        label_id: Optional[str] = None,
+        client_level_browse: bool = False,
+        facet_filters: Optional[dict] = None,
+    ) -> dict:
         """Browse emails for a user, optionally filtered by label, client level, or facet filters.
 
         Args:
@@ -1799,7 +1840,9 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         req_payload = copy.deepcopy(constants.WEB_SEARCH_PAYLOAD)
-        filters = req_payload.get("advSearchGrp").get("emailFilter")[0].get("filter").get("filters")
+        filters = (
+            req_payload.get("advSearchGrp").get("emailFilter")[0].get("filter").get("filters")
+        )
         for filter in filters:
             if filter.get("field") == "DATA_TYPE":
                 filter["fieldValues"]["values"] = [str(constants.GMAIL_MAIL_DOCUMENT_TYPE)]
@@ -1812,13 +1855,19 @@ class GoogleSubclient(CloudAppsSubclient):
         elif facet_filters and client_level_browse:
             filters.append(facet_filters)
         else:
-            raise SDKException("Subclient", "102", "Filters are needed to be supplied for client level browse")
+            raise SDKException(
+                "Subclient", "102", "Filters are needed to be supplied for client level browse"
+            )
         req_payload["advSearchGrp"]["emailFilter"][0]["filter"]["filters"] = filters
         req_payload["advSearchGrp"]["galaxyFilter"][0]["appIdList"].append(int(self.subclient_id))
         return self.__do_submit_browse_request(req_payload=req_payload)
 
-    def browse_files(self, client_level_browse: bool = False, search_keyword: str = '*',
-                     facet_filters: dict = None) -> dict:
+    def browse_files(
+        self,
+        client_level_browse: bool = False,
+        search_keyword: str = "*",
+        facet_filters: dict = None,
+    ) -> dict:
         """Browse files for the user within the GoogleSubclient.
 
         This method allows you to browse and search for files associated with the user.
@@ -1842,18 +1891,15 @@ class GoogleSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         req_payload = copy.deepcopy(constants.GDRIVE_WEB_SEARCH_PAYLOAD)
-        file_filters = [{
-            "field": "FILE_NAME",
-            "fieldValues": {
-                "values": [
-                    "",
-                    search_keyword
-                ]
-            },
-            "intraFieldOp": 0
-        }]
+        file_filters = [
+            {
+                "field": "FILE_NAME",
+                "fieldValues": {"values": ["", search_keyword]},
+                "intraFieldOp": 0,
+            }
+        ]
 
-        req_payload['advSearchGrp']['fileFilter'] = file_filters
+        req_payload["advSearchGrp"]["fileFilter"] = file_filters
         req_payload["advSearchGrp"]["galaxyFilter"][0]["appIdList"].append(int(self.subclient_id))
 
         if facet_filters:

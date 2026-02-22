@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -38,22 +36,15 @@ AdditionalSettings:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from .exception import SDKException
 
 if TYPE_CHECKING:
-    from .client import Client
-    from .clientgroup import ClientGroup
-    from .organization import Organization
-    from .security.user import User
-    from .security.usergroup import UserGroup
     from .commcell import Commcell
 
 
-class AdditionalSettings(object):
+class AdditionalSettings:
     """Class for performing activity control operations.
 
     Description:
@@ -75,19 +66,20 @@ class AdditionalSettings(object):
         >>> client = commcell.getClient('client_name')
         >>> additional_settings = AdditionalSettings(client)
     """
+
     entity_type_ids_map: Dict[str, int] = {
-        'Client': 3,
-        'ClientGroup': 28,
-        'Organization': 189,
-        'User': 13,
-        'UserGroup': 15,
+        "Client": 3,
+        "ClientGroup": 28,
+        "Organization": 189,
+        "User": 13,
+        "UserGroup": 15,
     }
     entity_id_prop: Dict[str, str] = {
-        'Client': 'client_id',
-        'ClientGroup': 'clientgroup_id',
-        'Organization': 'organization_id',
-        'User': 'user_id',
-        'UserGroup': 'user_group_id',
+        "Client": "client_id",
+        "ClientGroup": "clientgroup_id",
+        "Organization": "organization_id",
+        "User": "user_id",
+        "UserGroup": "user_group_id",
     }
 
     @staticmethod
@@ -126,15 +118,16 @@ class AdditionalSettings(object):
         self._entity_object: Any = entity_object
         entity_class: Optional[str] = self.lookup_entity_type(entity_object)
         if not entity_class:
-            raise SDKException('AdditionalSettings', '101',
-                               f'Unsupported entity of type: {type(entity_object)}')
+            raise SDKException(
+                "AdditionalSettings", "101", f"Unsupported entity of type: {type(entity_object)}"
+            )
 
         self._entity_type_id: int = self.entity_type_ids_map[entity_class]
         self._entity_id: int = getattr(self._entity_object, self.entity_id_prop.get(entity_class))
 
         self._additional_settings: Dict = {}
 
-        self._commcell_object: 'Commcell' = self._entity_object._commcell_object
+        self._commcell_object: Commcell = self._entity_object._commcell_object
 
     def __repr__(self) -> str:
         """String representation of the instance of this class.
@@ -145,9 +138,11 @@ class AdditionalSettings(object):
         Usage:
             >>> str(additional_settings)
         """
-        return f'AdditionalSettings class instance for entity: {self._entity_object}'
+        return f"AdditionalSettings class instance for entity: {self._entity_object}"
 
-    def _v4_workload_settings_api_caller(self, request_type: str, other_props: Optional[Dict] = None):
+    def _v4_workload_settings_api_caller(
+        self, request_type: str, other_props: Optional[Dict] = None
+    ):
         """
         A helper function to call the workload settings API.
 
@@ -168,14 +163,16 @@ class AdditionalSettings(object):
         """
         other_props = other_props or {}
 
-        def api_caller(key_name: str, category: str, data_type: str, value: str, comment: str, enabled: bool):
+        def api_caller(
+            key_name: str, category: str, data_type: str, value: str, comment: str, enabled: bool
+        ):
             properties_dict: Dict[str, Any] = {
                 "additionalSettings": [
                     {
                         "entityInfo": {
                             "entityId": int(self._entity_id),
                             "entityType": self._entity_type_id,
-                            "_type_": self._entity_type_id
+                            "_type_": self._entity_type_id,
                         },
                         "registryKeys": [
                             {
@@ -184,22 +181,31 @@ class AdditionalSettings(object):
                                 "type": data_type,
                                 "value": value,
                                 "enabled": int(enabled),
-                                "comment": comment
-                            } | other_props
-                        ]
+                                "comment": comment,
+                            }
+                            | other_props
+                        ],
                     }
                 ]
             }
             self._commcell_object.wrap_request(
-                request_type, 'SET_ADDITIONAL_SETTINGS',
-                req_kwargs={'payload': properties_dict},
-                sdk_exception=('AdditionalSettings', '102')
+                request_type,
+                "SET_ADDITIONAL_SETTINGS",
+                req_kwargs={"payload": properties_dict},
+                sdk_exception=("AdditionalSettings", "102"),
             )
             self.refresh()
+
         return api_caller
 
     def add_additional_setting(
-            self, key_name: str, category: str, data_type: str, value: str, comment: str = "Added using automation", enabled: bool = True
+        self,
+        key_name: str,
+        category: str,
+        data_type: str,
+        value: str,
+        comment: str = "Added using automation",
+        enabled: bool = True,
     ) -> None:
         """
         Adds additional settings on entity
@@ -216,9 +222,17 @@ class AdditionalSettings(object):
             >>> additional_settings.add_additional_setting('key_name', 'category', 'STRING', 'value')
             >>> additional_settings.add_additional_setting('key_name', 'category', 'INTEGER', '123', comment='custom comment', enabled=False)
         """
-        self._v4_workload_settings_api_caller('POST')(key_name, category, data_type, value, comment, enabled)
+        self._v4_workload_settings_api_caller("POST")(
+            key_name, category, data_type, value, comment, enabled
+        )
 
-    def edit_additional_setting(self, key_name: str, value: Optional[str] = None, comment: Optional[str] = None, enabled: Optional[bool] = None) -> None:
+    def edit_additional_setting(
+        self,
+        key_name: str,
+        value: Optional[str] = None,
+        comment: Optional[str] = None,
+        enabled: Optional[bool] = None,
+    ) -> None:
         """
         Edits an additional setting for the entity
 
@@ -235,16 +249,23 @@ class AdditionalSettings(object):
             >>> additional_settings.edit_additional_setting('key_name', value='new_value')
             >>> additional_settings.edit_additional_setting('key_name', comment='new comment', enabled=True)
         """
-        key_details: Optional[Tuple[str, str, str, str, str, bool]] = self.all_additional_settings.get(key_name)
+        key_details: Optional[Tuple[str, str, str, str, str, bool]] = (
+            self.all_additional_settings.get(key_name)
+        )
         if not key_details:
-            raise SDKException('AdditionalSettings', '102',
-                               f'Key {key_name} does not exist on entity: {self._entity_object}')
+            raise SDKException(
+                "AdditionalSettings",
+                "102",
+                f"Key {key_name} does not exist on entity: {self._entity_object}",
+            )
         category: str = key_details[1]
         data_type: str = key_details[2]
         value: str = value or key_details[3]
         comment: str = comment or key_details[4]
         enabled: bool = enabled if enabled is not None else key_details[5]
-        self._v4_workload_settings_api_caller('PUT')(key_name, category, data_type, value, comment, enabled)
+        self._v4_workload_settings_api_caller("PUT")(
+            key_name, category, data_type, value, comment, enabled
+        )
 
     def delete_additional_setting(self, key_name: str) -> None:
         """
@@ -256,10 +277,12 @@ class AdditionalSettings(object):
         Usage:
             >>> additional_settings.delete_additional_setting('key_name')
         """
-        key_details: Optional[Tuple[str, str, str, str, str, bool]] = self.all_additional_settings.get(key_name)
+        key_details: Optional[Tuple[str, str, str, str, str, bool]] = (
+            self.all_additional_settings.get(key_name)
+        )
         if not key_details:
             return
-        self._v4_workload_settings_api_caller('PUT', {'deleted': 1})(*key_details)
+        self._v4_workload_settings_api_caller("PUT", {"deleted": 1})(*key_details)
 
     def get_additional_settings(self) -> Dict[str, Tuple[str, str, str, str, str, bool]]:
         """
@@ -274,18 +297,18 @@ class AdditionalSettings(object):
             >>> settings = additional_settings.get_additional_settings()
         """
         response_json: Dict = self._commcell_object.wrap_request(
-            'GET', 'GET_ADDITIONAL_SETTINGS', (self._entity_type_id, self._entity_id)
+            "GET", "GET_ADDITIONAL_SETTINGS", (self._entity_type_id, self._entity_id)
         )
         return {
-            setting['name']: (
-                setting['name'],
-                setting['category'],
-                setting['type'],
-                setting.get('values', [{}])[0].get('value', ''),
-                setting.get('comment', ''),
-                bool(setting.get('enabled', True))
+            setting["name"]: (
+                setting["name"],
+                setting["category"],
+                setting["type"],
+                setting.get("values", [{}])[0].get("value", ""),
+                setting.get("comment", ""),
+                bool(setting.get("enabled", True)),
             )
-            for setting in response_json.get('additionalSettings', [])
+            for setting in response_json.get("additionalSettings", [])
         }
 
     @property
@@ -302,7 +325,9 @@ class AdditionalSettings(object):
             >>> all_settings = additional_settings.all_additional_settings
         """
         if not self._additional_settings:
-            self._additional_settings: Dict[str, Tuple[str, str, str, str, str, bool]] = self.get_additional_settings()
+            self._additional_settings: Dict[str, Tuple[str, str, str, str, str, bool]] = (
+                self.get_additional_settings()
+            )
         return self._additional_settings
 
     def refresh(self) -> None:

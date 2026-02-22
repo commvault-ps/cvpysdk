@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -169,7 +167,7 @@ DiskLibrary:
     _get_library_properties()   --  gets the disk library properties
 
     _get_advanced_library_properties() --  gets the advanced disk library  properties
-    
+
     refresh()                   --  Refresh the properties of this disk library.
 
 DiskLibrary instance Attributes
@@ -215,9 +213,9 @@ TapeLibrary:
 
     verify_media_status()                     --  Verify media status
     _process_media_details()                   --  fetch required details and sets media details class variable.
-    _get_all_media_details()                   --  fetch all media details. 
+    _get_all_media_details()                   --  fetch all media details.
     _get_media_id_list()                       --  return media Ids for the given barcode media names.
-    _perform_media_operations()                --  common function to perform media operations 
+    _perform_media_operations()                --  common function to perform media operations
 
     get_media_status()                        --  return media status for the given media barcode.
     mark_media_appendable()                   --  mark the given list of media appendable.
@@ -226,19 +224,18 @@ TapeLibrary:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-import json, time, uuid
+import time
 from base64 import b64encode
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from .exception import SDKException
 
 if TYPE_CHECKING:
-    from .job import Job
     from .commcell import Commcell
+    from .job import Job
 
-class MediaAgents(object):
+
+class MediaAgents:
     """
     Manages and interacts with media agents associated with a CommCell.
 
@@ -260,7 +257,7 @@ class MediaAgents(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize a MediaAgents object with the given Commcell connection.
 
         Args:
@@ -275,7 +272,7 @@ class MediaAgents(object):
         #ai-gen-doc
         """
         self._commcell_object = commcell_object
-        self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS']
+        self._MEDIA_AGENTS = self._commcell_object._services["GET_MEDIA_AGENTS"]
         self._media_agents = None
         self.refresh()
 
@@ -293,10 +290,10 @@ class MediaAgents(object):
             MediaAgent1, MediaAgent2, MediaAgent3
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Media Agent')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Media Agent")
 
         for index, media_agent in enumerate(self._media_agents):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, media_agent)
+            sub_str = f"{index + 1:^5}\t{media_agent:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -353,31 +350,31 @@ class MediaAgents(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._MEDIA_AGENTS
+            "GET", self._MEDIA_AGENTS
         )
 
         if flag:
             if isinstance(response.json(), dict):
-                media_agents = response.json().get('mediaAgentList', [])
+                media_agents = response.json().get("mediaAgentList", [])
                 media_agents_dict = {}
 
                 for media_agent in media_agents:
-                    temp_name = media_agent['mediaAgent']['mediaAgentName'].lower()
-                    temp_id = str(media_agent['mediaAgent']['mediaAgentId']).lower()
-                    temp_os = media_agent['osInfo']['OsDisplayInfo']['OSName']
-                    temp_status = bool(media_agent['status'])
+                    temp_name = media_agent["mediaAgent"]["mediaAgentName"].lower()
+                    temp_id = str(media_agent["mediaAgent"]["mediaAgentId"]).lower()
+                    temp_os = media_agent["osInfo"]["OsDisplayInfo"]["OSName"]
+                    temp_status = bool(media_agent["status"])
                     media_agents_dict[temp_name] = {
-                        'id': temp_id,
-                        'os_info': temp_os,
-                        'is_online': temp_status
+                        "id": temp_id,
+                        "os_info": temp_os,
+                        "is_online": temp_status,
                     }
 
                 return media_agents_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_media_agents(self) -> Dict[str, Dict[str, Any]]:
@@ -430,11 +427,11 @@ class MediaAgents(object):
         #ai-gen-doc
         """
         if not isinstance(media_agent_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         return self._media_agents and media_agent_name.lower() in self._media_agents
 
-    def get(self, media_agent_name: str) -> 'MediaAgent':
+    def get(self, media_agent_name: str) -> "MediaAgent":
         """Retrieve a MediaAgent object by its name.
 
         Args:
@@ -455,17 +452,19 @@ class MediaAgents(object):
         #ai-gen-doc
         """
         if not isinstance(media_agent_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         else:
             media_agent_name = media_agent_name.lower()
 
             if self.has_media_agent(media_agent_name):
-                return MediaAgent(self._commcell_object,
-                                  media_agent_name,
-                                  self._media_agents[media_agent_name]['id'])
+                return MediaAgent(
+                    self._commcell_object,
+                    media_agent_name,
+                    self._media_agents[media_agent_name]["id"],
+                )
 
             raise SDKException(
-                'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
+                "Storage", "102", f"No media agent exists with name: {media_agent_name}"
             )
 
     def delete(self, media_agent: str, force: bool = False) -> None:
@@ -488,39 +487,45 @@ class MediaAgents(object):
         #ai-gen-doc
         """
         if not isinstance(media_agent, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         else:
             media_agent = media_agent.lower()
 
             if self.has_media_agent(media_agent):
-                mediagent_id = self.all_media_agents[media_agent]['id']
-                mediagent_delete_service = self._commcell_object._services['MEDIA_AGENT'] % (mediagent_id)
+                mediagent_id = self.all_media_agents[media_agent]["id"]
+                mediagent_delete_service = self._commcell_object._services["MEDIA_AGENT"] % (
+                    mediagent_id
+                )
                 if force:
                     mediagent_delete_service += "?forceDelete=1"
 
-                flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', mediagent_delete_service)
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    "DELETE", mediagent_delete_service
+                )
 
                 error_code = 0
                 if flag:
-                    if 'errorCode' in response.json():
-                        o_str = 'Failed to delete mediaagent'
-                        error_code = response.json()['errorCode']
+                    if "errorCode" in response.json():
+                        o_str = "Failed to delete mediaagent"
+                        error_code = response.json()["errorCode"]
                         if error_code == 0:
                             # initialize the mediaagents again
                             # so the mediaagents object has all the mediaagents
                             self.refresh()
                         else:
-                            error_message = response.json()['errorMessage']
+                            error_message = response.json()["errorMessage"]
                             if error_message:
-                                o_str += '\nError: "{0}"'.format(error_message)
-                            raise SDKException('Storage', '102', o_str)
+                                o_str += f'\nError: "{error_message}"'
+                            raise SDKException("Storage", "102", o_str)
                     else:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
                 else:
-                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+                    raise SDKException(
+                        "Response", "101", self._commcell_object._update_response_(response.text)
+                    )
             else:
                 raise SDKException(
-                    'Storage', '102', 'No Mediaagent exists with name: {0}'.format(media_agent)
+                    "Storage", "102", f"No Mediaagent exists with name: {media_agent}"
                 )
 
     def refresh(self) -> None:
@@ -539,7 +544,7 @@ class MediaAgents(object):
         self._media_agents = self._get_media_agents()
 
 
-class MediaAgent(object):
+class MediaAgent:
     """
     Represents a specific media agent within a CommCell environment.
 
@@ -562,7 +567,9 @@ class MediaAgent(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', media_agent_name: str, media_agent_id: int = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", media_agent_name: str, media_agent_id: int = None
+    ) -> None:
         """Initialize a MediaAgent object.
 
         Args:
@@ -585,17 +592,17 @@ class MediaAgent(object):
         else:
             self._media_agent_id = self._get_media_agent_id()
 
-        self._MEDIA_AGENT = self._commcell_object._services['MEDIA_AGENT'] % (
+        self._MEDIA_AGENT = self._commcell_object._services["MEDIA_AGENT"] % (
             self._media_agent_name
         )
 
-        self._CLOUD_MEDIA_AGENT = self._commcell_object._services['CLOUD_MEDIA_AGENT'] % (
+        self._CLOUD_MEDIA_AGENT = self._commcell_object._services["CLOUD_MEDIA_AGENT"] % (
             self._media_agent_id
         )
 
-        self._CREATE_TASK = self._commcell_object._services['CREATE_TASK']
-        self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS'] + "/{0}".format(
-            self.media_agent_id
+        self._CREATE_TASK = self._commcell_object._services["CREATE_TASK"]
+        self._MEDIA_AGENTS = (
+            self._commcell_object._services["GET_MEDIA_AGENTS"] + f"/{self.media_agent_id}"
         )
 
         self.refresh()
@@ -657,18 +664,18 @@ class MediaAgent(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._MEDIA_AGENTS
+            "GET", self._MEDIA_AGENTS
         )
 
         if flag:
-            if response.json() and 'mediaAgentList' in response.json():
-                self._media_agent_info = response.json()['mediaAgentList'][0]
+            if response.json() and "mediaAgentList" in response.json():
+                self._media_agent_info = response.json()["mediaAgentList"][0]
                 return response.json()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _initialize_media_agent_properties(self) -> None:
         """Initialize the properties for this MediaAgent instance.
@@ -695,50 +702,59 @@ class MediaAgent(object):
 
         properties = self._get_media_agent_properties()
 
-        if properties['mediaAgentList']:
-            mediaagent_list = properties['mediaAgentList'][0]
+        if properties["mediaAgentList"]:
+            mediaagent_list = properties["mediaAgentList"][0]
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
-        status = mediaagent_list.get('status')
+        status = mediaagent_list.get("status")
         if status == 1:
             self._is_online = True
         else:
             self._is_online = False
 
-        if mediaagent_list['osInfo']['OsDisplayInfo']['OSName']:
-            platform = mediaagent_list['osInfo']['OsDisplayInfo']['OSName']
-            if 'windows' in platform.lower():
-                self._platform = 'WINDOWS'
-            elif 'unix' in platform.lower() or 'linux' in platform.lower():
-                self._platform = 'UNIX'
+        if mediaagent_list["osInfo"]["OsDisplayInfo"]["OSName"]:
+            platform = mediaagent_list["osInfo"]["OsDisplayInfo"]["OSName"]
+            if "windows" in platform.lower():
+                self._platform = "WINDOWS"
+            elif "unix" in platform.lower() or "linux" in platform.lower():
+                self._platform = "UNIX"
             else:
                 self._platform = platform
 
-        if mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps']['cacheEnabled']:
-            self._index_cache_enabled = mediaagent_list['mediaAgentProps'][
-                'mediaAgentIdxCacheProps']['cacheEnabled']
+        if mediaagent_list["mediaAgentProps"]["mediaAgentIdxCacheProps"]["cacheEnabled"]:
+            self._index_cache_enabled = mediaagent_list["mediaAgentProps"][
+                "mediaAgentIdxCacheProps"
+            ]["cacheEnabled"]
 
-        if mediaagent_list['mediaAgentProps']['indexLogsCacheInfo']['logsCachePath']['path']:
-            self._index_cache = mediaagent_list['mediaAgentProps']['indexLogsCacheInfo'
-                                                                   ]['logsCachePath']['path']
+        if mediaagent_list["mediaAgentProps"]["indexLogsCacheInfo"]["logsCachePath"]["path"]:
+            self._index_cache = mediaagent_list["mediaAgentProps"]["indexLogsCacheInfo"][
+                "logsCachePath"
+            ]["path"]
 
-        if mediaagent_list['powerManagementInfo']['isPowerMgmtSupported']:
-            self._is_power_mgmt_supported = mediaagent_list['powerManagementInfo']['isPowerMgmtSupported']
+        if mediaagent_list["powerManagementInfo"]["isPowerMgmtSupported"]:
+            self._is_power_mgmt_supported = mediaagent_list["powerManagementInfo"][
+                "isPowerMgmtSupported"
+            ]
 
         if self._is_power_mgmt_supported:
+            if mediaagent_list["powerManagementInfo"]["isPowerManagementEnabled"]:
+                self._is_power_management_enabled = mediaagent_list["powerManagementInfo"][
+                    "isPowerManagementEnabled"
+                ]
 
-            if mediaagent_list['powerManagementInfo']['isPowerManagementEnabled']:
-                self._is_power_management_enabled = mediaagent_list['powerManagementInfo']['isPowerManagementEnabled']
+            if mediaagent_list["powerManagementInfo"]["isPowerMgmtAllowed"]:
+                self._is_power_mgmt_allowed = mediaagent_list["powerManagementInfo"][
+                    "isPowerMgmtAllowed"
+                ]
 
-            if mediaagent_list['powerManagementInfo']['isPowerMgmtAllowed']:
-                self._is_power_mgmt_allowed = mediaagent_list['powerManagementInfo']['isPowerMgmtAllowed']
+            if mediaagent_list["powerManagementInfo"]["powerStatus"]:
+                self._power_status = mediaagent_list["powerManagementInfo"]["powerStatus"]
 
-            if mediaagent_list['powerManagementInfo']['powerStatus']:
-                self._power_status = mediaagent_list['powerManagementInfo']['powerStatus']
-
-            if mediaagent_list['powerManagementInfo']['selectedCloudController']['clientName']:
-                self._power_management_controller_name = mediaagent_list['powerManagementInfo']['selectedCloudController']['clientName']
+            if mediaagent_list["powerManagementInfo"]["selectedCloudController"]["clientName"]:
+                self._power_management_controller_name = mediaagent_list["powerManagementInfo"][
+                    "selectedCloudController"
+                ]["clientName"]
 
     def enable_power_management(self, pseudo_client_name: str) -> None:
         """Enable power management for the MediaAgent using the specified cloud controller.
@@ -767,15 +783,14 @@ class MediaAgent(object):
             payLoad = '<EVGui_SetCloudVMManagementInfoReq hostId="' + self.media_agent_id + '" useMediaAgent="1"> <powerManagementInfo isPowerManagementEnabled="1" > <selectedCloudController clientId="' + PseudoClientName_client_id + '" clientName="' + \
                       PseudoClientName + '"/></powerManagementInfo></EVGui_SetCloudVMManagementInfoReq>'
             """
-            payLoad = '<EVGui_SetCloudVMManagementInfoReq hostId="{0}" useMediaAgent="1"> <powerManagementInfo isPowerManagementEnabled="1" > <selectedCloudController clientId="{1}" clientName="{2}"/></powerManagementInfo></EVGui_SetCloudVMManagementInfoReq>'.format(
-                self.media_agent_id, pseudo_client_name_client_id, pseudo_client_name)
+            payLoad = f'<EVGui_SetCloudVMManagementInfoReq hostId="{self.media_agent_id}" useMediaAgent="1"> <powerManagementInfo isPowerManagementEnabled="1" > <selectedCloudController clientId="{pseudo_client_name_client_id}" clientName="{pseudo_client_name}"/></powerManagementInfo></EVGui_SetCloudVMManagementInfoReq>'
 
             response = self._commcell_object._qoperation_execute(payLoad)
 
-            if response['errorCode'] != 0:
-                raise SDKException('Response', '102', str(response))
+            if response["errorCode"] != 0:
+                raise SDKException("Response", "102", str(response))
         else:
-            raise SDKException('Storage', '102', "Power management is not supported")
+            raise SDKException("Storage", "102", "Power management is not supported")
 
     def _perform_power_operation(self, operation: int) -> None:
         """Perform a power operation on the MediaAgent.
@@ -799,22 +814,21 @@ class MediaAgent(object):
 
         #ai-gen-doc
         """
-        if not operation in ("1", "0"):
-            raise SDKException('Response', '102',
-                               "Invalid power operation type")
+        if operation not in ("1", "0"):
+            raise SDKException("Response", "102", "Invalid power operation type")
 
         if self._is_power_management_enabled:
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'GET', self._CLOUD_MEDIA_AGENT + "/" + operation
+                "GET", self._CLOUD_MEDIA_AGENT + "/" + operation
             )
             if not flag:
-                raise SDKException('Response', '102',
-                                   str(response))
-            if response.json()['errorCode'] != 0:
-                raise SDKException('Response', '102', str(response))
+                raise SDKException("Response", "102", str(response))
+            if response.json()["errorCode"] != 0:
+                raise SDKException("Response", "102", str(response))
         else:
-            raise SDKException('Storage', '102',
-                               'Power management is NOT enabled or NOT supported')
+            raise SDKException(
+                "Storage", "102", "Power management is NOT enabled or NOT supported"
+            )
 
     def power_on(self, wait_till_online: bool = True) -> None:
         """Power on the MediaAgent.
@@ -822,7 +836,7 @@ class MediaAgent(object):
         This method initiates the power-on sequence for the MediaAgent. By default, it waits until the MediaAgent is fully online before returning. If `wait_till_online` is set to False, the method submits the power-on request and returns immediately without waiting for the MediaAgent to become online.
 
         Args:
-            wait_till_online: 
+            wait_till_online:
                 If True (default), waits until the MediaAgent is online before returning.
                 If False, submits the power-on request and returns immediately.
 
@@ -846,7 +860,7 @@ class MediaAgent(object):
         This method initiates a power-off operation for the MediaAgent. By default, it waits until the MediaAgent is fully stopped before returning. If `wait_till_stopped` is set to False, the method submits the power-off request and returns immediately.
 
         Args:
-            wait_till_stopped: 
+            wait_till_stopped:
                 If True (default), waits until the MediaAgent is stopped before returning.
                 If False, submits the power-off request and returns immediately.
 
@@ -892,22 +906,31 @@ class MediaAgent(object):
         """
         if time_out_sec != None:
             if not isinstance(time_out_sec, int):
-                raise SDKException('Storage', '102',
-                                   'Expected an integer value for [time_out_sec]')
+                raise SDKException(
+                    "Storage", "102", "Expected an integer value for [time_out_sec]"
+                )
 
         start_time = time.time()
         while self.current_power_status != expected_power_status:
             time.sleep(10)
             if time_out_sec != None:
                 if time.time() - start_time > time_out_sec:
-                    raise SDKException('Storage', '102',
-                                       'The expected power status is not achieved within expected time')
+                    raise SDKException(
+                        "Storage",
+                        "102",
+                        "The expected power status is not achieved within expected time",
+                    )
 
-    def change_index_cache(self, old_index_cache_path: str, new_index_cache_path: str, 
-                           logs_cache_enabled: bool = False, logs_cache_path: Optional[str] = None) -> 'Job':
+    def change_index_cache(
+        self,
+        old_index_cache_path: str,
+        new_index_cache_path: str,
+        logs_cache_enabled: bool = False,
+        logs_cache_path: Optional[str] = None,
+    ) -> "Job":
         """Initiate a catalog migration job to move the index cache from one path to another.
 
-        This method starts a catalog migration job using the CreateTask endpoint, migrating the index cache 
+        This method starts a catalog migration job using the CreateTask endpoint, migrating the index cache
         from the specified source path to the destination path on the MediaAgent.
 
         Args:
@@ -935,41 +958,35 @@ class MediaAgent(object):
         media_id = int(self.media_agent_id)
         request_json = {
             "mediaAgentInfo": {
-                "mediaAgent": {
-                    "mediaAgentId": media_id
-                },
+                "mediaAgent": {"mediaAgentId": media_id},
                 "mediaAgentProps": {
-                    "indexDirectory": {
-                        "path": new_index_cache_path
-                    },
+                    "indexDirectory": {"path": new_index_cache_path},
                     "indexLogsCacheInfo": {
                         "isEnabled": logs_cache_enabled,
-                        "logsCachePath": {
-                            "path": logs_cache_path
-                        }
-                    }
-                }
+                        "logsCachePath": {"path": logs_cache_path},
+                    },
+                },
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._MEDIA_AGENTS, request_json
+            "PUT", self._MEDIA_AGENTS, request_json
         )
 
         if flag:
-            if response.json() and 'jobIds' in response.json() and response.json()['jobIds'][0]:
-
+            if response.json() and "jobIds" in response.json() and response.json()["jobIds"][0]:
                 response_json = response.json()
                 catalogmigration_jobid = response_json["jobIds"][0]
                 catalogmigration_job_obj = self._commcell_object.job_controller.get(
-                    catalogmigration_jobid)
+                    catalogmigration_jobid
+                )
                 return catalogmigration_job_obj
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def set_state(self, enable: bool = True) -> None:
         """Enable or disable the media agent by updating its properties.
@@ -989,22 +1006,18 @@ class MediaAgent(object):
         """
 
         if type(enable) != bool:
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         media_id = int(self.media_agent_id)
         request_json = {
             "mediaAgentInfo": {
-                "mediaAgent": {
-                    "mediaAgentId": media_id
-                },
-                "mediaAgentProps": {
-                    "enableMA": enable
-                }
+                "mediaAgent": {"mediaAgentId": media_id},
+                "mediaAgentProps": {"enableMA": enable},
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._MEDIA_AGENTS, request_json
+            "PUT", self._MEDIA_AGENTS, request_json
         )
 
         # check for response
@@ -1012,14 +1025,13 @@ class MediaAgent(object):
         if flag:
             if response and response.json():
                 response = response.json()
-                if response.get('error', {}).get('errorCode', -1) != 0:
-                    error_message = response.get('error', {}).get('errorString', '')
-                    raise SDKException('Storage', '102', error_message)
+                if response.get("error", {}).get("errorCode", -1) != 0:
+                    error_message = response.get("error", {}).get("errorString", "")
+                    raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
-
+            raise SDKException("Response", "101")
 
     def mark_for_maintenance(self, mark: bool = False) -> None:
         """Mark or unmark the MediaAgent for maintenance mode.
@@ -1028,7 +1040,7 @@ class MediaAgent(object):
         depending on the value of the `mark` parameter.
 
         Args:
-            mark: 
+            mark:
                 True to mark the MediaAgent for maintenance (offline).
                 False to unmark the MediaAgent and bring it back online.
 
@@ -1044,34 +1056,30 @@ class MediaAgent(object):
         """
 
         if type(mark) != bool:
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         media_id = int(self.media_agent_id)
         request_json = {
             "mediaAgentInfo": {
-                "mediaAgent": {
-                    "mediaAgentId": media_id
-                },
-                "mediaAgentProps": {
-                    "markMAOfflineForMaintenance": mark
-                }
+                "mediaAgent": {"mediaAgentId": media_id},
+                "mediaAgentProps": {"markMAOfflineForMaintenance": mark},
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._MEDIA_AGENTS, request_json
+            "PUT", self._MEDIA_AGENTS, request_json
         )
 
         if flag:
             if response and response.json():
                 response = response.json()
-                if response.get('error', {}).get('errorCode', -1) != 0:
-                    error_message = response.get('error', {}).get('errorString', '')
-                    raise SDKException('Storage', '102', error_message)
+                if response.get("error", {}).get("errorCode", -1) != 0:
+                    error_message = response.get("error", {}).get("errorString", "")
+                    raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def set_ransomware_protection(self, status: bool) -> None:
         """Enable or disable ransomware protection on a Windows MediaAgent.
@@ -1093,39 +1101,35 @@ class MediaAgent(object):
         #ai-gen-doc
         """
         # this works only on WINDOWS MA
-        if self._platform != 'WINDOWS':
-            raise SDKException('Storage', '101')
+        if self._platform != "WINDOWS":
+            raise SDKException("Storage", "101")
 
         if type(status) != bool:
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         media_id = int(self.media_agent_id)
 
         request_json = {
             "mediaAgentInfo": {
-                "mediaAgent": {
-                    "mediaAgentId": media_id
-                },
-                "mediaAgentProps": {
-                    "isRansomwareProtected": status
-                }
+                "mediaAgent": {"mediaAgentId": media_id},
+                "mediaAgentProps": {"isRansomwareProtected": status},
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._MEDIA_AGENTS, request_json
+            "PUT", self._MEDIA_AGENTS, request_json
         )
 
         if flag:
             if response and response.json():
                 response = response.json()
-                if response.get('error', {}).get('errorCode', -1) != 0:
-                    error_message = response.get('error', {}).get('errorString', '')
-                    raise SDKException('Storage', '102', error_message)
+                if response.get("error", {}).get("errorCode", -1) != 0:
+                    error_message = response.get("error", {}).get("errorString", "")
+                    raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def set_concurrent_lan(self, enable: bool = True) -> None:
         """Enable or disable concurrent LAN backup in the Media Agent properties.
@@ -1145,34 +1149,30 @@ class MediaAgent(object):
         """
 
         if type(enable) != bool:
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         media_id = int(self.media_agent_id)
         request_json = {
             "mediaAgentInfo": {
-                "mediaAgent": {
-                    "mediaAgentId": media_id
-                },
-                "mediaAgentProps": {
-                    "optimizeForConcurrentLANBackups": enable
-                }
+                "mediaAgent": {"mediaAgentId": media_id},
+                "mediaAgentProps": {"optimizeForConcurrentLANBackups": enable},
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._MEDIA_AGENTS, request_json
+            "PUT", self._MEDIA_AGENTS, request_json
         )
 
         if flag:
             if response and response.json():
                 response = response.json()
-                if response.get('error', {}).get('errorCode', -1) != 0:
-                    error_message = response.get('error', {}).get('errorString', '')
-                    raise SDKException('Storage', '102', error_message)
+                if response.get("error", {}).get("errorCode", -1) != 0:
+                    error_message = response.get("error", {}).get("errorString", "")
+                    raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     @property
     def name(self) -> str:
@@ -1188,7 +1188,7 @@ class MediaAgent(object):
 
         #ai-gen-doc
         """
-        return self._media_agent_info['mediaAgent']['displayName']
+        return self._media_agent_info["mediaAgent"]["displayName"]
 
     @property
     def media_agent_name(self) -> str:
@@ -1328,7 +1328,14 @@ class MediaAgent(object):
         #ai-gen-doc
         """
         self.refresh()
-        power_status = {0: 'Unknown', 1: 'Starting', 2: 'Started', 3: 'Online', 4: 'Stopping', 5: 'Stopped'}
+        power_status = {
+            0: "Unknown",
+            1: "Starting",
+            2: "Started",
+            3: "Online",
+            4: "Stopping",
+            5: "Stopped",
+        }
         return power_status.get(self._power_status)
 
     def refresh(self) -> None:
@@ -1348,7 +1355,7 @@ class MediaAgent(object):
         self._initialize_media_agent_properties()
 
 
-class Libraries(object):
+class Libraries:
     """
     Class for managing and interacting with libraries within a CommCell environment.
 
@@ -1365,7 +1372,7 @@ class Libraries(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize an instance of the DiskLibraries class with a Commcell connection.
 
         Args:
@@ -1380,7 +1387,7 @@ class Libraries(object):
         #ai-gen-doc
         """
         self._commcell_object = commcell_object
-        self._LIBRARY = self._commcell_object._services['LIBRARY']
+        self._LIBRARY = self._commcell_object._services["LIBRARY"]
 
         self._libraries = None
         self.refresh()
@@ -1407,16 +1414,16 @@ class Libraries(object):
 
         #ai-gen-doc
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._LIBRARY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._LIBRARY)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                libraries = response.json()['response']
+            if response.json() and "response" in response.json():
+                libraries = response.json()["response"]
                 libraries_dict = {}
 
                 for library in libraries:
-                    temp_name = library['entityInfo']['name'].lower()
-                    temp_id = str(library['entityInfo']['id']).lower()
+                    temp_name = library["entityInfo"]["name"].lower()
+                    temp_id = str(library["entityInfo"]["id"]).lower()
                     libraries_dict[temp_name] = temp_id
 
                 return libraries_dict
@@ -1424,8 +1431,7 @@ class Libraries(object):
                 return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def has_library(self, library_name: str) -> bool:
         """Check if a library with the specified name exists in the Commcell.
@@ -1448,7 +1454,7 @@ class Libraries(object):
         #ai-gen-doc
         """
         if not isinstance(library_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         return self._libraries and library_name.lower() in self._libraries
 
@@ -1488,7 +1494,7 @@ class DiskLibraries(Libraries):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize the DiskLibraries class with a Commcell connection object.
 
         Args:
@@ -1519,10 +1525,10 @@ class DiskLibraries(Libraries):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Disk Library')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Disk Library")
 
         for index, library in enumerate(self._libraries):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, library)
+            sub_str = f"{index + 1:^5}\t{library:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -1570,14 +1576,14 @@ class DiskLibraries(Libraries):
     def add(
         self,
         library_name: str,
-        media_agent: 'Union[str, MediaAgent]',
+        media_agent: "Union[str, MediaAgent]",
         mount_path: str,
         username: str = "",
         password: str = "",
         servertype: int = 0,
         saved_credential_name: str = "",
-        **kwargs: Any
-    ) -> 'DiskLibrary':
+        **kwargs: Any,
+    ) -> "DiskLibrary":
         """Add a new Disk Library to the Commcell.
 
         This method creates a new disk library on the specified media agent with the given mount path and credentials.
@@ -1617,20 +1623,22 @@ class DiskLibraries(Libraries):
 
         #ai-gen-doc
         """
-        if not (isinstance(library_name, str) and
-                isinstance(mount_path, str) and
-                isinstance(username, str) and
-                isinstance(password, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(library_name, str)
+            and isinstance(mount_path, str)
+            and isinstance(username, str)
+            and isinstance(password, str)
+        ):
+            raise SDKException("Storage", "101")
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
         elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
-            raise SDKException('Storage', '103')
+            raise SDKException("Storage", "103")
 
-        proxy_password = kwargs.get('proxy_password', '')
+        proxy_password = kwargs.get("proxy_password", "")
 
         request_json = {
             "isConfigRequired": 1,
@@ -1641,10 +1649,8 @@ class DiskLibraries(Libraries):
                 "loginName": username,
                 "password": b64encode(password.encode()).decode(),
                 "opType": 1,
-                "savedCredential":{
-                    "credentialName": saved_credential_name
-                }
-            }
+                "savedCredential": {"credentialName": saved_credential_name},
+            },
         }
 
         if servertype > 0:
@@ -1652,43 +1658,46 @@ class DiskLibraries(Libraries):
             request_json["library"]["isCloud"] = 1
 
             if saved_credential_name:
-                request_json["library"]["password"] = b64encode("XXXXX".encode()).decode()
+                request_json["library"]["password"] = b64encode(b"XXXXX").decode()
 
             if proxy_password != "":
-                request_json["library"]["proxyPassword"] = b64encode(proxy_password.encode()).decode()
+                request_json["library"]["proxyPassword"] = b64encode(
+                    proxy_password.encode()
+                ).decode()
 
             if servertype == 59:
                 request_json["library"]["HybridCloudOption"] = {
-                    "enableHybridCloud": "2", "diskLibrary": {"_type_": "9"}}
+                    "enableHybridCloud": "2",
+                    "diskLibrary": {"_type_": "9"},
+                }
                 request_json["library"]["savedCredential"] = {"_type_": "9"}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._LIBRARY, request_json
+            "POST", self._LIBRARY, request_json
         )
 
         if flag:
             if response.json():
-                if 'library' in response.json():
-                    library = response.json()['library']
+                if "library" in response.json():
+                    library = response.json()["library"]
 
                     # initialize the libraries again
                     # so the libraries object has all the libraries
                     self.refresh()
 
                     return DiskLibrary(
-                        self._commcell_object,
-                        library['libraryName'],
-                        library_details=library)
-                elif 'errorCode' in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Failed to create disk library\nError: "{0}"'.format(error_message)
+                        self._commcell_object, library["libraryName"], library_details=library
+                    )
+                elif "errorCode" in response.json():
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Failed to create disk library\nError: "{error_message}"'
 
-                    raise SDKException('Storage', '102', o_str)
+                    raise SDKException("Storage", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def delete(self, library_name: str) -> None:
         """Delete the specified disk library by name.
@@ -1697,7 +1706,7 @@ class DiskLibraries(Libraries):
             library_name: The name of the disk library to delete.
 
         Raises:
-            SDKException: If the library_name is not a string, if no library exists with the given name, 
+            SDKException: If the library_name is not a string, if no library exists with the given name,
                 or if the response from the server is incorrect.
 
         Example:
@@ -1708,52 +1717,46 @@ class DiskLibraries(Libraries):
         #ai-gen-doc
         """
         if not isinstance(library_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if not self.has_library(library_name):
-            raise SDKException('Storage',
-                               '102',
-                               'No library exists with name: {0}'.
-                               format(library_name))
+            raise SDKException("Storage", "102", f"No library exists with name: {library_name}")
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "isDeconfigLibrary": 1,
-                    "library":
-                        {
-                            "opType": 2,
-                            "libraryName": library_name
-                        }
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "isDeconfigLibrary": 1,
+                "library": {"opType": 2, "libraryName": library_name},
+            }
         }
-        exec_command = self._commcell_object._services['EXECUTE_QCOMMAND']
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', exec_command, request_json)
+        exec_command = self._commcell_object._services["EXECUTE_QCOMMAND"]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", exec_command, request_json
+        )
 
         if flag:
             if response.json():
-                if 'library' in response.json():
-                    _response = response.json()['library']
+                if "library" in response.json():
+                    _response = response.json()["library"]
 
-                    if 'errorCode' in _response:
-                        if _response['errorCode'] == 0:
+                    if "errorCode" in _response:
+                        if _response["errorCode"] == 0:
                             self.refresh()
                         else:
-                            raise SDKException('Storage', '102', _response['errorMessage'])
+                            raise SDKException("Storage", "102", _response["errorMessage"])
                 else:
-                    if 'errorMessage' in response.json():
-                        o_str = 'Error: ' + response.json()['errorMessage']
-                        raise SDKException('Response', '102', o_str)
+                    if "errorMessage" in response.json():
+                        o_str = "Error: " + response.json()["errorMessage"]
+                        raise SDKException("Response", "102", o_str)
 
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            _stdout = 'Failed to delete library {0} with error: \n [{1}]'
+            _stdout = "Failed to delete library {0} with error: \n [{1}]"
             _stderr = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', _stdout.format(library_name, _stderr))
+            raise SDKException("Response", "101", _stdout.format(library_name, _stderr))
 
-    def get(self, library_name: str, library_details: Optional[dict] = None) -> 'DiskLibrary':
+    def get(self, library_name: str, library_details: Optional[dict] = None) -> "DiskLibrary":
         """Retrieve a DiskLibrary object for the specified disk library name.
 
         Args:
@@ -1777,22 +1780,24 @@ class DiskLibraries(Libraries):
         #ai-gen-doc
         """
         if not isinstance(library_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         else:
             library_name = library_name.lower()
 
             if self.has_library(library_name):
-                return DiskLibrary(self._commcell_object,
-                                   library_name,
-                                   self._libraries[library_name], library_details)
+                return DiskLibrary(
+                    self._commcell_object,
+                    library_name,
+                    self._libraries[library_name],
+                    library_details,
+                )
 
             raise SDKException(
-                'Storage', '102', 'No disk library exists with name: {0}'.format(library_name)
+                "Storage", "102", f"No disk library exists with name: {library_name}"
             )
 
 
-
-class DiskLibrary(object):
+class DiskLibrary:
     """
     DiskLibrary provides comprehensive management and configuration capabilities for a specific disk library.
 
@@ -1819,7 +1824,13 @@ class DiskLibrary(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', library_name: str, library_id: Optional[int] = None, library_details: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        library_name: str,
+        library_id: Optional[int] = None,
+        library_details: Optional[dict] = None,
+    ) -> None:
         """Initialize a DiskLibrary object representing a disk library in the Commcell.
 
         Args:
@@ -1845,12 +1856,13 @@ class DiskLibrary(object):
         else:
             self._library_id = self._get_library_id()
         self._library_properties_service = self._commcell_object._services[
-            'GET_LIBRARY_PROPERTIES'] % (self._library_id)
+            "GET_LIBRARY_PROPERTIES"
+        ] % (self._library_id)
         self._library_properties = self._get_library_properties()
         self._advanced_library_properties = self._get_advanced_library_properties()
         if library_details is not None:
-            self.mountpath = library_details.get('mountPath', None)
-            self.mediaagent = library_details.get('mediaAgentName', None)
+            self.mountpath = library_details.get("mountPath", None)
+            self.mediaagent = library_details.get("mediaAgentName", None)
 
     def __repr__(self) -> str:
         """Return the string representation of the DiskLibrary instance.
@@ -1868,9 +1880,7 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
         representation_string = 'DiskLibrary class instance for library: "{0}" of Commcell: "{1}"'
-        return representation_string.format(
-            self.library_name, self._commcell_object.commserv_name
-        )
+        return representation_string.format(self.library_name, self._commcell_object.commserv_name)
 
     def move_mountpath(
         self,
@@ -1879,8 +1889,8 @@ class DiskLibrary(object):
         source_mediaagent_id: int,
         target_device_path: str,
         target_mediaagent_id: int,
-        target_device_id: int = 0
-    ) -> 'Job':
+        target_device_id: int = 0,
+    ) -> "Job":
         """Perform the move mountpath operation for a disk library.
 
         This method moves a mountpath from a source device and media agent to a target device and media agent.
@@ -1916,74 +1926,95 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not (isinstance(mountpath_id, int) and
-                isinstance(source_mediaagent_id, int) and
-                isinstance(target_mediaagent_id, int) and
-                (isinstance(target_device_path, str) or target_device_id > 0) and
-                isinstance(source_device_path, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(mountpath_id, int)
+            and isinstance(source_mediaagent_id, int)
+            and isinstance(target_mediaagent_id, int)
+            and (isinstance(target_device_path, str) or target_device_id > 0)
+            and isinstance(source_device_path, str)
+        ):
+            raise SDKException("Storage", "101")
 
-        MOVE_MOUNTPATH_DETAILS = self._commcell_object._services['GET_MOVE_MOUNTPATH_DETAILS'] % (mountpath_id)
+        MOVE_MOUNTPATH_DETAILS = self._commcell_object._services["GET_MOVE_MOUNTPATH_DETAILS"] % (
+            mountpath_id
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', MOVE_MOUNTPATH_DETAILS)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "GET", MOVE_MOUNTPATH_DETAILS
+        )
 
         source_device_id = None
 
         if flag:
             if response.json():
-                if 'sourceDeviceInfo' in response.json():
-                    source_device_id = response.json().get('sourceDeviceInfo').get('deviceId', None)
+                if "sourceDeviceInfo" in response.json():
+                    source_device_id = (
+                        response.json().get("sourceDeviceInfo").get("deviceId", None)
+                    )
                 if not source_device_id:
-                    raise SDKException('Storage', '102', 'Failed to get details of the mountpath for move')
+                    raise SDKException(
+                        "Storage", "102", "Failed to get details of the mountpath for move"
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         request_json = {
-            'MPMoveOption': {
-                'mountPathMoveList': [{
-                    'sourceDeviceId': source_device_id,
-                    'sourcemediaAgentId': source_mediaagent_id,
-                    'targetMediaAgentId': target_mediaagent_id,
-                }]
+            "MPMoveOption": {
+                "mountPathMoveList": [
+                    {
+                        "sourceDeviceId": source_device_id,
+                        "sourcemediaAgentId": source_mediaagent_id,
+                        "targetMediaAgentId": target_mediaagent_id,
+                    }
+                ]
             }
         }
         if target_device_id > 0:
-            request_json['MPMoveOption']['mountPathMoveList'][0]['targetDeviceId'] = target_device_id
+            request_json["MPMoveOption"]["mountPathMoveList"][0]["targetDeviceId"] = (
+                target_device_id
+            )
         else:
-            request_json['MPMoveOption']['mountPathMoveList'][0]['targetDevicePath'] = target_device_path
+            request_json["MPMoveOption"]["mountPathMoveList"][0]["targetDevicePath"] = (
+                target_device_path
+            )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['MOVE_MOUNTPATH'], request_json)
+            "POST", self._commcell_object._services["MOVE_MOUNTPATH"], request_json
+        )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    if len(response.json()['jobIds']) == 1:
+                    if len(response.json()["jobIds"]) == 1:
                         from cvpysdk.job import Job
-                        return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                        return Job(self._commcell_object, response.json()["jobIds"][0])
                     else:
                         from cvpysdk.job import Job
+
                         mp_move_job_list = []
-                        for job_id in response.json()['jobIds']:
+                        for job_id in response.json()["jobIds"]:
                             mp_move_job_list.append(Job(self._commcell_object, job_id))
                         return mp_move_job_list
 
                 if "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Error: "{0}"'.format(error_message)
-                    raise SDKException('Commcell', '105', o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Error: "{error_message}"'
+                    raise SDKException("Commcell", "105", o_str)
 
                 else:
-                    raise SDKException('Commcell', '105')
+                    raise SDKException("Commcell", "105")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
-    def validate_mountpath(self, mountpath_drive_id: int, media_agent: str) -> 'Job':
+    def validate_mountpath(self, mountpath_drive_id: int, media_agent: str) -> "Job":
         """Perform storage validation on a specified mountpath.
 
         This method initiates a storage validation job for the given mountpath drive ID
@@ -2010,12 +2041,10 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not (isinstance(mountpath_drive_id, int) and
-                isinstance(media_agent, str)):
-            raise SDKException('Storage', '101')
+        if not (isinstance(mountpath_drive_id, int) and isinstance(media_agent, str)):
+            raise SDKException("Storage", "101")
 
-
-        request_xml = """<TMMsg_CreateTaskReq>
+        request_xml = f"""<TMMsg_CreateTaskReq>
                         <taskInfo taskOperation="1">
                             <task associatedObjects="0" description="Storage Validation - Automation" initiatedFrom="1" 
                             isEZOperation="0" isEditing="0" isFromCommNetBrowserRootNode="0" ownerId="1" ownerName="" 
@@ -2027,41 +2056,52 @@ class DiskLibrary(object):
                                 <options originalJobId="0">
                                     <adminOpts>
                                         <libraryOption  operation="13" validationFlags="0" validattionReservedFlags="0">
-                                            <library libraryId="{0}" />
-                                            <mediaAgent mediaAgentName="{1}" />
-                                            <driveIds driveId="{2}" />
+                                            <library libraryId="{self.library_id}" />
+                                            <mediaAgent mediaAgentName="{media_agent}" />
+                                            <driveIds driveId="{mountpath_drive_id}" />
                                             <validateDrive chunkSize="16384" chunksTillEnd="0" fileMarkerToStart="2"
                                              numberOfChunks="2" threadCount="2" volumeBlockSize="64" />
                                         </libraryOption> </adminOpts> </options> </subTasks>  </taskInfo>
-                            </TMMsg_CreateTaskReq>""".format(self.library_id, media_agent, mountpath_drive_id)
+                            </TMMsg_CreateTaskReq>"""
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_TASK'], request_xml
+            "POST", self._commcell_object._services["CREATE_TASK"], request_xml
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
                     from cvpysdk.job import Job
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
 
                 if "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Error: "{0}"'.format(error_message)
-                    raise SDKException('Commcell', '105', o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Error: "{error_message}"'
+                    raise SDKException("Commcell", "105", o_str)
 
                 else:
-                    raise SDKException('Commcell', '105')
+                    raise SDKException("Commcell", "105")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
-    def add_cloud_mount_path(self, mount_path: str, media_agent: str, username: str, password: str, server_type: int, saved_credential_name: str = "") -> None:
+    def add_cloud_mount_path(
+        self,
+        mount_path: str,
+        media_agent: str,
+        username: str,
+        password: str,
+        server_type: int,
+        saved_credential_name: str = "",
+    ) -> None:
         """Add a cloud mount path to the disk library.
 
-        This method registers a new mount path for a cloud storage container or bucket, 
+        This method registers a new mount path for a cloud storage container or bucket,
         associating it with a specified MediaAgent and access credentials.
 
         Args:
@@ -2096,10 +2136,14 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not (isinstance(mount_path, str) or isinstance(media_agent, str)
-                or isinstance(username, str) or isinstance(password, str)
-                or isinstance(server_type, int)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(mount_path, str)
+            or isinstance(media_agent, str)
+            or isinstance(username, str)
+            or isinstance(password, str)
+            or isinstance(server_type, int)
+        ):
+            raise SDKException("Storage", "101")
 
         request_json = {
             "isConfigRequired": 1,
@@ -2112,37 +2156,37 @@ class DiskLibrary(object):
                 "loginName": username,
                 "password": b64encode(password.encode()).decode(),
                 "serverType": server_type,
-                "savedCredential": {
-                    "credentialName": saved_credential_name
-                }
-            }
+                "savedCredential": {"credentialName": saved_credential_name},
+            },
         }
 
-        exec_command = self._commcell_object._services['LIBRARY']
+        exec_command = self._commcell_object._services["LIBRARY"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', exec_command, request_json
+            "POST", exec_command, request_json
         )
 
         if flag:
             if response.json():
-                if 'library' in response.json():
-                    _response = response.json()['library']
+                if "library" in response.json():
+                    _response = response.json()["library"]
 
-                    if 'errorCode' in _response:
-                        if _response['errorCode'] != 0:
-                            raise SDKException('Storage', '102', _response['errorMessage'])
+                    if "errorCode" in _response:
+                        if _response["errorCode"] != 0:
+                            raise SDKException("Storage", "102", _response["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            _stdout = 'Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]'
+            _stdout = "Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]"
             _stderr = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', _stdout.format(mount_path,
-                                                                 self._library_name,
-                                                                 _stderr))
+            raise SDKException(
+                "Response", "101", _stdout.format(mount_path, self._library_name, _stderr)
+            )
 
-    def add_storage_accelerator_credential(self, mount_path: str, saved_credential: str = "", reset: bool = False) -> None:
+    def add_storage_accelerator_credential(
+        self, mount_path: str, saved_credential: str = "", reset: bool = False
+    ) -> None:
         """Add a storage accelerator credential to the specified cloud mount path.
 
         This method associates a saved credential with a given mount path for storage acceleration.
@@ -2169,44 +2213,42 @@ class DiskLibrary(object):
         """
 
         if not isinstance(mount_path, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         request_json = {
-                        "library": {
-                            "mediaAgentName": self.media_agent,
-                            "libraryName": self._library_name,
-                            "mountPath": mount_path,
-                            "opType": 8
-                        },
-                        "libNewProp": {
-                            "secondaryCredential": {
-                                "credentialName": saved_credential
-                            },
-                            "resetSecondaryCredentials": reset
-                        }
-                    }
+            "library": {
+                "mediaAgentName": self.media_agent,
+                "libraryName": self._library_name,
+                "mountPath": mount_path,
+                "opType": 8,
+            },
+            "libNewProp": {
+                "secondaryCredential": {"credentialName": saved_credential},
+                "resetSecondaryCredentials": reset,
+            },
+        }
 
-        exec_command = self._commcell_object._services['LIBRARY']
+        exec_command = self._commcell_object._services["LIBRARY"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', exec_command, request_json
+            "POST", exec_command, request_json
         )
 
         if flag:
             if response.json():
-                if 'library' in response.json():
-                    _response = response.json()['library']
+                if "library" in response.json():
+                    _response = response.json()["library"]
 
-                    if 'errorCode' in _response:
-                        if _response['errorCode'] != 0:
-                            raise SDKException('Storage', '102', _response['errorMessage'])
+                    if "errorCode" in _response:
+                        if _response["errorCode"] != 0:
+                            raise SDKException("Storage", "102", _response["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            _stdout = 'Failed to add storage accelerator credential with error: \n [{0}]'
+            _stdout = "Failed to add storage accelerator credential with error: \n [{0}]"
             _stderr = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', _stdout.format(_stderr))
+            raise SDKException("Response", "101", _stdout.format(_stderr))
 
     def _get_library_properties(self) -> dict:
         """Retrieve the properties of the disk library.
@@ -2227,17 +2269,17 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._library_properties_service
+            "GET", self._library_properties_service
         )
 
         if flag:
             if response.json():
-                if 'libraryInfo' in response.json():
-                    return response.json()['libraryInfo']
-                raise SDKException('Storage', '102', 'Failed to get disk Library properties')
-            raise SDKException('Response', '102')
+                if "libraryInfo" in response.json():
+                    return response.json()["libraryInfo"]
+                raise SDKException("Storage", "102", "Failed to get disk Library properties")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def _get_advanced_library_properties(self) -> dict:
         """Retrieve the advanced properties of the disk library.
@@ -2256,18 +2298,17 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', f"{self._library_properties_service}?propertylevel=20"
+            "GET", f"{self._library_properties_service}?propertylevel=20"
         )
 
         if flag:
             if response.json():
-                if 'libraryInfo' in response.json():
-                    return response.json()['libraryInfo']
-                raise SDKException('Storage', '102', 'Failed to get disk Library properties')
-            raise SDKException('Response', '102')
+                if "libraryInfo" in response.json():
+                    return response.json()["libraryInfo"]
+                raise SDKException("Storage", "102", "Failed to get disk Library properties")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
-
+        raise SDKException("Response", "101", response_string)
 
     def _get_library_id(self) -> str:
         """Retrieve the unique identifier associated with this disk library.
@@ -2288,8 +2329,8 @@ class DiskLibrary(object):
     def refresh(self) -> None:
         """Reload the properties of this disk library from the Commcell.
 
-        This method updates the disk library's properties to reflect the latest state 
-        as stored in the Commcell. Use this if you suspect the library's configuration 
+        This method updates the disk library's properties to reflect the latest state
+        as stored in the Commcell. Use this if you suspect the library's configuration
         has changed outside of the current object instance.
 
         Example:
@@ -2302,11 +2343,13 @@ class DiskLibrary(object):
         self._library_properties = self._get_library_properties()
         self._advanced_library_properties = self._get_advanced_library_properties()
 
-    def add_mount_path(self, mount_path: str, media_agent: str, username: str = '', password: str = '') -> None:
+    def add_mount_path(
+        self, mount_path: str, media_agent: str, username: str = "", password: str = ""
+    ) -> None:
         """Add a mount path (local or remote) to the disk library.
 
-        This method registers a new mount path to the disk library, which can be located 
-        either locally or remotely on the specified MediaAgent. Optionally, credentials 
+        This method registers a new mount path to the disk library, which can be located
+        either locally or remotely on the specified MediaAgent. Optionally, credentials
         can be provided for accessing the mount path.
 
         Args:
@@ -2331,46 +2374,45 @@ class DiskLibrary(object):
         """
 
         if not isinstance(mount_path, str) or not isinstance(media_agent, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "isConfigRequired": 1,
-                    "library": {
-                        "opType": 4,
-                        "mediaAgentName": media_agent,
-                        "libraryName": self._library_name,
-                        "mountPath": mount_path,
-                        "loginName": username,
-                        "password": b64encode(password.encode()).decode(),
-                    }
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "isConfigRequired": 1,
+                "library": {
+                    "opType": 4,
+                    "mediaAgentName": media_agent,
+                    "libraryName": self._library_name,
+                    "mountPath": mount_path,
+                    "loginName": username,
+                    "password": b64encode(password.encode()).decode(),
+                },
+            }
         }
 
-        exec_command = self._commcell_object._services['EXECUTE_QCOMMAND']
+        exec_command = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
-                                                                            exec_command,
-                                                                            request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", exec_command, request_json
+        )
         if flag:
             if response.json():
-                if 'library' in response.json():
-                    _response = response.json()['library']
+                if "library" in response.json():
+                    _response = response.json()["library"]
 
-                    if 'errorCode' in _response:
-                        if _response['errorCode'] != 0:
-                            raise SDKException('Storage', '102', _response['errorMessage'])
+                    if "errorCode" in _response:
+                        if _response["errorCode"] != 0:
+                            raise SDKException("Storage", "102", _response["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            _stdout = 'Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]'
+            _stdout = "Failed to add mount path [{0}] for library [{1}] with error: \n [{2}]"
             _stderr = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', _stdout.format(mount_path,
-                                                                 self._library_name,
-                                                                 _stderr))
+            raise SDKException(
+                "Response", "101", _stdout.format(mount_path, self._library_name, _stderr)
+            )
 
     def set_mountpath_reserve_space(self, mount_path: str, size: int) -> None:
         """Set the reserve space on a specified mount path.
@@ -2391,19 +2433,16 @@ class DiskLibrary(object):
         """
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "isConfigRequired": 1,
-                    "library": {
-                        "opType": 8,
-                        "mediaAgentName": self.media_agent,
-                        "libraryName": self._library_name,
-                        "mountPath": mount_path
-                    },
-                    "libNewProp":{
-                      "reserveSpaceInMB": size
-                    }
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "isConfigRequired": 1,
+                "library": {
+                    "opType": 8,
+                    "mediaAgentName": self.media_agent,
+                    "libraryName": self._library_name,
+                    "mountPath": mount_path,
+                },
+                "libNewProp": {"reserveSpaceInMB": size},
+            }
         }
         self._commcell_object.qoperation_execute(request_json)
 
@@ -2426,19 +2465,16 @@ class DiskLibrary(object):
         """
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "isConfigRequired": 1,
-                    "library": {
-                        "opType": 8,
-                        "mediaAgentName": self.media_agent,
-                        "libraryName": self._library_name,
-                        "mountPath": mount_path
-                    },
-                    "libNewProp":{
-                      "maxDataToWriteMB": size
-                    }
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "isConfigRequired": 1,
+                "library": {
+                    "opType": 8,
+                    "mediaAgentName": self.media_agent,
+                    "libraryName": self._library_name,
+                    "mountPath": mount_path,
+                },
+                "libNewProp": {"maxDataToWriteMB": size},
+            }
         }
         self._commcell_object.qoperation_execute(request_json)
 
@@ -2448,11 +2484,11 @@ class DiskLibrary(object):
         device_id: int,
         device_controller_id: int,
         media_agent_id: int,
-        device_access_type: int
+        device_access_type: int,
     ) -> None:
         """Change the access type for a specific device in the disk library.
 
-        This method updates the access type for a device associated with a given mount path, device controller, 
+        This method updates the access type for a device associated with a given mount path, device controller,
         and media agent. The access type determines how the device can be accessed (e.g., read, read/write, preferred)
         and varies depending on the connection type (Regular, IP, Fibre Channel, iSCSI).
 
@@ -2491,33 +2527,43 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not all([isinstance(mountpath_id, int), isinstance(device_id, int), isinstance(device_controller_id, int),
-                    isinstance(media_agent_id, int), isinstance(device_access_type, int)]):
-            raise SDKException('Storage', '101')
+        if not all(
+            [
+                isinstance(mountpath_id, int),
+                isinstance(device_id, int),
+                isinstance(device_controller_id, int),
+                isinstance(media_agent_id, int),
+                isinstance(device_access_type, int),
+            ]
+        ):
+            raise SDKException("Storage", "101")
 
         request_json = {
-            "EVGui_MMDevicePathInfoReq":
-                {
-                    "mountpathId": mountpath_id,
-                    "infoList": {
-                        "accessType": device_access_type,
-                        "deviceId": device_id,
-                        "deviceControllerId": device_controller_id,
-                        "path": self.mount_path,
-                        "enabled": 1,
-                        "numWriters": -1,
-                        "opType": 2,
-                        "autoPickTransportType": 0,
-                        "protocolType": 679,
-                        "mediaAgent": {
-                            "id": media_agent_id
-                        }
-                    }
-                }
+            "EVGui_MMDevicePathInfoReq": {
+                "mountpathId": mountpath_id,
+                "infoList": {
+                    "accessType": device_access_type,
+                    "deviceId": device_id,
+                    "deviceControllerId": device_controller_id,
+                    "path": self.mount_path,
+                    "enabled": 1,
+                    "numWriters": -1,
+                    "opType": 2,
+                    "autoPickTransportType": 0,
+                    "protocolType": 679,
+                    "mediaAgent": {"id": media_agent_id},
+                },
+            }
         }
         self._commcell_object.qoperation_execute(request_json)
 
-    def modify_cloud_access_type(self, mountpath_id: int, device_controller_id: int, device_access_type: int, enabled: bool = True) -> None:
+    def modify_cloud_access_type(
+        self,
+        mountpath_id: int,
+        device_controller_id: int,
+        device_access_type: int,
+        enabled: bool = True,
+    ) -> None:
         """Modify the device access type for a cloud mount path.
 
         This method updates the access type for a specified cloud mount path and device controller.
@@ -2543,9 +2589,14 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not all([isinstance(mountpath_id, int), isinstance(device_controller_id, int),
-                    isinstance(device_access_type, int)]):
-            raise SDKException('Storage', '101')
+        if not all(
+            [
+                isinstance(mountpath_id, int),
+                isinstance(device_controller_id, int),
+                isinstance(device_access_type, int),
+            ]
+        ):
+            raise SDKException("Storage", "101")
 
         access = ""
         if device_access_type == 4:
@@ -2553,29 +2604,30 @@ class DiskLibrary(object):
         else:
             access = "READ_AND_WRITE"
 
-        payload = {
-            "access": access,
-            "enable": enabled
-        }
+        payload = {"access": access, "enable": enabled}
 
-        EDIT_CLOUD_CONTROLLER = self._commcell_object._services['EDIT_CLOUD_CONTROLLER'] % (mountpath_id, device_controller_id)
+        EDIT_CLOUD_CONTROLLER = self._commcell_object._services["EDIT_CLOUD_CONTROLLER"] % (
+            mountpath_id,
+            device_controller_id,
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', EDIT_CLOUD_CONTROLLER, payload)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "PUT", EDIT_CLOUD_CONTROLLER, payload
+        )
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = int(response.json().get('errorCode'))
+                if "errorCode" in response.json():
+                    error_code = int(response.json().get("errorCode"))
                     if error_code != 0:
-                        error_message = response.json().get('errorMessage')
-                        raise SDKException('Storage', '102', error_message)
+                        error_message = response.json().get("errorMessage")
+                        raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            _stdout = 'Failed to modify cloud access type with error: \n [{0}]'
+            _stdout = "Failed to modify cloud access type with error: \n [{0}]"
             _stderr = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', _stdout.format(_stderr))
-
+            raise SDKException("Response", "101", _stdout.format(_stderr))
 
     def update_device_controller(
         self,
@@ -2584,7 +2636,7 @@ class DiskLibrary(object):
         device_controller_id: int,
         media_agent_id: int,
         device_access_type: int,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Update the properties of a device controller associated with a disk library.
 
@@ -2633,45 +2685,46 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not all([isinstance(mountpath_id, int), isinstance(device_id, int), isinstance(device_controller_id, int),
-                    isinstance(media_agent_id, int), isinstance(device_access_type, int)]):
-            raise SDKException('Storage', '101')
+        if not all(
+            [
+                isinstance(mountpath_id, int),
+                isinstance(device_id, int),
+                isinstance(device_controller_id, int),
+                isinstance(media_agent_id, int),
+                isinstance(device_access_type, int),
+            ]
+        ):
+            raise SDKException("Storage", "101")
 
         username = kwargs.get("username", "")
         password = kwargs.get("password", "")
         credential_name = kwargs.get("credential_name", "")
         path = kwargs.get("path", self.mount_path)
         enabled = 1
-        if not kwargs.get('enabled', True):
+        if not kwargs.get("enabled", True):
             enabled = 0
         request_json = {
-            "EVGui_MMDevicePathInfoReq":
-                {
-                    "mountpathId": mountpath_id,
-                    "infoList": {
-                        "password": password,
-                        "accessType": device_access_type,
-                        "deviceId": device_id,
-                        "deviceControllerId": device_controller_id,
-                        "path": path,
-                        "enabled": enabled,
-                        "numWriters": -1,
-                        "opType": 2,
-                        "autoPickTransportType": 0,
-                        "protocolType": 679,
-                        "mediaAgent": {
-                            "id": media_agent_id
-                        },
-                        "savedCredential": {
-                            "credentialName": credential_name
-                        },
-                        "userName": username
-                    }
-                }
+            "EVGui_MMDevicePathInfoReq": {
+                "mountpathId": mountpath_id,
+                "infoList": {
+                    "password": password,
+                    "accessType": device_access_type,
+                    "deviceId": device_id,
+                    "deviceControllerId": device_controller_id,
+                    "path": path,
+                    "enabled": enabled,
+                    "numWriters": -1,
+                    "opType": 2,
+                    "autoPickTransportType": 0,
+                    "protocolType": 679,
+                    "mediaAgent": {"id": media_agent_id},
+                    "savedCredential": {"credentialName": credential_name},
+                    "userName": username,
+                },
+            }
         }
 
         self._commcell_object.qoperation_execute(request_json)
-
 
     def verify_media(self, media_name: str, location_id: int) -> None:
         """Perform a verify media operation on a specified media in the disk library.
@@ -2688,9 +2741,8 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        if not (isinstance(media_name, str) and
-                isinstance(location_id,int)):
-            raise SDKException('Storage', '101')
+        if not (isinstance(media_name, str) and isinstance(location_id, int)):
+            raise SDKException("Storage", "101")
 
         request_xml = f"""<TMMsg_CreateTaskReq>
                             <taskInfo>
@@ -2713,27 +2765,30 @@ class DiskLibrary(object):
                         </TMMsg_CreateTaskReq>"""
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_TASK'], request_xml
+            "POST", self._commcell_object._services["CREATE_TASK"], request_xml
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
                     from cvpysdk.job import Job
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
 
                 if "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Error: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102',o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Error: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     @property
     def free_space(self) -> str:
@@ -2749,7 +2804,7 @@ class DiskLibrary(object):
 
         #ai-gen-doc
         """
-        return self._library_properties.get('magLibSummary', {}).get('totalFreeSpace').strip()
+        return self._library_properties.get("magLibSummary", {}).get("totalFreeSpace").strip()
 
     @property
     def mountpath_usage(self) -> Dict[str, Any]:
@@ -2767,7 +2822,7 @@ class DiskLibrary(object):
 
         #ai-gen-doc
         """
-        return self._library_properties.get('magLibSummary', {}).get('mountPathUsage').strip()
+        return self._library_properties.get("magLibSummary", {}).get("mountPathUsage").strip()
 
     @mountpath_usage.setter
     def mountpath_usage(self, value: str) -> None:
@@ -2784,26 +2839,20 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
         if not isinstance(value, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        if value == 'SPILL_AND_FILL':
+        if value == "SPILL_AND_FILL":
             value = 1
-        elif value == 'FILL_AND_SPILL':
+        elif value == "FILL_AND_SPILL":
             value = 2
         else:
-            raise SDKException('Storage', '110')
+            raise SDKException("Storage", "110")
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "library": {
-                            "opType": 32,
-                            "libraryName": self.library_name
-                        },
-                    "libNewProp": {
-                            "mountPathUsage": value
-                        }
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "library": {"opType": 32, "libraryName": self.library_name},
+                "libNewProp": {"mountPathUsage": value},
+            }
         }
         self._commcell_object.qoperation_execute(request_json)
 
@@ -2828,20 +2877,14 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "isConfigRequired": 1,
-                    "library": {
-                            "opType": 32,
-                            "libraryName": self.library_name
-                        },
-                    "libNewProp": {
-                            "preferMountPathAccordingToMA": int(value)
-                        }
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "isConfigRequired": 1,
+                "library": {"opType": 32, "libraryName": self.library_name},
+                "libNewProp": {"preferMountPathAccordingToMA": int(value)},
+            }
         }
         self._commcell_object.qoperation_execute(request_json)
 
@@ -2860,8 +2903,12 @@ class DiskLibrary(object):
 
         #ai-gen-doc
         """
-        mount_paths = self._library_properties.get('MountPathList')
-        media_agents = [mount_path.get('mountPathName').split('[')[1].split(']')[0] for mount_path in mount_paths if "mountPathName" in mount_path]
+        mount_paths = self._library_properties.get("MountPathList")
+        media_agents = [
+            mount_path.get("mountPathName").split("[")[1].split("]")[0]
+            for mount_path in mount_paths
+            if "mountPathName" in mount_path
+        ]
         return list(set(media_agents))
 
     @property
@@ -2878,7 +2925,7 @@ class DiskLibrary(object):
 
         #ai-gen-doc
         """
-        return self._library_properties['MountPathList'][0]['mountPathSummary']['libraryName']
+        return self._library_properties["MountPathList"][0]["mountPathSummary"]["libraryName"]
 
     @property
     def library_name(self) -> str:
@@ -3016,8 +3063,8 @@ class DiskLibrary(object):
     def share_mount_path(self, new_media_agent: str, new_mount_path: str, **kwargs: Any) -> None:
         """Share a mount path with a specified media agent.
 
-        This method allows you to share an existing mount path with another media agent, 
-        optionally specifying additional parameters such as access type, credentials, and 
+        This method allows you to share an existing mount path with another media agent,
+        optionally specifying additional parameters such as access type, credentials, and
         library details via keyword arguments.
 
         Args:
@@ -3038,12 +3085,12 @@ class DiskLibrary(object):
                     * 38  - Data Server - FC Read/Write
                     * 132 - Data Server - iSCSI Read
                     * 134 - Data Server - iSCSI Read/Write
-                    Note: For Data Server device access types, provide the local path in both the 
+                    Note: For Data Server device access types, provide the local path in both the
                     library/mountPath and libNewProp/mountPath parameters.
                 - username (str): Username for accessing the mount path (if UNC).
                 - password (str): Password for accessing the mount path (if UNC).
-                - credential_name (str): Credential name for the credential manager. For cloud libraries, 
-                  update the username parameter in the format "<vendorURL>//__CVCRED__" (e.g., 
+                - credential_name (str): Credential name for the credential manager. For cloud libraries,
+                  update the username parameter in the format "<vendorURL>//__CVCRED__" (e.g.,
                   "s3.amazonaws.com//__CVCRED__") and provide a dummy value for the password.
 
         Raises:
@@ -3064,42 +3111,39 @@ class DiskLibrary(object):
         #ai-gen-doc
         """
 
-        media_agent = kwargs.get('media_agent', self.mediaagent)
-        library_name = kwargs.get('library_name', self.library_name)
-        mount_path = kwargs.get('mount_path', self.mountpath)
-        access_type = kwargs.get('access_type', 22)
-        username = kwargs.get('username', '')
-        password = kwargs.get('password', '')
-        credential_name = kwargs.get('credential_name', '')
+        media_agent = kwargs.get("media_agent", self.mediaagent)
+        library_name = kwargs.get("library_name", self.library_name)
+        mount_path = kwargs.get("mount_path", self.mountpath)
+        access_type = kwargs.get("access_type", 22)
+        username = kwargs.get("username", "")
+        password = kwargs.get("password", "")
+        credential_name = kwargs.get("credential_name", "")
 
-        self._EXECUTE = self._commcell_object._services['EXECUTE_QCOMMAND']
+        self._EXECUTE = self._commcell_object._services["EXECUTE_QCOMMAND"]
         self.library = {
             "opType": 64,
             "mediaAgentName": media_agent,
             "libraryName": library_name,
-            "mountPath": "%s" %
-                         mount_path}
+            "mountPath": "%s" % mount_path,
+        }
         self.lib_new_prop = {
             "deviceAccessType": access_type,
             "password": password,
             "loginName": username,
             "mediaAgentName": new_media_agent,
-            "mountPath": "{}".format(new_mount_path),
+            "mountPath": f"{new_mount_path}",
             "proxyPassword": "",
-            "savedCredential": {
-                "credentialName": credential_name
-            }
+            "savedCredential": {"credentialName": credential_name},
         }
         request_json = {
-            "EVGui_ConfigureStorageLibraryReq":
-                {
-                    "library": self.library,
-                    "libNewProp": self.lib_new_prop
-                }
+            "EVGui_ConfigureStorageLibraryReq": {
+                "library": self.library,
+                "libNewProp": self.lib_new_prop,
+            }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._EXECUTE, request_json
+            "POST", self._EXECUTE, request_json
         )
         if flag:
             response_string = self._commcell_object._update_response_(response.text)
@@ -3108,15 +3152,16 @@ class DiskLibrary(object):
                     response = response.json()["library"]
                     return response
                 else:
-                    raise SDKException('Response', '102', response_string)
+                    raise SDKException("Response", "102", response_string)
             else:
-
-                raise SDKException('Response', '102', response_string)
+                raise SDKException("Response", "102", response_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def delete_media_agent_on_mount_path(self, device_id, media_agent_name, device_controller_id, mountPathId):
+    def delete_media_agent_on_mount_path(
+        self, device_id, media_agent_name, device_controller_id, mountPathId
+    ):
         """
         Method to delete media agent on mount path
 
@@ -3132,35 +3177,41 @@ class DiskLibrary(object):
 
         """
 
-        request_json = {"infoList": [
-                {"deviceId": device_id,
-                 "deviceControllerId": device_controller_id,
-                 "mediaAgent": {"name": media_agent_name},
-                 "enabled": 1,
-                 "opType": 3,
-                 "accessible": True}
+        request_json = {
+            "infoList": [
+                {
+                    "deviceId": device_id,
+                    "deviceControllerId": device_controller_id,
+                    "mediaAgent": {"name": media_agent_name},
+                    "enabled": 1,
+                    "opType": 3,
+                    "accessible": True,
+                }
             ],
-            "mountpathId": mountPathId
-            }
+            "mountpathId": mountPathId,
+        }
 
-        DELETE_DEVICE_CONTROLLER = self._commcell_object._services['DELETE_DEVICE_CONTROLLER']
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', DELETE_DEVICE_CONTROLLER, request_json)
+        DELETE_DEVICE_CONTROLLER = self._commcell_object._services["DELETE_DEVICE_CONTROLLER"]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", DELETE_DEVICE_CONTROLLER, request_json
+        )
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = int(response.json().get('errorCode'))
+                if "errorCode" in response.json():
+                    error_code = int(response.json().get("errorCode"))
                     if error_code != 0:
-                        error_message = response.json().get('errorMessage')
-                        raise SDKException('Storage', '102', error_message)
+                        error_message = response.json().get("errorMessage")
+                        raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            _stdout = 'Failed to delete media agent on mount path with error: \n [{0}]'
+            _stdout = "Failed to delete media agent on mount path with error: \n [{0}]"
             _stderr = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', _stdout.format(_stderr))
+            raise SDKException("Response", "101", _stdout.format(_stderr))
 
-class RPStores(object):
+
+class RPStores:
     """
     Manages RP (Recovery Point) Stores within a Commcell environment.
 
@@ -3179,7 +3230,8 @@ class RPStores(object):
 
     #ai-gen-doc
     """
-    def __init__(self, commcell: 'Commcell') -> None:
+
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize an instance of the RPStores class.
 
         Args:
@@ -3210,19 +3262,29 @@ class RPStores(object):
 
         #ai-gen-doc
         """
-        flag, response = self._commcell._cvpysdk_object.make_request('GET', self._commcell._services['ALL_RPStores'])
+        flag, response = self._commcell._cvpysdk_object.make_request(
+            "GET", self._commcell._services["ALL_RPStores"]
+        )
 
         try:
-            if response.json().get('libraryList'):
-                return {library["library"]["libraryName"].lower(): library["MountPathList"][0]["rpStoreLibraryInfo"]
-                        ["rpStoreId"] for library in response.json()["libraryList"]}
+            if response.json().get("libraryList"):
+                return {
+                    library["library"]["libraryName"].lower(): library["MountPathList"][0][
+                        "rpStoreLibraryInfo"
+                    ]["rpStoreId"]
+                    for library in response.json()["libraryList"]
+                }
             return {}
         except (KeyError, ValueError):
             generic_msg = "Unable to fetch RPStore"
-            err_msg = response.json().get("errorMessage", generic_msg) if response.status_code == 200 else generic_msg
-            raise SDKException('Storage', '102', '{0}'.format(err_msg))
+            err_msg = (
+                response.json().get("errorMessage", generic_msg)
+                if response.status_code == 200
+                else generic_msg
+            )
+            raise SDKException("Storage", "102", f"{err_msg}")
 
-    def add(self, name: str, path: str, storage: int, media_agent_name: str) -> 'RPStore':
+    def add(self, name: str, path: str, storage: int, media_agent_name: str) -> "RPStore":
         """Add a new RPStore with the specified configuration.
 
         Args:
@@ -3255,26 +3317,25 @@ class RPStores(object):
         try:
             ma_id = media_agents.all_media_agents[media_agent_name]["id"]
         except KeyError:
-            raise SDKException('Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name))
+            raise SDKException(
+                "Storage", "102", f"No media agent exists with name: {media_agent_name}"
+            )
 
         payload = {
             "rpLibrary": {"maxSpacePerRPStoreGB": storage},
-            "storageLibrary": {
-                "mediaAgentId": int(ma_id),
-                "libraryName": name,
-                "mountPath": path
-            },
-            "opType": 1
+            "storageLibrary": {"mediaAgentId": int(ma_id), "libraryName": name, "mountPath": path},
+            "opType": 1,
         }
         flag, response = self._commcell._cvpysdk_object.make_request(
-            "POST", self._commcell._services["RPSTORE"], payload)
+            "POST", self._commcell._services["RPSTORE"], payload
+        )
 
         try:
             return RPStore(self._commcell, name, response.json()["storageLibrary"]["libraryId"])
         except KeyError:
             generic_msg = "Unable to add RPStore"
             err_msg = response.json().get("errorMessage", generic_msg) if flag else generic_msg
-            raise SDKException('Storage', '102', '{0}'.format(err_msg))
+            raise SDKException("Storage", "102", f"{err_msg}")
 
     def has_rp_store(self, rpstore_name: str) -> bool:
         """Check if a specific RPStore exists in the current RPStores collection.
@@ -3294,11 +3355,11 @@ class RPStores(object):
         #ai-gen-doc
         """
         if not isinstance(rpstore_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         return rpstore_name.lower() in self._rp_stores
 
-    def get(self, rpstore_name: str) -> 'RPStore':
+    def get(self, rpstore_name: str) -> "RPStore":
         """Retrieve an instance of the specified RPStore by name.
 
         Args:
@@ -3315,12 +3376,12 @@ class RPStores(object):
         #ai-gen-doc
         """
         if not isinstance(rpstore_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         try:
             return RPStore(self._commcell, rpstore_name, self._rp_stores[rpstore_name.lower()])
         except KeyError:
-            raise SDKException('Storage', '102', 'No RPStore exists with name: {0}'.format(rpstore_name))
+            raise SDKException("Storage", "102", f"No RPStore exists with name: {rpstore_name}")
 
     def refresh(self) -> None:
         """Reload the media agent information associated with the Commcell.
@@ -3338,7 +3399,7 @@ class RPStores(object):
         self._rp_stores = self._get_rp_stores()
 
 
-class RPStore(object):
+class RPStore:
     """
     Represents a Recovery Point Store (RPStore) within a CommCell environment.
 
@@ -3353,7 +3414,8 @@ class RPStore(object):
 
     #ai-gen-doc
     """
-    def __init__(self, commcell: 'Commcell', rpstore_name: str, rpstore_id: int) -> None:
+
+    def __init__(self, commcell: "Commcell", rpstore_name: str, rpstore_id: int) -> None:
         """Initialize an instance of the RPStore class.
 
         Args:
@@ -3405,7 +3467,6 @@ class RPStore(object):
         return self._rpstore_id
 
 
-
 class TapeLibraries(Libraries):
     """
     Manages tape library operations within the context of a CommCell environment.
@@ -3427,7 +3488,7 @@ class TapeLibraries(Libraries):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize a TapeLibraries object with the given Commcell connection.
 
         Args:
@@ -3443,10 +3504,9 @@ class TapeLibraries(Libraries):
         """
         super().__init__(commcell_object)
         self._commcell_object = commcell_object
-        self._DETECT_TAPE_LIBRARY = self._commcell_object._services['DETECT_TAPE_LIBRARY']
-        self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services['CONFIGURE_TAPE_LIBRARY']
-        self._LOCK_MM_CONFIGURATION = self._commcell_object._services['LOCK_MM_CONFIGURATION']
-
+        self._DETECT_TAPE_LIBRARY = self._commcell_object._services["DETECT_TAPE_LIBRARY"]
+        self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services["CONFIGURE_TAPE_LIBRARY"]
+        self._LOCK_MM_CONFIGURATION = self._commcell_object._services["LOCK_MM_CONFIGURATION"]
 
     def __str__(self) -> str:
         """Return a string representation of all tape libraries associated with the Commcell.
@@ -3463,10 +3523,10 @@ class TapeLibraries(Libraries):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Tape Library')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Tape Library")
 
         for index, library in enumerate(self._libraries):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, library)
+            sub_str = f"{index + 1:^5}\t{library:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -3488,9 +3548,7 @@ class TapeLibraries(Libraries):
         """
         return "TapeLibraries class instance for Commcell"
 
-
-
-    def get(self, tape_library_name: str) -> 'TapeLibrary':
+    def get(self, tape_library_name: str) -> "TapeLibrary":
         """Retrieve the TapeLibrary object for the specified library name.
 
         Args:
@@ -3511,18 +3569,20 @@ class TapeLibraries(Libraries):
         """
 
         if not isinstance(tape_library_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         else:
             if self.has_library(tape_library_name):
                 tape_library_name = tape_library_name.lower()
-                return TapeLibrary(self._commcell_object, tape_library_name, self._libraries[tape_library_name])
+                return TapeLibrary(
+                    self._commcell_object, tape_library_name, self._libraries[tape_library_name]
+                )
 
     def delete(self, tape_library_name: str) -> None:
         """Delete the specified tape library by name.
 
         Args:
             tape_library_name: The name of the tape library to delete.
-            
+
         Raises:
             SDKException: If the tape_library_name is not a string, if the library does not exist,
                 or if the deletion fails.
@@ -3536,25 +3596,23 @@ class TapeLibraries(Libraries):
         """
 
         if not isinstance(tape_library_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if not self.has_library(tape_library_name):
-            raise SDKException('Storage', '101', "Invalid library name")
+            raise SDKException("Storage", "101", "Invalid library name")
 
-        pay_load={
-                "isDeconfigLibrary": 1,
-                "library": {
-                    "opType": 2,
-                    "libraryName": tape_library_name
-                }
+        pay_load = {
+            "isDeconfigLibrary": 1,
+            "library": {"opType": 2, "libraryName": tape_library_name},
         }
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._LIBRARY, pay_load)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", self._LIBRARY, pay_load
+        )
 
         if not flag:
-            raise SDKException('Storage', '102', "Failed to DELETE the library")
+            raise SDKException("Storage", "102", "Failed to DELETE the library")
 
         self.refresh()
-
 
     def __lock_unlock_mm_configuration(self, operation: int) -> None:
         """Lock or unlock the MM (Media Management) configuration for tape library detection.
@@ -3582,31 +3640,43 @@ class TapeLibraries(Libraries):
         """
 
         if not isinstance(operation, int):
-            raise SDKException('Storage', '101', "Invalid Operation data type. Expected is integer")
+            raise SDKException(
+                "Storage", "101", "Invalid Operation data type. Expected is integer"
+            )
 
-        if not operation in [0,1,2]:
-            raise SDKException('Storage', '101', "Invalid Operation type. Expected among [0,1,2] but received "+str(operation))
+        if operation not in [0, 1, 2]:
+            raise SDKException(
+                "Storage",
+                "101",
+                "Invalid Operation type. Expected among [0,1,2] but received " + str(operation),
+            )
 
-        pay_load ={
-        "configLockUnlock": {
-        "lockType": operation
-            }
-        }
+        pay_load = {"configLockUnlock": {"lockType": operation}}
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._LOCK_MM_CONFIGURATION, pay_load)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", self._LOCK_MM_CONFIGURATION, pay_load
+        )
 
-        if flag :
+        if flag:
             if response and response.json():
-                if 'errorCode' in response.json():
-                    if response.json()['errorCode'] != 0:
-                        raise SDKException('Storage', '102', "Failed to lock the MM Config. errorMessage : "+response.json().get('errorMessage'))
+                if "errorCode" in response.json():
+                    if response.json()["errorCode"] != 0:
+                        raise SDKException(
+                            "Storage",
+                            "102",
+                            "Failed to lock the MM Config. errorMessage : "
+                            + response.json().get("errorMessage"),
+                        )
                 else:
-                    raise SDKException('Storage', '102',
-                                       "lock_unlock_mm_configuration :: Error code is not part of response JSON")
+                    raise SDKException(
+                        "Storage",
+                        "102",
+                        "lock_unlock_mm_configuration :: Error code is not part of response JSON",
+                    )
             else:
-                raise SDKException('Response', '102', "Invalid response")
+                raise SDKException("Response", "102", "Invalid response")
         else:
-            raise SDKException('Response', '101', "API call is not successful")
+            raise SDKException("Response", "101", "API call is not successful")
 
     def lock_mm_configuration(self, forceLock: bool = False) -> None:
         """Lock the Media Management (MM) configuration for tape library detection.
@@ -3643,7 +3713,6 @@ class TapeLibraries(Libraries):
         """
         self.__lock_unlock_mm_configuration(0)
 
-
     def detect_tape_library(self, mediaagents: list) -> dict:
         """Detect tape libraries associated with the specified MediaAgent(s).
 
@@ -3666,22 +3735,21 @@ class TapeLibraries(Libraries):
         #ai-gen-doc
         """
 
-        pay_load ={
-        "autoDetect": True,
-        "mediaAgentIdList": mediaagents
-        }
+        pay_load = {"autoDetect": True, "mediaAgentIdList": mediaagents}
 
         try:
             self.lock_mm_configuration()
-            flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DETECT_TAPE_LIBRARY, pay_load )
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                "POST", self._DETECT_TAPE_LIBRARY, pay_load
+            )
         finally:
             self.unlock_mm_configuration()
 
         if flag and response.json():
             return response.json()
-        raise SDKException('Storage', '102', "Failed to detect library")
+        raise SDKException("Storage", "102", "Failed to detect library")
 
-    def configure_tape_library(self, tape_library_name: str, mediaagents: list) -> 'TapeLibrary':
+    def configure_tape_library(self, tape_library_name: str, mediaagents: list) -> "TapeLibrary":
         """Configure a new tape library with the specified name and associated MediaAgents.
 
         Args:
@@ -3702,25 +3770,20 @@ class TapeLibraries(Libraries):
         #ai-gen-doc
         """
 
-        libraries=self.detect_tape_library(mediaagents)
-        flag=False
-        for lib in libraries['libraries']:
+        libraries = self.detect_tape_library(mediaagents)
+        flag = False
+        for lib in libraries["libraries"]:
+            if lib["libraryName"] == tape_library_name:
+                drive_list = lib["drives"]
 
-            if lib['libraryName'] == tape_library_name:
-                drive_list=lib['drives']
-
-                pay_load= {
-                    "driveList": drive_list,
-                    "hdr": {
-                        "tag": 0
-                    }
-                }
-                flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._CONFIGURE_TAPE_LIBRARY,
-                                                                                    pay_load)
+                pay_load = {"driveList": drive_list, "hdr": {"tag": 0}}
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    "POST", self._CONFIGURE_TAPE_LIBRARY, pay_load
+                )
                 break
 
         if not flag:
-            raise SDKException('Storage', '102', "Failed to configure the library")
+            raise SDKException("Storage", "102", "Failed to configure the library")
 
         self.refresh()
 
@@ -3730,8 +3793,7 @@ class TapeLibraries(Libraries):
                 return self.get(lib_name)
 
 
-
-class TapeLibrary(object):
+class TapeLibrary:
     """
     Represents a tape library within a CommCell environment.
 
@@ -3751,7 +3813,9 @@ class TapeLibrary(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', tape_library_name: str, tape_library_id: int = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", tape_library_name: str, tape_library_id: int = None
+    ) -> None:
         """Initialize a TapeLibrary object representing a specific tape library.
 
         Args:
@@ -3777,15 +3841,15 @@ class TapeLibrary(object):
             self._library_id = self._get_library_id()
 
         self._library_properties_service = self._commcell_object._services[
-                                               'GET_LIBRARY_PROPERTIES'] % (self._library_id)
+            "GET_LIBRARY_PROPERTIES"
+        ] % (self._library_id)
 
         self.library_properties = self._get_library_properties()
 
-        self._name = self.library_properties['library']['libraryName']
+        self._name = self.library_properties["library"]["libraryName"]
 
         self.media_details = None
         self.latest_media_details = False
-
 
     def __str__(self) -> str:
         """Return a string representation of the tape library.
@@ -3822,10 +3886,7 @@ class TapeLibrary(object):
         #ai-gen-doc
         """
         representation_string = 'TapeLibrary class instance for library: "{0}" of Commcell: "{1}"'
-        return representation_string.format(
-            self._name, self._commcell_object.commserv_name
-        )
-
+        return representation_string.format(self._name, self._commcell_object.commserv_name)
 
     def _get_library_id(self) -> str:
         """Retrieve the unique identifier associated with this tape library.
@@ -3842,7 +3903,6 @@ class TapeLibrary(object):
         """
         libraries = TapeLibraries(self._commcell_object)
         return libraries.get(self.library_name).library_id
-
 
     def get_drive_list(self) -> list[list]:
         """Retrieve the list of tape drives associated with this tape library.
@@ -3862,14 +3922,13 @@ class TapeLibrary(object):
 
         self.refresh()
 
-        drive_list=[]
+        drive_list = []
 
-        if 'DriveList' in self.library_properties:
+        if "DriveList" in self.library_properties:
             for drive in self.library_properties["DriveList"]:
                 drive_list.append([drive["driveName"], drive["driveId"]])
 
         return drive_list
-
 
     def _get_library_properties(self) -> Dict[str, Any]:
         """Retrieve the properties of the tape library.
@@ -3892,18 +3951,17 @@ class TapeLibrary(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._library_properties_service
+            "GET", self._library_properties_service
         )
 
         if flag:
             if response.json():
-                if 'libraryInfo' in response.json():
-                    return response.json()['libraryInfo']
-                raise SDKException('Storage', '102', 'Failed to get tape Library properties')
-            raise SDKException('Response', '102')
+                if "libraryInfo" in response.json():
+                    return response.json()["libraryInfo"]
+                raise SDKException("Storage", "102", "Failed to get tape Library properties")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
-
+        raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Reload the properties and state information for this tape library.
@@ -3919,7 +3977,6 @@ class TapeLibrary(object):
         #ai-gen-doc
         """
         self.library_properties = self._get_library_properties()
-
 
     @property
     def library_name(self) -> str:
@@ -3951,7 +4008,7 @@ class TapeLibrary(object):
         #ai-gen-doc
         """
         return self._library_id
-    
+
     # === Media Handling Methods ===
     def verify_media_status(self, barcode_list, verify_status=None):
         """
@@ -3963,44 +4020,48 @@ class TapeLibrary(object):
         for barcode in barcode_list:
             if not self.media_details or not self.latest_media_details:
                 self._get_all_media_details()
-            
+
             barcode_details = self.media_details.get(barcode, "")
             if not barcode_details:
-                raise SDKException('Storage', '102', f"Failed to check media details for Media BarCode: {barcode}")
+                raise SDKException(
+                    "Storage", "102", f"Failed to check media details for Media BarCode: {barcode}"
+                )
             status = barcode_details.get("status")
             if verify_status.lower() != status.lower():
-                raise SDKException('Storage', '102', f"Failed to verify media status {barcode}!")
+                raise SDKException("Storage", "102", f"Failed to verify media status {barcode}!")
         return True
 
     def _process_media_details(self, media_details_list):
         """
-        Process media details for all media and set media details. 
+        Process media details for all media and set media details.
         """
         self.media_details = {}
         for obj in media_details_list:
             media_barcode = obj.get("barcode")
             if not media_barcode:
-                raise SDKException('Storage', '102', "API Response failure, empty BarCode is being returned!!")
-            
-            # Note - Other required details can be fetched as needed later and getter methods can be set. 
+                raise SDKException(
+                    "Storage", "102", "API Response failure, empty BarCode is being returned!!"
+                )
+
+            # Note - Other required details can be fetched as needed later and getter methods can be set.
             self.media_details[media_barcode] = {
                 "mediaId": obj.get("mediaId"),
-                "status": obj.get("status")
+                "status": obj.get("status"),
             }
         self.latest_media_details = True
 
     # Getter Methods.
     def _get_all_media_details(self, filter_media_type="all", is_exported="0"):
         """
-        Calls v4 API to fetch all media details. 
+        Calls v4 API to fetch all media details.
         Args:
             **kwargs
                 -- filterMeidaType = [all, spare, cleaning, retired, overwirte_protected, assigned, exported]
-                -- isExported      = (0, 1) 
+                -- isExported      = (0, 1)
         """
-        url = self._services['MEDIA_IN_TAPE'] % (self.library_id, filter_media_type, is_exported)
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', url)
-        
+        url = self._services["MEDIA_IN_TAPE"] % (self.library_id, filter_media_type, is_exported)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", url)
+
         if flag:
             if response.json():
                 response = response.json()
@@ -4008,17 +4069,17 @@ class TapeLibrary(object):
                     media_details = response.get("mediaDetailsList", [])
                     self._process_media_details(media_details)
                 elif "errorCode" in response:
-                    error_message = response['errorMessage']
-                    o_str = 'Failed to fetch Media details\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    error_message = response["errorMessage"]
+                    o_str = f'Failed to fetch Media details\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
                 else:
-                    raise SDKException('Storage', '102', f"Unknown error - {response}")
+                    raise SDKException("Storage", "102", f"Unknown error - {response}")
             else:
-                raise SDKException('Storage', '102')
+                raise SDKException("Storage", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Storage', '102', f"v4 API error - {response_string}")
+            raise SDKException("Storage", "102", f"v4 API error - {response_string}")
 
     def get_media_status(self, barcode):
         """
@@ -4029,21 +4090,25 @@ class TapeLibrary(object):
         """
         if not self.media_details or not self.latest_media_details:
             self._get_all_media_details()
-        
+
         barcode_details = self.media_details.get(barcode, "")
         if not barcode_details:
-            raise SDKException('Storage', '102', f"Failed to check media details for Media BarCode: {barcode}. Please check if barcode is present in library.")
+            raise SDKException(
+                "Storage",
+                "102",
+                f"Failed to check media details for Media BarCode: {barcode}. Please check if barcode is present in library.",
+            )
         status = barcode_details.get("status")
         if not status:
-            raise SDKException('Storage', '102', f"Could not get status for: {barcode} media!!!!")
+            raise SDKException("Storage", "102", f"Could not get status for: {barcode} media!!!!")
         return status
-    
+
     def _get_media_id_list(self, barcode_list):
         """
         Returns list of media Ids.
 
         Args:
-            barcode_list (list[int])   -   barcode ids to be fetched. 
+            barcode_list (list[int])   -   barcode ids to be fetched.
         """
         if not self.media_details or not self.latest_media_details:
             self._get_all_media_details()
@@ -4051,16 +4116,17 @@ class TapeLibrary(object):
         media_id_list = []
         for barcode in barcode_list:
             if barcode not in self.media_details:
-                raise SDKException('Storage', '102', f"Media: {barcode} not in library. Please check manually.")
+                raise SDKException(
+                    "Storage", "102", f"Media: {barcode} not in library. Please check manually."
+                )
             media_id_list.append(self.media_details.get(barcode).get("mediaId"))
 
         return media_id_list
-            
 
     def _perform_drive_operation(self, driveId: int, operation: int):
         """
-        Common function to perform operation on drive. 
-        Supported Operations - 
+        Common function to perform operation on drive.
+        Supported Operations -
             - UNLOAD_DRIVE = 0
             - GET_MEDIA_INFO_VALIDATE_DRIVE = 1
             - RESET_DRIVE = 2
@@ -4068,17 +4134,14 @@ class TapeLibrary(object):
             - MARK_DRIVE_CLEAN = 4
             - MARK_DRIVE_FIXED = 5
 
-        Args: 
+        Args:
             driveId(int)    -   drive Id to be unloaded.
-            operation(int)  -   valid operation to be performed. 
+            operation(int)  -   valid operation to be performed.
         """
-        url = self._services['DRIVE_OPERATION']
-        
-        payload = {
-            "driveId": driveId,
-            "driveOperationType": operation
-            }
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', url, payload)
+        url = self._services["DRIVE_OPERATION"]
+
+        payload = {"driveId": driveId, "driveOperationType": operation}
+        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", url, payload)
 
         if flag:
             if response.json():
@@ -4087,21 +4150,25 @@ class TapeLibrary(object):
                     return True
 
                 elif "errorCode" in response:
-                    error_message = response['errorMessage']
+                    error_message = response["errorMessage"]
                     o_str = f"Failed perform operation {operation} \nError: {error_message}"
-                    raise SDKException('Storage', '102', o_str)
+                    raise SDKException("Storage", "102", o_str)
                 else:
-                    raise SDKException('Storage', '102', f"Unable to perform media operation, Error - {response}")
+                    raise SDKException(
+                        "Storage", "102", f"Unable to perform media operation, Error - {response}"
+                    )
             else:
-                raise SDKException('Storage', '102')
+                raise SDKException("Storage", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Storage', '102', f"Perform operation failed, Error - {response_string}")
+            raise SDKException(
+                "Storage", "102", f"Perform operation failed, Error - {response_string}"
+            )
 
     def _perform_media_operations(self, media_id_list, operation):
         """
-        Common function to perform media operations. 
-        Supported Operations - 
+        Common function to perform media operations.
+        Supported Operations -
             - DISCOVER_MEDIA
             - MARK_MEDIA_GOOD
             - MARK_MEDIA_BAD
@@ -4119,16 +4186,13 @@ class TapeLibrary(object):
             - MOVE_MEDIA
 
         Args:
-            media_id_list (list[int])   -   list of media ids for which operation needs to be performed. 
-            operation (str)             -   operation name tag to be performed. 
+            media_id_list (list[int])   -   list of media ids for which operation needs to be performed.
+            operation (str)             -   operation name tag to be performed.
         """
-        url = self._services['MEDIA_OPERATION'] % (self.library_id)
-        
-        payload = {
-            "operationType": operation,
-            "mediaList": media_id_list
-            }
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', url, payload)
+        url = self._services["MEDIA_OPERATION"] % (self.library_id)
+
+        payload = {"operationType": operation, "mediaList": media_id_list}
+        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", url, payload)
 
         if flag:
             if response.json():
@@ -4137,17 +4201,21 @@ class TapeLibrary(object):
                     return True
 
                 elif "errorCode" in response:
-                    error_message = response['errorMessage']
+                    error_message = response["errorMessage"]
                     o_str = f"Failed perform operation {operation} \nError: {error_message}"
-                    raise SDKException('Storage', '102', o_str)
+                    raise SDKException("Storage", "102", o_str)
                 else:
-                    raise SDKException('Storage', '102', f"Unable to perform media operation, Error - {response}")
+                    raise SDKException(
+                        "Storage", "102", f"Unable to perform media operation, Error - {response}"
+                    )
             else:
-                raise SDKException('Storage', '102')
+                raise SDKException("Storage", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Storage', '102', f"Perform operation failed, Error - {response_string}")
-    
+            raise SDKException(
+                "Storage", "102", f"Perform operation failed, Error - {response_string}"
+            )
+
     def unload_drive(self, drive_id):
         """
         Performs Unload drive operation.
@@ -4165,9 +4233,9 @@ class TapeLibrary(object):
             barcode_list (list[str])   -   barcodes that needs to be marked appendable.
         """
         media_id_list = self._get_media_id_list(barcode_list)
-        self._perform_media_operations(media_id_list, 'MARK_MEDIA_APPENDABLE')
+        self._perform_media_operations(media_id_list, "MARK_MEDIA_APPENDABLE")
         self.latest_media_details = False
-        self.verify_media_status(barcode_list, 'Appendable Media')
+        self.verify_media_status(barcode_list, "Appendable Media")
 
     def mark_media_full(self, barcode_list):
         """
@@ -4177,8 +4245,8 @@ class TapeLibrary(object):
             barcode (list[str])   -   barcodes that needs to be marked full.
         """
         media_id_list = self._get_media_id_list(barcode_list)
-        self._perform_media_operations(media_id_list, 'MARK_MEDIA_FULL')
+        self._perform_media_operations(media_id_list, "MARK_MEDIA_FULL")
         self.latest_media_details = False
-        self.verify_media_status(barcode_list, 'Full Media')
-    
+        self.verify_media_status(barcode_list, "Full Media")
+
     # === Media Handling Methods Complete ===

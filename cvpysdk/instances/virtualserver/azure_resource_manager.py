@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -38,9 +36,9 @@ AzureResoureceManagerInstance: Derived class from VirtualServer
 
 """
 
-from ..vsinstance import VirtualServerInstance
-
 from typing import TYPE_CHECKING
+
+from ..vsinstance import VirtualServerInstance
 
 if TYPE_CHECKING:
     from ...agent import Agent
@@ -65,7 +63,7 @@ class AzureRMInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+    def __init__(self, agent: "Agent", name: str, iid: str) -> None:
         """Initialize an AzureRMInstance object for the specified Virtual Server instance.
 
         Args:
@@ -97,18 +95,19 @@ class AzureRMInstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(AzureRMInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         self._server_name = []
-        if 'virtualServerInstance' in self._properties:
+        if "virtualServerInstance" in self._properties:
             if self._properties["virtualServerInstance"]["associatedClients"].get("memberServers"):
-                _member_servers = self._properties["virtualServerInstance"] \
-                    ["associatedClients"]["memberServers"]
+                _member_servers = self._properties["virtualServerInstance"]["associatedClients"][
+                    "memberServers"
+                ]
             else:
                 _member_servers = []
             for _each_client in _member_servers:
-                client = _each_client['client']
-                if 'clientName' in client.keys():
-                    self._server_name.append(str(client['clientName']))
+                client = _each_client["client"]
+                if "clientName" in client.keys():
+                    self._server_name.append(str(client["clientName"]))
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient.
@@ -124,10 +123,10 @@ class AzureRMInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": {},
+                },
             }
         }
         return instance_json
@@ -146,12 +145,15 @@ class AzureRMInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(AzureRMInstance, self)._get_application_properties()
-        if 'azureResourceManager' in self._application_properties:
-            self._subscription_id = self._application_properties['azureResourceManager']['subscriptionId']
+        super()._get_application_properties()
+        if "azureResourceManager" in self._application_properties:
+            self._subscription_id = self._application_properties["azureResourceManager"][
+                "subscriptionId"
+            ]
 
-    def _update_azure_credentials(self, credential_id: int, credential_name: str = None,
-                                  usemanaged_identity: bool = False) -> None:
+    def _update_azure_credentials(
+        self, credential_id: int, credential_name: str = None, usemanaged_identity: bool = False
+    ) -> None:
         """Update the Azure credentials for the hypervisor instance.
 
         This method updates the credentials used by the Azure hypervisor, allowing you to specify a new credential ID,
@@ -170,15 +172,12 @@ class AzureRMInstance(VirtualServerInstance):
         self._credential_json = {
             "hypervisorType": self._vendor_id,
             "skipCredentialValidation": False,
-            "credentials": {
-                "id": credential_id,
-                "name": credential_name
-            },
+            "credentials": {"id": credential_id, "name": credential_name},
             "subscriptionId": self._subscription_id,
-            "useManagedIdentity": usemanaged_identity
+            "useManagedIdentity": usemanaged_identity,
         }
 
-        super(AzureRMInstance, self)._update_hypervisor_credentials(self._credential_json)
+        super()._update_hypervisor_credentials(self._credential_json)
 
     @property
     def server_name(self) -> list:

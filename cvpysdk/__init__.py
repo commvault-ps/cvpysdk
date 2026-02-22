@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -35,5 +33,5 @@ And Commvault Software v11 SP7 or later release with WebConsole installed
 
 """
 
-__author__ = 'Commvault Systems Inc.'
-__version__ = '11.42'
+__author__ = "Commvault Systems Inc."
+__version__ = "11.42"

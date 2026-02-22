@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -63,7 +61,7 @@ Credentials:
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
 
     add_azure_app_registration_creds()  --  Creates credential for azure using azure application
-	                                id and application secret key
+                                        id and application secret key
 
     add_aws_s3_creds()          --  Creates aws s3 credential
 
@@ -98,18 +96,16 @@ Credential:
 
 
 """
-import json
+
 from base64 import b64encode
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from .commcell import Commcell
-from .security.usergroup import UserGroups
 from .exception import SDKException
-from .constants import Credential_Type
 
 
-class Credentials(object):
+class Credentials:
     """
     Manages and maintains all configured credentials within a Commcell environment.
 
@@ -139,7 +135,7 @@ class Credentials(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize the Credentials object for a given Commcell instance.
 
         Args:
@@ -156,10 +152,7 @@ class Credentials(object):
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._credentials = self._get_credentials()
-        self.record_type = {
-            'windows': 1,
-            'linux': 2
-        }
+        self.record_type = {"windows": 1, "linux": 2}
 
     def __str__(self) -> str:
         """Return a formatted string representation of all credentials configured on the Commcell.
@@ -181,10 +174,10 @@ class Credentials(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Credentials')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Credentials")
 
         for index, credentials in enumerate(self._credentials):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, credentials)
+            sub_str = f"{index + 1:^5}\t{credentials:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -227,25 +220,24 @@ class Credentials(object):
 
         #ai-gen-doc
         """
-        get_all_credential_service = self._services['ALL_CREDENTIALS']
+        get_all_credential_service = self._services["ALL_CREDENTIALS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_all_credential_service
+            "GET", get_all_credential_service
         )
 
         if flag:
             credentials_dict = {}
-            if response.json() and 'credentialRecordInfo' in response.json():
-
-                for credential in response.json()['credentialRecordInfo']:
-                    temp_id = credential['credentialRecord']['credentialId']
-                    temp_name = credential['credentialRecord']['credentialName'].lower()
+            if response.json() and "credentialRecordInfo" in response.json():
+                for credential in response.json()["credentialRecordInfo"]:
+                    temp_id = credential["credentialRecord"]["credentialId"]
+                    temp_name = credential["credentialRecord"]["credentialName"].lower()
                     credentials_dict[temp_name] = temp_id
 
             return credentials_dict
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_credentials(self) -> Dict[str, int]:
@@ -287,11 +279,11 @@ class Credentials(object):
         #ai-gen-doc
         """
         if not isinstance(credential_name, str):
-            raise SDKException('Credentials', '101')
+            raise SDKException("Credentials", "101")
 
         return self._credentials and credential_name.lower() in self._credentials
 
-    def get(self, credential_name: str) -> 'Credential':
+    def get(self, credential_name: str) -> "Credential":
         """Retrieve the Credential object for the specified credential name.
 
         Args:
@@ -313,15 +305,23 @@ class Credentials(object):
         """
         if not self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "Credential {0} doesn't exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"Credential {credential_name} doesn't exists on this commcell.",
             )
 
-        return Credential(self._commcell_object, credential_name, self._credentials[
-            credential_name.lower()])
+        return Credential(
+            self._commcell_object, credential_name, self._credentials[credential_name.lower()]
+        )
 
-    def add(self, record_type: str, credential_name: str, user_name: str, user_password: str,
-            description: Optional[str] = None) -> None:
+    def add(
+        self,
+        record_type: str,
+        credential_name: str,
+        user_name: str,
+        user_password: str,
+        description: Optional[str] = None,
+    ) -> None:
         """Create a new credential account on the Commcell.
 
         Args:
@@ -350,46 +350,44 @@ class Credentials(object):
         """
 
         if not (isinstance(credential_name, str) and isinstance(user_name, str)):
-            raise SDKException('User', '101')
+            raise SDKException("User", "101")
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
             )
         password = b64encode(user_password.encode()).decode()
 
-        record = {
-            "userName": user_name,
-            "password": password
-        }
+        record = {"userName": user_name, "password": password}
         create_credential_account = {
-            "credentialRecordInfo": [{
-                "recordType": self.record_type[record_type.lower()],
-                "description": description,
-                "credentialRecord": {
-                    "credentialName": credential_name
-                },
-                "record": record,
-            }]
+            "credentialRecordInfo": [
+                {
+                    "recordType": self.record_type[record_type.lower()],
+                    "description": description,
+                    "credentialRecord": {"credentialName": credential_name},
+                    "record": record,
+                }
+            ]
         }
 
-        request = self._services['CREDENTIAL']
+        request = self._services["CREDENTIAL"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential_account
+            "POST", request, create_credential_account
         )
         if flag:
             if response.json():
-                response_json = response.json()['error']
-                error_code = response_json['errorCode']
-                error_message = response_json['errorMessage']
+                response_json = response.json()["error"]
+                error_code = response_json["errorCode"]
+                error_message = response_json["errorMessage"]
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def refresh(self) -> None:
@@ -429,35 +427,32 @@ class Credentials(object):
         """
         if not self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "credential {0} doesn't exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"credential {credential_name} doesn't exists on this commcell.",
             )
 
-        delete_credential = self._services['DELETE_RECORD']
+        delete_credential = self._services["DELETE_RECORD"]
 
         request_json = {
-            "credentialRecordInfo": [{
-                "credentialRecord": {
-                    "credentialName": credential_name
-                }
-            }]
+            "credentialRecordInfo": [{"credentialRecord": {"credentialName": credential_name}}]
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', delete_credential, request_json
+            "POST", delete_credential, request_json
         )
         if flag:
             if response.json():
-                response_json = response.json()['error']
-                error_code = response_json['errorCode']
-                error_message = response_json['errorMessage']
+                response_json = response.json()["error"]
+                error_code = response_json["errorCode"]
+                error_message = response_json["errorMessage"]
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def get_security_associations(self, owner: str, is_user: bool = False) -> Dict[str, Any]:
@@ -485,38 +480,37 @@ class Credentials(object):
             userOrGroupInfo = {
                 "entityTypeName": "USER_ENTITY",
                 "userGroupName": owner,
-                "userGroupId": int(self._commcell_object.users.get(owner).user_id)
+                "userGroupId": int(self._commcell_object.users.get(owner).user_id),
             }
         else:
             userOrGroupInfo = {
                 "entityTypeName": "USERGROUP_ENTITY",
                 "userGroupName": owner,
-                "userGroupId": int(self._commcell_object.user_groups.get(owner).user_group_id)
+                "userGroupId": int(self._commcell_object.user_groups.get(owner).user_group_id),
             }
         security_association = {
             "associationsOperationType": 1,
             "associations": [
                 {
-                    "userOrGroup": [
-                        userOrGroupInfo
-                    ],
+                    "userOrGroup": [userOrGroupInfo],
                     "properties": {
                         "isCreatorAssociation": False,
                         "permissions": [
                             {
                                 "permissionId": 218,
                                 "_type_": 122,
-                                "permissionName": "User Credential"
+                                "permissionName": "User Credential",
                             }
-                        ]
-                    }
+                        ],
+                    },
                 }
-            ]
+            ],
         }
         return security_association
 
-    def add_storage_array_creds(self, credential_name: str, username: str, password: str,
-                                description: Optional[str] = None) -> 'Credential':
+    def add_storage_array_creds(
+        self, credential_name: str, username: str, password: str, description: Optional[str] = None
+    ) -> "Credential":
         """Create a new storage array credential on the Commcell.
 
         Args:
@@ -546,8 +540,9 @@ class Credentials(object):
         """
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
             )
         encoded_password = b64encode(password.encode()).decode()
         create_credential = {
@@ -555,33 +550,33 @@ class Credentials(object):
             "name": credential_name,
             "userAccount": username,
             "password": encoded_password,
-            "description": description
+            "description": description,
         }
 
-        request = self._services['ADD_CREDENTIALS']
+        request = self._services["ADD_CREDENTIALS"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
+            "POST", request, create_credential
         )
         if flag:
             if response.json():
-                id = response.json()['id']
+                id = response.json()["id"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
 
     def add_database_creds(
-            self,
-            database_type: str,
-            credential_name: str,
-            username: str,
-            password: str,
-            description: Optional[str] = None,
-            service_name: Optional[str] = None
-    ) -> 'Credential':
+        self,
+        database_type: str,
+        credential_name: str,
+        username: str,
+        password: str,
+        description: Optional[str] = None,
+        service_name: Optional[str] = None,
+    ) -> "Credential":
         """Create a new database credential on the Commcell for the specified database type.
 
         Args:
@@ -613,15 +608,22 @@ class Credentials(object):
 
         #ai-gen-doc
         """
-        if database_type not in ["MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT",
-                                 "SQL_SERVER_ACCOUNT","SYBASE"]:
-            raise SDKException(
-                'Credential', '102', "Invalid database Type provided."
-            )
+        if database_type not in [
+            "MYSQL",
+            "INFORMIX",
+            "POSTGRESQL",
+            "DB2",
+            "ORACLE",
+            "ORACLE_CATALOG_ACCOUNT",
+            "SQL_SERVER_ACCOUNT",
+            "SYBASE",
+        ]:
+            raise SDKException("Credential", "102", "Invalid database Type provided.")
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
             )
         password = b64encode(password.encode()).decode()
         create_credential = {
@@ -630,29 +632,30 @@ class Credentials(object):
             "name": credential_name,
             "username": username,
             "password": password,
-            "description": description
+            "description": description,
         }
 
         if database_type in ["ORACLE", "ORACLE_CATALOG_ACCOUNT"]:
             create_credential["serviceName"] = service_name
 
-        request = self._services['ADD_CREDENTIALS']
+        request = self._services["ADD_CREDENTIALS"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
+            "POST", request, create_credential
         )
         if flag:
             if response.json():
-                id = response.json()['id']
+                id = response.json()["id"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
 
-    def add_db2_database_creds(self, credential_name: str, username: str, password: str,
-                               description: Optional[str] = None) -> None:
+    def add_db2_database_creds(
+        self, credential_name: str, username: str, password: str, description: Optional[str] = None
+    ) -> None:
         """Create a DB2 database credential on the Commcell.
 
         Args:
@@ -678,8 +681,9 @@ class Credentials(object):
         """
         self.add_database_creds("DB2", credential_name, username, password, description)
 
-    def add_postgres_database_creds(self, credential_name: str, username: str, password: str,
-                                    description: Optional[str] = None) -> None:
+    def add_postgres_database_creds(
+        self, credential_name: str, username: str, password: str, description: Optional[str] = None
+    ) -> None:
         """Create a PostgreSQL credential on the Commcell.
 
         Args:
@@ -704,8 +708,9 @@ class Credentials(object):
         """
         self.add_database_creds("POSTGRESQL", credential_name, username, password, description)
 
-    def add_informix_database_creds(self, credential_name: str, username: str, password: str,
-                                    description: Optional[str] = None) -> None:
+    def add_informix_database_creds(
+        self, credential_name: str, username: str, password: str, description: Optional[str] = None
+    ) -> None:
         """Create an Informix database credential on the Commcell.
 
         Args:
@@ -730,8 +735,9 @@ class Credentials(object):
         """
         self.add_database_creds("INFORMIX", credential_name, username, password, description)
 
-    def add_mysql_database_creds(self, credential_name: str, username: str, password: str,
-                                 description: Optional[str] = None) -> None:
+    def add_mysql_database_creds(
+        self, credential_name: str, username: str, password: str, description: Optional[str] = None
+    ) -> None:
         """Create a MySQL credential on the Commcell.
 
         Args:
@@ -757,8 +763,14 @@ class Credentials(object):
         """
         self.add_database_creds("MYSQL", credential_name, username, password, description)
 
-    def add_oracle_database_creds(self, credential_name: str, username: str, password: str, service_name: str,
-                                  description: Optional[str] = None):
+    def add_oracle_database_creds(
+        self,
+        credential_name: str,
+        username: str,
+        password: str,
+        service_name: str,
+        description: Optional[str] = None,
+    ):
         """Create Oracle database credentials on the Commcell.
 
         Args:
@@ -784,10 +796,18 @@ class Credentials(object):
 
         #ai-gen-doc
         """
-        return self.add_database_creds("ORACLE", credential_name, username, password, description, service_name)
+        return self.add_database_creds(
+            "ORACLE", credential_name, username, password, description, service_name
+        )
 
-    def add_oracle_catalog_creds(self, credential_name: str, username: str, password: str, service_name: str,
-                                 description: Optional[str] = None):
+    def add_oracle_catalog_creds(
+        self,
+        credential_name: str,
+        username: str,
+        password: str,
+        service_name: str,
+        description: Optional[str] = None,
+    ):
         """Create Oracle Recovery Catalog credentials on the Commcell.
 
         This method adds a new Oracle Recovery Catalog credential account, which can be used for database operations requiring authentication.
@@ -813,8 +833,15 @@ class Credentials(object):
             ... )
         #ai-gen-doc
         """
-        return self.add_database_creds("ORACLE_CATALOG_ACCOUNT", credential_name, username, password, description,
-                                       service_name)
+        return self.add_database_creds(
+            "ORACLE_CATALOG_ACCOUNT",
+            credential_name,
+            username,
+            password,
+            description,
+            service_name,
+        )
+
     def add_sybase_database_creds(self, credential_name, username, password, description=None):
         """Create Sybase database credentials on the Commcell.
 
@@ -841,8 +868,9 @@ class Credentials(object):
         """
         return self.add_database_creds("SYBASE", credential_name, username, password, description)
 
-
-    def add_azure_cloud_creds(self, credential_name: str, account_name: str, access_key_id: str, **kwargs: Any) -> None:
+    def add_azure_cloud_creds(
+        self, credential_name: str, account_name: str, access_key_id: str, **kwargs: Any
+    ) -> None:
         """Create an Azure access key-based credential on this Commcell.
 
         This method adds a new credential for an Azure storage account using the provided access key.
@@ -874,14 +902,18 @@ class Credentials(object):
         """
         description = kwargs.get("description", "")
 
-        if not (isinstance(access_key_id, str) and isinstance(account_name, str)
-                and isinstance(credential_name, str)):
+        if not (
+            isinstance(access_key_id, str)
+            and isinstance(account_name, str)
+            and isinstance(credential_name, str)
+        ):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
             )
 
         password = b64encode(access_key_id.encode()).decode()
@@ -891,55 +923,49 @@ class Credentials(object):
                 "endpoints": {
                     "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
                     "storageEndpoint": "blob.core.windows.net",
-                    "resourceManagerEndpoint": "https://management.azure.com/"
-                }
+                    "resourceManagerEndpoint": "https://management.azure.com/",
+                },
             }
         }
 
         create_credential_account = {
             "credentialRecordInfo": [
                 {
-                    "credentialRecord": {
-                        "credentialName": credential_name
-                    },
-
-                    "record": {
-                        "userName": account_name,
-                        "password": password
-                    },
+                    "credentialRecord": {"credentialName": credential_name},
+                    "record": {"userName": account_name, "password": password},
                     "recordType": "MICROSOFT_AZURE",
                     "additionalInformation": additional_information,
-                    "description": description
+                    "description": description,
                 }
             ]
         }
 
-        request = self._services['CREDENTIAL']
+        request = self._services["CREDENTIAL"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential_account
+            "POST", request, create_credential_account
         )
         if flag:
             if response.json():
-                response_json = response.json()['error']
-                error_code = response_json['errorCode']
-                error_message = response_json['errorMessage']
+                response_json = response.json()["error"]
+                error_code = response_json["errorCode"]
+                error_message = response_json["errorMessage"]
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def add_azure_app_registration_creds(
-            self,
-            credential_name: str,
-            tenant_id: str,
-            application_id: str,
-            application_secret: str,
-            description: str = "",
-            **kwargs: Any
+        self,
+        credential_name: str,
+        tenant_id: str,
+        application_id: str,
+        application_secret: str,
+        description: str = "",
+        **kwargs: Any,
     ) -> None:
         """Create Azure application registration credentials on the Commcell.
 
@@ -982,22 +1008,19 @@ class Credentials(object):
         #ai-gen-doc
         """
         if not (
-                isinstance(
-                    application_id,
-                    str) and isinstance(
-            tenant_id,
-            str) and isinstance(
-            credential_name,
-            str) and isinstance(
-            application_secret,
-            str)):
+            isinstance(application_id, str)
+            and isinstance(tenant_id, str)
+            and isinstance(credential_name, str)
+            and isinstance(application_secret, str)
+        ):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential',
-                '102',
-                "Credential {0} already exists on this commcell.".format(credential_name))
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
+            )
 
         password = b64encode(application_secret.encode()).decode()
 
@@ -1010,21 +1033,21 @@ class Credentials(object):
                             "endpoints": {
                                 "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
                                 "resourceManagerEndpoint": "https://management.azure.com/",
-                                "storageEndpoint": "blob.core.windows.net"},
+                                "storageEndpoint": "blob.core.windows.net",
+                            },
                             "environment": "AzureCloud",
-                            "tenantId": tenant_id}
+                            "tenantId": tenant_id,
+                        }
                     },
                     "createAs": {},
-                    "credentialRecord": {
-                        "credentialName": credential_name},
+                    "credentialRecord": {"credentialName": credential_name},
                     "description": description,
-                    "record": {
-                        "userName": application_id,
-                        "password": password},
+                    "record": {"userName": application_id, "password": password},
                     "recordType": "AZUREACCOUNT",
-                    "securityAssociations": {
-                        "associations": [],
-                        "associationsOperationType": 1}}]}
+                    "securityAssociations": {"associations": [], "associationsOperationType": 1},
+                }
+            ]
+        }
 
         if kwargs.get("cert_path", None) and kwargs.get("cert_password", None):
             cert_string = b64encode(kwargs.get("cert_path")).decode()
@@ -1042,58 +1065,61 @@ class Credentials(object):
                 "endpoints": {
                     "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
                     "resourceManagerEndpoint": "https://management.azure.com/",
-                    "storageEndpoint": "blob.core.windows.net"
-                }
+                    "storageEndpoint": "blob.core.windows.net",
+                },
             }
             create_credential_account["credentialRecordInfo"][0]["additionalInformation"][
-                "azureCredInfo"] = azure_cred_info
-            create_credential_account["credentialRecordInfo"][0]["recordType"] = "AZUREACCOUNT_SECRET_CERTIFICATE"
+                "azureCredInfo"
+            ] = azure_cred_info
+            create_credential_account["credentialRecordInfo"][0]["recordType"] = (
+                "AZUREACCOUNT_SECRET_CERTIFICATE"
+            )
 
-        request = self._services['CREDENTIAL']
+        request = self._services["CREDENTIAL"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential_account
+            "POST", request, create_credential_account
         )
         if flag:
             if response.json():
-                response_json = response.json()['error']
-                error_code = response_json['errorCode']
-                error_message = response_json['errorMessage']
+                response_json = response.json()["error"]
+                error_code = response_json["errorCode"]
+                error_message = response_json["errorMessage"]
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
-    def add_k8s_credentials(self, api_endpoint, ca_certificate, description, name, service_account, service_token):
+    def add_k8s_credentials(
+        self, api_endpoint, ca_certificate, description, name, service_account, service_token
+    ):
         """Creates k8s credential on this commcell
-            Args:
+        Args:
 
-                api_endpoint (str)   --  API endpoint of the k8s cluster
+            api_endpoint (str)   --  API endpoint of the k8s cluster
 
-                ca_certificate  (str)     --  CA certificate of the k8s cluster
+            ca_certificate  (str)     --  CA certificate of the k8s cluster
 
-                description (str)       --  description of the credential
+            description (str)       --  description of the credential
 
-                name (str)       --  name to be given to credential account
+            name (str)       --  name to be given to credential account
 
-                service_account (str)       --  service account name
+            service_account (str)       --  service account name
 
-                service_token (str)       --  service account token
+            service_token (str)       --  service account token
 
-            Raises:
-                SDKException:
-                    if credential account is already present on the commcell
+        Raises:
+            SDKException:
+                if credential account is already present on the commcell
 
-                    if response is not successful
+                if response is not successful
         """
         if self.has_credential(name):
             raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    name)
+                "Credential", "102", f"Credential {name} already exists on this commcell."
             )
         encoded_token = b64encode(service_token.encode()).decode()
         create_credential = {
@@ -1103,30 +1129,30 @@ class Credentials(object):
             "apiEndpoint": api_endpoint,
             "caCertificate": ca_certificate,
             "serviceAccount": service_account,
-            "serviceToken": encoded_token
+            "serviceToken": encoded_token,
         }
 
-        request = self._services['ADD_CREDENTIALS']
+        request = self._services["ADD_CREDENTIALS"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
+            "POST", request, create_credential
         )
         if flag:
             if response.json():
-                id = response.json()['id']
+                id = response.json()["id"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
         return Credential(self._commcell_object, name, id)
 
     def add_aws_s3_creds(
-            self,
-            credential_name: str,
-            access_key_id: str,
-            secret_access_key: str,
-            description: Optional[str] = None
+        self,
+        credential_name: str,
+        access_key_id: str,
+        secret_access_key: str,
+        description: Optional[str] = None,
     ) -> None:
         """Create an AWS S3 access key-based credential on this Commcell.
 
@@ -1158,60 +1184,48 @@ class Credentials(object):
         """
 
         if not (
-                isinstance(
-                    access_key_id,
-                    str) and isinstance(
-            secret_access_key,
-            str) and isinstance(
-            credential_name,
-            str)):
+            isinstance(access_key_id, str)
+            and isinstance(secret_access_key, str)
+            and isinstance(credential_name, str)
+        ):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential',
-                '102',
-                "Credential {0} already exists on this commcell.".format(credential_name))
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
+            )
 
         password = b64encode(secret_access_key.encode()).decode()
         create_credential_account = {
             "credentialRecordInfo": [
                 {
-                    "createAs": {
-                    },
-                    "credentialRecord": {
-                        "credentialName": credential_name
-                    },
+                    "createAs": {},
+                    "credentialRecord": {"credentialName": credential_name},
                     "description": description,
-                    "record": {
-                        "userName": access_key_id,
-                        "password": password
-                    },
+                    "record": {"userName": access_key_id, "password": password},
                     "recordType": "AMAZON_S3",
-                    "securityAssociations": {
-                        "associations": [
-                        ],
-                        "associationsOperationType": 1
-                    }
+                    "securityAssociations": {"associations": [], "associationsOperationType": 1},
                 }
             ]
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._services['CREDENTIAL'], payload=create_credential_account)
+            "POST", self._services["CREDENTIAL"], payload=create_credential_account
+        )
         if flag:
             if response.json():
-                response_json = response.json()['error']
-                error_code = response_json['errorCode']
-                error_message = response_json['errorMessage']
+                response_json = response.json()["error"]
+                error_code = response_json["errorCode"]
+                error_message = response_json["errorMessage"]
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def add_aws_creds(self, credential_name: str, creds_type: str, **kwargs: Any) -> None:
@@ -1256,16 +1270,22 @@ class Credentials(object):
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', f"Credential {credential_name} already exists on this commcell."
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
             )
 
-        if creds_type == 'AWS_ACCESS_KEY':
-            access_key = kwargs.get('access_key')
-            secret = kwargs.get('secret')
-            description = kwargs.get('description', "")
-            if not access_key or not secret or not (isinstance(access_key, str) and isinstance(secret, str)):
+        if creds_type == "AWS_ACCESS_KEY":
+            access_key = kwargs.get("access_key")
+            secret = kwargs.get("secret")
+            description = kwargs.get("description", "")
+            if (
+                not access_key
+                or not secret
+                or not (isinstance(access_key, str) and isinstance(secret, str))
+            ):
                 raise SDKException("Credential", "102", "Invalid AWS access key or secret.")
-            encoded_secret = b64encode(secret.encode('utf-8')).decode('utf-8')
+            encoded_secret = b64encode(secret.encode("utf-8")).decode("utf-8")
             create_credential_account = {
                 "accountType": "CLOUD_ACCOUNT",
                 "vendorType": "AMAZON",
@@ -1273,13 +1293,13 @@ class Credentials(object):
                 "name": credential_name,
                 "accessKeyId": access_key,
                 "secretAccessKey": encoded_secret,
-                "description": description
+                "description": description,
             }
 
-        elif creds_type == 'AWS_STS_IAM_ROLE':
-            role_arn = kwargs.get('role_arn')
-            external_id = kwargs.get('external_id', "")
-            description = kwargs.get('description', "")
+        elif creds_type == "AWS_STS_IAM_ROLE":
+            role_arn = kwargs.get("role_arn")
+            external_id = kwargs.get("external_id", "")
+            description = kwargs.get("description", "")
             if not role_arn or not isinstance(role_arn, str):
                 raise SDKException("Credential", "102", "Invalid IAM role ARN.")
             create_credential_account = {
@@ -1290,34 +1310,41 @@ class Credentials(object):
                 "externalId": external_id,
                 "roleArn": role_arn,
                 "description": description,
-                "password": ""
+                "password": "",
             }
 
         else:
             raise SDKException("Credential", "102", f"Unsupported credential type: {creds_type}")
 
-        request = self._services['ADD_CREDENTIALS']
+        request = self._services["ADD_CREDENTIALS"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential_account
+            "POST", request, create_credential_account
         )
 
         if flag:
             if response.json():
-                response_json = response.json().get('error', {})
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                response_json = response.json().get("error", {})
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if error_code != 0:
-                    raise SDKException('Response', '102', error_message)
+                    raise SDKException("Response", "102", error_message)
             else:
-                raise SDKException('Response', '102', "Empty response received.")
+                raise SDKException("Response", "102", "Empty response received.")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         self.refresh()
 
-    def add_bigdata_creds(self, database_type: str, credential_name: str, username: str, password: str,
-                          description: Optional[str] = None, **kwargs: Any) -> 'Credential':
+    def add_bigdata_creds(
+        self,
+        database_type: str,
+        credential_name: str,
+        username: str,
+        password: str,
+        description: Optional[str] = None,
+        **kwargs: Any,
+    ) -> "Credential":
         """Create a big data credential for a specified database type on this Commcell.
 
         This method adds a credential for supported big data database types such as Cassandra, CockroachDB, or MongoDB.
@@ -1367,26 +1394,31 @@ class Credentials(object):
         #ai-gen-doc
         """
         valid_types = {
-            "CASSANDRA_ACCOUNT", "CASSANDRA_JMX_ACCOUNT", "CASSANDRA_TRUSTSTORE_ACCOUNT",
-            "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS",
-            "COUCHBASE_ACCOUNT", "YUGABYTE_ACCOUNT"
+            "CASSANDRA_ACCOUNT",
+            "CASSANDRA_JMX_ACCOUNT",
+            "CASSANDRA_TRUSTSTORE_ACCOUNT",
+            "CASSANDRA_KEYSTORE_ACCOUNT",
+            "COCKROACHDB_ACCOUNT",
+            "MONGODB_ACCOUNT",
+            "MONGODB_SSL_OPTIONS",
+            "COUCHBASE_ACCOUNT",
+            "YUGABYTE_ACCOUNT",
         }
 
         if database_type not in valid_types:
-            raise SDKException(
-                'Credential', '102', "Invalid database Type provided."
-            )
+            raise SDKException("Credential", "102", "Invalid database Type provided.")
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
+                "Credential",
+                "102",
+                f"Credential {credential_name} already exists on this commcell.",
             )
         password = b64encode(password.encode()).decode()
 
         if database_type == "COCKROACHDB_ACCOUNT":
-            sslClientCertFile = kwargs.get('sslClientCertFile', "")
-            sslCAFile = kwargs.get('sslCAFile', "")
-            sslPEMKeyFile = kwargs.get('sslPEMKeyFile', "")
+            sslClientCertFile = kwargs.get("sslClientCertFile", "")
+            sslCAFile = kwargs.get("sslCAFile", "")
+            sslPEMKeyFile = kwargs.get("sslPEMKeyFile", "")
             create_credential = {
                 "accountType": "BIG_DATA_APPS_ACCOUNT",
                 "databaseCredentialType": database_type,
@@ -1395,7 +1427,7 @@ class Credentials(object):
                 "sslCAFile": sslCAFile,
                 "sslPEMKeyFile": sslPEMKeyFile,
                 "password": password,
-                "description": description
+                "description": description,
             }
         elif database_type == "MONGODB_ACCOUNT":
             create_credential = {
@@ -1404,12 +1436,12 @@ class Credentials(object):
                 "accountType": "BIG_DATA_APPS_ACCOUNT",
                 "databaseCredentialType": database_type,
                 "userName": username,
-                "password": password
+                "password": password,
             }
         elif database_type == "MONGODB_SSL_OPTIONS":
-            sslClientCertFile = kwargs.get('sslClientCertFile', "")
-            sslCAFile = kwargs.get('sslCAFile', "")
-            sslPEMKeyFile = kwargs.get('sslPEMKeyFile', "")
+            sslClientCertFile = kwargs.get("sslClientCertFile", "")
+            sslCAFile = kwargs.get("sslCAFile", "")
+            sslPEMKeyFile = kwargs.get("sslPEMKeyFile", "")
             create_credential = {
                 "accountType": "BIG_DATA_APPS_ACCOUNT",
                 "databaseCredentialType": database_type,
@@ -1418,7 +1450,7 @@ class Credentials(object):
                 "sslPEMKeyFile": sslPEMKeyFile,
                 "username": username,
                 "password": password,
-                "description": description
+                "description": description,
             }
         elif database_type == "COUCHBASE_ACCOUNT":
             create_credential = {
@@ -1427,7 +1459,7 @@ class Credentials(object):
                 "name": credential_name,
                 "userName": username,
                 "password": password,
-                "description": description
+                "description": description,
             }
         elif database_type == "YUGABYTE_ACCOUNT":
             create_credential = {
@@ -1435,7 +1467,7 @@ class Credentials(object):
                 "databaseCredentialType": database_type,
                 "name": credential_name,
                 "password": password,
-                "description": description
+                "description": description,
             }
         else:
             # CASSANDRA credential integrated.
@@ -1446,26 +1478,26 @@ class Credentials(object):
                 "name": credential_name,
                 "username": username,
                 "password": password,
-                "description": description
+                "description": description,
             }
 
-        request = self._services['ADD_CREDENTIALS']
+        request = self._services["ADD_CREDENTIALS"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
+            "POST", request, create_credential
         )
         if flag:
             if response.json():
-                id = response.json()['id']
+                id = response.json()["id"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
 
 
-class Credential(object):
+class Credential:
     """
     Class for representing and managing a Credential record within a Commcell environment.
 
@@ -1484,7 +1516,12 @@ class Credential(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', credential_name: str, credential_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        credential_name: str,
+        credential_id: Optional[str] = None,
+    ) -> None:
         """Initialize a Credential object for the specified credential.
 
         Args:
@@ -1515,10 +1552,7 @@ class Credential(object):
         self._credential_security_assoc = []
         self._record_type = None
         self._credential_password = ""
-        self._record_types = {
-            'WINDOWSACCOUNT': 'Windows',
-            'LINUXACCOUNT': 'Linux'
-        }
+        self._record_types = {"WINDOWSACCOUNT": "Windows", "LINUXACCOUNT": "Linux"}
         self._get_credential_properties()
 
     def __repr__(self) -> str:
@@ -1586,10 +1620,7 @@ class Credential(object):
         #ai-gen-doc
         """
         props_dict = {
-            "credentialRecord": {
-                "credentialId": self._credential_id,
-                "credentialName": val
-            }
+            "credentialRecord": {"credentialId": self._credential_id, "credentialName": val}
         }
         self._update_credential_props(properties_dict=props_dict)
 
@@ -1621,7 +1652,7 @@ class Credential(object):
             >>> print(f"Credential description: {description}")
         #ai-gen-doc
         """
-        return self._credential_properties.get('description')
+        return self._credential_properties.get("description")
 
     @credential_description.setter
     def credential_description(self, value: str) -> None:
@@ -1637,9 +1668,7 @@ class Credential(object):
 
         #ai-gen-doc
         """
-        props_dict = {
-            "description": value
-        }
+        props_dict = {"description": value}
         self._update_credential_props(props_dict)
 
     @property
@@ -1685,21 +1714,27 @@ class Credential(object):
         props_dict = {
             "securityAssociations": {
                 "associationsOperationType": 1,
-                "associations": [{
-                    "userOrGroup": [{
-                        "_type_": 13 if is_user else 15,
-                        "userName" if is_user else "userGroupName": name
-                    }],
-                    "properties": {
-                        "isCreatorAssociation": False,
-                        "permissions": [{
-                            "permissionId": 218,
-                            "_type_": 122,
-                            "permissionName": "User Credential"
-                        }]
+                "associations": [
+                    {
+                        "userOrGroup": [
+                            {
+                                "_type_": 13 if is_user else 15,
+                                "userName" if is_user else "userGroupName": name,
+                            }
+                        ],
+                        "properties": {
+                            "isCreatorAssociation": False,
+                            "permissions": [
+                                {
+                                    "permissionId": 218,
+                                    "_type_": 122,
+                                    "permissionName": "User Credential",
+                                }
+                            ],
+                        },
                     }
-                }],
-                "ownerAssociations": {}
+                ],
+                "ownerAssociations": {},
             }
         }
 
@@ -1735,10 +1770,7 @@ class Credential(object):
         #ai-gen-doc
         """
         creds_dict = {
-            "record": {
-                "userName": uname,
-                "password": b64encode(upassword.encode()).decode()
-            }
+            "record": {"userName": uname, "password": b64encode(upassword.encode()).decode()}
         }
         self._update_credential_props(properties_dict=creds_dict)
 
@@ -1793,36 +1825,35 @@ class Credential(object):
             >>> print(f"Security Associations: {credential._credential_security_assoc}")
         #ai-gen-doc
         """
-        property_request = self._services['V5_CREDENTIAL'] % (
-            self._credential_id)
+        property_request = self._services["V5_CREDENTIAL"] % (self._credential_id)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', property_request
+            "GET", property_request
         )
 
         if flag:
             if response.json():
                 self._credential_properties = response.json()
-                self._credential_id = self._credential_properties.get('id')
-                self._credential_name = self._credential_properties.get('name')
-                self._credential_user_name = self._credential_properties.get('userAccount')
-                self._record_type = self._credential_properties.get('accountType')
-                security = self._credential_properties.get('security', {})
-                associations = security.get('associations', [])
+                self._credential_id = self._credential_properties.get("id")
+                self._credential_name = self._credential_properties.get("name")
+                self._credential_user_name = self._credential_properties.get("userAccount")
+                self._record_type = self._credential_properties.get("accountType")
+                security = self._credential_properties.get("security", {})
+                associations = security.get("associations", [])
                 for association in associations:
-                    if 'user' in association:
-                        self._credential_security_assoc.append({
-                            'user': association['user']['name']
-                        })
-                    elif 'userGroup' in association:
-                        self._credential_security_assoc.append({
-                            'userGroup': association['userGroup']['name']
-                        })
+                    if "user" in association:
+                        self._credential_security_assoc.append(
+                            {"user": association["user"]["name"]}
+                        )
+                    elif "userGroup" in association:
+                        self._credential_security_assoc.append(
+                            {"userGroup": association["userGroup"]["name"]}
+                        )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _update_credential_props(self, properties_dict: Dict[str, Any]) -> None:
         """Update the properties of this credential using the provided dictionary.
@@ -1862,33 +1893,35 @@ class Credential(object):
         #ai-gen-doc
         """
         if "record" in properties_dict:
-            self._credential_user_name = properties_dict['record']['userName']
-            self._credential_password = properties_dict.get('record', {}).get('password', {})
+            self._credential_user_name = properties_dict["record"]["userName"]
+            self._credential_password = properties_dict.get("record", {}).get("password", {})
 
         if "credentialRecord" in properties_dict:
-            self._credential_name = properties_dict['credentialRecord']['credentialName']
+            self._credential_name = properties_dict["credentialRecord"]["credentialName"]
 
         request_json = {
-            "credentialRecordInfo": [{
-                "recordType": self._record_type,
-                "credentialRecord": {
-                    "credentialId": self._credential_id,
-                    "credentialName": self._credential_name
-                },
-                "record": {
-                    "userName": self._credential_user_name
+            "credentialRecordInfo": [
+                {
+                    "recordType": self._record_type,
+                    "credentialRecord": {
+                        "credentialId": self._credential_id,
+                        "credentialName": self._credential_name,
+                    },
+                    "record": {"userName": self._credential_user_name},
                 }
-            }]
+            ]
         }
         if "securityAssociations" in properties_dict:
-            request_json['credentialRecordInfo'][0].update(securityAssociations=properties_dict['securityAssociations'])
+            request_json["credentialRecordInfo"][0].update(
+                securityAssociations=properties_dict["securityAssociations"]
+            )
 
-        request = self._services['CREDENTIAL']
+        request = self._services["CREDENTIAL"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', request, request_json
+            "PUT", request, request_json
         )
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()

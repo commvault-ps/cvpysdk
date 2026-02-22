@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -81,13 +79,13 @@ LicenseDetails Attributes
     other_licenses   --    Returns dictionary with the other licenses
 
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
+
 from typing import Any, Dict
+
 from .exception import SDKException
 
 
-class LicenseDetails(object):
+class LicenseDetails:
     """
     Provides access to detailed license information for a CommCell environment.
 
@@ -123,8 +121,8 @@ class LicenseDetails(object):
         #ai-gen-doc
         """
         self._commcell_object = commcell_object
-        self._LICENSE = self._commcell_object._services['LICENSE']
-        self._APPLY_LICENSE = self._commcell_object._services['APPLY_LICENSE']
+        self._LICENSE = self._commcell_object._services["LICENSE"]
+        self._APPLY_LICENSE = self._commcell_object._services["APPLY_LICENSE"]
         self._capacity_licenses = None
         self._complete_oi_licenses = None
         self._virtualization_licenses = None
@@ -178,17 +176,18 @@ class LicenseDetails(object):
         #ai-gen-doc
         """
 
-        self._CAPACITY_LICENSE = self._commcell_object._services['CAPACITY_LICENSE']
+        self._CAPACITY_LICENSE = self._commcell_object._services["CAPACITY_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._CAPACITY_LICENSE)
+            "GET", self._CAPACITY_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._capacity_licenses = response.json().get('records', None)
+                self._capacity_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_complete_oi_licenses(self) -> dict:
         """Retrieve the complete OI (Object Identification) licenses property via a GET request.
@@ -210,17 +209,18 @@ class LicenseDetails(object):
         #ai-gen-doc
         """
 
-        self._OI_LICENSE = self._commcell_object._services['OI_LICENSE']
+        self._OI_LICENSE = self._commcell_object._services["OI_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._OI_LICENSE)
+            "GET", self._OI_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._complete_oi_licenses = response.json().get('records', None)
+                self._complete_oi_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_virtualization_licenses(self) -> dict:
         """Retrieve virtualization license properties via a GET request.
@@ -242,17 +242,18 @@ class LicenseDetails(object):
 
         #ai-gen-doc
         """
-        self._VIRTUALIZATION_LICENSE = self._commcell_object._services['VIRTUALIZATION_LICENSE']
+        self._VIRTUALIZATION_LICENSE = self._commcell_object._services["VIRTUALIZATION_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._VIRTUALIZATION_LICENSE)
+            "GET", self._VIRTUALIZATION_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._virtualization_licenses = response.json().get('records', None)
+                self._virtualization_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_user_licenses(self) -> dict:
         """Retrieve the user licenses property via a GET request.
@@ -274,17 +275,18 @@ class LicenseDetails(object):
 
         #ai-gen-doc
         """
-        self._USER_LICENSE = self._commcell_object._services['USER_LICENSE']
+        self._USER_LICENSE = self._commcell_object._services["USER_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._USER_LICENSE)
+            "GET", self._USER_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._user_licenses = response.json().get('records', None)
+                self._user_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_activate_licenses(self) -> dict:
         """Send a GET request to retrieve the activated licenses property.
@@ -305,17 +307,18 @@ class LicenseDetails(object):
 
         #ai-gen-doc
         """
-        self._ACTIVATE_LICENSE = self._commcell_object._services['ACTIVATE_LICENSE']
+        self._ACTIVATE_LICENSE = self._commcell_object._services["ACTIVATE_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._ACTIVATE_LICENSE)
+            "GET", self._ACTIVATE_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._activate_licenses = response.json().get('records', None)
+                self._activate_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_metallic_licenses(self) -> Any:
         """Send a GET request to retrieve the Metallic licenses property.
@@ -334,17 +337,18 @@ class LicenseDetails(object):
 
         #ai-gen-doc
         """
-        self._METALLIC_LICENSE = self._commcell_object._services['METALLIC_LICENSE']
+        self._METALLIC_LICENSE = self._commcell_object._services["METALLIC_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._METALLIC_LICENSE)
+            "GET", self._METALLIC_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._metallic_licenses = response.json().get('records', None)
+                self._metallic_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_other_licenses(self) -> dict:
         """Retrieve the details of other licenses via a GET request.
@@ -365,17 +369,18 @@ class LicenseDetails(object):
             {'licenseType': 'Trial', 'expiryDate': '2024-12-31'}
         #ai-gen-doc
         """
-        self._OTHER_LICENSE = self._commcell_object._services['OTHER_LICENSE']
+        self._OTHER_LICENSE = self._commcell_object._services["OTHER_LICENSE"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._OTHER_LICENSE)
+            "GET", self._OTHER_LICENSE
+        )
 
         if flag:
             if response.json():
-                self._other_licenses = response.json().get('records', None)
+                self._other_licenses = response.json().get("records", None)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _get_license_details(self) -> dict:
         """Retrieve detailed license information via a GET request.
@@ -398,23 +403,21 @@ class LicenseDetails(object):
         #ai-gen-doc
         """
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._LICENSE
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._LICENSE)
         if flag:
             if response.json():
-                self._commcell_id = response.json()['commcellId']
-                self._cs_hostname = response.json()['csHostNameOrAddress']
-                self._license_ipaddress = response.json()['licenseIpAddress']
-                self._oemname = response.json()['oemName']
-                self._regcode = response.json()['regCode']
-                self._serialno = response.json()['serialNo']
-                self._license_mode = response.json()['licenseMode']
-                self._expiry_date = response.json()['expiryDate']
+                self._commcell_id = response.json()["commcellId"]
+                self._cs_hostname = response.json()["csHostNameOrAddress"]
+                self._license_ipaddress = response.json()["licenseIpAddress"]
+                self._oemname = response.json()["oemName"]
+                self._regcode = response.json()["regCode"]
+                self._serialno = response.json()["serialNo"]
+                self._license_mode = response.json()["licenseMode"]
+                self._expiry_date = response.json()["expiryDate"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def refresh(self) -> None:
         """Update the LicenseDetails metrics object with the latest configuration.
@@ -464,8 +467,8 @@ class LicenseDetails(object):
         """
         ccid = self._commcell_id
         if ccid == -1:
-            return 'FFFFF'
-        return hex(ccid).split('x')[1].upper()
+            return "FFFFF"
+        return hex(ccid).split("x")[1].upper()
 
     @property
     def cs_hostname(self) -> str:

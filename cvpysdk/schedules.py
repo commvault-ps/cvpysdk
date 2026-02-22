@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#class Schedules
+# class Schedules
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
@@ -152,28 +150,30 @@ Schedule:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from typing import Optional, Dict, Union, List, Tuple, Any, TYPE_CHECKING
-from datetime import datetime
 import calendar
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+
 from .exception import SDKException
 
 if TYPE_CHECKING:
-    from .commcell import Commcell
-    from .client import Client
+    from .activateapps.file_storage_optimization import FsoServer
+    from .activateapps.inventory_manager import Inventory
+    from .activateapps.sensitive_data_governance import Project
     from .agent import Agent
     from .backupset import Backupset
-    from .subclient import Subclient
+    from .client import Client
+    from .commcell import Commcell
     from .instance import Instance
-    from .activateapps.inventory_manager import Inventory
-    from .activateapps.file_storage_optimization import FsoServer
-    from .activateapps.sensitive_data_governance import Project
+    from .subclient import Subclient
+
 
 class OperationType:
-    """ Operation Types supported to get schedules of particular optype"""
-    REPORTS = 'Reports'
-    DATA_AGING = 'DATA_AGING'
+    """Operation Types supported to get schedules of particular optype"""
+
+    REPORTS = "Reports"
+    DATA_AGING = "DATA_AGING"
+
 
 class SchedulePattern:
     """Class for getting the schedule pattern
@@ -187,37 +187,33 @@ class SchedulePattern:
     """
 
     _days_to_run: Dict[int, str] = {
-        2: 'monday',
-        4: 'tuesday',
-        8: 'wednesday',
-        16: 'thursday',
-        32: 'friday',
-        64: 'saturday',
-        1: 'sunday',
+        2: "monday",
+        4: "tuesday",
+        8: "wednesday",
+        16: "thursday",
+        32: "friday",
+        64: "saturday",
+        1: "sunday",
     }
 
     _relative_weekday: Dict[int, str] = {
-        1: 'sunday',
-        2: 'monday',
-        3: 'tuesday',
-        4: 'wednesday',
-        5: 'thursday',
-        6: 'friday',
-        7: 'saturday',
-        8: 'days',
-        9: 'weekday',
-        10: 'weekend_day'
+        1: "sunday",
+        2: "monday",
+        3: "tuesday",
+        4: "wednesday",
+        5: "thursday",
+        6: "friday",
+        7: "saturday",
+        8: "days",
+        9: "weekday",
+        10: "weekend_day",
     }
 
-    _relative_day: Dict[int, str] = {
-        1: 'first',
-        2: 'second',
-        3: 'third',
-        4: 'fourth',
-        5: 'last'
-    }
+    _relative_day: Dict[int, str] = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "last"}
 
-    def __init__(self, schedule_pattern: Dict[str, Union[str, int, dict, list, None]] = None) -> None:
+    def __init__(
+        self, schedule_pattern: Dict[str, Union[str, int, dict, list, None]] = None
+    ) -> None:
         """initialise object of the SchedulePattern class
 
         Args:
@@ -226,12 +222,14 @@ class SchedulePattern:
             pattern = SchedulePattern({'freq_type': 'Daily'})
         """
         if not schedule_pattern:
-            self._pattern: Dict[str, Union[str, int, dict, list, None]] = {'freq_type': 'Init'}
+            self._pattern: Dict[str, Union[str, int, dict, list, None]] = {"freq_type": "Init"}
         else:
             self._pattern: Dict[str, Union[str, int, dict, list, None]] = schedule_pattern
 
     @staticmethod
-    def _time_converter(_time: Union[str, int], time_format: str, utc_to_epoch: bool = True) -> int:
+    def _time_converter(
+        _time: Union[str, int], time_format: str, utc_to_epoch: bool = True
+    ) -> int:
         """
         converts a time string to epoch time based on the time format provided
         Args:
@@ -249,22 +247,21 @@ class SchedulePattern:
             formatted_time = SchedulePattern._time_converter(1665427200, "%m/%d/%Y %H:%M", utc_to_epoch=False)
         """
         try:
-
             if utc_to_epoch:
                 date_time = datetime.strptime(_time, time_format)
-                return int(
-                    (date_time - datetime.utcfromtimestamp(0)).total_seconds())
+                return int((date_time - datetime.utcfromtimestamp(0)).total_seconds())
 
             utc_time = datetime.utcfromtimestamp(_time)
             return utc_time.strftime(time_format)
 
         except ValueError:
             raise SDKException(
-                'Schedules',
-                '102',
-                "Incorrect data format, should be {0}".format(time_format))
+                "Schedules", "102", f"Incorrect data format, should be {time_format}"
+            )
 
-    def _pattern_json(self, pattern_option_dict: Dict[str, Union[str, int, dict, list, None]]) -> None:
+    def _pattern_json(
+        self, pattern_option_dict: Dict[str, Union[str, int, dict, list, None]]
+    ) -> None:
         """
         forms a pattern json and set the class variable
         Args:
@@ -280,62 +277,59 @@ class SchedulePattern:
             pattern._pattern_json({'freq_type': 'Daily', 'active_start_date': '10/26/2023', 'active_start_time': '09:00'})
         """
 
-        if ('freq_type' not in pattern_option_dict) or (
-                pattern_option_dict['freq_type'] == self._pattern['freq_type']):
+        if ("freq_type" not in pattern_option_dict) or (
+            pattern_option_dict["freq_type"] == self._pattern["freq_type"]
+        ):
             for key, value in pattern_option_dict.items():
-                if key in ('active_start_date', 'active_end_date'):
+                if key in ("active_start_date", "active_end_date"):
                     self._pattern[key] = self._time_converter(
-                        pattern_option_dict[key] + ' 00:00', '%m/%d/%Y %H:%M')
-                elif key in ('active_start_time', 'active_end_time'):
+                        pattern_option_dict[key] + " 00:00", "%m/%d/%Y %H:%M"
+                    )
+                elif key in ("active_start_time", "active_end_time"):
                     self._pattern[key] = self._time_converter(
-                        '1/1/1970 ' + pattern_option_dict[key], '%m/%d/%Y %H:%M')
+                        "1/1/1970 " + pattern_option_dict[key], "%m/%d/%Y %H:%M"
+                    )
                 else:
                     self._pattern[key] = value
 
         else:
-
-            if pattern_option_dict['freq_type'] == 'One_Time':
-                default_start_time = str(datetime.now().strftime('%H:%M'))
+            if pattern_option_dict["freq_type"] == "One_Time":
+                default_start_time = str(datetime.now().strftime("%H:%M"))
 
             else:
-                default_start_time = '09:00'
+                default_start_time = "09:00"
 
             _active_start_date = pattern_option_dict.get(
-                'active_start_date', str(datetime.now().strftime('%m/%d/%Y')))
-            _active_start_time = pattern_option_dict.get(
-                'active_start_time', default_start_time)
+                "active_start_date", str(datetime.now().strftime("%m/%d/%Y"))
+            )
+            _active_start_time = pattern_option_dict.get("active_start_time", default_start_time)
 
             self._pattern = {
-                'freq_type': pattern_option_dict['freq_type'],
-                'active_start_date': self._time_converter(
-                    _active_start_date + ' 00:00',
-                    '%m/%d/%Y %H:%M'),
-                'active_start_time': self._time_converter(
-                    '1/1/1970 ' + _active_start_time,
-                    '%m/%d/%Y %H:%M'),
-                'freq_recurrence_factor': pattern_option_dict.get(
-                    'freq_recurrence_factor',
-                    0),
-                'freq_interval': pattern_option_dict.get(
-                    'freq_interval',
-                    0),
-                'freq_relative_interval': pattern_option_dict.get(
-                    'freq_relative_interval',
-                    0),
-                'timeZone': {
-                    'TimeZoneName': pattern_option_dict.get(
-                        'time_zone',
-                        '')}}
+                "freq_type": pattern_option_dict["freq_type"],
+                "active_start_date": self._time_converter(
+                    _active_start_date + " 00:00", "%m/%d/%Y %H:%M"
+                ),
+                "active_start_time": self._time_converter(
+                    "1/1/1970 " + _active_start_time, "%m/%d/%Y %H:%M"
+                ),
+                "freq_recurrence_factor": pattern_option_dict.get("freq_recurrence_factor", 0),
+                "freq_interval": pattern_option_dict.get("freq_interval", 0),
+                "freq_relative_interval": pattern_option_dict.get("freq_relative_interval", 0),
+                "timeZone": {"TimeZoneName": pattern_option_dict.get("time_zone", "")},
+            }
 
             if "active_end_date" in pattern_option_dict:
                 self._pattern["active_end_date"] = self._time_converter(
-                    pattern_option_dict["active_end_date"] + ' 00:00', '%m/%d/%Y %H:%M')
+                    pattern_option_dict["active_end_date"] + " 00:00", "%m/%d/%Y %H:%M"
+                )
 
         if "exception_dates" in pattern_option_dict:
-            self._pattern["repeatPattern"] = [{"exception": True,
-                                               "onDayNumber": self.exception_dates(
-                                                   pattern_option_dict["exception_dates"])}
-                                              ]
+            self._pattern["repeatPattern"] = [
+                {
+                    "exception": True,
+                    "onDayNumber": self.exception_dates(pattern_option_dict["exception_dates"]),
+                }
+            ]
 
         if "end_after" in pattern_option_dict:
             self._pattern["active_end_occurence"] = pattern_option_dict["end_after"]
@@ -358,14 +352,14 @@ class SchedulePattern:
         Usage:
             repeat_info = SchedulePattern._repeat_pattern({"repeat_every": "08:00", "repeat_end": "23:00"})
         """
-        _repeat_time = datetime.strptime(
-            pattern_dict.get(
-                "repeat_every", "08:00"), "%H:%M")
-        _freq_subday = (_repeat_time.hour * 3600 + _repeat_time.minute * 60)
-        return {'freq_subday_interval': _freq_subday,
-                'active_end_time': SchedulePattern._time_converter(
-                    '1/1/1970 ' + pattern_dict["repeat_end"], '%m/%d/%Y %H:%M')
-                }
+        _repeat_time = datetime.strptime(pattern_dict.get("repeat_every", "08:00"), "%H:%M")
+        _freq_subday = _repeat_time.hour * 3600 + _repeat_time.minute * 60
+        return {
+            "freq_subday_interval": _freq_subday,
+            "active_end_time": SchedulePattern._time_converter(
+                "1/1/1970 " + pattern_dict["repeat_end"], "%m/%d/%Y %H:%M"
+            ),
+        }
 
     def _one_time(self, pattern_dict: Dict[str, str]) -> None:
         """
@@ -381,7 +375,7 @@ class SchedulePattern:
             pattern = SchedulePattern()
             pattern._one_time({"active_start_date": "10/27/2023", "active_start_time": "10:00"})
         """
-        pattern_dict['freq_type'] = 1
+        pattern_dict["freq_type"] = 1
         self._pattern_json(pattern_dict)
 
     def _daily(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
@@ -399,14 +393,15 @@ class SchedulePattern:
             pattern._daily({"active_start_time": "09:00", "repeat_days": 2})
         """
         _repeat_days = 1
-        if self._pattern['freq_type'] == 4:
-            _repeat_days = self._pattern['freq_recurrence_factor']
+        if self._pattern["freq_type"] == 4:
+            _repeat_days = self._pattern["freq_recurrence_factor"]
 
-        _freq_recurrence_factor = pattern_dict.get('repeat_days', _repeat_days)
+        _freq_recurrence_factor = pattern_dict.get("repeat_days", _repeat_days)
 
-        pattern_dict['freq_type'] = 4
-        pattern_dict['freq_recurrence_factor'] = 1 if not isinstance(
-            _freq_recurrence_factor, int) else _freq_recurrence_factor
+        pattern_dict["freq_type"] = 4
+        pattern_dict["freq_recurrence_factor"] = (
+            1 if not isinstance(_freq_recurrence_factor, int) else _freq_recurrence_factor
+        )
         self._pattern_json(pattern_dict)
 
     def _weekly(self, pattern_dict: Dict[str, Union[str, int, List[str]]]) -> None:
@@ -429,37 +424,33 @@ class SchedulePattern:
         try:
             _repeat_weeks = 1
             _freq_interval = 0
-            if self._pattern['freq_type'] == 8:
-                _repeat_weeks = self._pattern['freq_recurrence_factor']
-                _freq_interval = self._pattern['freq_interval']
+            if self._pattern["freq_type"] == 8:
+                _repeat_weeks = self._pattern["freq_recurrence_factor"]
+                _freq_interval = self._pattern["freq_interval"]
 
-            pattern_dict['freq_type'] = 8
+            pattern_dict["freq_type"] = 8
             # encoding
-            if 'weekdays' in pattern_dict:
-                _freq_interval_list = pattern_dict['weekdays']
+            if "weekdays" in pattern_dict:
+                _freq_interval_list = pattern_dict["weekdays"]
                 for weekday in _freq_interval_list:
-                    _freq_interval += (
-                        list(
-                            self._days_to_run.keys())[
-                            list(
-                                self._days_to_run.values()).index(
-                                weekday.lower())])
+                    _freq_interval += list(self._days_to_run.keys())[
+                        list(self._days_to_run.values()).index(weekday.lower())
+                    ]
             elif _freq_interval == 0:
-                o_str = 'Weekdays need to be specified'
-                raise SDKException('Schedules', '102', o_str)
+                o_str = "Weekdays need to be specified"
+                raise SDKException("Schedules", "102", o_str)
 
-            _freq_recurrence_factor = pattern_dict.get(
-                '_repeat_weeks', _repeat_weeks)
+            _freq_recurrence_factor = pattern_dict.get("_repeat_weeks", _repeat_weeks)
 
-            pattern_dict['freq_interval'] = _freq_interval
-            pattern_dict['freq_recurrence_factor'] = 1 if not isinstance(
-                _freq_recurrence_factor, int) else _freq_recurrence_factor
+            pattern_dict["freq_interval"] = _freq_interval
+            pattern_dict["freq_recurrence_factor"] = (
+                1 if not isinstance(_freq_recurrence_factor, int) else _freq_recurrence_factor
+            )
 
             self._pattern_json(pattern_dict)
 
         except ValueError:
-            raise SDKException('Schedules', '102',
-                               "Incorrect weekday specified")
+            raise SDKException("Schedules", "102", "Incorrect weekday specified")
 
     def _monthly(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
@@ -478,19 +469,20 @@ class SchedulePattern:
         """
         _repeat_months = 1
         _on_day = 10
-        if self._pattern['freq_type'] == 16:
-            _repeat_months = self._pattern['freq_recurrence_factor']
-            _on_day = self._pattern['freq_interval']
+        if self._pattern["freq_type"] == 16:
+            _repeat_months = self._pattern["freq_recurrence_factor"]
+            _on_day = self._pattern["freq_interval"]
 
-        _freq_recurrence_factor = pattern_dict.get(
-            'repeat_months', _repeat_months)
-        _freq_interval = pattern_dict.get('on_day', _on_day)
+        _freq_recurrence_factor = pattern_dict.get("repeat_months", _repeat_months)
+        _freq_interval = pattern_dict.get("on_day", _on_day)
 
-        pattern_dict['freq_recurrence_factor'] = 1 if not isinstance(
-            _freq_recurrence_factor, int) else _freq_recurrence_factor
-        pattern_dict['freq_interval'] = 1 if not isinstance(
-            _freq_interval, int) else _freq_interval
-        pattern_dict['freq_type'] = 16
+        pattern_dict["freq_recurrence_factor"] = (
+            1 if not isinstance(_freq_recurrence_factor, int) else _freq_recurrence_factor
+        )
+        pattern_dict["freq_interval"] = (
+            1 if not isinstance(_freq_interval, int) else _freq_interval
+        )
+        pattern_dict["freq_type"] = 16
         self._pattern_json(pattern_dict)
 
     def _monthly_relative(self, pattern_dict: Dict[str, str]) -> None:
@@ -517,43 +509,37 @@ class SchedulePattern:
         _freq_relative_interval = 1
 
         try:
+            if self._pattern["freq_type"] == 32:
+                _freq_recurrence_factor = self._pattern["freq_recurrence_factor"]
+                _freq_interval = self._pattern["freq_interval"]
+                _freq_relative_interval = self._pattern["freq_relative_interval"]
 
-            if self._pattern['freq_type'] == 32:
-                _freq_recurrence_factor = self._pattern['freq_recurrence_factor']
-                _freq_interval = self._pattern['freq_interval']
-                _freq_relative_interval = self._pattern['freq_relative_interval']
+            if "relative_time" in pattern_dict:
+                _freq_relative_interval = list(self._relative_day.keys())[
+                    list(self._relative_day.values()).index(pattern_dict["relative_time"].lower())
+                ]
 
-            if 'relative_time' in pattern_dict:
-                _freq_relative_interval = (
-                    list(
-                        self._relative_day.keys())[
-                        list(
-                            self._relative_day.values()).index(
-                            pattern_dict['relative_time'].lower())])
+            if "relative_weekday" in pattern_dict:
+                _freq_interval = list(self._relative_weekday.keys())[
+                    list(self._relative_weekday.values()).index(
+                        pattern_dict["relative_weekday"].lower()
+                    )
+                ]
 
-            if 'relative_weekday' in pattern_dict:
-                _freq_interval = (
-                    list(
-                        self._relative_weekday.keys())[
-                        list(
-                            self._relative_weekday.values()).index(
-                            pattern_dict['relative_weekday'].lower())])
+            _freq_recurrence_factor = pattern_dict.get("repeat_months", _freq_recurrence_factor)
 
-            _freq_recurrence_factor = pattern_dict.get(
-                'repeat_months', _freq_recurrence_factor)
+            pattern_dict["freq_recurrence_factor"] = (
+                1 if not isinstance(_freq_recurrence_factor, int) else _freq_recurrence_factor
+            )
 
-            pattern_dict['freq_recurrence_factor'] = 1 if not isinstance(
-                _freq_recurrence_factor, int) else _freq_recurrence_factor
+            pattern_dict["freq_interval"] = _freq_interval
+            pattern_dict["freq_relative_interval"] = _freq_relative_interval
 
-            pattern_dict['freq_interval'] = _freq_interval
-            pattern_dict['freq_relative_interval'] = _freq_relative_interval
-
-            pattern_dict['freq_type'] = 32
+            pattern_dict["freq_type"] = 32
             self._pattern_json(pattern_dict)
 
         except ValueError as v_error:
-            raise SDKException('Schedules', '102',
-                               str(v_error))
+            raise SDKException("Schedules", "102", str(v_error))
 
     def _yearly(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
@@ -573,29 +559,28 @@ class SchedulePattern:
             pattern._yearly({"active_start_time": "10:00", "on_month": "January", "on_day": 1})
         """
         try:
-
             _freq_recurrence_factor = 1
             _freq_interval = 10
-            if self._pattern['freq_type'] == 64:
-                _freq_recurrence_factor = self._pattern['freq_recurrence_factor']
-                _freq_interval = self._pattern['freq_interval']
+            if self._pattern["freq_type"] == 64:
+                _freq_recurrence_factor = self._pattern["freq_recurrence_factor"]
+                _freq_interval = self._pattern["freq_interval"]
 
-            if 'on_month' in pattern_dict:
-                _freq_recurrence_factor = list(
-                    calendar.month_name).index(
-                    pattern_dict['on_month'].title())
+            if "on_month" in pattern_dict:
+                _freq_recurrence_factor = list(calendar.month_name).index(
+                    pattern_dict["on_month"].title()
+                )
 
-            _freq_interval = pattern_dict.get('on_day', _freq_interval)
+            _freq_interval = pattern_dict.get("on_day", _freq_interval)
 
-            pattern_dict['freq_recurrence_factor'] = _freq_recurrence_factor
-            pattern_dict['freq_interval'] = 1 if not isinstance(
-                _freq_interval, int) else _freq_interval
-            pattern_dict['freq_type'] = 64
+            pattern_dict["freq_recurrence_factor"] = _freq_recurrence_factor
+            pattern_dict["freq_interval"] = (
+                1 if not isinstance(_freq_interval, int) else _freq_interval
+            )
+            pattern_dict["freq_type"] = 64
             self._pattern_json(pattern_dict)
 
         except ValueError as ve:
-            raise SDKException('Schedules', '102',
-                               str(ve))
+            raise SDKException("Schedules", "102", str(ve))
 
     def _yearly_relative(self, pattern_dict: Dict[str, str]) -> None:
         """
@@ -621,42 +606,36 @@ class SchedulePattern:
         _freq_relative_interval = 1
 
         try:
+            if self._pattern["freq_type"] == 128:
+                _freq_recurrence_factor = self._pattern["freq_recurrence_factor"]
+                _freq_interval = self._pattern["freq_interval"]
+                _freq_relative_interval = self._pattern["freq_relative_interval"]
 
-            if self._pattern['freq_type'] == 128:
-                _freq_recurrence_factor = self._pattern['freq_recurrence_factor']
-                _freq_interval = self._pattern['freq_interval']
-                _freq_relative_interval = self._pattern['freq_relative_interval']
+            if "relative_time" in pattern_dict:
+                _freq_relative_interval = list(self._relative_day.keys())[
+                    list(self._relative_day.values()).index(pattern_dict["relative_time"].lower())
+                ]
 
-            if 'relative_time' in pattern_dict:
-                _freq_relative_interval = (
-                    list(
-                        self._relative_day.keys())[
-                        list(
-                            self._relative_day.values()).index(
-                            pattern_dict['relative_time'].lower())])
+            if "relative_weekday" in pattern_dict:
+                _freq_interval = list(self._relative_weekday.keys())[
+                    list(self._relative_weekday.values()).index(
+                        pattern_dict["relative_weekday"].lower()
+                    )
+                ]
 
-            if 'relative_weekday' in pattern_dict:
-                _freq_interval = (
-                    list(
-                        self._relative_weekday.keys())[
-                        list(
-                            self._relative_weekday.values()).index(
-                            pattern_dict['relative_weekday'].lower())])
+            if "on_month" in pattern_dict:
+                _freq_recurrence_factor = list(calendar.month_name).index(
+                    pattern_dict["on_month"].title()
+                )
+            pattern_dict["freq_recurrence_factor"] = _freq_recurrence_factor
+            pattern_dict["freq_interval"] = _freq_interval
+            pattern_dict["freq_relative_interval"] = _freq_relative_interval
 
-            if 'on_month' in pattern_dict:
-                _freq_recurrence_factor = list(
-                    calendar.month_name).index(
-                    pattern_dict['on_month'].title())
-            pattern_dict['freq_recurrence_factor'] = _freq_recurrence_factor
-            pattern_dict['freq_interval'] = _freq_interval
-            pattern_dict['freq_relative_interval'] = _freq_relative_interval
-
-            pattern_dict['freq_type'] = 128
+            pattern_dict["freq_type"] = 128
             self._pattern_json(pattern_dict)
 
         except ValueError as ve:
-            raise SDKException('Schedules', '102',
-                               str(ve))
+            raise SDKException("Schedules", "102", str(ve))
 
     def _continuous(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
@@ -672,10 +651,11 @@ class SchedulePattern:
             pattern._continuous({"job_interval": 60})
         """
 
-        _freq_recurrence_factor = pattern_dict.get('job_interval', 30)
-        pattern_dict['freq_interval'] = 30 if not isinstance(
-            _freq_recurrence_factor, int) else _freq_recurrence_factor
-        pattern_dict['freq_type'] = 4096
+        _freq_recurrence_factor = pattern_dict.get("job_interval", 30)
+        pattern_dict["freq_interval"] = (
+            30 if not isinstance(_freq_recurrence_factor, int) else _freq_recurrence_factor
+        )
+        pattern_dict["freq_type"] = 4096
         self._pattern_json(pattern_dict)
 
     def _automatic(self, pattern_dict: dict) -> None:
@@ -733,120 +713,127 @@ class SchedulePattern:
             SchedulePattern()._automatic(pattern_dict)
         """
         automatic_pattern = {
-            "maxBackupInterval": pattern_dict.get("max_interval_hours",
-                                                  self._pattern.get("maxBackupInterval", 72)),
-            "ignoreOpWindowPastMaxInterval": pattern_dict.get("ignore_opwindow_past_maxinterval",
-                                                              self._pattern.get(
-                                                                  "ignoreOpWindowPastMaxInterval",
-                                                                  False)),
-            "minBackupIntervalMinutes": pattern_dict.get("min_interval_minutes",
-                                                         self._pattern.get(
-                                                             "minBackupIntervalMinutes", 15)),
-            "maxBackupIntervalMinutes": pattern_dict.get("max_interval_minutes",
-                                                         self._pattern.get(
-                                                             "maxBackupIntervalMinutes", 0)),
-            "minSyncInterval": pattern_dict.get("min_sync_interval_hours",
-                                                self._pattern.get("minSyncInterval", 0)),
-            "minBackupInterval": pattern_dict.get("min_interval_hours",
-                                                  self._pattern.get("minBackupInterval", 0)),
-            "minSyncIntervalMinutes": pattern_dict.get("min_sync_interval_minutes",
-                                                       self._pattern.get("minSyncIntervalMinutes",
-                                                                         2)),
+            "maxBackupInterval": pattern_dict.get(
+                "max_interval_hours", self._pattern.get("maxBackupInterval", 72)
+            ),
+            "ignoreOpWindowPastMaxInterval": pattern_dict.get(
+                "ignore_opwindow_past_maxinterval",
+                self._pattern.get("ignoreOpWindowPastMaxInterval", False),
+            ),
+            "minBackupIntervalMinutes": pattern_dict.get(
+                "min_interval_minutes", self._pattern.get("minBackupIntervalMinutes", 15)
+            ),
+            "maxBackupIntervalMinutes": pattern_dict.get(
+                "max_interval_minutes", self._pattern.get("maxBackupIntervalMinutes", 0)
+            ),
+            "minSyncInterval": pattern_dict.get(
+                "min_sync_interval_hours", self._pattern.get("minSyncInterval", 0)
+            ),
+            "minBackupInterval": pattern_dict.get(
+                "min_interval_hours", self._pattern.get("minBackupInterval", 0)
+            ),
+            "minSyncIntervalMinutes": pattern_dict.get(
+                "min_sync_interval_minutes", self._pattern.get("minSyncIntervalMinutes", 2)
+            ),
             "stopIfOnBattery": {
-                "enabled": pattern_dict.get("stop_if_on_battery",
-                                            self._pattern.get("stopIfOnBattery",
-                                                              {'enabled': False})['enabled'])
+                "enabled": pattern_dict.get(
+                    "stop_if_on_battery",
+                    self._pattern.get("stopIfOnBattery", {"enabled": False})["enabled"],
+                )
             },
             "acPower": {
-                "enabled": pattern_dict.get("ac_power",
-                                            self._pattern.get("acPower",
-                                                              {'enabled': False})['enabled'])
+                "enabled": pattern_dict.get(
+                    "ac_power", self._pattern.get("acPower", {"enabled": False})["enabled"]
+                )
             },
             "specfificNetwork": {
-                "enabled": True if 'specific_network' in pattern_dict
-                else (self._pattern.get("specfificNetwork",
-                                        {'enabled': False})['enabled']),
+                "enabled": True
+                if "specific_network" in pattern_dict
+                else (self._pattern.get("specfificNetwork", {"enabled": False})["enabled"]),
                 "ipAddress": {
                     "family": 32,
-                    "address": pattern_dict.get('specific_network',
-                                                {"ip_address": "0.0.0.0"})["ip_address"],
-                    "subnet": pattern_dict.get('specific_network',
-                                               {"subnet": 24})["subnet"],
-                }
-
+                    "address": pattern_dict.get("specific_network", {"ip_address": "0.0.0.0"})[
+                        "ip_address"
+                    ],
+                    "subnet": pattern_dict.get("specific_network", {"subnet": 24})["subnet"],
+                },
             },
             "stopSleepIfBackUp": {
-                "enabled": pattern_dict.get("stop_sleep_if_runningjob",
-                                            self._pattern.get("stopSleepIfBackUp",
-                                                              {'enabled': False})['enabled'])
-
+                "enabled": pattern_dict.get(
+                    "stop_sleep_if_runningjob",
+                    self._pattern.get("stopSleepIfBackUp", {"enabled": False})["enabled"],
+                )
             },
             "emergencyBackup": {
                 "emergencyBackupCommandName": "",
-                "emergencyBackup": {
-                    "enabled": False
-                }
+                "emergencyBackup": {"enabled": False},
             },
             "cpuUtilization": {
-                "enabled": True if 'cpu_utilization_below' in pattern_dict
-                else (self._pattern.get("cpuUtilization",
-                                        {'enabled': False})['enabled']),
-                "threshold": pattern_dict.get("cpu_utilization_below",
-                                              self._pattern.get("cpuUtilization",
-                                                                {'threshold': 10})['threshold'])
+                "enabled": True
+                if "cpu_utilization_below" in pattern_dict
+                else (self._pattern.get("cpuUtilization", {"enabled": False})["enabled"]),
+                "threshold": pattern_dict.get(
+                    "cpu_utilization_below",
+                    self._pattern.get("cpuUtilization", {"threshold": 10})["threshold"],
+                ),
             },
             "dontUseMeteredNetwork": {
-                "enabled": pattern_dict.get("dont_use_metered_network",
-                                            self._pattern.get("dontUseMeteredNetwork",
-                                                              {'enabled': False})['enabled'])
+                "enabled": pattern_dict.get(
+                    "dont_use_metered_network",
+                    self._pattern.get("dontUseMeteredNetwork", {"enabled": False})["enabled"],
+                )
             },
             "cpuUtilizationAbove": {
-                "enabled": True if 'cpu_utilization_above' in pattern_dict
-                else (self._pattern.get("cpuUtilizationAbove",
-                                        {'enabled': False})['enabled']),
-                "threshold": pattern_dict.get("cpu_utilization_above",
-                                              self._pattern.get("cpuUtilizationAbove",
-                                                                {'threshold': 10})['threshold'])
+                "enabled": True
+                if "cpu_utilization_above" in pattern_dict
+                else (self._pattern.get("cpuUtilizationAbove", {"enabled": False})["enabled"]),
+                "threshold": pattern_dict.get(
+                    "cpu_utilization_above",
+                    self._pattern.get("cpuUtilizationAbove", {"threshold": 10})["threshold"],
+                ),
             },
             "wiredNetworkConnection": {
-                "enabled": pattern_dict.get("wired_network_connection",
-                                            self._pattern.get("wiredNetworkConnection",
-                                                              {'enabled': False})['enabled'])
+                "enabled": pattern_dict.get(
+                    "wired_network_connection",
+                    self._pattern.get("wiredNetworkConnection", {"enabled": False})["enabled"],
+                )
             },
             "minNetworkBandwidth": {
-                "enabled": True if 'min_network_bandwidth' in pattern_dict
-                else (self._pattern.get("minNetworkBandwidth",
-                                        {'enabled': False})['enabled']),
-                "threshold": pattern_dict.get("min_network_bandwidth",
-                                              self._pattern.get("minNetworkBandwidth",
-                                                                {'threshold': 128})['threshold'])
+                "enabled": True
+                if "min_network_bandwidth" in pattern_dict
+                else (self._pattern.get("minNetworkBandwidth", {"enabled": False})["enabled"]),
+                "threshold": pattern_dict.get(
+                    "min_network_bandwidth",
+                    self._pattern.get("minNetworkBandwidth", {"threshold": 128})["threshold"],
+                ),
             },
-            "sweepStartTime": pattern_dict.get("sweep_start_time",
-                                               self._pattern.get("sweepStartTime", 3600)
-                                               ),
-            "useStorageSpaceFromMA": pattern_dict.get("use_storage_space_ma",
-                                               self._pattern.get("useStorageSpaceFromMA", False)
-                                               ),
+            "sweepStartTime": pattern_dict.get(
+                "sweep_start_time", self._pattern.get("sweepStartTime", 3600)
+            ),
+            "useStorageSpaceFromMA": pattern_dict.get(
+                "use_storage_space_ma", self._pattern.get("useStorageSpaceFromMA", False)
+            ),
             "diskUsedPercent": {
-                "enabled": True if 'disk_use_threshold' in pattern_dict
-                else (self._pattern.get("diskUsedPercent",
-                                        {'enabled': False})['enabled']),
-                "threshold": pattern_dict.get("disk_use_threshold",
-                                              self._pattern.get("diskUsedPercent",
-                                                                {'threshold': 80})['threshold'])
+                "enabled": True
+                if "disk_use_threshold" in pattern_dict
+                else (self._pattern.get("diskUsedPercent", {"enabled": False})["enabled"]),
+                "threshold": pattern_dict.get(
+                    "disk_use_threshold",
+                    self._pattern.get("diskUsedPercent", {"threshold": 80})["threshold"],
+                ),
             },
             "logFileNum": {
-                "enabled": True if 'number_of_log_files' in pattern_dict
-                else (self._pattern.get("logFileNum",
-                                        {'enabled': False})['enabled']),
-                "threshold": pattern_dict.get("number_of_log_files",
-                                              self._pattern.get("logFileNum",
-                                                                {'threshold': 50})['threshold'])
-            }
+                "enabled": True
+                if "number_of_log_files" in pattern_dict
+                else (self._pattern.get("logFileNum", {"enabled": False})["enabled"]),
+                "threshold": pattern_dict.get(
+                    "number_of_log_files",
+                    self._pattern.get("logFileNum", {"threshold": 50})["threshold"],
+                ),
+            },
         }
 
         self._pattern = automatic_pattern
-
 
     def _after_job_completes(self, pattern_dict: dict) -> None:
         """sets the pattern type as after job completes with the parameters provided,
@@ -868,12 +855,11 @@ class SchedulePattern:
             }
             SchedulePattern()._after_job_completes(pattern_dict)
         """
-        pattern_dict['freq_type'] = 'After_Job_Completes'
+        pattern_dict["freq_type"] = "After_Job_Completes"
 
-        pattern_dict['freq_recurrence_factor'] = pattern_dict.get('repeat_days', 4096)
+        pattern_dict["freq_recurrence_factor"] = pattern_dict.get("repeat_days", 4096)
 
         self._pattern_json(pattern_dict)
-
 
     @staticmethod
     def exception_dates(day_list: list) -> int:
@@ -891,9 +877,8 @@ class SchedulePattern:
         """
         on_day = 0
         for value in day_list:
-            on_day |= (1 << (value - 1))
+            on_day |= 1 << (value - 1)
         return on_day
-
 
     def create_schedule_pattern(self, pattern_dict: dict) -> dict:
         """calls the required type of schedule module and forms the pattern json
@@ -915,21 +900,15 @@ class SchedulePattern:
             pattern = SchedulePattern().create_schedule_pattern(pattern_dict)
         """
 
-        if 'freq_type' not in pattern_dict:
-            raise SDKException('Schedules', '102',
-                               "Frequency type is required to create pattern")
+        if "freq_type" not in pattern_dict:
+            raise SDKException("Schedules", "102", "Frequency type is required to create pattern")
 
         try:
-            getattr(
-                self,
-                '_' +
-                pattern_dict['freq_type'].lower())(pattern_dict)
+            getattr(self, "_" + pattern_dict["freq_type"].lower())(pattern_dict)
             return self._pattern
 
         except AttributeError:
-            raise SDKException('Schedules', '102',
-                               "freq_type specified is wrong")
-
+            raise SDKException("Schedules", "102", "freq_type specified is wrong")
 
     def create_schedule(self, task_req: dict, pattern_dict: dict, schedule_id: str = None) -> dict:
         """returns a schedule task_req after including pattern
@@ -1045,7 +1024,7 @@ class SchedulePattern:
 
         _automatic_pattern = {}
 
-        if pattern_dict["freq_type"] == 'automatic':
+        if pattern_dict["freq_type"] == "automatic":
             _pattern = {"freq_type": 1024}
             _automatic_pattern = self.create_schedule_pattern(pattern_dict)
         else:
@@ -1054,58 +1033,62 @@ class SchedulePattern:
         _task_info = task_req["taskInfo"]
         if _task_info.get("task"):
             _task_info["task"]["taskType"] = 2
-        for subtask in _task_info['subTasks']:
+        for subtask in _task_info["subTasks"]:
             if schedule_id:
-                if subtask["subTask"]['subTaskId'] != schedule_id:
+                if subtask["subTask"]["subTaskId"] != schedule_id:
                     continue
             else:
-                subtask["subTask"]['subTaskName'] = pattern_dict.get(
-                    'schedule_name', '')
+                subtask["subTask"]["subTaskName"] = pattern_dict.get("schedule_name", "")
             subtask["pattern"] = _pattern
-            if pattern_dict["freq_type"] == 'automatic':
-                if 'options' in subtask:
-                    _task_options = subtask['options']
-                    if 'commonOpts' in _task_options:
-                        _task_options["commonOpts"]["automaticSchedulePattern"] = _automatic_pattern
+            if pattern_dict["freq_type"] == "automatic":
+                if "options" in subtask:
+                    _task_options = subtask["options"]
+                    if "commonOpts" in _task_options:
+                        _task_options["commonOpts"]["automaticSchedulePattern"] = (
+                            _automatic_pattern
+                        )
                     else:
-                        _task_options["commonOpts"] = \
-                            {"automaticSchedulePattern": _automatic_pattern}
+                        _task_options["commonOpts"] = {
+                            "automaticSchedulePattern": _automatic_pattern
+                        }
 
-                    if 'run_synthetic_full' in pattern_dict:
-                        synthetic_pattern = pattern_dict['run_synthetic_full']
+                    if "run_synthetic_full" in pattern_dict:
+                        synthetic_pattern = pattern_dict["run_synthetic_full"]
 
-                        if synthetic_pattern == 'every_x_days':
+                        if synthetic_pattern == "every_x_days":
                             synthetic_interval = pattern_dict.get(
-                                'days_between_synthetic_full', 30)
+                                "days_between_synthetic_full", 30
+                            )
                         else:
                             synthetic_interval = 30
 
                         _data_opt = {
-                            'autoCopy': True,
-                            'daysBetweenSyntheticBackup': synthetic_interval,
-                            'useAutomaticIntervalForSyntheticFull': (
-                                    synthetic_pattern == 'extended_retention'),
-                            'enableRunFullConsolidationBackup': (
-                                    synthetic_pattern == 'space_reclaim')
+                            "autoCopy": True,
+                            "daysBetweenSyntheticBackup": synthetic_interval,
+                            "useAutomaticIntervalForSyntheticFull": (
+                                synthetic_pattern == "extended_retention"
+                            ),
+                            "enableRunFullConsolidationBackup": (
+                                synthetic_pattern == "space_reclaim"
+                            ),
                         }
 
-                        if 'backupOpts' in _task_options:
-                            if 'dataOpt' in _task_options["backupOpts"]:
-                                _task_options['backupOpts']['dataOpt'].update(_data_opt)
+                        if "backupOpts" in _task_options:
+                            if "dataOpt" in _task_options["backupOpts"]:
+                                _task_options["backupOpts"]["dataOpt"].update(_data_opt)
                             else:
-                                _task_options['backupOpts']['dataOpt'] = _data_opt
+                                _task_options["backupOpts"]["dataOpt"] = _data_opt
                         else:
-                            _task_options['backupOpts'] = {
-                                'dataOpt': _data_opt
-                            }
+                            _task_options["backupOpts"] = {"dataOpt": _data_opt}
 
                 else:
-                    subtask['options'] = {
-                        'commonOpts': {
-                            'automaticSchedulePattern': _automatic_pattern}}
+                    subtask["options"] = {
+                        "commonOpts": {"automaticSchedulePattern": _automatic_pattern}
+                    }
 
         task_req["taskInfo"] = _task_info
         return task_req
+
 
 class Schedules:
     """Class for getting the schedules of a commcell entity.
@@ -1119,29 +1102,43 @@ class Schedules:
         schedules = Schedules(client_object)
     """
 
-    def __init__(self, class_object: Union['Commcell', 'Client', 'Agent', 'Instance', 'Backupset', 'Subclient', 'Inventory', 'FsoServer', 'Project'], operation_type: str = None) -> None:
+    def __init__(
+        self,
+        class_object: Union[
+            "Commcell",
+            "Client",
+            "Agent",
+            "Instance",
+            "Backupset",
+            "Subclient",
+            "Inventory",
+            "FsoServer",
+            "Project",
+        ],
+        operation_type: str = None,
+    ) -> None:
         """Initialise the Schedules class instance.
 
-            Args:
-                class_object (object): instance of Commcell/Client/Agent/Backupset/Subclient/Inventory/FsoServer/Project class
-                operation_type (str, optional): required when commcell object is passed
-                                        refer OperationType class for supported op types. Defaults to None.
+        Args:
+            class_object (object): instance of Commcell/Client/Agent/Backupset/Subclient/Inventory/FsoServer/Project class
+            operation_type (str, optional): required when commcell object is passed
+                                    refer OperationType class for supported op types. Defaults to None.
 
-            Raises:
-                SDKException:
-                    if class object does not belong to any of the Client or Agent or Backupset or
-                        Subclient class
+        Raises:
+            SDKException:
+                if class object does not belong to any of the Client or Agent or Backupset or
+                    Subclient class
         """
         # imports inside the __init__ method definition to avoid cyclic imports
-        from .commcell import Commcell
-        from .client import Client
+        from .activateapps.file_storage_optimization import FsoServer
+        from .activateapps.inventory_manager import Inventory
+        from .activateapps.sensitive_data_governance import Project
         from .agent import Agent
         from .backupset import Backupset
-        from .subclient import Subclient
+        from .client import Client
+        from .commcell import Commcell
         from .instance import Instance
-        from .activateapps.inventory_manager import Inventory
-        from .activateapps.file_storage_optimization import FsoServer
-        from .activateapps.sensitive_data_governance import Project
+        from .subclient import Subclient
 
         self.class_object = class_object
         self._single_scheduled_entity = False
@@ -1151,87 +1148,87 @@ class Schedules:
         if isinstance(class_object, Commcell):
             self._commcell_object = class_object
             if operation_type == OperationType.REPORTS:
-                self._SCHEDULES = class_object._services['REPORT_SCHEDULES']
-                self._repr_str = "Reports in Commcell: {0}".format(
-                    class_object.commserv_name)
+                self._SCHEDULES = class_object._services["REPORT_SCHEDULES"]
+                self._repr_str = f"Reports in Commcell: {class_object.commserv_name}"
             elif operation_type == OperationType.DATA_AGING:
-                self._SCHEDULES = class_object._services['OPTYPE_SCHEDULES'] % (
-                    operation_type)
-                self._repr_str = "Dataging in Commcell: {0}".format(
-                    class_object.commserv_name)
+                self._SCHEDULES = class_object._services["OPTYPE_SCHEDULES"] % (operation_type)
+                self._repr_str = f"Dataging in Commcell: {class_object.commserv_name}"
             elif not operation_type:
-                self._SCHEDULES = class_object._services['COMMCELL_SCHEDULES']
+                self._SCHEDULES = class_object._services["COMMCELL_SCHEDULES"]
                 self._repr_str = "Schedules in Commcell"
             else:
-                raise SDKException('Schedules', '103')
+                raise SDKException("Schedules", "103")
         elif isinstance(class_object, FsoServer):
-            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
-                class_object.server_id)
-            self._repr_str = "Fso Server: {0}".format(class_object.server_id)
+            self._SCHEDULES = class_object._commcell_object._services["CLIENT_SCHEDULES"] % (
+                class_object.server_id
+            )
+            self._repr_str = f"Fso Server: {class_object.server_id}"
             self._commcell_object = class_object._commcell_object
             self._single_scheduled_entity = True
-            self._task_flags['isEdiscovery'] = True
+            self._task_flags["isEdiscovery"] = True
 
         elif isinstance(class_object, Project):
-            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
-                class_object.project_id)
-            self._repr_str = "SDG Project: {0}".format(class_object.project_id)
+            self._SCHEDULES = class_object._commcell_object._services["CLIENT_SCHEDULES"] % (
+                class_object.project_id
+            )
+            self._repr_str = f"SDG Project: {class_object.project_id}"
             self._commcell_object = class_object._commcell_object
             self._single_scheduled_entity = True
-            self._task_flags['isEdiscovery'] = True
+            self._task_flags["isEdiscovery"] = True
 
         elif isinstance(class_object, Inventory):
-            self._SCHEDULES = class_object._commcell_object._services['INVENTORY_SCHEDULES'] % (
-                class_object.inventory_id)
-            self._repr_str = "Inventory: {0}".format(class_object.inventory_name)
+            self._SCHEDULES = class_object._commcell_object._services["INVENTORY_SCHEDULES"] % (
+                class_object.inventory_id
+            )
+            self._repr_str = f"Inventory: {class_object.inventory_name}"
             self._commcell_object = class_object._commcell_object
             # set below flag to denote inventory type entity will always have only one schedule associated to it
             self._single_scheduled_entity = True
 
         elif isinstance(class_object, Client):
-            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
-                class_object.client_id)
-            self._repr_str = "Client: {0}".format(class_object.client_name)
+            self._SCHEDULES = class_object._commcell_object._services["CLIENT_SCHEDULES"] % (
+                class_object.client_id
+            )
+            self._repr_str = f"Client: {class_object.client_name}"
             self._commcell_object = class_object._commcell_object
 
         elif isinstance(class_object, Agent):
-            self._SCHEDULES = class_object._commcell_object._services['AGENT_SCHEDULES'] % (
-                class_object._client_object.client_id, class_object.agent_id)
-            self._repr_str = "Agent: {0}".format(class_object.agent_name)
+            self._SCHEDULES = class_object._commcell_object._services["AGENT_SCHEDULES"] % (
+                class_object._client_object.client_id,
+                class_object.agent_id,
+            )
+            self._repr_str = f"Agent: {class_object.agent_name}"
             self._commcell_object = class_object._commcell_object
 
         elif isinstance(class_object, Instance):
-            self._SCHEDULES = class_object._commcell_object._services['INSTANCE_SCHEDULES'] % (
+            self._SCHEDULES = class_object._commcell_object._services["INSTANCE_SCHEDULES"] % (
                 class_object._agent_object._client_object.client_id,
                 class_object._agent_object.agent_id,
-                class_object.instance_id
+                class_object.instance_id,
             )
-            self._repr_str = "Instance: {0}".format(
-                class_object.instance_name)
+            self._repr_str = f"Instance: {class_object.instance_name}"
             self._commcell_object = class_object._commcell_object
 
         elif isinstance(class_object, Backupset):
-            self._SCHEDULES = class_object._commcell_object._services['BACKUPSET_SCHEDULES'] % (
+            self._SCHEDULES = class_object._commcell_object._services["BACKUPSET_SCHEDULES"] % (
                 class_object._agent_object._client_object.client_id,
                 class_object._agent_object.agent_id,
-                class_object.backupset_id
+                class_object.backupset_id,
             )
-            self._repr_str = "Backupset: {0}".format(
-                class_object.backupset_name)
+            self._repr_str = f"Backupset: {class_object.backupset_name}"
             self._commcell_object = class_object._commcell_object
 
         elif isinstance(class_object, Subclient):
-            self._SCHEDULES = class_object._commcell_object._services['SUBCLIENT_SCHEDULES'] % (
+            self._SCHEDULES = class_object._commcell_object._services["SUBCLIENT_SCHEDULES"] % (
                 class_object._backupset_object._agent_object._client_object.client_id,
                 class_object._backupset_object._agent_object.agent_id,
                 class_object._backupset_object.backupset_id,
-                class_object.subclient_id
+                class_object.subclient_id,
             )
-            self._repr_str = "Subclient: {0}".format(
-                class_object.subclient_name)
+            self._repr_str = f"Subclient: {class_object.subclient_name}"
             self._commcell_object = class_object._commcell_object
         else:
-            raise SDKException('Schedules', '101')
+            raise SDKException("Schedules", "101")
 
         self.schedules = None
         self.refresh()
@@ -1239,87 +1236,82 @@ class Schedules:
     def __str__(self) -> str:
         """Representation string consisting of all schedules of the commcell entity.
 
-            Returns:
-                str - string of all the schedules associated with the commcell entity
+        Returns:
+            str - string of all the schedules associated with the commcell entity
         """
         if self.schedules:
-            representation_string = '{:^5}\t{:^20}\n\n'.format(
-                'S. No.', 'Schedule')
+            representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Schedule")
 
             for index, schedule in enumerate(self.schedules):
-                sub_str = '{:^5}\t{:20}\n'.format(index + 1, schedule)
+                sub_str = f"{index + 1:^5}\t{schedule:20}\n"
                 representation_string += sub_str
         else:
-            representation_string = 'No Schedules are associated to this Commcell Entity'
+            representation_string = "No Schedules are associated to this Commcell Entity"
 
         return representation_string.strip()
 
     def __repr__(self) -> str:
         """Representation string for the instance of the Schedules class."""
-        return "Schedules class instance for {0}".format(self._repr_str)
+        return f"Schedules class instance for {self._repr_str}"
 
     def _get_schedules(self) -> dict:
         """Gets the schedules associated with the input commcell entity.
-            Client / Agent / Backupset / Subclient
+        Client / Agent / Backupset / Subclient
 
-            Returns:
-                dict: consists of all schedules for the commcell entity
-                    {
-                         "schedule_id": {
-                                'task_id': task_id,
-                                'schedule_name': schedule_name,
-                                'description': description
-                            }
+        Returns:
+            dict: consists of all schedules for the commcell entity
+                {
+                     "schedule_id": {
+                            'task_id': task_id,
+                            'schedule_name': schedule_name,
+                            'description': description
+                        }
 
-                         "schedule_id": {
-                                'task_id': task_id,
-                                'schedule_name': schedule_name,
-                                'description': description
-                            }
-                    }
+                     "schedule_id": {
+                            'task_id': task_id,
+                            'schedule_name': schedule_name,
+                            'description': description
+                        }
+                }
 
-            Raises:
-                SDKException:
-                    if response is not success
+        Raises:
+            SDKException:
+                if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._SCHEDULES)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._SCHEDULES)
 
         if flag:
-            if response.json() and 'taskDetail' in response.json():
+            if response.json() and "taskDetail" in response.json():
                 subtask_dict = {}
-                for schedule in response.json()['taskDetail']:
-                    task_id = schedule['task']['taskId']
-                    description = ''
-                    task_flags = schedule['task'].get('taskFlags', 0)
-                    if 'subTasks' in schedule:
-                        for subtask in schedule['subTasks']:
-                            schedule_id = subtask['subTask']['subTaskId']
-                            if 'description' in subtask['subTask']:
-                                description = subtask['pattern']['description'].lower(
-                                )
-                            if 'subTaskName' in subtask['subTask']:
-                                subtask_name = subtask['subTask']['subTaskName'].lower(
-                                )
+                for schedule in response.json()["taskDetail"]:
+                    task_id = schedule["task"]["taskId"]
+                    description = ""
+                    task_flags = schedule["task"].get("taskFlags", 0)
+                    if "subTasks" in schedule:
+                        for subtask in schedule["subTasks"]:
+                            schedule_id = subtask["subTask"]["subTaskId"]
+                            if "description" in subtask["subTask"]:
+                                description = subtask["pattern"]["description"].lower()
+                            if "subTaskName" in subtask["subTask"]:
+                                subtask_name = subtask["subTask"]["subTaskName"].lower()
                             elif description:
                                 subtask_name = description
                             else:
                                 subtask_name = str(schedule_id)
                             # change schedule_id as key
                             subtask_dict[schedule_id] = {
-                                'task_id': task_id,
-                                'schedule_name': subtask_name,
-                                'description': description,
-                                'task_flags': task_flags
+                                "task_id": task_id,
+                                "schedule_name": subtask_name,
+                                "description": description,
+                                "task_flags": task_flags,
                             }
 
                 return subtask_dict
             else:
                 return {}
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def _get_sch_id_from_task_id(self, task_id: int) -> int:
         """
@@ -1334,29 +1326,33 @@ class Schedules:
         Raises:
             SDKException: if schedule id not found for the corresponding task id
         """
-        task_ids = [k for k, v in self.schedules.items() if v['task_id'] == task_id]
+        task_ids = [k for k, v in self.schedules.items() if v["task_id"] == task_id]
         if task_ids:
             return task_ids[0]
         else:
-            raise SDKException('Schedules', '102', 'Schedule id not found for corresponding task id')
+            raise SDKException(
+                "Schedules", "102", "Schedule id not found for corresponding task id"
+            )
 
-    def _get_schedule_id(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> int:
+    def _get_schedule_id(
+        self, schedule_name: str = None, schedule_id: int = None, task_id: int = None
+    ) -> int:
         """Gets the schedule id from the provided inputs.
 
-            Args:
-                schedule_name (str, optional): name of the schedule. Defaults to None.
-                schedule_id (int, optional): id of the schedule. Defaults to None.
-                task_id (int, optional): task id of the schedule. Defaults to None.
+        Args:
+            schedule_name (str, optional): name of the schedule. Defaults to None.
+            schedule_id (int, optional): id of the schedule. Defaults to None.
+            task_id (int, optional): task id of the schedule. Defaults to None.
 
-            Returns:
-                int: schedule id of the schedule
+        Returns:
+            int: schedule id of the schedule
 
-            Raises:
-                SDKException:
-                    if neither schedule_name nor schedule_id is provided
-                    if schedule_name is not a string
-                    if schedule_id is not an integer
-                    if task_id is not an integer
+        Raises:
+            SDKException:
+                if neither schedule_name nor schedule_id is provided
+                if schedule_name is not a string
+                if schedule_id is not an integer
+                if task_id is not an integer
         """
 
         if self._single_scheduled_entity:
@@ -1366,7 +1362,7 @@ class Schedules:
                 if len(self._task_flags) == 0:
                     return subtask_id
                 else:
-                    task_flags = subtask_dict['task_flags']
+                    task_flags = subtask_dict["task_flags"]
                     match = True
                     for flag, value in self._task_flags.items():
                         if flag in task_flags:
@@ -1379,24 +1375,21 @@ class Schedules:
             return None
 
         if not task_id and not schedule_name and not schedule_id:
-            raise SDKException(
-                'Schedules',
-                '102',
-                'Either Schedule Name or Schedule Id is needed')
+            raise SDKException("Schedules", "102", "Either Schedule Name or Schedule Id is needed")
 
         if schedule_name and not isinstance(schedule_name, str):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         if schedule_id and not isinstance(schedule_id, int):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         if task_id and not isinstance(task_id, int):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         if schedule_name:
             schedule_name = schedule_name.lower()
             for subtask_id, subtask_dict in self.schedules.items():
-                if subtask_dict['schedule_name'] == schedule_name:
+                if subtask_dict["schedule_name"] == schedule_name:
                     schedule_id = subtask_id
 
         elif task_id:
@@ -1405,122 +1398,123 @@ class Schedules:
         if self.schedules and schedule_id in self.schedules:
             return schedule_id
 
-    def has_schedule(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> bool:
+    def has_schedule(
+        self, schedule_name: str = None, schedule_id: int = None, task_id: int = None
+    ) -> bool:
         """Checks if a schedule exists for the commcell entity with the input schedule name.
 
-            Args:
-                schedule_name (str, optional): name of the schedule. Defaults to None.
-                schedule_id (int, optional): id of the schedule. Defaults to None.
-                task_id (int, optional): task id of the schedule. Defaults to None.
+        Args:
+            schedule_name (str, optional): name of the schedule. Defaults to None.
+            schedule_id (int, optional): id of the schedule. Defaults to None.
+            task_id (int, optional): task id of the schedule. Defaults to None.
 
-            Returns:
-                bool: boolean output whether the schedule exists for the commcell entity or not
+        Returns:
+            bool: boolean output whether the schedule exists for the commcell entity or not
 
-            Raises:
-                SDKException:
-                    if type of the schedule name argument is not string
+        Raises:
+            SDKException:
+                if type of the schedule name argument is not string
         """
         if self._get_schedule_id(schedule_name, schedule_id, task_id):
             return True
         return False
 
-    def get(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> 'Schedule':
+    def get(
+        self, schedule_name: str = None, schedule_id: int = None, task_id: int = None
+    ) -> "Schedule":
         """Returns a schedule object of the specified schedule name.
 
-            Args:
-                schedule_name (str, optional): name of the Schedule. Defaults to None.
-                schedule_id (int, optional): id of the schedule. Defaults to None.
-                task_id (int, optional): task id of the schedule. Defaults to None.
+        Args:
+            schedule_name (str, optional): name of the Schedule. Defaults to None.
+            schedule_id (int, optional): id of the schedule. Defaults to None.
+            task_id (int, optional): task id of the schedule. Defaults to None.
 
-            Returns:
-                object: instance of the schedule class for the given schedule name
+        Returns:
+            object: instance of the schedule class for the given schedule name
 
-            Raises:
-                SDKException:
-                    if type of the schedule name argument is not string
+        Raises:
+            SDKException:
+                if type of the schedule name argument is not string
 
-                    if no schedule exists with the given name
+                if no schedule exists with the given name
 
-            Usage:
-                # Get a schedule by name
-                schedule = schedules.get(schedule_name='My Schedule')
+        Usage:
+            # Get a schedule by name
+            schedule = schedules.get(schedule_name='My Schedule')
 
-                # Get a schedule by ID
-                schedule = schedules.get(schedule_id=123)
+            # Get a schedule by ID
+            schedule = schedules.get(schedule_id=123)
 
-                # Get a schedule by task ID
-                schedule = schedules.get(task_id=456)
+            # Get a schedule by task ID
+            schedule = schedules.get(task_id=456)
         """
         schedule_id = self._get_schedule_id(schedule_name, schedule_id, task_id)
         if schedule_id:
-            return Schedule(self.class_object, schedule_id=schedule_id, task_id=self.schedules[schedule_id]['task_id'])
+            return Schedule(
+                self.class_object,
+                schedule_id=schedule_id,
+                task_id=self.schedules[schedule_id]["task_id"],
+            )
 
-        raise SDKException('Schedules', '105')
+        raise SDKException("Schedules", "105")
 
-    def delete(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> None:
+    def delete(
+        self, schedule_name: str = None, schedule_id: int = None, task_id: int = None
+    ) -> None:
         """deletes the specified schedule name.
 
-                    Args:
-                        schedule_name (str, optional): name of the Schedule. Defaults to None.
-                        schedule_id (int, optional): id of the schedule. Defaults to None.
-                        task_id (int, optional): task id of the schedule. Defaults to None.
+        Args:
+            schedule_name (str, optional): name of the Schedule. Defaults to None.
+            schedule_id (int, optional): id of the schedule. Defaults to None.
+            task_id (int, optional): task id of the schedule. Defaults to None.
 
-                    Raises:
-                        SDKException:
-                            if type of the schedule name argument is not string
-                            if no schedule exists with the given name
+        Raises:
+            SDKException:
+                if type of the schedule name argument is not string
+                if no schedule exists with the given name
 
-                    Usage:
-                        # Delete a schedule by name
-                        schedules.delete(schedule_name='My Schedule')
+        Usage:
+            # Delete a schedule by name
+            schedules.delete(schedule_name='My Schedule')
 
-                        # Delete a schedule by ID
-                        schedules.delete(schedule_id=123)
+            # Delete a schedule by ID
+            schedules.delete(schedule_id=123)
 
-                        # Delete a schedule by task ID
-                        schedules.delete(task_id=456)
+            # Delete a schedule by task ID
+            schedules.delete(task_id=456)
         """
 
         schedule_id = self._get_schedule_id(schedule_name, schedule_id, task_id)
         if schedule_id:
             request_json = {
-                "TMMsg_TaskOperationReq":
-                    {
-                        "opType": 3,
-                        "subtaskEntity":
-                            [
-                                {
-                                    "_type_": 68,
-                                    "subtaskId": schedule_id
-                                }
-                            ]
-                    }
+                "TMMsg_TaskOperationReq": {
+                    "opType": 3,
+                    "subtaskEntity": [{"_type_": 68, "subtaskId": schedule_id}],
+                }
             }
 
-            modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
+            modify_schedule = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', modify_schedule, request_json)
+                "POST", modify_schedule, request_json
+            )
 
             if flag:
                 if response.json():
-                    if 'errorCode' in response.json():
-                        if response.json()['errorCode'] == 0:
+                    if "errorCode" in response.json():
+                        if response.json()["errorCode"] == 0:
                             self.refresh()
                         else:
-                            raise SDKException(
-                                'Schedules', '102', response.json()['errorMessage'])
+                            raise SDKException("Schedules", "102", response.json()["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                response_string = self._commcell_object._update_response_(
-                    response.text)
-                exception_message = 'Failed to delete schedule\nError: "{0}"'.format(
-                    response_string)
+                response_string = self._commcell_object._update_response_(response.text)
+                exception_message = f'Failed to delete schedule\nError: "{response_string}"'
 
-                raise SDKException('Schedules', '102', exception_message)
+                raise SDKException("Schedules", "102", exception_message)
         else:
-            raise SDKException('Schedules', '105')
+            raise SDKException("Schedules", "105")
 
     def refresh(self) -> None:
         """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient.
@@ -1529,6 +1523,7 @@ class Schedules:
             schedules.refresh()
         """
         self.schedules = self._get_schedules()
+
 
 class Schedule:
     """Class for performing operations for a specific Schedule.
@@ -1561,7 +1556,17 @@ class Schedule:
 
     def __init__(
         self,
-        class_object: Union['Commcell', 'Client', 'Agent', 'Instance', 'Backupset', 'Subclient', 'Inventory', 'FsoServer', 'Project'],
+        class_object: Union[
+            "Commcell",
+            "Client",
+            "Agent",
+            "Instance",
+            "Backupset",
+            "Subclient",
+            "Inventory",
+            "FsoServer",
+            "Project",
+        ],
         schedule_name: Optional[str] = None,
         schedule_id: Optional[int] = None,
         task_id: Optional[int] = None,
@@ -1591,13 +1596,10 @@ class Schedule:
             self._commcell_object = class_object
         else:
             self._commcell_object = class_object._commcell_object
-        self.schedule_name = ''
+        self.schedule_name = ""
 
         if not schedule_name and not schedule_id:
-            raise SDKException(
-                'Schedules',
-                '102',
-                'Either Schedule Name or Schedule Id is needed')
+            raise SDKException("Schedules", "102", "Either Schedule Name or Schedule Id is needed")
 
         if schedule_name:
             self.schedule_name = schedule_name.lower()
@@ -1612,43 +1614,42 @@ class Schedule:
         else:
             self.task_id = self._get_task_id()
 
-        self._SCHEDULE = self._commcell_object._services['SCHEDULE'] % (
-            self.task_id)
-        self._MODIFYSCHEDULE = self._commcell_object._services['EXECUTE_QCOMMAND']
+        self._SCHEDULE = self._commcell_object._services["SCHEDULE"] % (self.task_id)
+        self._MODIFYSCHEDULE = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
         self._freq_type = {
-            1: 'One_Time',
-            2: 'On_Demand',
-            4: 'Daily',
-            8: 'Weekly',
-            16: 'Monthly',
-            32: 'Monthly_Relative',
-            64: 'Yearly',
-            128: 'Yearly_Relative',
-            1024: 'Automatic',
-            4096: 'Continuous'
+            1: "One_Time",
+            2: "On_Demand",
+            4: "Daily",
+            8: "Weekly",
+            16: "Monthly",
+            32: "Monthly_Relative",
+            64: "Yearly",
+            128: "Yearly_Relative",
+            1024: "Automatic",
+            4096: "Continuous",
         }
 
         self._week_of_month = {
-            '1': 'First',
-            '2': 'Second',
-            '3': 'Third',
-            '4': 'Fourth',
-            '5': 'Last'
+            "1": "First",
+            "2": "Second",
+            "3": "Third",
+            "4": "Fourth",
+            "5": "Last",
         }
 
         self.task_operation_type = {
-            1: 'ALL_BACKUP_JOBS',
-            2: 'BACKUP',
-            1001: ' RESTORE',
-            2000: 'ADMIN',
-            2001: 'WORK_FLOW',
-            4002: 'DRBACKUP',
-            4003: 'AUX_COPY',
-            4004: 'REPORT',
-            4018: 'DATA_AGING',
-            4019: 'DOWNLOAD_UPDATES',
-            4020: 'INSTALL_UPDATES'
+            1: "ALL_BACKUP_JOBS",
+            2: "BACKUP",
+            1001: " RESTORE",
+            2000: "ADMIN",
+            2001: "WORK_FLOW",
+            4002: "DRBACKUP",
+            4003: "AUX_COPY",
+            4004: "REPORT",
+            4018: "DATA_AGING",
+            4019: "DOWNLOAD_UPDATES",
+            4020: "INSTALL_UPDATES",
         }
 
         self._criteria = {}
@@ -1688,7 +1689,7 @@ class Schedule:
             int: schedule ID
         """
         schedules_obj = Schedules(self.class_object)
-        return schedules_obj.schedules.get(self.schedule_id).get('task_id')
+        return schedules_obj.schedules.get(self.schedule_id).get("task_id")
 
     def _get_schedule_properties(self) -> Dict:
         """Gets the properties of this Schedule.
@@ -1702,60 +1703,63 @@ class Schedule:
 
                 if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._SCHEDULE)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._SCHEDULE)
 
         if flag:
-            if response.json() and 'taskInfo' in response.json():
-                _task_info = response.json()['taskInfo']
+            if response.json() and "taskInfo" in response.json():
+                _task_info = response.json()["taskInfo"]
 
-                if 'associations' in _task_info:
-                    self._associations_json = _task_info['associations']
+                if "associations" in _task_info:
+                    self._associations_json = _task_info["associations"]
 
-                if 'task' in _task_info:
-                    self._task_json = _task_info['task']
+                if "task" in _task_info:
+                    self._task_json = _task_info["task"]
 
                     # Get status of schedule enabled/disabled
-                    self._schedule_disabled = self._task_json.get('taskFlags', {}).get('disabled')
+                    self._schedule_disabled = self._task_json.get("taskFlags", {}).get("disabled")
 
-                for subtask in _task_info['subTasks']:
-                    self._sub_task_option = subtask['subTask']
-                    if self._sub_task_option['subTaskId'] == self.schedule_id:
-                        self.schedule_name = self._sub_task_option['subTaskName']
-                        if 'operationType' in subtask['subTask']:
-                            self.operation_type = subtask['subTask']['operationType']
+                for subtask in _task_info["subTasks"]:
+                    self._sub_task_option = subtask["subTask"]
+                    if self._sub_task_option["subTaskId"] == self.schedule_id:
+                        self.schedule_name = self._sub_task_option["subTaskName"]
+                        if "operationType" in subtask["subTask"]:
+                            self.operation_type = subtask["subTask"]["operationType"]
                         else:
                             continue
 
-                        if 'pattern' in subtask:
-                            self._pattern = subtask['pattern']
+                        if "pattern" in subtask:
+                            self._pattern = subtask["pattern"]
                         else:
                             continue
 
-                        if 'options' in subtask:
-                            self._task_options = subtask['options']
-                            if 'restoreOptions' in self._task_options:
-                                if 'virtualServerRstOption' in self._task_options['restoreOptions']:
-                                    self.virtualServerRstOptions = self._task_options['restoreOptions'][
-                                        'virtualServerRstOption']
+                        if "options" in subtask:
+                            self._task_options = subtask["options"]
+                            if "restoreOptions" in self._task_options:
+                                if (
+                                    "virtualServerRstOption"
+                                    in self._task_options["restoreOptions"]
+                                ):
+                                    self.virtualServerRstOptions = self._task_options[
+                                        "restoreOptions"
+                                    ]["virtualServerRstOption"]
 
-                            if 'commonOpts' in self._task_options:
-                                if 'automaticSchedulePattern' in self._task_options["commonOpts"]:
-                                    self._automatic_pattern = self._task_options[
-                                        "commonOpts"]['automaticSchedulePattern']
+                            if "commonOpts" in self._task_options:
+                                if "automaticSchedulePattern" in self._task_options["commonOpts"]:
+                                    self._automatic_pattern = self._task_options["commonOpts"][
+                                        "automaticSchedulePattern"
+                                    ]
 
-                            if 'backupOpts' in self._task_options:
-                                if 'dataOpt' in self._task_options['backupOpts']:
+                            if "backupOpts" in self._task_options:
+                                if "dataOpt" in self._task_options["backupOpts"]:
                                     if isinstance(self._automatic_pattern, dict):
-                                        _data_opt = self._task_options['backupOpts']['dataOpt']
+                                        _data_opt = self._task_options["backupOpts"]["dataOpt"]
                                         self._automatic_pattern.update(_data_opt)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def is_disabled(self) -> bool:
@@ -1773,7 +1777,7 @@ class Schedule:
         Returns:
             str: the schedule frequency type
         """
-        return self._freq_type[self._pattern['freq_type']]
+        return self._freq_type[self._pattern["freq_type"]]
 
     @property
     def name(self) -> str:
@@ -1795,8 +1799,8 @@ class Schedule:
             >>> schedule.name = "New Schedule Name"
         """
         self.schedule_name = new_name
-        self._sub_task_option['subTaskName'] = new_name
-        self._sub_task_option['subTask']['subtaskName'] = new_name
+        self._sub_task_option["subTaskName"] = new_name
+        self._sub_task_option["subTask"]["subtaskName"] = new_name
         self._modify_task_properties()
 
     @property
@@ -1812,14 +1816,14 @@ class Schedule:
 
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'One_Time':
+        if self.schedule_freq_type == "One_Time":
             return {
-                'active_start_date': SchedulePattern._time_converter(
-                    self._pattern['active_start_date'],
-                    '%m/%d/%Y', False),
-                'active_start_time': SchedulePattern._time_converter(
-                    self._pattern['active_start_time'],
-                    '%H:%M', False)
+                "active_start_date": SchedulePattern._time_converter(
+                    self._pattern["active_start_date"], "%m/%d/%Y", False
+                ),
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
             }
 
         return False
@@ -1841,7 +1845,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'one_time'
+        pattern_dict["freq_type"] = "one_time"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -1858,10 +1862,12 @@ class Schedule:
                     }
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Daily':
-            return {'active_start_time': SchedulePattern._time_converter(
-                self._pattern['active_start_time'], '%H:%M', False),
-                'repeat_days': self._pattern['freq_recurrence_factor']
+        if self.schedule_freq_type == "Daily":
+            return {
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
+                "repeat_days": self._pattern["freq_recurrence_factor"],
             }
         return False
 
@@ -1882,7 +1888,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'daily'
+        pattern_dict["freq_type"] = "daily"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -1900,17 +1906,19 @@ class Schedule:
                 }
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Weekly':
-            _freq = self._pattern['freq_interval']
+        if self.schedule_freq_type == "Weekly":
+            _freq = self._pattern["freq_interval"]
             return {
-                'active_start_time': SchedulePattern._time_converter(
-                    self._pattern['active_start_time'],
-                    '%H:%M',
-                    False),
-                'repeat_weeks': self._pattern['freq_recurrence_factor'],
-                'weekdays': [
-                    SchedulePattern._days_to_run[x] for x in list(
-                        SchedulePattern._days_to_run.keys()) if _freq & x > 0]}
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
+                "repeat_weeks": self._pattern["freq_recurrence_factor"],
+                "weekdays": [
+                    SchedulePattern._days_to_run[x]
+                    for x in list(SchedulePattern._days_to_run.keys())
+                    if _freq & x > 0
+                ],
+            }
         return False
 
     @weekly.setter
@@ -1932,7 +1940,7 @@ class Schedule:
 
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'weekly'
+        pattern_dict["freq_type"] = "weekly"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -1950,14 +1958,14 @@ class Schedule:
                 }
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Monthly':
+        if self.schedule_freq_type == "Monthly":
             return {
-                'active_start_time': SchedulePattern._time_converter(
-                    self._pattern['active_start_time'],
-                    '%H:%M',
-                    False),
-                'repeat_months': self._pattern['freq_recurrence_factor'],
-                'on_day': self._pattern['freq_interval']}
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
+                "repeat_months": self._pattern["freq_recurrence_factor"],
+                "on_day": self._pattern["freq_interval"],
+            }
         return False
 
     @monthly.setter
@@ -1978,7 +1986,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'monthly'
+        pattern_dict["freq_type"] = "monthly"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -1997,17 +2005,19 @@ class Schedule:
                 }
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Monthly_Relative':
+        if self.schedule_freq_type == "Monthly_Relative":
             return {
-                'active_start_time': SchedulePattern._time_converter(
-                    self._pattern['active_start_time'],
-                    '%H:%M',
-                    False),
-                'relative_time': SchedulePattern._relative_day[
-                    self._pattern['freq_relative_interval']],
-                'relative_weekday': SchedulePattern._relative_weekday[
-                    self._pattern['freq_interval']],
-                'repeat_months': self._pattern['freq_recurrence_factor']}
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
+                "relative_time": SchedulePattern._relative_day[
+                    self._pattern["freq_relative_interval"]
+                ],
+                "relative_weekday": SchedulePattern._relative_weekday[
+                    self._pattern["freq_interval"]
+                ],
+                "repeat_months": self._pattern["freq_recurrence_factor"],
+            }
         return False
 
     @monthly_relative.setter
@@ -2030,7 +2040,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'monthly_relative'
+        pattern_dict["freq_type"] = "monthly_relative"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2048,13 +2058,14 @@ class Schedule:
                 }
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Yearly':
-            return {'active_start_time':
-                    SchedulePattern._time_converter(self._pattern['active_start_time'],
-                                                    '%H:%M', False),
-                    'on_month': calendar.month_name[self._pattern['freq_recurrence_factor']],
-                    'on_day': self._pattern['freq_interval']
-                    }
+        if self.schedule_freq_type == "Yearly":
+            return {
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
+                "on_month": calendar.month_name[self._pattern["freq_recurrence_factor"]],
+                "on_day": self._pattern["freq_interval"],
+            }
         return False
 
     @yearly.setter
@@ -2075,7 +2086,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'yearly'
+        pattern_dict["freq_type"] = "yearly"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2094,16 +2105,19 @@ class Schedule:
                 }
             False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Yearly_Relative':
-            return {'active_start_time':
-                    SchedulePattern._time_converter(self._pattern['active_start_time'],
-                                                    '%H:%M', False),
-                    'relative_time': SchedulePattern._relative_day
-                    [self._pattern['freq_relative_interval']],
-                    'relative_weekday': SchedulePattern._relative_weekday
-                    [self._pattern['freq_interval']],
-                    'on_month': calendar.month_name[self._pattern['freq_recurrence_factor']]
-                    }
+        if self.schedule_freq_type == "Yearly_Relative":
+            return {
+                "active_start_time": SchedulePattern._time_converter(
+                    self._pattern["active_start_time"], "%H:%M", False
+                ),
+                "relative_time": SchedulePattern._relative_day[
+                    self._pattern["freq_relative_interval"]
+                ],
+                "relative_weekday": SchedulePattern._relative_weekday[
+                    self._pattern["freq_interval"]
+                ],
+                "on_month": calendar.month_name[self._pattern["freq_recurrence_factor"]],
+            }
         return False
 
     @yearly_relative.setter
@@ -2123,7 +2137,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'yearly_relative'
+        pattern_dict["freq_type"] = "yearly_relative"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2139,10 +2153,8 @@ class Schedule:
                 }
                 False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Continuous':
-            return {
-                'job_interval': self._pattern['freq_interval']
-            }
+        if self.schedule_freq_type == "Continuous":
+            return {"job_interval": self._pattern["freq_interval"]}
         return False
 
     @continuous.setter
@@ -2158,7 +2170,7 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'continuous'
+        pattern_dict["freq_type"] = "continuous"
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2194,48 +2206,64 @@ class Schedule:
                         }
                 False: if schedule type is wrong
         """
-        if self.schedule_freq_type == 'Automatic':
+        if self.schedule_freq_type == "Automatic":
             pattern = {
-                "min_interval_hours": self._automatic_pattern['minBackupInterval'],
-                "min_interval_minutes": self._automatic_pattern['minBackupIntervalMinutes'],
-                "max_interval_hours": self._automatic_pattern['maxBackupInterval'],
-                "max_interval_minutes": self._automatic_pattern['maxBackupIntervalMinutes'],
-                "min_sync_interval_hours": self._automatic_pattern['minSyncInterval'],
-                "min_sync_interval_minutes": self._automatic_pattern['minSyncIntervalMinutes'],
-                "ignore_opwindow_past_maxinterval": self._automatic_pattern['ignoreOpWindowPastMaxInterval'],
-                "wired_network_connection": self._automatic_pattern.get('wiredNetworkConnection',
-                                                                        {'enabled': False})['enabled'],
-                "min_network_bandwidth": self._automatic_pattern.get('minNetworkBandwidth',
-                                                                     {'enabled': False})['enabled'],
-                "specific_network": self._automatic_pattern.get('specfificNetwork',
-                                                                {'enabled': False})['enabled'],
-                "dont_use_metered_network": self._automatic_pattern.get('dontUseMeteredNetwork',
-                                                                        {'enabled': False})['enabled'],
-                "ac_power": self._automatic_pattern.get('acPower',
-                                                        {'enabled': False})['enabled'],
-                "stop_if_on_battery": self._automatic_pattern.get('stopIfOnBattery',
-                                                                  {'enabled': False})['enabled'],
-                "stop_sleep_if_runningjob": self._automatic_pattern.get('stopSleepIfBackUp',
-                                                                        {'enabled': False})['enabled'],
-                "cpu_utilization_below": self._automatic_pattern.get('cpuUtilization',
-                                                                     {'enabled': False})['enabled'],
-                "cpu_utilization_above": self._automatic_pattern.get('cpuUtilizationAbove',
-                                                                     {'enabled': False})['enabled'],
-                "run_synthetic_full": 'every_x_days'
+                "min_interval_hours": self._automatic_pattern["minBackupInterval"],
+                "min_interval_minutes": self._automatic_pattern["minBackupIntervalMinutes"],
+                "max_interval_hours": self._automatic_pattern["maxBackupInterval"],
+                "max_interval_minutes": self._automatic_pattern["maxBackupIntervalMinutes"],
+                "min_sync_interval_hours": self._automatic_pattern["minSyncInterval"],
+                "min_sync_interval_minutes": self._automatic_pattern["minSyncIntervalMinutes"],
+                "ignore_opwindow_past_maxinterval": self._automatic_pattern[
+                    "ignoreOpWindowPastMaxInterval"
+                ],
+                "wired_network_connection": self._automatic_pattern.get(
+                    "wiredNetworkConnection", {"enabled": False}
+                )["enabled"],
+                "min_network_bandwidth": self._automatic_pattern.get(
+                    "minNetworkBandwidth", {"enabled": False}
+                )["enabled"],
+                "specific_network": self._automatic_pattern.get(
+                    "specfificNetwork", {"enabled": False}
+                )["enabled"],
+                "dont_use_metered_network": self._automatic_pattern.get(
+                    "dontUseMeteredNetwork", {"enabled": False}
+                )["enabled"],
+                "ac_power": self._automatic_pattern.get("acPower", {"enabled": False})["enabled"],
+                "stop_if_on_battery": self._automatic_pattern.get(
+                    "stopIfOnBattery", {"enabled": False}
+                )["enabled"],
+                "stop_sleep_if_runningjob": self._automatic_pattern.get(
+                    "stopSleepIfBackUp", {"enabled": False}
+                )["enabled"],
+                "cpu_utilization_below": self._automatic_pattern.get(
+                    "cpuUtilization", {"enabled": False}
+                )["enabled"],
+                "cpu_utilization_above": self._automatic_pattern.get(
+                    "cpuUtilizationAbove", {"enabled": False}
+                )["enabled"],
+                "run_synthetic_full": "every_x_days",
             }
 
-            if ('useAutomaticIntervalForSyntheticFull' in self._automatic_pattern and
-                    self._automatic_pattern['useAutomaticIntervalForSyntheticFull']):
-                pattern['run_synthetic_full'] = 'extended_retention'
+            if (
+                "useAutomaticIntervalForSyntheticFull" in self._automatic_pattern
+                and self._automatic_pattern["useAutomaticIntervalForSyntheticFull"]
+            ):
+                pattern["run_synthetic_full"] = "extended_retention"
 
-            if ('enableRunFullConsolidationBackup' in self._automatic_pattern and
-                    self._automatic_pattern['enableRunFullConsolidationBackup']):
-                pattern['run_synthetic_full'] = 'space_reclaim'
+            if (
+                "enableRunFullConsolidationBackup" in self._automatic_pattern
+                and self._automatic_pattern["enableRunFullConsolidationBackup"]
+            ):
+                pattern["run_synthetic_full"] = "space_reclaim"
 
-            if ('daysBetweenSyntheticBackup' in self._automatic_pattern and
-                    self._automatic_pattern['daysBetweenSyntheticBackup']):
-                pattern['days_between_synthetic_full'] = self._automatic_pattern[
-                    'daysBetweenSyntheticBackup']
+            if (
+                "daysBetweenSyntheticBackup" in self._automatic_pattern
+                and self._automatic_pattern["daysBetweenSyntheticBackup"]
+            ):
+                pattern["days_between_synthetic_full"] = self._automatic_pattern[
+                    "daysBetweenSyntheticBackup"
+                ]
 
             return pattern
         return False
@@ -2273,44 +2301,42 @@ class Schedule:
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
-        pattern_dict['freq_type'] = 'automatic'
+        pattern_dict["freq_type"] = "automatic"
         schedule_pattern = SchedulePattern(self._automatic_pattern)
         self._pattern = {"freq_type": 1024}
-        if 'commonOpts' in self._task_options:
-            self._task_options["commonOpts"]["automaticSchedulePattern"] = \
+        if "commonOpts" in self._task_options:
+            self._task_options["commonOpts"]["automaticSchedulePattern"] = (
                 schedule_pattern.create_schedule_pattern(pattern_dict)
+            )
         else:
-            self._task_options["commonOpts"] = \
-                {"automaticSchedulePattern": schedule_pattern.create_schedule_pattern(
-                    pattern_dict)}
+            self._task_options["commonOpts"] = {
+                "automaticSchedulePattern": schedule_pattern.create_schedule_pattern(pattern_dict)
+            }
 
-        if 'run_synthetic_full' in pattern_dict:
-            synthetic_pattern = pattern_dict['run_synthetic_full']
+        if "run_synthetic_full" in pattern_dict:
+            synthetic_pattern = pattern_dict["run_synthetic_full"]
 
-            if synthetic_pattern == 'every_x_days':
-                synthetic_interval = pattern_dict.get(
-                    'days_between_synthetic_full', 30)
+            if synthetic_pattern == "every_x_days":
+                synthetic_interval = pattern_dict.get("days_between_synthetic_full", 30)
             else:
                 synthetic_interval = 30
 
             _data_opt = {
-                'autoCopy': True,
-                'daysBetweenSyntheticBackup': synthetic_interval,
-                'useAutomaticIntervalForSyntheticFull': (
-                        synthetic_pattern == 'extended_retention'),
-                'enableRunFullConsolidationBackup': (
-                        synthetic_pattern == 'space_reclaim')
+                "autoCopy": True,
+                "daysBetweenSyntheticBackup": synthetic_interval,
+                "useAutomaticIntervalForSyntheticFull": (
+                    synthetic_pattern == "extended_retention"
+                ),
+                "enableRunFullConsolidationBackup": (synthetic_pattern == "space_reclaim"),
             }
 
-            if 'backupOpts' in self._task_options:
-                if 'dataOpt' in self._task_options["backupOpts"]:
-                    self._task_options['backupOpts']['dataOpt'].update(_data_opt)
+            if "backupOpts" in self._task_options:
+                if "dataOpt" in self._task_options["backupOpts"]:
+                    self._task_options["backupOpts"]["dataOpt"].update(_data_opt)
                 else:
-                    self._task_options['backupOpts']['dataOpt'] = _data_opt
+                    self._task_options["backupOpts"]["dataOpt"] = _data_opt
             else:
-                self._task_options['backupOpts'] = {
-                    'dataOpt': _data_opt
-                }
+                self._task_options["backupOpts"] = {"dataOpt": _data_opt}
 
         self._modify_task_properties()
 
@@ -2322,7 +2348,8 @@ class Schedule:
             (str): date in %m/%d/%Y
         """
         return SchedulePattern._time_converter(
-            self._pattern['active_start_date'], '%m/%d/%Y', False)
+            self._pattern["active_start_date"], "%m/%d/%Y", False
+        )
 
     @active_start_date.setter
     def active_start_date(self, active_start_date: str) -> None:
@@ -2332,8 +2359,8 @@ class Schedule:
             active_start_date (str): date in %m/%d/%Y
         """
         pattern_dict = dict()
-        pattern_dict['freq_type'] = self.schedule_freq_type
-        pattern_dict['active_start_date'] = active_start_date
+        pattern_dict["freq_type"] = self.schedule_freq_type
+        pattern_dict["active_start_date"] = active_start_date
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2345,8 +2372,7 @@ class Schedule:
         Returns:
             (str): time in %H/%S
         """
-        return SchedulePattern._time_converter(
-            self._pattern['active_start_time'], '%H:%M', False)
+        return SchedulePattern._time_converter(self._pattern["active_start_time"], "%H:%M", False)
 
     @active_start_time.setter
     def active_start_time(self, active_start_time: str) -> None:
@@ -2356,8 +2382,8 @@ class Schedule:
             active_start_time (str): time in %H/%S
         """
         pattern_dict = dict()
-        pattern_dict['freq_type'] = self.schedule_freq_type
-        pattern_dict['active_start_time'] = active_start_time
+        pattern_dict["freq_type"] = self.schedule_freq_type
+        pattern_dict["active_start_time"] = active_start_time
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2372,7 +2398,8 @@ class Schedule:
         if "active_end_date" in self._pattern:
             if self._pattern["active_end_date"]:
                 return SchedulePattern._time_converter(
-                    self._pattern['active_end_date'], '%m/%d/%Y', False)
+                    self._pattern["active_end_date"], "%m/%d/%Y", False
+                )
         return False
 
     @active_end_date.setter
@@ -2383,8 +2410,8 @@ class Schedule:
             active_start_date (str): date in %m/%d/%Y
         """
         pattern_dict = dict()
-        pattern_dict['freq_type'] = self.schedule_freq_type
-        pattern_dict['active_end_date'] = active_start_date
+        pattern_dict["freq_type"] = self.schedule_freq_type
+        pattern_dict["active_end_date"] = active_start_date
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2418,8 +2445,8 @@ class Schedule:
             day_list (list): exception days to set for the schedule
         """
         pattern_dict = dict()
-        pattern_dict['freq_type'] = self.schedule_freq_type
-        pattern_dict['exception_dates'] = day_list
+        pattern_dict["freq_type"] = self.schedule_freq_type
+        pattern_dict["exception_dates"] = day_list
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2441,8 +2468,8 @@ class Schedule:
             end_after (int): number of times the schedule should run
         """
         pattern_dict = dict()
-        pattern_dict['freq_type'] = self.schedule_freq_type
-        pattern_dict['end_after'] = end_after
+        pattern_dict["freq_type"] = self.schedule_freq_type
+        pattern_dict["end_after"] = end_after
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_dict)
         self._modify_task_properties()
@@ -2461,14 +2488,11 @@ class Schedule:
 
         if self._pattern.get("freq_subday_interval", 0):
             _subday_interval = self._pattern["freq_subday_interval"]
-            repeat_every = "{0}:0{1}".format(int(_subday_interval / 3600), int(
-                ((_subday_interval / 60) - ((_subday_interval / 3600) * 60))))
+            repeat_every = f"{int(_subday_interval / 3600)}:0{int((_subday_interval / 60) - ((_subday_interval / 3600) * 60))}"
             repeat_end = SchedulePattern._time_converter(
-                self._pattern["active_end_time"], "%H:%M", utc_to_epoch=False)
-            return {
-                "repeat_every": repeat_every,
-                "repeat_end": repeat_end
-            }
+                self._pattern["active_end_time"], "%H:%M", utc_to_epoch=False
+            )
+            return {"repeat_every": repeat_every, "repeat_end": repeat_end}
         return False
 
     @repeat_pattern.setter
@@ -2478,7 +2502,7 @@ class Schedule:
         Args:
             pattern_json (Dict): containing the repeat every and repeat end parameters
         """
-        pattern_json['freq_type'] = self.schedule_freq_type
+        pattern_json["freq_type"] = self.schedule_freq_type
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_json)
         self._modify_task_properties()
@@ -2503,42 +2527,36 @@ class Schedule:
             schedule.run_now(return_multiple_jobs=True)
         """
         request_json = {
-            "TMMsg_TaskOperationReq":
-                {
-                    "opType": 5,
-                    "subtaskEntity":
-                        [
-                            {
-                                "_type_": 68,
-                                "subtaskId": self.subtask_id,
-                                "taskName": "",
-                                "subtaskName": self.schedule_name,
-                                "taskId": self.task_id
-                            }
-                        ],
-                    "taskIds":
-                        [
-                            self.task_id
-                        ]
-                }
+            "TMMsg_TaskOperationReq": {
+                "opType": 5,
+                "subtaskEntity": [
+                    {
+                        "_type_": 68,
+                        "subtaskId": self.subtask_id,
+                        "taskName": "",
+                        "subtaskName": self.schedule_name,
+                        "taskId": self.task_id,
+                    }
+                ],
+                "taskIds": [self.task_id],
+            }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._MODIFYSCHEDULE, request_json
+            "POST", self._MODIFYSCHEDULE, request_json
         )
         if response.json():
             if "jobIds" in response.json():
-                if(return_multiple_jobs):
-                    job_id = [int(i) for i in response.json()['jobIds']]
+                if return_multiple_jobs:
+                    job_id = [int(i) for i in response.json()["jobIds"]]
                 else:
                     job_id = str(response.json()["jobIds"][0])
 
                 return job_id
             else:
-                raise SDKException(
-                    'Response', '102', 'JobID not found in response')
+                raise SDKException("Response", "102", "JobID not found in response")
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     def _modify_task_properties(self) -> None:
         """Modifies the task properties of the schedule.
@@ -2550,28 +2568,23 @@ class Schedule:
             schedule._modify_task_properties()
         """
         request_json = {
-            'TMMsg_ModifyTaskReq':
-                {
-                    'taskInfo':
+            "TMMsg_ModifyTaskReq": {
+                "taskInfo": {
+                    "associations": self._associations_json,
+                    "task": self._task_json,
+                    "subTasks": [
                         {
-                            'associations': self._associations_json,
-                            'task': self._task_json,
-                            'subTasks':
-                                [
-                                    {
-
-                                        'subTask': self._sub_task_option,
-                                        'pattern': self._pattern,
-                                        'options': self._task_options
-
-                                    }
-                                ]
+                            "subTask": self._sub_task_option,
+                            "pattern": self._pattern,
+                            "options": self._task_options,
                         }
+                    ],
                 }
+            }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._MODIFYSCHEDULE, request_json
+            "POST", self._MODIFYSCHEDULE, request_json
         )
         output = self._process_schedule_update_response(flag, response)
         self.refresh()
@@ -2580,7 +2593,7 @@ class Schedule:
             return
 
         o_str = 'Failed to update properties of Schedule\nError: "{0}"'
-        raise SDKException('Schedules', '102', o_str.format(output[2]))
+        raise SDKException("Schedules", "102", o_str.format(output[2]))
 
     def enable(self) -> None:
         """Enable a schedule.
@@ -2591,38 +2604,38 @@ class Schedule:
         Usage:
             schedule.enable()
         """
-        enable_request = self._commcell_object._services['ENABLE_SCHEDULE']
-        request_text = "taskId={0}".format(self.task_id)
+        enable_request = self._commcell_object._services["ENABLE_SCHEDULE"]
+        request_text = f"taskId={self.task_id}"
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', enable_request, request_text)
+            "POST", enable_request, request_text
+        )
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
                 if error_code == "0":
                     return
                 else:
                     error_message = ""
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
 
                     if error_message:
                         raise SDKException(
-                            'Schedules',
-                            '102',
-                            'Failed to enable Schedule\nError: "{0}"'.format(error_message))
+                            "Schedules",
+                            "102",
+                            f'Failed to enable Schedule\nError: "{error_message}"',
+                        )
                     else:
-                        raise SDKException(
-                            'Schedules', '102', "Failed to enable Schedule")
+                        raise SDKException("Schedules", "102", "Failed to enable Schedule")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def disable(self) -> None:
         """Disable a Schedule.
@@ -2633,41 +2646,43 @@ class Schedule:
         Usage:
             schedule.disable()
         """
-        disable_request = self._commcell_object._services['DISABLE_SCHEDULE']
+        disable_request = self._commcell_object._services["DISABLE_SCHEDULE"]
 
-        request_text = "taskId={0}".format(self.task_id)
+        request_text = f"taskId={self.task_id}"
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', disable_request, request_text)
+            "POST", disable_request, request_text
+        )
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
                 if error_code == "0":
                     return
                 else:
                     error_message = ""
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
 
                     if error_message:
                         raise SDKException(
-                            'Schedules',
-                            '102',
-                            'Failed to disable Schedule\nError: "{0}"'.format(error_message))
+                            "Schedules",
+                            "102",
+                            f'Failed to disable Schedule\nError: "{error_message}"',
+                        )
                     else:
-                        raise SDKException(
-                            'Schedules', '102', "Failed to disable Schedule")
+                        raise SDKException("Schedules", "102", "Failed to disable Schedule")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
-    def _process_schedule_update_response(self, flag: bool, response: Any) -> Tuple[bool, str, str]:
+    def _process_schedule_update_response(
+        self, flag: bool, response: Any
+    ) -> Tuple[bool, str, str]:
         """Processes the response received post update request.
 
         Args:
@@ -2696,8 +2711,8 @@ class Schedule:
                         return True, "0", ""
 
                 elif "errorCode" in response.json():
-                    error_code = str(response.json()['errorCode'])
-                    error_message = response.json()['errorMessage']
+                    error_code = str(response.json()["errorCode"])
+                    error_message = response.json()["errorMessage"]
 
                     if error_code == "0":
                         return True, "0", ""
@@ -2707,13 +2722,12 @@ class Schedule:
                     else:
                         return False, error_code, ""
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Refresh the properties of the Schedule.

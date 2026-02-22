@@ -88,13 +88,16 @@ IndexPool Attributes
 """
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-from .exception import SDKException
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from .datacube.constants import IndexServerConstants
+from .exception import SDKException
+
 if TYPE_CHECKING:
     from .commcell import Commcell
-    
-class IndexPools(object):
+
+
+class IndexPools:
     """
     Represents and manages all Index pools associated with a CommCell.
 
@@ -118,7 +121,7 @@ class IndexPools(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize an IndexPools object with the given Commcell connection.
 
         Args:
@@ -154,11 +157,10 @@ class IndexPools(object):
             IndexPool1, IndexPool2, IndexPool3
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Index pool Name')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Index pool Name")
         index = 1
         for pool_name in self.all_index_pools:
-            representation_string += '{:^5}\t{:^20}\n'.format(
-                index, pool_name)
+            representation_string += f"{index:^5}\t{pool_name:^20}\n"
             index += 1
         return representation_string
 
@@ -203,7 +205,7 @@ class IndexPools(object):
         value = value.lower()
         if value in self.all_index_pools:
             return {"pool_name": value, "pool_id": self.all_index_pools[value]}
-        raise SDKException('IndexPools', '102')
+        raise SDKException("IndexPools", "102")
 
     def _get_all_index_pools(self) -> None:
         """Retrieve details of all index pools present in the Commcell.
@@ -217,18 +219,20 @@ class IndexPools(object):
             ...     print(f"Index Pool Name: {pool.get('name')}, ID: {pool.get('id')}")
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_ALL_CLIENTS'])
+        flag, response = self._cvpysdk_object.make_request(
+            "GET", self._services["GET_ALL_CLIENTS"]
+        )
         if flag:
-            if response.json() and 'clientProperties' in response.json():
-                for dictionary in response.json()['clientProperties']:
-                    if dictionary['clientProps']['clusterType'] == 14:
-                        temp_name = dictionary['client']['clientEntity']['clientName'].lower()
-                        temp_id = int(dictionary['client']['clientEntity']['clientId'])
+            if response.json() and "clientProperties" in response.json():
+                for dictionary in response.json()["clientProperties"]:
+                    if dictionary["clientProps"]["clusterType"] == 14:
+                        temp_name = dictionary["client"]["clientEntity"]["clientName"].lower()
+                        temp_id = int(dictionary["client"]["clientEntity"]["clientId"])
                         self._all_index_pools[temp_name] = temp_id
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _response_not_success(self, response: object) -> None:
         """Raise an exception if the HTTP response is not successful (status code 200).
@@ -247,16 +251,12 @@ class IndexPools(object):
 
         #ai-gen-doc
         """
-        raise SDKException(
-            'Response',
-            '101',
-            self._update_response_(
-                response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def refresh(self) -> None:
         """Reload the properties and state of the IndexPools class.
 
-        This method refreshes the internal data of the IndexPools instance, ensuring that 
+        This method refreshes the internal data of the IndexPools instance, ensuring that
         any changes made externally are reflected in the current object.
 
         Example:
@@ -287,7 +287,7 @@ class IndexPools(object):
         """
         return self._all_index_pools
 
-    def get(self, pool_name: str) -> 'IndexPool':
+    def get(self, pool_name: str) -> "IndexPool":
         """Retrieve the IndexPool object for the specified pool name.
 
         Args:
@@ -315,8 +315,8 @@ class IndexPools(object):
             if pool_name.lower() in self.all_index_pools:
                 return IndexPool(self._commcell_object, pool_name.lower())
         else:
-            raise SDKException('IndexPools', '101')
-        raise SDKException('IndexPools', '102')
+            raise SDKException("IndexPools", "101")
+        raise SDKException("IndexPools", "102")
 
     def has_pool(self, pool_name: str) -> bool:
         """Check if an index pool with the specified name exists in the Commcell.
@@ -337,7 +337,7 @@ class IndexPools(object):
         """
         return pool_name.lower() in self.all_index_pools
 
-    def add(self, pool_name: str, node_names: List[str], hac_name: str) -> 'IndexPool':
+    def add(self, pool_name: str, node_names: List[str], hac_name: str) -> "IndexPool":
         """Create a new Index pool within the Commcell.
 
         This method creates an Index pool with the specified name, node names, and HAC cluster name.
@@ -362,25 +362,23 @@ class IndexPools(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(pool_name, str) and isinstance(node_names, list)
-                and isinstance(hac_name, str)):
-            raise SDKException('IndexPools', '101')
+        if not (
+            isinstance(pool_name, str)
+            and isinstance(node_names, list)
+            and isinstance(hac_name, str)
+        ):
+            raise SDKException("IndexPools", "101")
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
-        del req_json['solrCloudInfo']
-        del req_json['cloudMetaInfos']
-        req_json['type'] = 9
-        req_json['cloudInfoEntity'] = {
-            "cloudName": pool_name,
-            "cloudDisplayName": pool_name
-        }
-        req_json['solrCloudPoolInfo'] = {
-            'zookerEntity': {
+        del req_json["solrCloudInfo"]
+        del req_json["cloudMetaInfos"]
+        req_json["type"] = 9
+        req_json["cloudInfoEntity"] = {"cloudName": pool_name, "cloudDisplayName": pool_name}
+        req_json["solrCloudPoolInfo"] = {
+            "zookerEntity": {
                 "_type_": 28,
                 "clientGroupId": int(self._commcell_object.hac_clusters.get(hac_name).cluster_id),
                 "clientGroupName": hac_name,
-                "flags": {
-                    "include": False
-                }
+                "flags": {"include": False},
             }
         }
         for node_name in node_names:
@@ -391,45 +389,30 @@ class IndexPools(object):
                     "hostName": node_obj.client_hostname,
                     "clientId": int(node_obj.client_id),
                     "clientName": node_obj.client_name,
-                    "_type_": 3
+                    "_type_": 3,
                 },
                 "nodeMetaInfos": [
-                    {
-                        "name": "ISENABLED",
-                        "value": "false"
-                    },
-                    {
-                        "name": "JVMMAXMEMORY",
-                        "value": "8191"
-                    },
-                    {
-                        "name": "PORTNO",
-                        "value": "20000"
-                    },
-                    {
-                        "name": "URL",
-                        "value": ""
-                    },
-                    {
-                        "name": "INDEXLOCATION",
-                        "value": "NA"
-                    }
-                ]
+                    {"name": "ISENABLED", "value": "false"},
+                    {"name": "JVMMAXMEMORY", "value": "8191"},
+                    {"name": "PORTNO", "value": "20000"},
+                    {"name": "URL", "value": ""},
+                    {"name": "INDEXLOCATION", "value": "NA"},
+                ],
             }
-            req_json['cloudNodes'].append(node_data)
+            req_json["cloudNodes"].append(node_data)
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_CREATE'], req_json
+            "POST", self._services["CLOUD_CREATE"], req_json
         )
         if flag:
-            if response.json() and 'genericResp' in response.json():
-                if response.json()['genericResp'] == {} and \
-                        'cloudId' in response.json():
+            if response.json() and "genericResp" in response.json():
+                if response.json()["genericResp"] == {} and "cloudId" in response.json():
                     self.refresh()
                     return IndexPool(self._commcell_object, pool_name)
                 o_str = 'Failed to create index pool. Error: "{0}"'.format(
-                    response.json()['genericResp'])
-                raise SDKException('Response', '102', o_str)
-            raise SDKException('Response', '102')
+                    response.json()["genericResp"]
+                )
+                raise SDKException("Response", "102", o_str)
+            raise SDKException("Response", "102")
         self._response_not_success(response)
 
     def delete(self, pool_name: str) -> None:
@@ -452,29 +435,32 @@ class IndexPools(object):
         #ai-gen-doc
         """
         if not isinstance(pool_name, str):
-            raise SDKException('IndexPools', '101')
+            raise SDKException("IndexPools", "101")
         client = self.get(pool_name)
         cloud_id = client.cloud_id
         req_json = IndexServerConstants.REQUEST_JSON.copy()
         req_json["opType"] = IndexServerConstants.OPERATION_DELETE
-        req_json['cloudInfoEntity']['cloudId'] = cloud_id
+        req_json["cloudInfoEntity"]["cloudId"] = cloud_id
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_DELETE'], req_json
+            "POST", self._services["CLOUD_DELETE"], req_json
         )
         if flag:
-            if response.json() and 'genericResp' in response.json() \
-                    and 'errorCode' not in response.json()['genericResp']:
+            if (
+                response.json()
+                and "genericResp" in response.json()
+                and "errorCode" not in response.json()["genericResp"]
+            ):
                 self.refresh()
                 return
-            if response.json() and 'genericResp' in response.json():
+            if response.json() and "genericResp" in response.json():
                 raise SDKException(
-                    'Response', '102', response.json()['genericResp'].get(
-                        'errorMessage', ''))
-            raise SDKException('Response', '102')
+                    "Response", "102", response.json()["genericResp"].get("errorMessage", "")
+                )
+            raise SDKException("Response", "102")
         self._response_not_success(response)
 
 
-class IndexPool(object):
+class IndexPool:
     """
     Class for managing and performing operations on a specific index pool.
 
@@ -495,7 +481,7 @@ class IndexPool(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_obj: 'Commcell', pool_name: str, pool_id: str = None) -> None:
+    def __init__(self, commcell_obj: "Commcell", pool_name: str, pool_id: str = None) -> None:
         """Initialize an IndexPool class instance.
 
         Args:
@@ -557,17 +543,13 @@ class IndexPool(object):
 
         #ai-gen-doc
         """
-        raise SDKException(
-            'Response',
-            '101',
-            self.commcell._update_response_(
-                response.text))
+        raise SDKException("Response", "101", self.commcell._update_response_(response.text))
 
     def refresh(self) -> None:
         """Reload the properties of the IndexPool instance.
 
-        This method updates the IndexPool object's properties to reflect the latest state 
-        from the underlying data source. Use this method to ensure that the IndexPool 
+        This method updates the IndexPool object's properties to reflect the latest state
+        from the underlying data source. Use this method to ensure that the IndexPool
         instance has up-to-date information.
 
         Example:
@@ -579,12 +561,13 @@ class IndexPool(object):
         """
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self.pool_name):
-            raise SDKException('IndexPools', '102')
+            raise SDKException("IndexPools", "102")
         self.pool_client = self.commcell.clients.get(self.pool_name)
         self._pool_id = self.pool_client.client_id
-        self.pool_properties = self.pool_client.\
-            properties['pseudoClientInfo']['distributedClusterInstanceProperties']['clusterConfig']['cloudInfo']
-        self.pool_nodes = self.pool_properties['cloudNodes']
+        self.pool_properties = self.pool_client.properties["pseudoClientInfo"][
+            "distributedClusterInstanceProperties"
+        ]["clusterConfig"]["cloudInfo"]
+        self.pool_nodes = self.pool_properties["cloudNodes"]
 
     def node_info(self, node_name: str) -> dict:
         """Retrieve information for a specific index pool node.
@@ -607,11 +590,16 @@ class IndexPool(object):
         #ai-gen-doc
         """
         for node_info in self.pool_nodes:
-            if node_info['nodeClientEntity']['clientName'].lower() == node_name.lower():
+            if node_info["nodeClientEntity"]["clientName"].lower() == node_name.lower():
                 return node_info
-        raise SDKException('IndexPools', '103')
+        raise SDKException("IndexPools", "103")
 
-    def modify_node(self, node_name: str, operation_type: int = IndexServerConstants.OPERATION_EDIT, node_params: Optional[List[Dict[str, Any]]] = None) -> None:
+    def modify_node(
+        self,
+        node_name: str,
+        operation_type: int = IndexServerConstants.OPERATION_EDIT,
+        node_params: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
         """Modify the details of an index pool node.
 
         This method allows you to add, remove, or edit a node in the index pool by specifying the node name,
@@ -653,27 +641,28 @@ class IndexPool(object):
         #ai-gen-doc
         """
         req_json = {
-            'cloudId': self.cloud_id,
-            'type': 9,
-            'nodes': [{
-                'status': 1,
-                'opType': operation_type,
-                'nodeClientEntity': {
-                    'clientId': int(self.commcell.clients[node_name]['id']),
-                    'clientName': node_name
-                },
-                'nodeMetaInfos': []
-            }]
+            "cloudId": self.cloud_id,
+            "type": 9,
+            "nodes": [
+                {
+                    "status": 1,
+                    "opType": operation_type,
+                    "nodeClientEntity": {
+                        "clientId": int(self.commcell.clients[node_name]["id"]),
+                        "clientName": node_name,
+                    },
+                    "nodeMetaInfos": [],
+                }
+            ],
         }
         if node_params:
-            req_json['nodes'][0]['nodeMetaInfos'] = node_params
+            req_json["nodes"][0]["nodeMetaInfos"] = node_params
         flag, response = self.commcell._cvpysdk_object.make_request(
-            'POST', self.commcell._services['CLOUD_NODE_UPDATE'],
-            req_json
+            "POST", self.commcell._services["CLOUD_NODE_UPDATE"], req_json
         )
         if flag:
             if response.json() is not None:
-                if 'errorCode' not in response.json():
+                if "errorCode" not in response.json():
                     self.refresh()
                     return
         self._response_not_success(response)
@@ -708,7 +697,7 @@ class IndexPool(object):
 
         #ai-gen-doc
         """
-        return self.pool_properties['cloudInfoEntity']['cloudId']
+        return self.pool_properties["cloudInfoEntity"]["cloudId"]
 
     @property
     def pool_name(self) -> str:
@@ -742,7 +731,7 @@ class IndexPool(object):
         """
         result = []
         for node_info in self.pool_nodes:
-            result.append(node_info['nodeClientEntity']['clientName'])
+            result.append(node_info["nodeClientEntity"]["clientName"])
         return result
 
     @property
@@ -759,4 +748,4 @@ class IndexPool(object):
 
         #ai-gen-doc
         """
-        return self.pool_properties['solrCloudPoolInfo']['zookerEntity']['clientGroupName']
+        return self.pool_properties["solrCloudPoolInfo"]["zookerEntity"]["clientGroupName"]

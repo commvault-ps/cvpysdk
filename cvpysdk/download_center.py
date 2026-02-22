@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -113,26 +111,26 @@ and get the size of the file
 
 """
 
-from xml.parsers.expat import ExpatError
-
 import os
 import time
+from xml.parsers.expat import ExpatError
+
 import xmltodict
 
 from .exception import SDKException
 
 
-class DownloadCenter(object):
+class DownloadCenter:
     """Class for doing operations on Download Center like upload or download product."""
 
     def __init__(self, commcell_object):
         """Initializes an instance of the DownloadCenter class.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+        Args:
+            commcell_object     (object)    --  instance of the Commcell class
 
-            Returns:
-                object  -   instance of the DownloadCenter class
+        Returns:
+            object  -   instance of the DownloadCenter class
 
         """
         self._commcell_object = commcell_object
@@ -159,17 +157,17 @@ class DownloadCenter(object):
         """
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['GET_DC_DATA'], request_xml
+            "POST", self._services["GET_DC_DATA"], request_xml
         )
 
         if flag:
             try:
                 self._response = response.json()
             except ExpatError:
-                raise SDKException('DownloadCenter', '101', response.text)
+                raise SDKException("DownloadCenter", "101", response.text)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_packages(self):
         """Gets the list of all the Active packages available at the download center."""
@@ -193,259 +191,256 @@ class DownloadCenter(object):
         </DM2ContentIndexing_CVSearchReq>
         """
 
-        root = 'DM2ContentIndexing_CVDownloadCenterResp'
+        root = "DM2ContentIndexing_CVDownloadCenterResp"
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['SEARCH_PACKAGES'], request_xml
+            "POST", self._services["SEARCH_PACKAGES"], request_xml
         )
 
         if flag:
             try:
-                packages = response.json()['searchResult']['packages']
+                packages = response.json()["searchResult"]["packages"]
 
                 if isinstance(packages, dict):
                     packages = [packages]
 
                 for package in packages:
-                    name = package['name'].lower()
+                    name = package["name"].lower()
 
                     self._packages[name] = {
-                        'id': package['packageId'],
-                        'description': package['description'],
-                        'platforms': {}
+                        "id": package["packageId"],
+                        "description": package["description"],
+                        "platforms": {},
                     }
 
-                    platforms = package['platforms']
+                    platforms = package["platforms"]
 
                     if isinstance(platforms, dict):
                         platforms = [platforms]
 
                     for platform in platforms:
-                        platform_name = platform['name']
-                        platform_id = platform['id']
-                        download_type = platform['downloadType']['name']
+                        platform_name = platform["name"]
+                        platform_id = platform["id"]
+                        download_type = platform["downloadType"]["name"]
 
-                        if platform_name not in self._packages[name]['platforms']:
-                            self._packages[name]['platforms'][platform_name] = {
-                                'id': platform_id,
-                                'download_type': [download_type]
+                        if platform_name not in self._packages[name]["platforms"]:
+                            self._packages[name]["platforms"][platform_name] = {
+                                "id": platform_id,
+                                "download_type": [download_type],
                             }
                         else:
-                            self._packages[name]['platforms'][platform_name][
-                                'download_type'].append(download_type)
+                            self._packages[name]["platforms"][platform_name][
+                                "download_type"
+                            ].append(download_type)
             except ExpatError:
-                raise SDKException('DownloadCenter', '101', response.text)
+                raise SDKException("DownloadCenter", "101", response.text)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _process_category_request(self, operation, name, description=None, new_name=None):
         """Executes the request on the server, and process the response received from the server.
 
-            Args:
-                operation       (str)   --  type of operation to be performed on the server
+        Args:
+            operation       (str)   --  type of operation to be performed on the server
 
-                    e.g:
-                        add     -   to add a new category
+                e.g:
+                    add     -   to add a new category
 
-                        delete  -   to delete an existing category
+                    delete  -   to delete an existing category
 
-                        update  -   to update the details of an existing category
-
-
-                name            (str)   --  name of the category to perform the operation on
-
-                description     (str)   --  description for the category
-
-                    default: None
-
-                new_name        (str)   --  new name to be set for the category
-
-                    in case of ``update`` operation
-
-                    default: None
+                    update  -   to update the details of an existing category
 
 
-            Returns:
-                None    -   if the operation was performed successfully
+            name            (str)   --  name of the category to perform the operation on
 
-            Raises:
-                SDKException:
-                    if failed to process the request
+            description     (str)   --  description for the category
 
-                    if failed to parse the response
+                default: None
+
+            new_name        (str)   --  new name to be set for the category
+
+                in case of ``update`` operation
+
+                default: None
+
+
+        Returns:
+            None    -   if the operation was performed successfully
+
+        Raises:
+            SDKException:
+                if failed to process the request
+
+                if failed to parse the response
 
         """
         operations = {
-            'service': 'DC_ENTITY',
-            'root': 'App_DCSaveLookupEntityResp',
-            'error': 'Failed to %s the category.\nError: "{0}"' % (operation)
+            "service": "DC_ENTITY",
+            "root": "App_DCSaveLookupEntityResp",
+            "error": 'Failed to %s the category.\nError: "{0}"' % (operation),
         }
 
-        if operation == 'add':
-            operation_type = '1'
-            category_id = ''
-        elif operation == 'delete':
-            operation_type = '2'
-            category_id = self._categories[name]['id']
-        elif operation == 'update':
-            operation_type = '3'
-            category_id = self._categories[name]['id']
+        if operation == "add":
+            operation_type = "1"
+            category_id = ""
+        elif operation == "delete":
+            operation_type = "2"
+            category_id = self._categories[name]["id"]
+        elif operation == "update":
+            operation_type = "3"
+            category_id = self._categories[name]["id"]
             name = new_name
         else:
-            raise SDKException('DownloadCenter', '102', 'Invalid Operation')
+            raise SDKException("DownloadCenter", "102", "Invalid Operation")
 
         if description is None:
-            description = ''
+            description = ""
 
-        request_xml = """
-        <App_DCSaveLookupEntityReq operation="{0}">
-            <entitiesToSave entityType="0" id="{1}" name="{2}" description="{3}"/>
+        request_xml = f"""
+        <App_DCSaveLookupEntityReq operation="{operation_type}">
+            <entitiesToSave entityType="0" id="{category_id}" name="{name}" description="{description}"/>
         </App_DCSaveLookupEntityReq>
-        """.format(operation_type, category_id, name, description)
+        """
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services[operations['service']], request_xml
+            "POST", self._services[operations["service"]], request_xml
         )
 
         if flag:
             try:
-                response = xmltodict.parse(response.text)[operations['root']]
-                result = response['@result']
+                response = xmltodict.parse(response.text)[operations["root"]]
+                result = response["@result"]
 
                 try:
-                    category_id = response['entitiesToSave']['@id']
-                    error_code = response['entitiesToSave']['errorDetail']['@errorCode']
-                    error_message = response['entitiesToSave']['errorDetail']['@errorMessage']
+                    category_id = response["entitiesToSave"]["@id"]
+                    error_code = response["entitiesToSave"]["errorDetail"]["@errorCode"]
+                    error_message = response["entitiesToSave"]["errorDetail"]["@errorMessage"]
                 except KeyError:
                     # for delete category request,
                     # entitiesToSave key is not returned in the response
                     # so initialize these values to None
                     category_id = error_code = error_message = None
 
-                if result == '3' and error_code != '0':
-                    error_message = operations['error'].format(error_message)
-                    raise SDKException('DownloadCenter', '102', error_message)
+                if result == "3" and error_code != "0":
+                    error_message = operations["error"].format(error_message)
+                    raise SDKException("DownloadCenter", "102", error_message)
 
                 self.refresh()
             except ExpatError:
-                raise SDKException('DownloadCenter', '101', response.text)
+                raise SDKException("DownloadCenter", "101", response.text)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _process_sub_category_request(
-            self,
-            operation,
-            name,
-            category,
-            description=None,
-            new_name=None):
+        self, operation, name, category, description=None, new_name=None
+    ):
         """Executes the request on the server, and process the response received from the server.
 
-            Args:
-                operation       (str)   --  type of operation to be performed on the server
+        Args:
+            operation       (str)   --  type of operation to be performed on the server
 
-                    e.g:
-                        add     -   to add a new sub category
+                e.g:
+                    add     -   to add a new sub category
 
-                        delete  -   to delete an existing sub category from the specified category
+                    delete  -   to delete an existing sub category from the specified category
 
-                        update  -   to update the details of an existing sub category
-
-
-                name            (str)   --  name of the sub category to perform the operation on
-
-                category        (str)   --  category for the sub category
-
-                description     (str)   --  description for the sub category
-
-                    default: None
-
-                new_name        (str)   --  new name to be set for the sub category
-
-                    in case of ``update`` operation
-
-                    default: None
+                    update  -   to update the details of an existing sub category
 
 
-            Returns:
-                None    -   if the operation was performed successfully
+            name            (str)   --  name of the sub category to perform the operation on
 
-            Raises:
-                SDKException:
-                    if failed to process the request
+            category        (str)   --  category for the sub category
 
-                    if failed to parse the response
+            description     (str)   --  description for the sub category
+
+                default: None
+
+            new_name        (str)   --  new name to be set for the sub category
+
+                in case of ``update`` operation
+
+                default: None
+
+
+        Returns:
+            None    -   if the operation was performed successfully
+
+        Raises:
+            SDKException:
+                if failed to process the request
+
+                if failed to parse the response
 
         """
         operations = {
-            'service': 'DC_SUB_CATEGORY',
-            'root': 'App_DCSaveSubCategoriesMsg',
-            'error': 'Failed to %s the sub category.\nError: "{0}"' % (operation)
+            "service": "DC_SUB_CATEGORY",
+            "root": "App_DCSaveSubCategoriesMsg",
+            "error": 'Failed to %s the sub category.\nError: "{0}"' % (operation),
         }
 
-        if operation == 'add':
-            operation_type = '1'
-            sub_category_id = ''
-        elif operation == 'delete':
-            operation_type = '2'
-            sub_category_id = self._categories[category]['sub_categories'][name]['id']
-        elif operation == 'update':
-            operation_type = '3'
-            sub_category_id = self._categories[category]['sub_categories'][name]['id']
+        if operation == "add":
+            operation_type = "1"
+            sub_category_id = ""
+        elif operation == "delete":
+            operation_type = "2"
+            sub_category_id = self._categories[category]["sub_categories"][name]["id"]
+        elif operation == "update":
+            operation_type = "3"
+            sub_category_id = self._categories[category]["sub_categories"][name]["id"]
             name = new_name
         else:
-            raise SDKException('DownloadCenter', '102', 'Invalid Operation')
+            raise SDKException("DownloadCenter", "102", "Invalid Operation")
 
         if description is None:
-            description = ''
+            description = ""
 
         request_xml = """
         <App_DCSaveSubCategoriesMsg operation="{0}">
             <subCategories id="{1}" name="{2}" description="{3}" categoryId="{4}"/>
         </App_DCSaveSubCategoriesMsg>
         """.format(
-            operation_type, sub_category_id, name, description, self._categories[category]['id']
+            operation_type, sub_category_id, name, description, self._categories[category]["id"]
         )
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services[operations['service']], request_xml
+            "POST", self._services[operations["service"]], request_xml
         )
 
         if flag:
             try:
-                response = xmltodict.parse(response.text)[operations['root']]
+                response = xmltodict.parse(response.text)[operations["root"]]
 
-                result = response['@result']
-                sub_category_id = response['subCategories']['@id']
-                error_code = response['subCategories']['errorDetail']['@errorCode']
-                error_message = response['subCategories']['errorDetail']['@errorMessage']
+                result = response["@result"]
+                sub_category_id = response["subCategories"]["@id"]
+                error_code = response["subCategories"]["errorDetail"]["@errorCode"]
+                error_message = response["subCategories"]["errorDetail"]["@errorMessage"]
 
-                if result == '3' and error_code != '0':
-                    error_message = operations['error'].format(error_message)
-                    raise SDKException('DownloadCenter', '102', error_message)
+                if result == "3" and error_code != "0":
+                    error_message = operations["error"].format(error_message)
+                    raise SDKException("DownloadCenter", "102", error_message)
 
                 self.refresh()
             except ExpatError:
-                raise SDKException('DownloadCenter', '101', response.text)
+                raise SDKException("DownloadCenter", "101", response.text)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def product_versions(self):
         """Return the versions of product available at Download Center."""
         if not self._product_versions:
-            product_versions = self._response['productVersions']
+            product_versions = self._response["productVersions"]
 
             if isinstance(product_versions, dict):
                 product_versions = [product_versions]
 
             for product_version in product_versions:
-                self._product_versions[product_version['@name']] = {
-                    'id': product_version['@id'],
-                    'entity_type': product_version['@entityType']
+                self._product_versions[product_version["@name"]] = {
+                    "id": product_version["@id"],
+                    "entity_type": product_version["@entityType"],
                 }
 
         return list(self._product_versions.keys())
@@ -454,17 +449,17 @@ class DownloadCenter(object):
     def servers_for_browse(self):
         """Returns the servers available for browse at Download Center."""
         if not self._servers_for_browse:
-            servers_for_browse = self._response['serversForBrowse']
+            servers_for_browse = self._response["serversForBrowse"]
 
             if isinstance(servers_for_browse, dict):
                 servers_for_browse = [servers_for_browse]
 
             for server_for_browse in servers_for_browse:
-                self._servers_for_browse[server_for_browse['@name']] = {
-                    'id': server_for_browse['@id'],
-                    'internal_name': server_for_browse['@internalName'],
-                    'entity_type': server_for_browse['@entityType'],
-                    'attribute': server_for_browse['@attribute']
+                self._servers_for_browse[server_for_browse["@name"]] = {
+                    "id": server_for_browse["@id"],
+                    "internal_name": server_for_browse["@internalName"],
+                    "entity_type": server_for_browse["@entityType"],
+                    "attribute": server_for_browse["@attribute"],
                 }
 
         return list(self._servers_for_browse.keys())
@@ -472,24 +467,24 @@ class DownloadCenter(object):
     @property
     def error_detail(self):
         """Returns the error details."""
-        return self._response['errorDetail']
+        return self._response["errorDetail"]
 
     @property
     def users_and_groups(self):
         """Returns the Users and User Groups available at Download Center."""
         if not self._users_and_groups:
-            users_and_groups = self._response['usersAndGroups']
+            users_and_groups = self._response["usersAndGroups"]
 
             if isinstance(users_and_groups, dict):
                 users_and_groups = [users_and_groups]
 
-            for user_and_group in self._response['usersAndGroups']:
-                self._users_and_groups[user_and_group['@name']] = {
-                    'id': user_and_group['@id'],
-                    'provider_id': user_and_group['@providerId'],
-                    'guid': user_and_group['@guid'],
-                    'type': user_and_group['@type'],
-                    'service_type': user_and_group['@serviceType']
+            for user_and_group in self._response["usersAndGroups"]:
+                self._users_and_groups[user_and_group["@name"]] = {
+                    "id": user_and_group["@id"],
+                    "provider_id": user_and_group["@providerId"],
+                    "guid": user_and_group["@guid"],
+                    "type": user_and_group["@type"],
+                    "service_type": user_and_group["@serviceType"],
                 }
 
         return list(self._users_and_groups.keys())
@@ -498,37 +493,37 @@ class DownloadCenter(object):
     def categories(self):
         """Returns the categories of products available at Download Center."""
         if not self._categories:
-            categories = self._response['categories']
+            categories = self._response["categories"]
 
             if isinstance(categories, dict):
                 categories = [categories]
 
             for category in categories:
-                category_id = category['@id']
+                category_id = category["@id"]
                 temp = {}
 
-                sub_categories = self._response['subCategories']
+                sub_categories = self._response["subCategories"]
 
                 if isinstance(sub_categories, dict):
                     sub_categories = [sub_categories]
 
                 for sub_category in sub_categories:
-                    cat_id = sub_category['@categoryId']
+                    cat_id = sub_category["@categoryId"]
 
                     if cat_id == category_id:
-                        temp[sub_category['@name']] = {
-                            'id': sub_category['@id'],
-                            'description': sub_category['@description'],
-                            'entity_type': sub_category['@entityType'],
-                            'attribute': sub_category['@attribute']
+                        temp[sub_category["@name"]] = {
+                            "id": sub_category["@id"],
+                            "description": sub_category["@description"],
+                            "entity_type": sub_category["@entityType"],
+                            "attribute": sub_category["@attribute"],
                         }
 
-                self._categories[category['@name']] = {
-                    'id': category_id,
-                    'description': category['@description'],
-                    'entity_type': category['@entityType'],
-                    'attribute': category['@attribute'],
-                    'sub_categories': temp
+                self._categories[category["@name"]] = {
+                    "id": category_id,
+                    "description": category["@description"],
+                    "entity_type": category["@entityType"],
+                    "attribute": category["@attribute"],
+                    "sub_categories": temp,
                 }
 
         return list(self._categories)
@@ -537,15 +532,15 @@ class DownloadCenter(object):
     def download_types(self):
         """Returns the types of packages available for download at Download Center."""
         if not self._download_types:
-            download_types = self._response['downloadTypes']
+            download_types = self._response["downloadTypes"]
 
             if isinstance(download_types, dict):
                 download_types = [download_types]
 
             for download_type in download_types:
-                self._download_types[download_type['@name']] = {
-                    'id': download_type['@id'],
-                    'entity_type': download_type['@entityType']
+                self._download_types[download_type["@name"]] = {
+                    "id": download_type["@id"],
+                    "entity_type": download_type["@entityType"],
                 }
 
         return list(self._download_types.keys())
@@ -554,15 +549,15 @@ class DownloadCenter(object):
     def vendors(self):
         """Returns the vendors available at Download Center."""
         if not self._vendors:
-            vendors = self._response['vendors']
+            vendors = self._response["vendors"]
 
             if isinstance(vendors, dict):
                 vendors = [vendors]
 
             for vendor in vendors:
-                self._vendors[vendor['@name']] = {
-                    'id': vendor['@id'],
-                    'entity_type': vendor['@entityType']
+                self._vendors[vendor["@name"]] = {
+                    "id": vendor["@id"],
+                    "entity_type": vendor["@entityType"],
                 }
 
         return list(self._vendors.keys())
@@ -571,16 +566,16 @@ class DownloadCenter(object):
     def platforms(self):
         """Returns the platforms supported for packages at Download Center."""
         if not self._platforms:
-            platforms = self._response['platforms']
+            platforms = self._response["platforms"]
 
             if isinstance(platforms, dict):
                 platforms = [platforms]
 
             for platform in platforms:
-                self._platforms[platform['@name']] = {
-                    'id': platform['@id'],
-                    'entity_type': platform['@entityType'],
-                    'architecture': platform['@architectureName']
+                self._platforms[platform["@name"]] = {
+                    "id": platform["@id"],
+                    "entity_type": platform["@entityType"],
+                    "architecture": platform["@architectureName"],
                 }
 
         return list(self._platforms.keys())
@@ -596,11 +591,11 @@ class DownloadCenter(object):
     def has_package(self, package):
         """Checks if a package with the given name already exists at Download Center or not.
 
-            Args:
-                package     (str)   --  name of the package to check
+        Args:
+            package     (str)   --  name of the package to check
 
-            Returns:
-                bool    -   boolean specifying whether the package exists or not
+        Returns:
+            bool    -   boolean specifying whether the package exists or not
 
         """
         return self.packages and package.lower() in self.packages
@@ -608,388 +603,380 @@ class DownloadCenter(object):
     def sub_categories(self, category):
         """Returns the sub categories available for the specified category.
 
-            Args:
-                category    (str)   --  name of the category to get the sub categories of
+        Args:
+            category    (str)   --  name of the category to get the sub categories of
 
-            Returns:
-                list    -   list of sub categories available for the given category
+        Returns:
+            list    -   list of sub categories available for the given category
 
-            Raises:
-                SDKException:
-                    if category does not exist
+        Raises:
+            SDKException:
+                if category does not exist
 
         """
         if category not in self.categories:
-            raise SDKException('DownloadCenter', '103')
+            raise SDKException("DownloadCenter", "103")
 
-        return list(self._categories[category]['sub_categories'].keys())
+        return list(self._categories[category]["sub_categories"].keys())
 
     def get_package_details(self, package):
         """Returns the details of the package, like the package description, platforms, etc.
 
-            Args:
-                package     (str)   --  name of the package to get the details of
+        Args:
+            package     (str)   --  name of the package to get the details of
 
-            Returns:
-                dict    -   dictionary consisting of the details of the package
+        Returns:
+            dict    -   dictionary consisting of the details of the package
 
-            Raises:
-                SDKException:
-                    if package does not exist
+        Raises:
+            SDKException:
+                if package does not exist
 
         """
         if not self.has_package(package):
-            raise SDKException('DownloadCenter', '106')
+            raise SDKException("DownloadCenter", "106")
 
         package = package.lower()
         package_detail = self._packages[package]
 
-        output = {
-            'name': package,
-            'description': package_detail['description'],
-            'platforms': {}
-        }
+        output = {"name": package, "description": package_detail["description"], "platforms": {}}
 
-        platforms = package_detail['platforms']
+        platforms = package_detail["platforms"]
 
         for platform in platforms:
-            output['platforms'][platform] = platforms[platform]['download_type']
+            output["platforms"][platform] = platforms[platform]["download_type"]
 
         return output
 
     def add_category(self, name, description=None):
         """Adds a new category with the given name, and description.
 
-            Args:
-                name            (str)   --  name of the category to add
+        Args:
+            name            (str)   --  name of the category to add
 
-                description     (str)   --  description for the category (optional)
-                    default: None
+            description     (str)   --  description for the category (optional)
+                default: None
 
-            Returns:
-                None    -   if the category was added successfully
+        Returns:
+            None    -   if the category was added successfully
 
-            Raises:
-                SDKException:
-                    if category already exists
+        Raises:
+            SDKException:
+                if category already exists
 
-                    if failed to add the category
+                if failed to add the category
 
         """
         if name in self.categories:
-            raise SDKException('DownloadCenter', '104')
+            raise SDKException("DownloadCenter", "104")
 
-        self._process_category_request('add', name, description)
+        self._process_category_request("add", name, description)
 
     def update_category(self, name, new_name, description=None):
         """Updates the name and description of the category with the given name.
 
-            Args:
-                name            (str)   --  name of the existing category to update
+        Args:
+            name            (str)   --  name of the existing category to update
 
-                new_name        (str)   --  new name for the category
+            new_name        (str)   --  new name for the category
 
-                description     (str)   --  description for the category (optional)
+            description     (str)   --  description for the category (optional)
 
-                    default: None
+                default: None
 
 
-            Returns:
-                None    -   if the category information was updated successfully
+        Returns:
+            None    -   if the category information was updated successfully
 
-            Raises:
-                SDKException:
-                    if no category exists with the given name
+        Raises:
+            SDKException:
+                if no category exists with the given name
 
-                    if category already exists with the new name specified
+                if category already exists with the new name specified
 
-                    if failed to update the category
+                if failed to update the category
 
         """
         if name not in self.categories:
-            raise SDKException('DownloadCenter', '108')
+            raise SDKException("DownloadCenter", "108")
 
         if new_name in self.categories:
-            raise SDKException('DownloadCenter', '104')
+            raise SDKException("DownloadCenter", "104")
 
-        self._process_category_request('update', name, description, new_name)
+        self._process_category_request("update", name, description, new_name)
 
     def delete_category(self, name):
         """Deletes the category with the given name.
 
-            Args:
-                name            (str)   --  name of the category to delete
+        Args:
+            name            (str)   --  name of the category to delete
 
-            Returns:
-                None    -   if the category was deleted successfully
+        Returns:
+            None    -   if the category was deleted successfully
 
-            Raises:
-                SDKException:
-                    if category does not exists
+        Raises:
+            SDKException:
+                if category does not exists
 
-                    if failed to delete the category
+                if failed to delete the category
 
         """
         if name not in self.categories:
-            raise SDKException('DownloadCenter', '108')
+            raise SDKException("DownloadCenter", "108")
 
-        self._process_category_request('delete', name)
+        self._process_category_request("delete", name)
 
     def add_sub_category(self, name, category, description=None):
         """Adds a new sub category with the given name, and description to the specified category.
 
-            Args:
-                name            (str)   --  name of the sub category to add
+        Args:
+            name            (str)   --  name of the sub category to add
 
-                category        (str)   --  name of the category to add the sub category to
+            category        (str)   --  name of the category to add the sub category to
 
-                description     (str)   --  description for the sub category (optional)
-                    default: None
+            description     (str)   --  description for the sub category (optional)
+                default: None
 
-            Returns:
-                None    -   if the sub category was added successfully
+        Returns:
+            None    -   if the sub category was added successfully
 
-            Raises:
-                SDKException:
-                    if category does not exist
+        Raises:
+            SDKException:
+                if category does not exist
 
-                    if sub category already exists
+                if sub category already exists
 
-                    if failed to add the sub category
+                if failed to add the sub category
 
         """
         if name in self.sub_categories(category):
-            raise SDKException('DownloadCenter', '105')
+            raise SDKException("DownloadCenter", "105")
 
-        self._process_sub_category_request('add', name, category, description)
+        self._process_sub_category_request("add", name, category, description)
 
     def update_sub_category(self, name, category, new_name, description=None):
         """Updates the name and description of the sub category with the given name and category.
 
-            Args:
-                name            (str)   --  name of the sub category to update the details of
+        Args:
+            name            (str)   --  name of the sub category to update the details of
 
-                category        (str)   --  name of the category to update the sub category of
+            category        (str)   --  name of the category to update the sub category of
 
-                new_name        (str)   --  new name for the sub category
+            new_name        (str)   --  new name for the sub category
 
-                description     (str)   --  description for the sub category (optional)
+            description     (str)   --  description for the sub category (optional)
 
-                    default: None
+                default: None
 
 
-            Returns:
-                None    -   if the sub category information was updated successfully
+        Returns:
+            None    -   if the sub category information was updated successfully
 
-            Raises:
-                SDKException:
-                    if no sub category exists with the given name
+        Raises:
+            SDKException:
+                if no sub category exists with the given name
 
-                    if sub category already exists with the new name specified
+                if sub category already exists with the new name specified
 
-                    if failed to update the sub category
+                if failed to update the sub category
 
         """
         if name not in self.sub_categories(category):
-            raise SDKException('DownloadCenter', '109')
+            raise SDKException("DownloadCenter", "109")
 
         if new_name in self.sub_categories(category):
-            raise SDKException('DownloadCenter', '105')
+            raise SDKException("DownloadCenter", "105")
 
-        self._process_sub_category_request('update', name, category, description, new_name)
+        self._process_sub_category_request("update", name, category, description, new_name)
 
     def delete_sub_category(self, name, category):
         """Deletes the sub category from the category with the given name.
 
-            Args:
-                name            (str)   --  name of the sub category to delete
+        Args:
+            name            (str)   --  name of the sub category to delete
 
-                category        (str)   --  name of the category to delete the sub category from
+            category        (str)   --  name of the category to delete the sub category from
 
-            Returns:
-                None    -   if the sub category was deleted successfully
+        Returns:
+            None    -   if the sub category was deleted successfully
 
-            Raises:
-                SDKException:
-                    if sub category does not exist
+        Raises:
+            SDKException:
+                if sub category does not exist
 
-                    if failed to delete the sub category
+                if failed to delete the sub category
 
         """
         if name not in self.sub_categories(category):
-            raise SDKException('DownloadCenter', '109')
+            raise SDKException("DownloadCenter", "109")
 
-        self._process_sub_category_request('delete', name, category)
+        self._process_sub_category_request("delete", name, category)
 
     def upload_package(self, package, category, version, platform_download_locations, **kwargs):
         """Uploads the given package to Download Center.
 
-            Args:
-                package                         (str)   --  name of the package to upload
+        Args:
+            package                         (str)   --  name of the package to upload
 
-                category                        (str)   --  category to upload the package for
+            category                        (str)   --  category to upload the package for
 
-                version                         (str)   --  product version for package to upload
+            version                         (str)   --  product version for package to upload
 
-                platform_download_locations     (list)  --  list consisting of dictionaries
+            platform_download_locations     (list)  --  list consisting of dictionaries
 
-                    where each dictionary contains the values for the platform, download type, and
-                    location of the file
+                where each dictionary contains the values for the platform, download type, and
+                location of the file
 
-                    e.g.:
-                        [
-                            {
-                                'platform': 'Windows-x64',
+                e.g.:
+                    [
+                        {
+                            'platform': 'Windows-x64',
 
-                                'download_type': 'Exe',
+                            'download_type': 'Exe',
 
-                                'location': 'C:\\location1'
-                            }, {
-                                'platform': 'Windows-x64',
+                            'location': 'C:\\location1'
+                        }, {
+                            'platform': 'Windows-x64',
 
-                                'download_type': 'Script',
+                            'download_type': 'Script',
 
-                                'location': 'C:\\location2'
-                            }, {
-                                'platform': 'Windows-x86',
+                            'location': 'C:\\location2'
+                        }, {
+                            'platform': 'Windows-x86',
 
-                                'download_type': 'Exe',
+                            'download_type': 'Exe',
 
-                                'location': 'C:\\location3'
-                            }, {
-                                'platform': 'Windows-x86',
+                            'location': 'C:\\location3'
+                        }, {
+                            'platform': 'Windows-x86',
 
-                                'download_type': 'Script',
+                            'download_type': 'Script',
 
-                                'location': 'C:\\location4'
-                            }
-                        ]
-
-
-                **kwargs:
-
-                    valid_from          (str)   --  date from which the package should be valid
-
-                        if the value is not specified, then current date is taken as it's value
-
-                        format:     DD/MM/YYYY
+                            'location': 'C:\\location4'
+                        }
+                    ]
 
 
-                    description         (str)   --  description of the package
+            **kwargs:
 
-                    readme_location     (str)   --  location of the readme file
+                valid_from          (str)   --  date from which the package should be valid
 
-                        readme file should have one of the following extensions
+                    if the value is not specified, then current date is taken as it's value
 
-                            [**.txt**, **.pdf**, **.doc**, **.docx**]
-
-
-                    sub_category        (str)   --  sub category to associate the package with
-
-                    vendor              (str)   --  vendor / distributor of the package
-
-                    valid_to            (str)   --  date till which the package should be valid
-
-                        format:     DD/MM/YYYY
+                    format:     DD/MM/YYYY
 
 
-                    repository          (str)   --  name of the repository to add the package to
+                description         (str)   --  description of the package
 
-                        if this value is not defined, the first repository will be taken by default
+                readme_location     (str)   --  location of the readme file
 
+                    readme file should have one of the following extensions
 
-                    visible_to          (list)  --  list of users, the package should be visible to
-
-                    not_visible_to      (list)  --  users, the package should not be visible to
-
-                    early_preview_users (list)  --  list of users, the package should be
-                    visible to before release
+                        [**.txt**, **.pdf**, **.doc**, **.docx**]
 
 
-            Returns:
-                None    -   if the package was uploaded successfully to Download Center
+                sub_category        (str)   --  sub category to associate the package with
+
+                vendor              (str)   --  vendor / distributor of the package
+
+                valid_to            (str)   --  date till which the package should be valid
+
+                    format:     DD/MM/YYYY
 
 
-            Raises:
-                SDKException:
-                    if package with given name already exists
+                repository          (str)   --  name of the repository to add the package to
 
-                    if category does not exists at Download Center
+                    if this value is not defined, the first repository will be taken by default
 
-                    if version is not supported at Download Center
 
-                    if platform is not supported at Download Center
+                visible_to          (list)  --  list of users, the package should be visible to
 
-                    if download type is not supported at Download Center
+                not_visible_to      (list)  --  users, the package should not be visible to
 
-                    if sub category not present for the given category
+                early_preview_users (list)  --  list of users, the package should be
+                visible to before release
 
-                    if failed to upload the package
 
-                    if error returned by the server
+        Returns:
+            None    -   if the package was uploaded successfully to Download Center
 
-                    if response was not success
+
+        Raises:
+            SDKException:
+                if package with given name already exists
+
+                if category does not exists at Download Center
+
+                if version is not supported at Download Center
+
+                if platform is not supported at Download Center
+
+                if download type is not supported at Download Center
+
+                if sub category not present for the given category
+
+                if failed to upload the package
+
+                if error returned by the server
+
+                if response was not success
 
         """
         if self.has_package(package):
-            raise SDKException('DownloadCenter', '114')
+            raise SDKException("DownloadCenter", "114")
 
         if category not in self.categories:
-            raise SDKException(
-                'DownloadCenter', '103', 'Available categories: {0}'.format(self.categories)
-            )
+            raise SDKException("DownloadCenter", "103", f"Available categories: {self.categories}")
 
         if version not in self.product_versions:
             raise SDKException(
-                'DownloadCenter', '115', 'Available versions: {0}'.format(self.product_versions)
+                "DownloadCenter", "115", f"Available versions: {self.product_versions}"
             )
 
         platforms = []
 
-        readme_location = kwargs.get('readme_location', '')
-        readme_file_extensions = ['.txt', '.pdf', '.doc', '.docx']
+        readme_location = kwargs.get("readme_location", "")
+        readme_file_extensions = [".txt", ".pdf", ".doc", ".docx"]
 
         if readme_location:
             if os.path.splitext(readme_location)[1] not in readme_file_extensions:
-                raise SDKException('DownloadCenter', '118')
+                raise SDKException("DownloadCenter", "118")
 
         del readme_file_extensions
 
         for platform_dl_loc in platform_download_locations:
-            platform = platform_dl_loc['platform']
-            download_type = platform_dl_loc['download_type']
-            location = platform_dl_loc['location']
+            platform = platform_dl_loc["platform"]
+            download_type = platform_dl_loc["download_type"]
+            location = platform_dl_loc["location"]
 
             if platform not in self.platforms:
                 raise SDKException(
-                    'DownloadCenter', '116', 'Available platforms: {0}'.format(self.platforms)
+                    "DownloadCenter", "116", f"Available platforms: {self.platforms}"
                 )
 
             if download_type not in self.download_types:
                 raise SDKException(
-                    'DownloadCenter',
-                    '117',
-                    'Available download types: {0}'.format(self.download_types)
+                    "DownloadCenter", "117", f"Available download types: {self.download_types}"
                 )
 
-            package_repository = kwargs.get('repository', self.servers_for_browse[0])
-            package_repository_id = self._servers_for_browse[package_repository]['id']
-            package_repository_name = self._servers_for_browse[package_repository]['internal_name']
+            package_repository = kwargs.get("repository", self.servers_for_browse[0])
+            package_repository_id = self._servers_for_browse[package_repository]["id"]
+            package_repository_name = self._servers_for_browse[package_repository]["internal_name"]
 
             temp = {
                 "@name": platform,
                 "@readMeLocation": readme_location,
                 "@location": location,
-                "@id": self._platforms[platform]['id'],
+                "@id": self._platforms[platform]["id"],
                 "downloadType": {
                     "@name": download_type,
-                    "@id": self._download_types[download_type]['id']
+                    "@id": self._download_types[download_type]["id"],
                 },
-                'pkgRepository': {
-                    '@repositoryId': package_repository_id,
-                    '@respositoryName': package_repository_name
+                "pkgRepository": {
+                    "@repositoryId": package_repository_id,
+                    "@respositoryName": package_repository_name,
                 },
-                '@size': 186646528
+                "@size": 186646528,
             }
 
             platforms.append(temp)
@@ -1000,92 +987,79 @@ class DownloadCenter(object):
         del temp
         del platform_download_locations
 
-        valid_from = kwargs.get('valid_from', time.strftime('%d/%m/%Y', time.localtime()))
-        valid_from = int(time.mktime(time.strptime(valid_from, '%d/%m/%Y')))
+        valid_from = kwargs.get("valid_from", time.strftime("%d/%m/%Y", time.localtime()))
+        valid_from = int(time.mktime(time.strptime(valid_from, "%d/%m/%Y")))
 
-        valid_to = kwargs.get('valid_to', '')
+        valid_to = kwargs.get("valid_to", "")
         if valid_to:
-            valid_to = int(time.mktime(time.strptime(valid_from, '%d/%m/%Y')))
+            valid_to = int(time.mktime(time.strptime(valid_from, "%d/%m/%Y")))
 
-        sub_category = {
-            "@entityType": 1,
-            "@categoryId": self._categories[category]['id']
-        }
+        sub_category = {"@entityType": 1, "@categoryId": self._categories[category]["id"]}
 
-        if 'sub_category' in kwargs:
-            sub_category_name = kwargs['sub_category']
+        if "sub_category" in kwargs:
+            sub_category_name = kwargs["sub_category"]
             sub_categories = self.sub_categories(category)
 
             if sub_category_name in sub_categories:
-                sub_category["@id"] = self._categories[category][
-                    'sub_categories'][sub_category_name]['id']
+                sub_category["@id"] = self._categories[category]["sub_categories"][
+                    sub_category_name
+                ]["id"]
             else:
                 raise SDKException(
-                    'DownloadCenter', '109', 'Available Sub Categories: {0}'.format(sub_categories)
+                    "DownloadCenter", "109", f"Available Sub Categories: {sub_categories}"
                 )
 
             del sub_categories
 
-        vendor = kwargs.get('vendor', '')
+        vendor = kwargs.get("vendor", "")
 
         if vendor and vendor in self.vendors:
-            vendor = self._vendors[vendor]['id']
+            vendor = self._vendors[vendor]["id"]
 
         visible_to = []
         not_visible_to = []
         early_preview_users = []
 
-        for user in kwargs.get('visible_to', []):
+        for user in kwargs.get("visible_to", []):
             if user in self.users_and_groups:
                 temp = {
-                    '@name': user,
-                    '@guid': self._users_and_groups[user]['guid'],
-                    '@type': self._users_and_groups[user]['type']
+                    "@name": user,
+                    "@guid": self._users_and_groups[user]["guid"],
+                    "@type": self._users_and_groups[user]["type"],
                 }
                 visible_to.append(temp)
 
-        for user in kwargs.get('not_visible_to', []):
+        for user in kwargs.get("not_visible_to", []):
             if user in self.users_and_groups:
                 temp = {
-                    '@name': user,
-                    '@guid': self._users_and_groups[user]['guid'],
-                    '@type': self._users_and_groups[user]['type']
+                    "@name": user,
+                    "@guid": self._users_and_groups[user]["guid"],
+                    "@type": self._users_and_groups[user]["type"],
                 }
                 not_visible_to.append(temp)
 
-        for user in kwargs.get('early_preview_users', []):
+        for user in kwargs.get("early_preview_users", []):
             if user in self.users_and_groups:
                 temp = {
-                    '@name': user,
-                    '@guid': self._users_and_groups[user]['guid'],
-                    '@type': self._users_and_groups[user]['type']
+                    "@name": user,
+                    "@guid": self._users_and_groups[user]["guid"],
+                    "@type": self._users_and_groups[user]["type"],
                 }
                 early_preview_users.append(temp)
 
         request_json = {
             "App_DCPackage": {
                 "@name": package,
-                "@description": kwargs.get('description', ''),
+                "@description": kwargs.get("description", ""),
                 "@validFrom": valid_from,
                 "@validTo": valid_to,
-                "@rank": kwargs.get('rank', 0),
-                "category": {
-                    "@entityType": 0,
-                    "@id": self._categories[category]['id']
-                },
+                "@rank": kwargs.get("rank", 0),
+                "category": {"@entityType": 0, "@id": self._categories[category]["id"]},
                 "subCategory": sub_category,
                 "platforms": platforms,
-                "productVersion": {
-                    "entityType": 3,
-                    "id": self._product_versions[version]['id']
-                },
-                "vendor": {
-                    "entityType": 6,
-                    "id": vendor
-                },
-                "recutNumber": {
-                    "entityType": 4
-                },
+                "productVersion": {"entityType": 3, "id": self._product_versions[version]["id"]},
+                "vendor": {"entityType": 6, "id": vendor},
+                "recutNumber": {"entityType": 4},
                 "visibleTo": visible_to,
                 "notVisibleTo": not_visible_to,
                 "earlyPreviewUsers": early_preview_users,
@@ -1093,154 +1067,152 @@ class DownloadCenter(object):
         }
 
         xml = xmltodict.unparse(request_json)
-        xml = xml[xml.find('<App_'):]
+        xml = xml[xml.find("<App_") :]
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['UPLOAD_PACKAGE'], xml
+            "POST", self._services["UPLOAD_PACKAGE"], xml
         )
 
         self.refresh()
 
         if flag:
-            response = xmltodict.parse(response.text)['App_DCPackage']
-            error_code = response['errorDetail']['@errorCode']
+            response = xmltodict.parse(response.text)["App_DCPackage"]
+            error_code = response["errorDetail"]["@errorCode"]
 
-            if error_code != '0':
-                error_message = response['errorDetail']['@errorMessage']
+            if error_code != "0":
+                error_message = response["errorDetail"]["@errorMessage"]
 
-                raise SDKException('DownloadCenter', '119', 'Error: {0}'.format(error_message))
+                raise SDKException("DownloadCenter", "119", f"Error: {error_message}")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def download_package(self, package, download_location, platform=None, download_type=None):
         """Downloads the given package from Download Center to the path specified.
 
-            Args:
-                package             (str)   --  name of the pacakge to be downloaded
+        Args:
+            package             (str)   --  name of the pacakge to be downloaded
 
-                download_location   (str)   --  path on local machine to download the package at
+            download_location   (str)   --  path on local machine to download the package at
 
-                platform            (str)   --  platform to download the package for
+            platform            (str)   --  platform to download the package for
 
-                    to be provided only if the package is added for multiple platforms
+                to be provided only if the package is added for multiple platforms
 
-                    default: None
+                default: None
 
-                download_type       (str)   --  type of package to be downloaded
+            download_type       (str)   --  type of package to be downloaded
 
-                    to be provided only if multiple download types are present for single platform
+                to be provided only if multiple download types are present for single platform
 
-                    default: None
+                default: None
 
-            Returns:
-                str     -   path on local machine where the file has been downloaded
+        Returns:
+            str     -   path on local machine where the file has been downloaded
 
-            Raises:
-                SDKException:
-                    if package does not exist
+        Raises:
+            SDKException:
+                if package does not exist
 
-                    if platform not given:
-                        in case of multiple platforms
+                if platform not given:
+                    in case of multiple platforms
 
-                    if platform given does not exists in the list of supported platforms
+                if platform given does not exists in the list of supported platforms
 
-                    if download type is not specified:
-                        if case of multiple download types for the selected platform
+                if download type is not specified:
+                    if case of multiple download types for the selected platform
 
-                    if download type given does not exists in the list of download types available
+                if download type given does not exists in the list of download types available
 
-                    if error returned by the server
+                if error returned by the server
 
-                    if response was not success
+                if response was not success
 
         """
 
         # get the id of the package, if it is a valid package
         if not self.has_package(package):
-            raise SDKException('DownloadCenter', '106')
+            raise SDKException("DownloadCenter", "106")
         else:
             package = package.lower()
-            package_id = self._packages[package]['id']
+            package_id = self._packages[package]["id"]
 
         def get_platform_id(package, platform):
             """Checks if the platform is valid or not, and returns the platform id.
 
-                If platform is set to None, gets the platform from the list of platforms,
-                and the platform id.
+            If platform is set to None, gets the platform from the list of platforms,
+            and the platform id.
 
-                Args:
-                    package     (str)   --  name of the package to check the platform for
+            Args:
+                package     (str)   --  name of the package to check the platform for
 
-                    platform    (str)   --  name of the platform to get the id of
+                platform    (str)   --  name of the platform to get the id of
 
-                Returns:
-                    (str, str)  -   tuple consisting of the platform name as the first,
-                                        and platform id as the second value
+            Returns:
+                (str, str)  -   tuple consisting of the platform name as the first,
+                                    and platform id as the second value
 
-                Raises:
-                    SDKException:
-                        if platform is not given, and multiple platforms exists for the package
+            Raises:
+                SDKException:
+                    if platform is not given, and multiple platforms exists for the package
 
-                        if platform specified is not supported for the package
+                    if platform specified is not supported for the package
 
             """
-            platforms = self._packages[package]['platforms']
+            platforms = self._packages[package]["platforms"]
             # check if the package has a single platform only, in case platform is not given
             if platform is None:
-
                 # raise exception if multiple platforms exist for the package
                 if len(platforms.keys()) > 1:
-                    raise SDKException('DownloadCenter', '110')
+                    raise SDKException("DownloadCenter", "110")
 
                 # get the platform name and id, if it's a single platform
                 else:
                     platform = list(platforms.keys())[0]
-                    platform_id = platforms[platform]['id']
+                    platform_id = platforms[platform]["id"]
 
             # raise exception if the platform does not exists in the list of supported platforms,
             # when it is given
             elif platform not in platforms:
-                raise SDKException('DownloadCenter', '112')
+                raise SDKException("DownloadCenter", "112")
 
             # get the id of the platform,
             # when it's given and exists in the list of supported platforms
             else:
-                platform_id = platforms[platform]['id']
+                platform_id = platforms[platform]["id"]
 
             return platform, platform_id
 
         def get_download_type(package, platform, download_type):
             """Checks if the download type for the given package and platform is valid or not.
 
-                If download type is set to None, gets the download type from the list of download
-                types availalble for the given package and platform.
+            If download type is set to None, gets the download type from the list of download
+            types availalble for the given package and platform.
 
-                Args:
-                    package         (str)   --  name of the package to get the download type for
+            Args:
+                package         (str)   --  name of the package to get the download type for
 
-                    platform        (str)   --  name of the platform to get the download type of
+                platform        (str)   --  name of the platform to get the download type of
 
-                    download_type   (str)   --  download type to be validated
+                download_type   (str)   --  download type to be validated
 
-                Returns:
-                    str     -   name of the download type
+            Returns:
+                str     -   name of the download type
 
-                Raises:
-                    SDKException:
-                        if download type is not given, and multiple download types exists
+            Raises:
+                SDKException:
+                    if download type is not given, and multiple download types exists
 
-                        if download type specified is not available for the package
+                    if download type specified is not available for the package
 
             """
-            download_types = self._packages[package]['platforms'][platform]['download_type']
+            download_types = self._packages[package]["platforms"][platform]["download_type"]
             # check if the package has a single download type only,
             # in case download type is not given
             if download_type is None:
-
                 # raise exception if multiple download types exist for the package and the platform
                 if len(download_types) > 1:
-                    raise SDKException('DownloadCenter', '111')
+                    raise SDKException("DownloadCenter", "111")
 
                 # get the download type name, if it's a single download type for the given platform
                 else:
@@ -1248,7 +1220,7 @@ class DownloadCenter(object):
 
             # raise exception if the download type does not exists in the list, when it is given
             elif download_type not in download_types:
-                raise SDKException('DownloadCenter', '113')
+                raise SDKException("DownloadCenter", "113")
 
             # use the download type given by the user
             else:
@@ -1265,7 +1237,7 @@ class DownloadCenter(object):
             except FileExistsError:
                 pass
 
-        request_id = ''
+        request_id = ""
         file_name = None
 
         # ID: 3 is static for Download Center, and has the value "Package"
@@ -1273,7 +1245,7 @@ class DownloadCenter(object):
         # ID: 9, needs to provide the platform id as the value for "name"
         # ID: 11, needs to provide the download tyoe as the value for "name"
         # ID: 10 is static for Streamed downloads
-        request_xml = '''
+        request_xml = """
         <DM2ContentIndexing_OpenFileReq requestId="{3}">
             <fileParams id="3" name="Package"/>
             <fileParams id="2" name="{0}"/>
@@ -1281,24 +1253,24 @@ class DownloadCenter(object):
             <fileParams id="11" name="{2}"/>
             <fileParams id="10" name="Streamed"/>
         </DM2ContentIndexing_OpenFileReq>
-        '''
+        """
 
         # execute the request to get the details like file name, and request id
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['DOWNLOAD_PACKAGE'], request_xml.format(
-                package_id, platform_id, download_type, request_id
-            )
+            "POST",
+            self._services["DOWNLOAD_PACKAGE"],
+            request_xml.format(package_id, platform_id, download_type, request_id),
         )
 
         if flag:
-            error_list = response.json()['errList']
-            file_content = response.json()['fileContent']
+            error_list = response.json()["errList"]
+            file_content = response.json()["fileContent"]
 
             if error_list:
-                raise SDKException('DownloadCenter', '107', 'Error: {0}'.format(error_list))
+                raise SDKException("DownloadCenter", "107", f"Error: {error_list}")
 
-            file_name = file_content.get('fileName', file_name)
-            request_id = file_content['requestId']
+            file_name = file_content.get("fileName", file_name)
+            request_id = file_content["requestId"]
 
             # full path of the file on local machine to be downloaded
             download_path = os.path.join(download_location, file_name)
@@ -1306,14 +1278,14 @@ class DownloadCenter(object):
             # execute request to get the stream of content
             # using request id returned in the previous response
             flag1, response1 = self._cvpysdk_object.make_request(
-                'POST',
-                self._services['DOWNLOAD_VIA_STREAM'],
+                "POST",
+                self._services["DOWNLOAD_VIA_STREAM"],
                 request_xml.format(package_id, platform_id, download_type, request_id),
-                stream=True
+                stream=True,
             )
 
             # download chunks of 1MB each
-            chunk_size = 1024 ** 2
+            chunk_size = 1024**2
 
             if flag1:
                 with open(download_path, "wb") as file_pointer:
@@ -1321,56 +1293,56 @@ class DownloadCenter(object):
                         file_pointer.write(content)
             else:
                 response_string = self._update_response_(response1.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return download_path
 
     def delete_package(self, package):
         """Deletes the package from Download Center.
 
-            Args:
-                package     (str)   --  name of the package to be deleted
+        Args:
+            package     (str)   --  name of the package to be deleted
 
-            Returns:
-                None    -   if the package was deleted successfully
+        Returns:
+            None    -   if the package was deleted successfully
 
-            Raises:
-                SDKException:
-                    if no package exists with the given name
+        Raises:
+            SDKException:
+                if no package exists with the given name
 
-                    if failed to delete the package
+                if failed to delete the package
 
-                    if response is not success
+                if response is not success
 
         """
         if not self.has_package(package):
-            raise SDKException('DownloadCenter', '106')
+            raise SDKException("DownloadCenter", "106")
         else:
             package = package.lower()
-            package_id = self._packages[package]['id']
+            package_id = self._packages[package]["id"]
 
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['DELETE_PACKAGE'] % package_id
+            "GET", self._services["DELETE_PACKAGE"] % package_id
         )
 
         self.refresh()
 
         if flag:
-            response = xmltodict.parse(response.text)['DM2ContentIndexing_CVDownloadCenterResp']
+            response = xmltodict.parse(response.text)["DM2ContentIndexing_CVDownloadCenterResp"]
 
-            if 'errList' in response:
-                error_code = response['errList']['@errorCode']
+            if "errList" in response:
+                error_code = response["errList"]["@errorCode"]
 
-                if error_code != '0':
-                    error_message = response['errList']['@errLogMessage']
+                if error_code != "0":
+                    error_message = response["errList"]["@errLogMessage"]
 
-                    raise SDKException('DownloadCenter', '119', 'Error: {0}'.format(error_message))
+                    raise SDKException("DownloadCenter", "119", f"Error: {error_message}")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self):
         """Refresh the properties of the DownloadCenter."""

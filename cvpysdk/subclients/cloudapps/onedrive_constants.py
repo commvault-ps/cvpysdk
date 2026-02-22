@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -21,6 +19,8 @@
 OneDriveConstants  -   Maintains constants for OneDrive subclient.
 
 """
+
+
 class OneDriveConstants:
     """
     Container for OneDrive subclient-related constants.
@@ -37,5 +37,6 @@ class OneDriveConstants:
 
     #ai-gen-doc
     """
+
     INDEX_APP_TYPE = 200118
-    INSTANCE = 'OneDrive'
+    INSTANCE = "OneDrive"

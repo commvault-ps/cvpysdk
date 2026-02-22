@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""" Main file for performing the download operation
+""" " Main file for performing the download operation
 
 Download
 ========
@@ -30,17 +28,19 @@ Download
 
 """
 
-from ..job import Job
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
+
+from cvpysdk.schedules import SchedulePattern, Schedules
+
 from ..exception import SDKException
+from ..job import Job
 from .deploymentconstants import DownloadOptions
-from cvpysdk.schedules import Schedules, SchedulePattern
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
 
-class Download(object):
+class Download:
     """class for downloading software packages
 
     Description:
@@ -57,7 +57,7 @@ class Download(object):
         >>> download_obj = Download(commcell_object)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize commcell_object of the Download class.
 
         Args:
@@ -75,14 +75,15 @@ class Download(object):
         self._update_response_ = commcell_object._update_response_
 
     def download_software(
-            self,
-            options: Optional[str] = None,
-            os_list: Optional[List[str]] = None,
-            service_pack: Optional[int] = None,
-            cu_number: int = 0,
-            sync_cache: bool = True,
-            sync_cache_list: Optional[List[str]] = None,
-            schedule_pattern: Optional[Dict] = None) -> Union[Job, Schedules]:
+        self,
+        options: Optional[str] = None,
+        os_list: Optional[List[str]] = None,
+        service_pack: Optional[int] = None,
+        cu_number: int = 0,
+        sync_cache: bool = True,
+        sync_cache_list: Optional[List[str]] = None,
+        schedule_pattern: Optional[Dict] = None,
+    ) -> Union[Job, Schedules]:
         """Downloads the os packages on the commcell
 
         Args:
@@ -151,69 +152,78 @@ class Download(object):
         version = self.commcell_object.commserv_version
         direct_download = version >= 36 and not schedule_pattern
         if options is None:
-            options = 'latest service pack'
+            options = "latest service pack"
 
         if DownloadOptions.LATEST_SERVICEPACK.value == options:
             self.update_option = {
-                'upgradeToLatestRelease': True,
-                'latestFixesForCurrentRelease': False,
+                "upgradeToLatestRelease": True,
+                "latestFixesForCurrentRelease": False,
                 "featureRelease": self.commcell_object.version,
-                'SPName': 'latest',
-                'IsSPName': False,
-                'isSpDelayedDays': True,
-                'isHotfixesDownload': False
+                "SPName": "latest",
+                "IsSPName": False,
+                "isSpDelayedDays": True,
+                "isHotfixesDownload": False,
             }
         elif DownloadOptions.LATEST_HOTFIXES.value == options:
             self.update_option = {
-                'upgradeToLatestRelease': False,
-                'latestFixesForCurrentRelease': True,
-                'SPName': 'hotfix',
-                'IsSPName': False,
-                'isSpDelayedDays': True,
-                'isHotfixesDownload': True
+                "upgradeToLatestRelease": False,
+                "latestFixesForCurrentRelease": True,
+                "SPName": "hotfix",
+                "IsSPName": False,
+                "isSpDelayedDays": True,
+                "isHotfixesDownload": True,
             }
         elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
             if service_pack is None:
-                raise SDKException('Download', '102')
+                raise SDKException("Download", "102")
             self.update_option = {
-                'upgradeToLatestRelease': False,
-                'latestFixesForCurrentRelease': False,
+                "upgradeToLatestRelease": False,
+                "latestFixesForCurrentRelease": False,
                 "featureRelease": "11." + str(service_pack) + "." + str(cu_number),
-                'SPName': str(service_pack),
-                'IsSPName': True,
-                'isSpDelayedDays': False,
-                'isHotfixesDownload': False
+                "SPName": str(service_pack),
+                "IsSPName": True,
+                "isSpDelayedDays": False,
+                "isHotfixesDownload": False,
             }
 
         # to set the default value if os_list is none
         if os_list is None:
-            os_list = ['WINDOWS_X64']
+            os_list = ["WINDOWS_X64"]
 
         client_groups = []
         if sync_cache and sync_cache_list:
             for cache in sync_cache_list:
-                client_groups.append({"type": "CLIENT_ENTITY",
-                                      "clientName": cache,
-                                      "id": self.commcell_object.clients.get(cache).client_id
-                                      }) if version >= 36 else client_groups.append({"clientName": cache})
+                client_groups.append(
+                    {
+                        "type": "CLIENT_ENTITY",
+                        "clientName": cache,
+                        "id": self.commcell_object.clients.get(cache).client_id,
+                    }
+                ) if version >= 36 else client_groups.append({"clientName": cache})
         elif sync_cache and not sync_cache_list:
             if direct_download:
-                flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['SOFTWARE_CACHE'])
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(
+                    "GET", self._services["SOFTWARE_CACHE"]
+                )
                 cache_list = []
-                for obj in response_1.json().get('softwareCacheDetailList', []):
-                    if obj['cache']['id'] != 2:
-                        cache_list.append(obj['cache']['name'])
+                for obj in response_1.json().get("softwareCacheDetailList", []):
+                    if obj["cache"]["id"] != 2:
+                        cache_list.append(obj["cache"]["name"])
                 for client in cache_list:
-                    client_groups.append({"type": "CLIENT_ENTITY",
-                                          "clientName": client,
-                                          "id": int(self.commcell_object.clients.all_clients[client]['id'])})
+                    client_groups.append(
+                        {
+                            "type": "CLIENT_ENTITY",
+                            "clientName": client,
+                            "id": int(self.commcell_object.clients.all_clients[client]["id"]),
+                        }
+                    )
             else:
                 client_groups = [{"_type_": 2}]
 
         if direct_download:
             win_os_list = []
             unix_os_list = []
-            temp_win = ['WINDOWS_X64', 'WINDOWS_X32', 'WINDOWS_ARM64']
+            temp_win = ["WINDOWS_X64", "WINDOWS_X32", "WINDOWS_ARM64"]
 
             for os in os_list:
                 if os in temp_win:
@@ -222,17 +232,20 @@ class Download(object):
                     unix_os_list.append(os)
             request_json = {
                 "downloadConfiguration": {
-                    "upgradeToLatestRelease": self.update_option['upgradeToLatestRelease'],
-                    "latestFixesForCurrentRelease": self.update_option['latestFixesForCurrentRelease'],
+                    "upgradeToLatestRelease": self.update_option["upgradeToLatestRelease"],
+                    "latestFixesForCurrentRelease": self.update_option[
+                        "latestFixesForCurrentRelease"
+                    ],
                     "windowsDownloadOptions": win_os_list,
                     "unixDownloadOptions": unix_os_list,
                 },
                 "notifyWhenJobCompletes": False,
-                "entities": client_groups
-
+                "entities": client_groups,
             }
             if DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
-                request_json["downloadConfiguration"]["featureRelease"] = self.update_option['featureRelease']
+                request_json["downloadConfiguration"]["featureRelease"] = self.update_option[
+                    "featureRelease"
+                ]
         else:
             request_json = {
                 "taskInfo": {
@@ -240,99 +253,102 @@ class Download(object):
                         "taskType": 1,
                         "initiatedFrom": 2,
                         "policyType": 0,
-                        "alert": {
-                            "alertName": ""
-                        },
-                        "taskFlags": {
-                            "isEdgeDrive": False,
-                            "disabled": False
-                        }
+                        "alert": {"alertName": ""},
+                        "taskFlags": {"isEdgeDrive": False, "disabled": False},
                     },
                     "subTasks": [
                         {
                             "subTaskOperation": 1,
-                            "subTask": {
-                                "subTaskType": 1,
-                                "operationType": 4019
-                            },
+                            "subTask": {"subTaskType": 1, "operationType": 4019},
                             "options": {
                                 "adminOpts": {
                                     "updateOption": {
                                         "syncUpdateCaches": sync_cache,
-                                        "spName": self.update_option['SPName'],
+                                        "spName": self.update_option["SPName"],
                                         "CUNumber": cu_number,
                                         "isWindows": True,
                                         "majorOnly": False,
-                                        "isSpName": self.update_option['IsSPName'],
+                                        "isSpName": self.update_option["IsSPName"],
                                         "copyUpdates": True,
-                                        "isHotfixesDownload": self.update_option['isHotfixesDownload'],
-                                        "isSpDelayedDays": self.update_option['isSpDelayedDays'],
+                                        "isHotfixesDownload": self.update_option[
+                                            "isHotfixesDownload"
+                                        ],
+                                        "isSpDelayedDays": self.update_option["isSpDelayedDays"],
                                         "copySoftwareAndUpdates": False,
                                         "isUnix": True,
                                         "unixDownloadPackages": {
-                                            "linuxosX64": 'LINUX_X86_64' in os_list,
-                                            "solarisosX64": 'SOLARIS_X86_64' in os_list,
-                                            "solsparcos": 'Solaris-SPARC-X86' in os_list,
-                                            "freeBSDos": 'FREEBSD_X86' in os_list,
-                                            "linuxos": 'LINUX_X86' in os_list,
-                                            "linuxosPPC64le": 'LINUX_PPC64LE' in os_list,
-                                            "freeBSDosX64": 'FREEBSD_X86_64' in os_list,
-                                            "solarisos": 'SOLARIS_SPARC' in os_list,
-                                            "linuxs390os": 'Linux-S390-31' in os_list,
-                                            "darwinos": 'MAC_OS' in os_list,
-                                            "linuxosS390": 'Linux-S390' in os_list,
-                                            "aixppcos": 'Aix-PPC-32' in os_list,
-                                            "linuxosPPC64": 'LINUX_PPC64' in os_list,
-                                            "aixos": 'AIX_PPC' in os_list,
-                                            "hpos": 'HP_IA64' in os_list,
-                                            "solos": 'Solaris X86' in os_list
+                                            "linuxosX64": "LINUX_X86_64" in os_list,
+                                            "solarisosX64": "SOLARIS_X86_64" in os_list,
+                                            "solsparcos": "Solaris-SPARC-X86" in os_list,
+                                            "freeBSDos": "FREEBSD_X86" in os_list,
+                                            "linuxos": "LINUX_X86" in os_list,
+                                            "linuxosPPC64le": "LINUX_PPC64LE" in os_list,
+                                            "freeBSDosX64": "FREEBSD_X86_64" in os_list,
+                                            "solarisos": "SOLARIS_SPARC" in os_list,
+                                            "linuxs390os": "Linux-S390-31" in os_list,
+                                            "darwinos": "MAC_OS" in os_list,
+                                            "linuxosS390": "Linux-S390" in os_list,
+                                            "aixppcos": "Aix-PPC-32" in os_list,
+                                            "linuxosPPC64": "LINUX_PPC64" in os_list,
+                                            "aixos": "AIX_PPC" in os_list,
+                                            "hpos": "HP_IA64" in os_list,
+                                            "solos": "Solaris X86" in os_list,
                                         },
                                         "windowsDownloadPackages": {
-                                            "windowsX64": 'WINDOWS_X64' in os_list,
-                                            "windows32": 'WINDOWS_X32' in os_list
+                                            "windowsX64": "WINDOWS_X64" in os_list,
+                                            "windows32": "WINDOWS_X32" in os_list,
                                         },
                                         "clientAndClientGroups": client_groups,
-                                        "downloadUpdatesJobOptions": {
-                                            "downloadSoftware": True
-                                        }
+                                        "downloadUpdatesJobOptions": {"downloadSoftware": True},
                                     }
                                 }
-                            }
+                            },
                         }
-                    ]
+                    ],
                 }
             }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-        method = 'PUT' if direct_download else 'POST'
-        url = self._services['DOWNLOAD_SOFTWARE'] if direct_download else self._services['CREATE_TASK']
-
-        flag, response = self._cvpysdkcommcell_object.make_request(
-            method, url, request_json
+        method = "PUT" if direct_download else "POST"
+        url = (
+            self._services["DOWNLOAD_SOFTWARE"]
+            if direct_download
+            else self._services["CREATE_TASK"]
         )
+
+        flag, response = self._cvpysdkcommcell_object.make_request(method, url, request_json)
 
         if flag:
             if response.json():
                 if "jobId" in response.json() or "jobIds" in response.json():
-                    return Job(self.commcell_object, response.json()['jobId']) if version >= 36 \
-                        else Job(self.commcell_object, response.json()['jobIds'][0])
+                    return (
+                        Job(self.commcell_object, response.json()["jobId"])
+                        if version >= 36
+                        else Job(self.commcell_object, response.json()["jobIds"][0])
+                    )
 
                 elif "taskId" in response.json():
-                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self.commcell_object).get(task_id=response.json()["taskId"])
 
                 else:
-                    raise SDKException('Download', '101', self._update_response_(response.text))
+                    raise SDKException("Download", "101", self._update_response_(response.text))
 
             else:
-                raise SDKException('Response', '102', self._update_response_(response.text))
+                raise SDKException("Response", "102", self._update_response_(response.text))
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def copy_software(self, media_loc: str, username: Optional[str] = None, password: Optional[str] = None,
-                      sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None,
-                      schedule_pattern: Optional[Dict] = None) -> Union[Job, Schedules]:
+    def copy_software(
+        self,
+        media_loc: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        sync_cache: bool = True,
+        sync_cache_list: Optional[List[str]] = None,
+        schedule_pattern: Optional[Dict] = None,
+    ) -> Union[Job, Schedules]:
         """copies media from the specified location on the commcell
 
         Args:
@@ -374,40 +390,46 @@ class Download(object):
         if username:
             if password is None:
                 raise Exception(f"Password missing for remote location {media_loc}")
-            client_auth = {
-                "userName": username,
-                "password": password
-            }
+            client_auth = {"userName": username, "password": password}
 
         if version >= 36:
             client_groups = []
             if sync_cache:
                 if sync_cache_list:
                     for cache in sync_cache_list:
-                        client_groups.append({"type": "CLIENT_ENTITY",
-                                              "clientName": cache,
-                                              "id": self.commcell_object.clients.get(cache).client_id
-                                              })
+                        client_groups.append(
+                            {
+                                "type": "CLIENT_ENTITY",
+                                "clientName": cache,
+                                "id": self.commcell_object.clients.get(cache).client_id,
+                            }
+                        )
                 else:
-                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['SOFTWARE_CACHE'])
+                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(
+                        "GET", self._services["SOFTWARE_CACHE"]
+                    )
                     cache_list = []
-                    for obj in response_1.json()['softwareCacheDetailList']:
-                        if obj['cache']['id'] != 2:
-                            cache_list.append(obj['cache']['name'])
+                    for obj in response_1.json()["softwareCacheDetailList"]:
+                        if obj["cache"]["id"] != 2:
+                            cache_list.append(obj["cache"]["name"])
                     for client in cache_list:
-                        client_groups.append({"type": "CLIENT_ENTITY",
-                                              "clientName": client,
-                                              "id": int(self.commcell_object.clients.all_clients[client.lower()]['id'])})
+                        client_groups.append(
+                            {
+                                "type": "CLIENT_ENTITY",
+                                "clientName": client,
+                                "id": int(
+                                    self.commcell_object.clients.all_clients[client.lower()]["id"]
+                                ),
+                            }
+                        )
             request_json = {
-                "copyConfiguration": {
-                    "downloadPath": media_loc
-                },
+                "copyConfiguration": {"downloadPath": media_loc},
                 "notifyWhenJobCompletes": False,
-                "entities": client_groups
+                "entities": client_groups,
             }
             if client_auth:
-                request_json['copyConfiguration']['username'] = username
-                request_json['copyConfiguration']['password'] = password
+                request_json["copyConfiguration"]["username"] = username
+                request_json["copyConfiguration"]["password"] = password
         else:
             request_json = {
                 "taskInfo": {
@@ -415,74 +437,66 @@ class Download(object):
                         "taskType": 1,
                         "initiatedFrom": 2,
                         "policyType": 0,
-                        "alert": {
-                            "alertName": ""
-                        },
-                        "taskFlags": {
-                            "isEdgeDrive": False,
-                            "disabled": False
-                        }
+                        "alert": {"alertName": ""},
+                        "taskFlags": {"isEdgeDrive": False, "disabled": False},
                     },
                     "subTasks": [
                         {
                             "subTaskOperation": 1,
-                            "subTask": {
-                                "subTaskType": 1,
-                                "operationType": 4019
-                            },
+                            "subTask": {"subTaskType": 1, "operationType": 4019},
                             "options": {
                                 "adminOpts": {
                                     "updateOption": {
                                         "syncUpdateCaches": sync_cache,
                                         "copyUpdates": True,
                                         "copySoftwareAndUpdates": True,
-                                        "clientAndClientGroups": [
-                                            {
-                                                "_type_": 2
-                                            }
-                                        ],
+                                        "clientAndClientGroups": [{"_type_": 2}],
                                         "downloadUpdatesJobOptions": {
                                             "downloadSoftware": True,
                                             "updateCachePath": media_loc,
-                                            "clientAuth": client_auth
-                                        }
+                                            "clientAuth": client_auth,
+                                        },
                                     }
                                 }
-                            }
+                            },
                         }
-                    ]
+                    ],
                 }
             }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-        method = 'PUT' if version >= 36 else 'POST'
-        url = self._services['DOWNLOAD_SOFTWARE'] if version >= 36 else self._services['CREATE_TASK']
-
-        flag, response = self._cvpysdkcommcell_object.make_request(
-            method, url, request_json
+        method = "PUT" if version >= 36 else "POST"
+        url = (
+            self._services["DOWNLOAD_SOFTWARE"] if version >= 36 else self._services["CREATE_TASK"]
         )
+
+        flag, response = self._cvpysdkcommcell_object.make_request(method, url, request_json)
 
         if flag:
             if response.json():
                 if "jobId" in response.json() or "jobIds" in response.json():
-                    return Job(self.commcell_object, response.json()['jobId']) if version >= 36 \
-                        else Job(self.commcell_object, response.json()['jobIds'][0])
+                    return (
+                        Job(self.commcell_object, response.json()["jobId"])
+                        if version >= 36
+                        else Job(self.commcell_object, response.json()["jobIds"][0])
+                    )
 
                 elif "taskId" in response.json():
-                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self.commcell_object).get(task_id=response.json()["taskId"])
 
                 else:
-                    raise SDKException('Download', '101')
+                    raise SDKException("Download", "101")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
-    def sync_remote_cache(self, client_list: Optional[list] = None,
-                          schedule_pattern: Optional[dict] = None) -> Union[Job, Schedules]:
+    def sync_remote_cache(
+        self, client_list: Optional[list] = None, schedule_pattern: Optional[dict] = None
+    ) -> Union[Job, Schedules]:
         """Syncs remote cache
 
         Args:
@@ -513,15 +527,10 @@ class Download(object):
 
         clients = []
         if client_list is None:
-
-            clients = [{
-                "_type_": 2
-            }]
+            clients = [{"_type_": 2}]
         else:
             for each in client_list:
-                clients.append({
-                    "_type_": 3,
-                    "clientName": each})
+                clients.append({"_type_": 3, "clientName": each})
 
         request_json = {
             "taskInfo": {
@@ -531,17 +540,12 @@ class Download(object):
                     "ownerName": "admin",
                     "initiatedFrom": 1,
                     "policyType": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4019
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4019},
                         "options": {
                             "adminOpts": {
                                 "updateOption": {
@@ -556,14 +560,12 @@ class Download(object):
                                     "copySoftwareAndUpdates": False,
                                     "isUnix": False,
                                     "clientAndClientGroups": clients,
-                                    "downloadUpdatesJobOptions": {
-                                        "downloadSoftware": False
-                                    }
+                                    "downloadUpdatesJobOptions": {"downloadSoftware": False},
                                 }
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
@@ -571,24 +573,24 @@ class Download(object):
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         flag, response = self._cvpysdkcommcell_object.make_request(
-            'POST', self._services['CREATE_TASK'], request_json
+            "POST", self._services["CREATE_TASK"], request_json
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self.commcell_object, response.json()['jobIds'][0])
+                    return Job(self.commcell_object, response.json()["jobIds"][0])
 
                 elif "taskId" in response.json():
-                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self.commcell_object).get(task_id=response.json()["taskId"])
 
                 else:
-                    raise SDKException('Download', '101', self._update_response_(response.text))
+                    raise SDKException("Download", "101", self._update_response_(response.text))
 
             else:
-                raise SDKException('Response', '102', self._update_response_(response.text))
+                raise SDKException("Response", "102", self._update_response_(response.text))
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_packages(self) -> list:
         """
@@ -605,18 +607,16 @@ class Download(object):
             >>> Download.get_packages()
         """
         flag, response = self._cvpysdkcommcell_object.make_request(
-            'GET', self._services['AVAILABLE_PACKAGES']
+            "GET", self._services["AVAILABLE_PACKAGES"]
         )
         if flag:
             if response.json():
                 if "pkgList" in response.json():
-                    return response.json()['pkgList']
+                    return response.json()["pkgList"]
                 else:
-                    raise SDKException('Packages', '101')
+                    raise SDKException("Packages", "101")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
-
-
+            raise SDKException("Response", "101", self._update_response_(response.text))

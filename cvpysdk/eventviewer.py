@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -58,17 +57,15 @@ Event:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from typing import TYPE_CHECKING
 
 from .exception import SDKException
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
 
 
-class Events(object):
+class Events:
     """
     Class for managing and representing Events associated with the commcell.
 
@@ -85,7 +82,7 @@ class Events(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize an instance of the Events class.
 
         Args:
@@ -112,10 +109,10 @@ class Events(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'EventId')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "EventId")
 
         for index, event in enumerate(self._events):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, event)
+            sub_str = f"{index + 1:^5}\t{event:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -131,7 +128,7 @@ class Events(object):
 
         #ai-gen-doc
         """
-        representation_string = 'Events class instance'
+        representation_string = "Events class instance"
         return representation_string
 
     def events(self, query_params_dict: dict = None, details: bool = False) -> dict:
@@ -169,41 +166,40 @@ class Events(object):
 
         #ai-gen-doc
         """
-        events_request = self._commcell_object._services['GET_EVENTS']
+        events_request = self._commcell_object._services["GET_EVENTS"]
         if query_params_dict:
-            events_request = events_request + '?'
+            events_request = events_request + "?"
             for query_param in query_params_dict.keys():
-                if events_request[-1] != '?':
-                    events_request = events_request + '&'
-                events_request = events_request + query_param + \
-                    '=' + query_params_dict[query_param]
+                if events_request[-1] != "?":
+                    events_request = events_request + "&"
+                events_request = (
+                    events_request + query_param + "=" + query_params_dict[query_param]
+                )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', events_request)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", events_request)
 
         if flag:
-            if response.json() and 'commservEvents' in response.json():
+            if response.json() and "commservEvents" in response.json():
                 events_dict = {}
 
-                for dictionary in response.json()['commservEvents']:
-                    event_id = dictionary['id']
-                    event_code = dictionary['eventCode']
+                for dictionary in response.json()["commservEvents"]:
+                    event_id = dictionary["id"]
+                    event_code = dictionary["eventCode"]
                     if details:
                         event_details = dictionary.copy()
-                        del event_details['id']
+                        del event_details["id"]
                         events_dict[event_id] = event_details
                     else:
                         events_dict[event_id] = event_code
 
                 return events_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
-    def get(self, event_id: int) -> 'Event':
+    def get(self, event_id: int) -> "Event":
         """Retrieve an Event object by its unique event ID.
 
         Args:
@@ -217,7 +213,7 @@ class Events(object):
         return Event(self._commcell_object, event_id)
 
 
-class Event(object):
+class Event:
     """
     Class for managing and viewing event operations within the Event Viewer.
 
@@ -238,7 +234,7 @@ class Event(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', event_id: int) -> None:
+    def __init__(self, commcell_object: "Commcell", event_id: int) -> None:
         """Initialize an instance of the Event class for a specific event.
 
         Args:
@@ -254,8 +250,7 @@ class Event(object):
         """
         self._commcell_object = commcell_object
         self._event_id = event_id
-        self._event = self._commcell_object._services['GET_EVENT'] % (
-            self._event_id)
+        self._event = self._commcell_object._services["GET_EVENT"] % (self._event_id)
         self._get_event_properties()
         self._event_code_type_dict = {
             "BACKUP DISABLED": "318767861",
@@ -287,25 +282,23 @@ class Event(object):
 
         #ai-gen-doc
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._event)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._event)
 
         if flag:
-            if response.json() and 'commservEvents' in response.json():
-                self._properties = response.json()['commservEvents'][0]
+            if response.json() and "commservEvents" in response.json():
+                self._properties = response.json()["commservEvents"][0]
 
-                self._eventcode = self._properties['eventCode']
-                self._timeSource = self._properties['timeSource']
-                self._severity = self._properties['severity']
-                self._job_id = self._properties['jobId']
-                self._description = self._properties['description']
-                self._subsystem = self._properties['subsystem']
+                self._eventcode = self._properties["eventCode"]
+                self._timeSource = self._properties["timeSource"]
+                self._severity = self._properties["severity"]
+                self._job_id = self._properties["jobId"]
+                self._description = self._properties["description"]
+                self._subsystem = self._properties["subsystem"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def event_code(self) -> int:

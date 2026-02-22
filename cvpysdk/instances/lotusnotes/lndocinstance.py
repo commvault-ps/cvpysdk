@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -29,14 +27,13 @@ LNDOCInstance:
 
 """
 
-from __future__ import unicode_literals
-
 from typing import Optional, Union
 
-from .lninstance import LNInstance
+from ...client import Client
 from ...exception import SDKException
 from ...job import Job
-from ...client import Client
+from .lninstance import LNInstance
+
 
 class LNDOCInstance(LNInstance):
     """
@@ -76,54 +73,36 @@ class LNDOCInstance(LNInstance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         self._commonoption_restore_json = {
-            "overwriteDBLinks": value.get('common_options_dict').get(
-                'overwriteDBLinks', False
+            "overwriteDBLinks": value.get("common_options_dict").get("overwriteDBLinks", False),
+            "overwriteDesignDoc": value.get("common_options_dict").get(
+                "overwriteDesignDoc", False
             ),
-            "overwriteDesignDoc": value.get('common_options_dict').get(
-                'overwriteDesignDoc', False
+            "overwriteDataDoc": value.get("common_options_dict").get("overwriteDataDoc", False),
+            "dbLinksOnly": value.get("common_options_dict").get("dbLinksOnly", False),
+            "onePassRestore": value.get("common_options_dict").get("onePassRestore", False),
+            "offlineMiningRestore": value.get("common_options_dict").get(
+                "offlineMiningRestore", False
             ),
-            "overwriteDataDoc": value.get('common_options_dict').get(
-                'overwriteDataDoc', False
-            ),
-            "dbLinksOnly": value.get('common_options_dict').get(
-                'dbLinksOnly', False
-            ),
-            "onePassRestore": value.get('common_options_dict').get(
-                'onePassRestore', False
-            ),
-            "offlineMiningRestore": value.get('common_options_dict').get(
-                'offlineMiningRestore', False
-            ),
-            "clusterDBBackedup": value.get('common_options_dict').get(
-                'clusterDBBackedup', False
-            ),
-            "restoreToDisk": value.get('common_options_dict').get(
-                'restoreToDisk', False
-            ),
-            "syncRestore": value.get('common_options_dict').get(
-                'syncRestore', False
-            ),
-            "restoreToExchange": value.get('common_options_dict').get(
-                'restoreToExchange', False
-            ),
-            "copyToObjectStore": value.get('common_options_dict').get(
-                'copyToObjectStore', False
-            )
+            "clusterDBBackedup": value.get("common_options_dict").get("clusterDBBackedup", False),
+            "restoreToDisk": value.get("common_options_dict").get("restoreToDisk", False),
+            "syncRestore": value.get("common_options_dict").get("syncRestore", False),
+            "restoreToExchange": value.get("common_options_dict").get("restoreToExchange", False),
+            "copyToObjectStore": value.get("common_options_dict").get("copyToObjectStore", False),
         }
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore specified files or folders to their original location within the LNDOC instance.
 
         This method initiates an in-place restore operation for the provided list of file or folder paths.
@@ -166,27 +145,22 @@ class LNDOCInstance(LNInstance):
 
         #ai-gen-doc
         """
-        return super(LNDOCInstance, self).restore_in_place(
-            paths,
-            overwrite,
-            restore_data_and_acl,
-            copy_precedence,
-            from_time,
-            to_time,
-            **kwargs)
+        return super().restore_in_place(
+            paths, overwrite, restore_data_and_acl, copy_precedence, from_time, to_time, **kwargs
+        )
 
     def restore_out_of_place(
-            self,
-            client: 'Union[str, Client]',
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: 'Optional[int]' = None,
-            from_time: 'Optional[str]' = None,
-            to_time: 'Optional[str]' = None,
-            common_options_dict: 'Optional[dict]' = None
-        ) -> 'Job':
+        self,
+        client: "Union[str, Client]",
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: "Optional[int]" = None,
+        from_time: "Optional[str]" = None,
+        to_time: "Optional[str]" = None,
+        common_options_dict: "Optional[dict]" = None,
+    ) -> "Job":
         """Restore specified files or folders to a different client and location.
 
         This method restores the files and folders listed in `paths` to the specified `destination_path`
@@ -231,7 +205,7 @@ class LNDOCInstance(LNInstance):
 
         #ai-gen-doc
         """
-        return super(LNDOCInstance, self).restore_out_of_place(
+        return super().restore_out_of_place(
             client,
             destination_path,
             paths,
@@ -240,4 +214,5 @@ class LNDOCInstance(LNInstance):
             copy_precedence,
             from_time,
             to_time,
-            **kwargs)
+            **kwargs,
+        )

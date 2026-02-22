@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ————————————————————————–
 # Copyright Commvault Systems, Inc.
 #
@@ -26,12 +25,8 @@ PowerBISubclient:
     _json_subclient_entity()    --  Get subclientEntity json for power bi association operation
 """
 
-from __future__ import unicode_literals
-import base64
-from copy import copy, deepcopy
-from typing import Any, Dict, List, Optional, Union
-from enum import Enum
-from ...exception import SDKException
+from copy import copy
+
 from ..casubclient import CloudAppsSubclient
 from ..cloudapps.powerbi_constants import PowerBiConstants as const
 
@@ -62,8 +57,8 @@ class PowerBISubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         subclient_entity_json = copy(const.ADD_SUBCLIENT_ENTITY_JSON)
-        subclient_entity_json['instanceId'] = int(self._instance_object.instance_id)
-        subclient_entity_json['subclientId'] = int(self._subclient_id)
-        subclient_entity_json['clientId'] = int(self._client_object.client_id)
-        subclient_entity_json['applicationId'] = int(self._subClientEntity['applicationId'])
+        subclient_entity_json["instanceId"] = int(self._instance_object.instance_id)
+        subclient_entity_json["subclientId"] = int(self._subclient_id)
+        subclient_entity_json["clientId"] = int(self._client_object.client_id)
+        subclient_entity_json["applicationId"] = int(self._subClientEntity["applicationId"])
         return subclient_entity_json

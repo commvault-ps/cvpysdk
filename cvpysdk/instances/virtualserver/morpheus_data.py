@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -28,9 +26,10 @@ Classes:
                          provides methods to get and set instance properties.
 """
 
+from typing import TYPE_CHECKING, List
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -55,7 +54,7 @@ class MorpheusInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize a MorpheusInstance object.
 
         Args:
@@ -74,13 +73,17 @@ class MorpheusInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(MorpheusInstance, self).__init__(agent, instance_name, instance_id)
+        super().__init__(agent, instance_name, instance_id)
         self._vendor_id = 27
         self._server_name = [
-            self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('clientName')
+            self._virtualserverinstance["associatedClients"]["memberServers"][0]["client"].get(
+                "clientName"
+            )
         ]
         self._server_host_name = [
-            self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('hostName')
+            self._virtualserverinstance["associatedClients"]["memberServers"][0]["client"].get(
+                "hostName"
+            )
         ]
 
     def _get_instance_properties(self) -> None:
@@ -99,7 +102,7 @@ class MorpheusInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(MorpheusInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
     def _get_instance_properties_json(self) -> dict:
         """Construct the JSON representation of the instance properties.
@@ -121,9 +124,9 @@ class MorpheusInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients']
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                },
             }
         }
         return instance_json

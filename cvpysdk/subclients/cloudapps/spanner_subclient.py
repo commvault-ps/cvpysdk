@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -37,7 +35,6 @@ GoogleSpannerSubclient Attributes:
 
 """
 
-from ...exception import SDKException
 from ..casubclient import CloudAppsSubclient
 
 
@@ -70,14 +67,18 @@ class GoogleSpannerSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        super(GoogleSpannerSubclient, self)._get_subclient_properties()
-        if 'backupObject' in self._subclient_properties['cloudAppsSubClientProp']['cloudSpannerSubclient']:
-            self._content = \
-                self._subclient_properties['cloudAppsSubClientProp']['cloudSpannerSubclient']['backupObject']
+        super()._get_subclient_properties()
+        if (
+            "backupObject"
+            in self._subclient_properties["cloudAppsSubClientProp"]["cloudSpannerSubclient"]
+        ):
+            self._content = self._subclient_properties["cloudAppsSubClientProp"][
+                "cloudSpannerSubclient"
+            ]["backupObject"]
 
         self._spanner_content = []
         for database in self._content:
-            self._spanner_content.append(database['dbName'])
+            self._spanner_content.append(database["dbName"])
 
     @property
     def content(self) -> list:
@@ -115,11 +116,7 @@ class GoogleSpannerSubclient(CloudAppsSubclient):
         for database in subclient_content:
             temp_content_dict = {
                 "cloudAppsSubClientProp": {
-                    "cloudSpannerSubclient": {
-                        "backupObject": {
-                            "dbName": database
-                        }
-                    }
+                    "cloudSpannerSubclient": {"backupObject": {"dbName": database}}
                 }
             }
 

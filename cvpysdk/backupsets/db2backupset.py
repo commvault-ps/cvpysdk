@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -40,10 +38,10 @@ DB2Backupset instance Attributes:
 
 """
 
-from __future__ import unicode_literals
+from typing import Any, Optional
 
 from ..backupset import Backupset
-from typing import Any, Optional
+
 
 class DB2Backupset(Backupset):
     """
@@ -78,15 +76,15 @@ class DB2Backupset(Backupset):
 
         #ai-gen-doc
         """
-        return self._properties.get('db2BackupSet', {}).get('dB2DBStatus', "")
+        return self._properties.get("db2BackupSet", {}).get("dB2DBStatus", "")
 
     def restore_entire_database(
-            self,
-            dest_client_name: Optional[str] = None,
-            dest_instance_name: Optional[str] = None,
-            dest_database_name: Optional[str] = None,
-            **kwargs: Any
-        ):
+        self,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        dest_database_name: Optional[str] = None,
+        **kwargs: Any,
+    ):
         """Restore the entire DB2 database to the specified destination.
 
         This method initiates a restore operation for the DB2 database associated with this backupset.
@@ -143,16 +141,17 @@ class DB2Backupset(Backupset):
             dest_database_name = self.backupset_name.upper()
 
         return self._instance_object.restore_entire_database(
-            dest_client_name, dest_instance_name, dest_database_name, **kwargs)
+            dest_client_name, dest_instance_name, dest_database_name, **kwargs
+        )
 
     def restore_out_of_place(
-            self,
-            dest_client_name: str,
-            dest_instance_name: str,
-            dest_backupset_name: str,
-            target_path: str,
-            **kwargs: Any
-    ) -> 'Job':
+        self,
+        dest_client_name: str,
+        dest_instance_name: str,
+        dest_backupset_name: str,
+        target_path: str,
+        **kwargs: Any,
+    ) -> "Job":
         """Restore DB2 data or log files to a different client, instance, or backupset.
 
         This method initiates an out-of-place restore operation for DB2 data or log files,
@@ -201,30 +200,32 @@ class DB2Backupset(Backupset):
         """
         self._instance_object._restore_association = self._backupset_association
 
-        return self._instance_object.restore_out_of_place(dest_client_name=dest_client_name,
-                                                          dest_instance_name=dest_instance_name,
-                                                          dest_backupset_name=dest_backupset_name,
-                                                          target_path=target_path,
-                                                          **kwargs)
+        return self._instance_object.restore_out_of_place(
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_path=target_path,
+            **kwargs,
+        )
 
     def restore_table_level(
-            self,
-            aux_client_name: str,
-            aux_instance_name: str,
-            aux_backupset_name: str,
-            dest_client_name: str,
-            dest_instance_name: str,
-            dest_backupset_name: str,
-            target_path: str,
-            staging_path: str,
-            tables_path: list,
-            user_name: str,
-            password: str,
-            **kwargs: Any
-        ):
+        self,
+        aux_client_name: str,
+        aux_instance_name: str,
+        aux_backupset_name: str,
+        dest_client_name: str,
+        dest_instance_name: str,
+        dest_backupset_name: str,
+        target_path: str,
+        staging_path: str,
+        tables_path: list,
+        user_name: str,
+        password: str,
+        **kwargs: Any,
+    ):
         """Perform a DB2 table-level restore operation.
 
-        This method initiates a table-level restore for DB2 databases, allowing you to specify 
+        This method initiates a table-level restore for DB2 databases, allowing you to specify
         auxiliary and destination client details, restore paths, table paths, and authentication credentials.
         Additional restore options can be provided via keyword arguments.
 
@@ -237,7 +238,7 @@ class DB2Backupset(Backupset):
             dest_backupset_name: Destination DB2 backupset name on the destination client.
             target_path: Path where the database will be restored.
             staging_path: Path used for staging during restore.
-            tables_path: List of table paths to restore. 
+            tables_path: List of table paths to restore.
                 Example (Unix): ['/+tblview+/instance_name/database_name/schema_name/table_name/**']
                 Example (Windows): ["\\+tblview+\\instance_name\\database_name\\schema_name\\table_name\\**"]
             user_name: Username for authentication on the destination.
@@ -287,15 +288,17 @@ class DB2Backupset(Backupset):
 
         self._instance_object._restore_association = self._backupset_association
 
-        return self._instance_object.restore_table_level(aux_client_name=aux_client_name,
-                                                         aux_instance_name=aux_instance_name,
-                                                         aux_backupset_name=aux_backupset_name,
-                                                         dest_client_name=dest_client_name,
-                                                         dest_instance_name=dest_instance_name,
-                                                         dest_backupset_name=dest_backupset_name,
-                                                         target_path=target_path,
-                                                         staging_path=staging_path,
-                                                         tables_path=tables_path,
-                                                         user_name=user_name,
-                                                         password=password,
-                                                         **kwargs)
+        return self._instance_object.restore_table_level(
+            aux_client_name=aux_client_name,
+            aux_instance_name=aux_instance_name,
+            aux_backupset_name=aux_backupset_name,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_path=target_path,
+            staging_path=staging_path,
+            tables_path=tables_path,
+            user_name=user_name,
+            password=password,
+            **kwargs,
+        )

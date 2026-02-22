@@ -85,17 +85,18 @@ HACCluster Attributes
 """
 
 from copy import deepcopy
+from typing import TYPE_CHECKING, List, Optional, Union
 
-from .exception import SDKException
 from .datacube.constants import IndexServerConstants
+from .exception import SDKException
 
-from typing import List, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     import requests
+
     from cvpysdk.commcell import Commcell
 
 
-class HACClusters(object):
+class HACClusters:
     """
     Represents and manages all High Availability Cluster (HAC) entities associated with a CommCell.
 
@@ -117,7 +118,7 @@ class HACClusters(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize an instance of the HACClusters class.
 
         Args:
@@ -150,11 +151,10 @@ class HACClusters(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'HAC Name')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "HAC Name")
         index = 1
         for hac_name in self.all_hac_clusters:
-            representation_string += '{:^5}\t{:^20}\n'.format(
-                index, hac_name)
+            representation_string += f"{index:^5}\t{hac_name:^20}\n"
             index += 1
         return representation_string
 
@@ -188,9 +188,9 @@ class HACClusters(object):
         value = value.lower()
         if value.lower() in self.all_hac_clusters:
             return {"name": value.lower, "id": self.all_hac_clusters[value]}
-        raise SDKException('HACClusters', '102')
+        raise SDKException("HACClusters", "102")
 
-    def _response_not_success(self, response: 'requests.Response') -> None:
+    def _response_not_success(self, response: "requests.Response") -> None:
         """Raise an exception if the response status is not successful (HTTP 200).
 
         Args:
@@ -201,10 +201,7 @@ class HACClusters(object):
 
         #ai-gen-doc
         """
-        raise SDKException(
-            'Response',
-            '101',
-            self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_all_clusters(self) -> None:
         """Retrieve details of all HAC clusters associated with the Commcell.
@@ -219,9 +216,7 @@ class HACClusters(object):
                 self._hac_group = self._commcell_object.client_groups.get("HAC Cluster")
             self._hac_group.refresh()
             for client_name in self._hac_group.associated_clients:
-                client_obj = HACCluster(
-                    self._commcell_object, client_name
-                )
+                client_obj = HACCluster(self._commcell_object, client_name)
                 self._all_hac_clusters[client_name.lower()] = int(client_obj.cloud_id)
 
     def has_cluster(self, hac_name: str) -> bool:
@@ -239,10 +234,10 @@ class HACClusters(object):
         #ai-gen-doc
         """
         if not isinstance(hac_name, str):
-            raise SDKException('HACClusters', '101')
+            raise SDKException("HACClusters", "101")
         return hac_name.lower() in self._all_hac_clusters
 
-    def get(self, hac_name: Union[str, int]) -> 'HACCluster':
+    def get(self, hac_name: Union[str, int]) -> "HACCluster":
         """Retrieve an instance of the HACCluster class for the specified cluster name or ID.
 
         Args:
@@ -272,13 +267,13 @@ class HACClusters(object):
                 if int(self._all_hac_clusters[cluster_name]) == int(hac_name):
                     return HACCluster(self._commcell_object, cluster_name)
         else:
-            raise SDKException('HACClusters', '101')
+            raise SDKException("HACClusters", "101")
         raise SDKException("HACClusters", "102")
 
     def refresh(self) -> None:
         """Reload the properties and state information for the HACClusters class.
 
-        This method refreshes the internal data of the HACClusters instance, ensuring that 
+        This method refreshes the internal data of the HACClusters instance, ensuring that
         any changes in the underlying cluster configuration or status are reflected in the object.
 
         #ai-gen-doc
@@ -289,7 +284,7 @@ class HACClusters(object):
         self._hac_group = None
         self._get_all_clusters()
 
-    def add(self, cloud_name: str, cloud_node_names: List[str]) -> 'HACCluster':
+    def add(self, cloud_name: str, cloud_node_names: List[str]) -> "HACCluster":
         """Create a new HAC cluster with the specified cloud name and node names.
 
         Args:
@@ -311,23 +306,23 @@ class HACClusters(object):
         #ai-gen-doc
         """
         if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
-            raise SDKException('HACClusters', '101')
+            raise SDKException("HACClusters", "101")
         cloud_node_names = sorted(cloud_node_names)
         node_meta_infos = {
-            'zkDataPort': '8091',
-            'zkElectionPort': '8097',
-            'zkListenerPort': '8090',
-            'zkServerId': None,
-            'zkDataDir': None
+            "zkDataPort": "8091",
+            "zkElectionPort": "8097",
+            "zkListenerPort": "8090",
+            "zkServerId": None,
+            "zkDataDir": None,
         }
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
-        del req_json['solrCloudInfo']
-        del req_json['cloudMetaInfos']
-        req_json['type'] = 6
-        req_json['cloudInfoEntity'] = {
+        del req_json["solrCloudInfo"]
+        del req_json["cloudMetaInfos"]
+        req_json["type"] = 6
+        req_json["cloudInfoEntity"] = {
             "_type_": 169,
             "cloudName": cloud_name,
-            "cloudDisplayName": cloud_name
+            "cloudDisplayName": cloud_name,
         }
         server_id = 1
         for node_name in cloud_node_names:
@@ -339,34 +334,35 @@ class HACClusters(object):
                     "_type_": 3,
                     "hostName": node_obj.client_hostname,
                     "clientName": node_name,
-                    "clientId": int(node_obj.client_id)
+                    "clientId": int(node_obj.client_id),
                 },
-                "nodeMetaInfos": []
+                "nodeMetaInfos": [],
             }
-            node_meta_infos['zkServerId'] = str(server_id)
-            node_meta_infos['zkDataDir'] = node_obj.install_directory + "\\iDataAgent\\JobResults\\ZKData"
+            node_meta_infos["zkServerId"] = str(server_id)
+            node_meta_infos["zkDataDir"] = (
+                node_obj.install_directory + "\\iDataAgent\\JobResults\\ZKData"
+            )
             for node_info in node_meta_infos:
-                node_data['nodeMetaInfos'].append({
-                    'name': node_info,
-                    'value': node_meta_infos[node_info]
-                })
-            req_json['cloudNodes'].append(node_data)
+                node_data["nodeMetaInfos"].append(
+                    {"name": node_info, "value": node_meta_infos[node_info]}
+                )
+            req_json["cloudNodes"].append(node_data)
             server_id += 1
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_CREATE'], req_json
+            "POST", self._services["CLOUD_CREATE"], req_json
         )
         if flag:
-            if response.json() and 'genericResp' in response.json():
-                if response.json()['genericResp'] == {} and \
-                        'cloudId' in response.json():
+            if response.json() and "genericResp" in response.json():
+                if response.json()["genericResp"] == {} and "cloudId" in response.json():
                     self.refresh()
                     return HACCluster(self._commcell_object, cloud_name)
                 else:
                     o_str = 'Failed to create HAC Cluster. Error: "{0}"'.format(
-                        response.json()['genericResp'])
-                    raise SDKException('Response', '102', o_str)
+                        response.json()["genericResp"]
+                    )
+                    raise SDKException("Response", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             self._response_not_success(response)
 
@@ -387,24 +383,27 @@ class HACClusters(object):
         #ai-gen-doc
         """
         if not isinstance(cloud_name, str):
-            raise SDKException('HACCluster', '101')
+            raise SDKException("HACCluster", "101")
         cloud_id = self.all_hac_clusters[cloud_name.lower()]
         req_json = IndexServerConstants.REQUEST_JSON.copy()
         req_json["opType"] = IndexServerConstants.OPERATION_DELETE
-        req_json['cloudInfoEntity']['cloudId'] = cloud_id
+        req_json["cloudInfoEntity"]["cloudId"] = cloud_id
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_DELETE'], req_json
+            "POST", self._services["CLOUD_DELETE"], req_json
         )
         if flag:
-            if response.json() and 'genericResp' in response.json() \
-                    and 'errorCode' not in response.json()['genericResp']:
+            if (
+                response.json()
+                and "genericResp" in response.json()
+                and "errorCode" not in response.json()["genericResp"]
+            ):
                 self.refresh()
                 return
-            if response.json() and 'genericResp' in response.json():
+            if response.json() and "genericResp" in response.json():
                 raise SDKException(
-                    'Response', '102', response.json()['genericResp'].get(
-                        'errorMessage', ''))
-            raise SDKException('Response', '102')
+                    "Response", "102", response.json()["genericResp"].get("errorMessage", "")
+                )
+            raise SDKException("Response", "102")
         self._response_not_success(response)
 
     @property
@@ -419,7 +418,7 @@ class HACClusters(object):
         return self._all_hac_clusters
 
 
-class HACCluster(object):
+class HACCluster:
     """
     Class for managing and performing operations on a specific HAC (High Availability Cluster).
 
@@ -438,7 +437,9 @@ class HACCluster(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', cluster_name: str, cluster_id: int = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", cluster_name: str, cluster_id: int = None
+    ) -> None:
         """Initialize a HACCluster object representing a specific HAC cluster.
 
         Args:
@@ -474,7 +475,7 @@ class HACCluster(object):
         """
         return "HACCluster class instance for Commcell"
 
-    def _response_not_success(self, response: 'requests.Response') -> None:
+    def _response_not_success(self, response: "requests.Response") -> None:
         """Raise an exception if the HTTP response status is not 200 (OK).
 
         This helper method checks the provided response object and raises an SDKException
@@ -488,11 +489,7 @@ class HACCluster(object):
 
         #ai-gen-doc
         """
-        raise SDKException(
-            'Response',
-            '101',
-            self.commcell._update_response_(response.text)
-        )
+        raise SDKException("Response", "101", self.commcell._update_response_(response.text))
 
     def refresh(self) -> None:
         """Reload the properties of the HAC cluster to ensure the latest information is available.
@@ -504,12 +501,13 @@ class HACCluster(object):
         """
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self._cluster_name):
-            raise SDKException('HACClusters', '102')
+            raise SDKException("HACClusters", "102")
         self.cluster_client_obj = self.commcell.clients.get(self._cluster_name)
         self._cluster_id = self.cluster_client_obj.client_id
-        self._cluster_properties = self.cluster_client_obj.\
-            properties['pseudoClientInfo']['distributedClusterInstanceProperties']['clusterConfig']['cloudInfo']
-        self.cluster_nodes = self._cluster_properties['cloudNodes']
+        self._cluster_properties = self.cluster_client_obj.properties["pseudoClientInfo"][
+            "distributedClusterInstanceProperties"
+        ]["clusterConfig"]["cloudInfo"]
+        self.cluster_nodes = self._cluster_properties["cloudNodes"]
 
     def modify_node(
         self,
@@ -517,7 +515,7 @@ class HACCluster(object):
         listener_port: Optional[Union[int, str]] = None,
         data_port: Optional[Union[int, str]] = None,
         election_port: Optional[Union[int, str]] = None,
-        data_dir: Optional[str] = None
+        data_dir: Optional[str] = None,
     ) -> None:
         """Modify the properties of a node in the HAC cluster.
 
@@ -549,53 +547,43 @@ class HACCluster(object):
         """
         node_info = self.node_info(node_name)
         port_infos = {}
-        node_meta_info = node_info['nodeMetaInfos']
+        node_meta_info = node_info["nodeMetaInfos"]
         for meta_info in node_meta_info:
-            port_infos[meta_info['name']] = meta_info['value']
+            port_infos[meta_info["name"]] = meta_info["value"]
         if listener_port:
-            port_infos['ZKLISTENERPORT'] = str(listener_port)
+            port_infos["ZKLISTENERPORT"] = str(listener_port)
         if election_port:
-            port_infos['ZKELECTIONPORT'] = str(election_port)
+            port_infos["ZKELECTIONPORT"] = str(election_port)
         if data_port:
-            port_infos['ZKDATAPORT'] = str(data_port)
+            port_infos["ZKDATAPORT"] = str(data_port)
         if data_dir:
-            port_infos['ZKDATADIR'] = str(data_dir)
+            port_infos["ZKDATADIR"] = str(data_dir)
         req_json = {
-            'cloudId': self.cloud_id,
-            'nodes': [{
-                'status': 1,
-                'opType': IndexServerConstants.OPERATION_EDIT,
-                'nodeClientEntity': {
-                    'clientId': int(self.commcell.clients[node_name]['id']),
-                    'hostName': self.commcell.clients[node_name]['hostname'],
-                    'clientName': node_name
-                },
-                'nodeMetaInfos': [
-                    {
-                        "name": "zkListenerPort",
-                        "value": port_infos['ZKLISTENERPORT']
+            "cloudId": self.cloud_id,
+            "nodes": [
+                {
+                    "status": 1,
+                    "opType": IndexServerConstants.OPERATION_EDIT,
+                    "nodeClientEntity": {
+                        "clientId": int(self.commcell.clients[node_name]["id"]),
+                        "hostName": self.commcell.clients[node_name]["hostname"],
+                        "clientName": node_name,
                     },
-                    {
-                        "name": "zkDataPort",
-                        "value": port_infos['ZKDATAPORT']
-                    },
-                    {
-                        "name": "zkElectionPort",
-                        "value": port_infos['ZKELECTIONPORT']
-                    },
-                    {
-                        "name": "zkDataDir",
-                        "value": port_infos['ZKDATADIR']
-                    }]
-            }]
+                    "nodeMetaInfos": [
+                        {"name": "zkListenerPort", "value": port_infos["ZKLISTENERPORT"]},
+                        {"name": "zkDataPort", "value": port_infos["ZKDATAPORT"]},
+                        {"name": "zkElectionPort", "value": port_infos["ZKELECTIONPORT"]},
+                        {"name": "zkDataDir", "value": port_infos["ZKDATADIR"]},
+                    ],
+                }
+            ],
         }
         flag, response = self.commcell._cvpysdk_object.make_request(
-            'POST', self.commcell._services['CLOUD_NODE_UPDATE'],
-            req_json
+            "POST", self.commcell._services["CLOUD_NODE_UPDATE"], req_json
         )
         if flag:
             if response.json() is not None:
-                if 'errorCode' not in response.json():
+                if "errorCode" not in response.json():
                     self.refresh()
                     return
         self._response_not_success(response)
@@ -615,9 +603,9 @@ class HACCluster(object):
         #ai-gen-doc
         """
         for node_info in self.cluster_nodes:
-            if node_info['nodeClientEntity']['clientName'].lower() == node_name.lower():
+            if node_info["nodeClientEntity"]["clientName"].lower() == node_name.lower():
                 return node_info
-        raise SDKException('HACCluster', '103')
+        raise SDKException("HACCluster", "103")
 
     @property
     def cloud_id(self) -> str:
@@ -628,7 +616,7 @@ class HACCluster(object):
 
         #ai-gen-doc
         """
-        return self._cluster_properties['cloudInfoEntity']['cloudId']
+        return self._cluster_properties["cloudInfoEntity"]["cloudId"]
 
     @property
     def node_names(self) -> list:
@@ -641,7 +629,7 @@ class HACCluster(object):
         """
         result = []
         for node_info in self.cluster_nodes:
-            result.append(node_info['nodeClientEntity']['clientName'])
+            result.append(node_info["nodeClientEntity"]["clientName"])
         return result
 
     @property

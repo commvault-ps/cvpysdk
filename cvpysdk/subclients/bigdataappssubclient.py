@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -17,26 +15,26 @@
 # --------------------------------------------------------------------------
 
 """
-        Module for operating on a Big Data Apps Subclient
+Module for operating on a Big Data Apps Subclient
 
-        BigDataAppsSubclient:
+BigDataAppsSubclient:
 
-            __init__()                  --  Just inializes all properties related to its super class
+    __init__()                  --  Just inializes all properties related to its super class
 
-            set_data_access_nodes(data_access_nodes) -- adds the passed json object as data access
-                                                        nodes for this subclient.
+    set_data_access_nodes(data_access_nodes) -- adds the passed json object as data access
+                                                nodes for this subclient.
 
 """
 
-from __future__ import unicode_literals
-from ..subclients.fssubclient import FileSystemSubclient
 from ..exception import SDKException
+from ..subclients.fssubclient import FileSystemSubclient
 
 
 class BigDataAppsSubclient(FileSystemSubclient):
     """
-        Derived class from FileSystemSubclient. Can perform fs subclient operations.
+    Derived class from FileSystemSubclient. Can perform fs subclient operations.
     """
+
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         """
         Object creation function for BigDataAppsSubclient which returns appropiate
@@ -54,15 +52,14 @@ class BigDataAppsSubclient(FileSystemSubclient):
             object              (obj)   --  Object associated with the Bigdatapps subclient
 
         """
-        from ..subclients.splunksubclient import SplunkSubclient
         from ..subclients.index_server_subclient import IndexServerSubclient
-        cluster_types = {
-            16: SplunkSubclient,
-            6: IndexServerSubclient
-        }
+        from ..subclients.splunksubclient import SplunkSubclient
 
-        bigdata_apps_cluster_type = backupset_object._instance_object.properties. \
-            get('distributedClusterInstance', {}).get('clusterType', -1)
+        cluster_types = {16: SplunkSubclient, 6: IndexServerSubclient}
+
+        bigdata_apps_cluster_type = backupset_object._instance_object.properties.get(
+            "distributedClusterInstance", {}
+        ).get("clusterType", -1)
 
         if bigdata_apps_cluster_type in cluster_types.keys():
             cluster_type = cluster_types[bigdata_apps_cluster_type]
@@ -72,16 +69,16 @@ class BigDataAppsSubclient(FileSystemSubclient):
 
     def set_data_access_nodes(self, data_access_nodes):
         """
-            Sets the Data Access Nodes for the distributed apps subclient.
-            Args :
+        Sets the Data Access Nodes for the distributed apps subclient.
+        Args :
 
-                data_access_nodes (list) : Sets the list of client nodes passed as
-                                            data access node for this distributed apps
-                                            subclient
+            data_access_nodes (list) : Sets the list of client nodes passed as
+                                        data access node for this distributed apps
+                                        subclient
 
-            Raise SDK Exception :
+        Raise SDK Exception :
 
-                If unable to set data access nodes property of the subclient.
+            If unable to set data access nodes property of the subclient.
 
         """
 
@@ -89,20 +86,15 @@ class BigDataAppsSubclient(FileSystemSubclient):
         for access_node in data_access_nodes:
             data_access_nodes_client_json.append({"clientName": access_node})
 
-        data_access_nodes_json = {
-            "dataAccessNodes": data_access_nodes_client_json
-        }
+        data_access_nodes_json = {"dataAccessNodes": data_access_nodes_client_json}
 
         request_json = {
             "subClientProperties": {
-                "dfsSubclientProp": {
-                    "distributedDataAccessNodes": data_access_nodes_json
-                }
+                "dfsSubclientProp": {"distributedDataAccessNodes": data_access_nodes_json}
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._SUBCLIENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._SUBCLIENT, request_json)
 
         output = self._process_update_response(flag, response)
 
@@ -110,4 +102,4 @@ class BigDataAppsSubclient(FileSystemSubclient):
             return
 
         o_str = 'Failed to update properties of subclient\nError: "{0}"'
-        raise SDKException('Subclient', '102', o_str.format(output[2]))
+        raise SDKException("Subclient", "102", o_str.format(output[2]))

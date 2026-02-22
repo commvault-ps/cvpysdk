@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -164,43 +162,40 @@ ClientGroup Attributes
     Following attributes are available for an instance of the ClientGroup class:
 
         **name**                       --      returns the name of client group
-        
+
         **clientgroup_id**             --      returns the id of client group
-        
+
         **clientgroup_name**           --      returns the name of client group
-        
+
         **description**                --      returns the description of client group
-        
+
         **associated_clients**         --      returns the associated clients of client group
-        
+
         **is_backup_enabled**          --      returns the backup activity status of client group
-        
+
         **is_restore_enabled**         --      returns the restore activity status of client group
-        
+
         **is_data_aging_enabled**      --      returns the data aging activity status of client group
-        
+
         **is_smart_client_group**      --      returns true if client group is a smart client group
-        
+
         **is_auto_discover_enabled**   --      returns the auto discover status of client group
-        
+
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import time
 import copy
+import time
 from typing import Dict, List, Optional, Union
 
 from .additional_settings import AdditionalSettings
+from .deployment.install import Install
 from .exception import SDKException
+from .job import Job
 from .network import Network
 from .network_throttle import NetworkThrottle
-from .deployment.install import Install
-from .job import Job
 
 
-class ClientGroups(object):
+class ClientGroups:
     """
     Manages all client groups associated with a Commcell.
 
@@ -241,7 +236,7 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         self._commcell_object = commcell_object
-        self._CLIENTGROUPS = self._commcell_object._services['CLIENTGROUPS']
+        self._CLIENTGROUPS = self._commcell_object._services["CLIENTGROUPS"]
 
         self._clientgroups = None
         self._clientgroups_cache = None
@@ -264,10 +259,10 @@ class ClientGroups(object):
             ClientGroup1, ClientGroup2, ClientGroup3
         #ai-gen-doc
         """
-        representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'ClientGroup')
+        representation_string = "{:^5}\t{:^50}\n\n".format("S. No.", "ClientGroup")
 
         for index, clientgroup_name in enumerate(self._clientgroups):
-            sub_str = '{:^5}\t{:50}\n'.format(index + 1, clientgroup_name)
+            sub_str = f"{index + 1:^5}\t{clientgroup_name:50}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -275,7 +270,7 @@ class ClientGroups(object):
     def __repr__(self) -> str:
         """Return a string representation of the ClientGroups instance.
 
-        This method provides a human-readable summary of all client groups 
+        This method provides a human-readable summary of all client groups
         associated with the Commcell, which is useful for debugging and logging.
 
         Returns:
@@ -340,21 +335,21 @@ class ClientGroups(object):
             return self.all_clientgroups[value]
         else:
             try:
-                return list(
-                    filter(lambda x: x[1]['id'] == value, self.all_clientgroups.items())
-                )[0][0]
+                return list(filter(lambda x: x[1]["id"] == value, self.all_clientgroups.items()))[
+                    0
+                ][0]
             except IndexError:
-                raise IndexError('No client group exists with the given Name / Id')
+                raise IndexError("No client group exists with the given Name / Id")
 
     def _get_clientgroups(self, full_response: bool = False) -> dict:
         """Retrieve all client groups associated with the Commcell.
 
         Args:
-            full_response: If True, returns the complete response from the Commcell API. 
+            full_response: If True, returns the complete response from the Commcell API.
                 If False, returns a simplified dictionary mapping client group names to their IDs.
 
         Returns:
-            dict: A dictionary containing all client groups of the Commcell. 
+            dict: A dictionary containing all client groups of the Commcell.
             The keys are client group names, and the values are their corresponding IDs.
             Example:
                 {
@@ -376,32 +371,40 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._CLIENTGROUPS
+            "GET", self._CLIENTGROUPS
         )
 
         if flag:
-            if response.json() and 'groups' in response.json():
+            if response.json() and "groups" in response.json():
                 if full_response:
                     return response.json()
                 clientgroups_dict = {}
 
                 name_count = {}
 
-                for client_group in response.json()['groups']:
-                    temp_name = client_group['name'].lower()
-                    temp_company = \
-                        client_group.get('clientGroup', {}).get('entityInfo', {}).get('companyName', '').lower()
+                for client_group in response.json()["groups"]:
+                    temp_name = client_group["name"].lower()
+                    temp_company = (
+                        client_group.get("clientGroup", {})
+                        .get("entityInfo", {})
+                        .get("companyName", "")
+                        .lower()
+                    )
 
                     if temp_name in name_count:
                         name_count[temp_name].add(temp_company)
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for client_group in response.json()['groups']:
-                    temp_name = client_group['name'].lower()
-                    temp_id = str(client_group['Id']).lower()
-                    temp_company = \
-                        client_group.get('clientGroup', {}).get('entityInfo', {}).get('companyName', '').lower()
+                for client_group in response.json()["groups"]:
+                    temp_name = client_group["name"].lower()
+                    temp_id = str(client_group["Id"]).lower()
+                    temp_company = (
+                        client_group.get("clientGroup", {})
+                        .get("entityInfo", {})
+                        .get("companyName", "")
+                        .lower()
+                    )
 
                     if len(name_count[temp_name]) > 1:
                         unique_key = f"{temp_name}_({temp_company})"
@@ -412,10 +415,10 @@ class ClientGroups(object):
 
                 return clientgroups_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _valid_clients(self, clients_list: list) -> list:
         """Filter and return only the valid clients from the provided clients list.
@@ -439,7 +442,7 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         if not isinstance(clients_list, list):
-            raise SDKException('ClientGroup', '101')
+            raise SDKException("ClientGroup", "101")
 
         clients = []
 
@@ -470,22 +473,24 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         self.valid_columns = {
-            'name': 'name',
-            'id': 'groups.Id',
-            'association': 'groups.groupAssocType',
-            'companyName': 'groups.clientGroup.entityInfo.companyName',
-            'tags': 'tags'
+            "name": "name",
+            "id": "groups.Id",
+            "association": "groups.groupAssocType",
+            "companyName": "groups.clientGroup.entityInfo.companyName",
+            "tags": "tags",
         }
-        default_columns = 'name'
+        default_columns = "name"
 
         if fl:
             if all(col in self.valid_columns for col in fl):
                 fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
             else:
-                raise SDKException('ClientGroup', '102', 'Invalid column name passed')
+                raise SDKException("ClientGroup", "102", "Invalid column name passed")
         else:
-            fl_parameters = "&fl=groups.clientGroup,groups.discoverRulesInfo,groups.groupAssocType,groups.Id," \
-                            "groups.name,groups.isCompanySmartClientGroup"
+            fl_parameters = (
+                "&fl=groups.clientGroup,groups.discoverRulesInfo,groups.groupAssocType,groups.Id,"
+                "groups.name,groups.isCompanySmartClientGroup"
+            )
 
         return fl_parameters
 
@@ -513,10 +518,10 @@ class ClientGroups(object):
         """
         sort_type = str(sort[1])
         col = sort[0]
-        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
-            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        if col in self.valid_columns.keys() and sort_type in ["1", "-1"]:
+            sort_parameter = "&sort=" + self.valid_columns[col] + ":" + sort_type
         else:
-            raise SDKException('ClientGroup', '102', 'Invalid column name passed')
+            raise SDKException("ClientGroup", "102", "Invalid column name passed")
         return sort_parameter
 
     def _get_fq_parameters(self, fq: Optional[list] = None) -> str:
@@ -541,12 +546,12 @@ class ClientGroups(object):
         conditions = {"contains", "notContain", "eq", "neq"}
         params = [
             "&fq=groups.isCompanySmartClientGroup:eq:false",
-            "&fq=groups.clientGroup.clientGroupName:neq:Index Servers"
+            "&fq=groups.clientGroup.clientGroupName:neq:Index Servers",
         ]
 
         for column, condition, *value in fq or []:
             if column not in self.valid_columns:
-                raise SDKException('ClientGroup', '102', 'Invalid column name passed')
+                raise SDKException("ClientGroup", "102", "Invalid column name passed")
 
             # Handle 'tags' column separately
             if column == "tags" and condition == "contains":
@@ -556,7 +561,7 @@ class ClientGroups(object):
             elif condition == "isEmpty" and not value:
                 params.append(f"&fq={self.valid_columns[column]}:in:null,")
             else:
-                raise SDKException('ClientGroup', '102', 'Invalid condition passed')
+                raise SDKException("ClientGroup", "102", "Invalid condition passed")
 
         return "".join(params)
 
@@ -593,17 +598,25 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         # computing params
-        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
-        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', None)
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
-        hard_refresh = '&hardRefresh=true' if hard else ''
-        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        fl_parameters = self._get_fl_parameters(kwargs.get("fl", None))
+        fq_parameters = self._get_fq_parameters(kwargs.get("fq", None))
+        limit = kwargs.get("limit", None)
+        limit_parameters = f"start={limit[0]}&limit={limit[1]}" if limit else ""
+        hard_refresh = "&hardRefresh=true" if hard else ""
+        sort_parameters = (
+            self._get_sort_parameters(kwargs.get("sort", None)) if kwargs.get("sort", None) else ""
+        )
 
         # Search operation can only be performed on limited columns, so filtering out the columns on which search works
-        searchable_columns = ["name","association",'companyName']
-        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
-                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+        searchable_columns = ["name", "association", "companyName"]
+        search_parameter = (
+            (
+                f"&search={','.join(self.valid_columns[col] for col in searchable_columns)}:contains:"
+                f"{kwargs.get('search', None)}"
+            )
+            if kwargs.get("search", None)
+            else ""
+        )
 
         params = [
             limit_parameters,
@@ -611,31 +624,33 @@ class ClientGroups(object):
             fl_parameters,
             hard_refresh,
             search_parameter,
-            fq_parameters
+            fq_parameters,
         ]
         request_url = f"{self._CLIENTGROUPS}?" + "".join(params)
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         client_group_cache = {}
-        if response.json() and 'groups' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount', 0)
-            for group in response.json()['groups']:
-                name = group.get('name')
+        if response.json() and "groups" in response.json():
+            self.filter_query_count = response.json().get("filterQueryCount", 0)
+            for group in response.json()["groups"]:
+                name = group.get("name")
                 company_name = None
                 client_group_config = {
-                    'name': name,
-                    'id': group.get('Id'),
-                    'association': group.get('groupAssocType'),
+                    "name": name,
+                    "id": group.get("Id"),
+                    "association": group.get("groupAssocType"),
                 }
-                if 'clientGroup' in group:
-                    if 'companyName' in group.get('clientGroup', {}).get('entityInfo', {}):
-                        company_name = group.get('clientGroup', {}).get('entityInfo', {}).get('companyName')
-                        client_group_config['companyName'] = company_name
-                    if 'tags' in group.get('clientGroup', {}):
-                        client_group_config['tags'] = group.get('clientGroup', {}).get('tags')
+                if "clientGroup" in group:
+                    if "companyName" in group.get("clientGroup", {}).get("entityInfo", {}):
+                        company_name = (
+                            group.get("clientGroup", {}).get("entityInfo", {}).get("companyName")
+                        )
+                        client_group_config["companyName"] = company_name
+                    if "tags" in group.get("clientGroup", {}):
+                        client_group_config["tags"] = group.get("clientGroup", {}).get("tags")
 
                 # Ensure unique key
                 unique_name = name
@@ -646,7 +661,7 @@ class ClientGroups(object):
 
             return client_group_cache
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     @property
     def all_clientgroups(self) -> Dict[str, int]:
@@ -721,15 +736,17 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         if not isinstance(clientgroup_name, str):
-            raise SDKException('ClientGroup', '101')
+            raise SDKException("ClientGroup", "101")
 
         return self._clientgroups and clientgroup_name.lower() in self._clientgroups
 
-    def create_smart_rule(self,
-                          filter_rule: str = 'OS Type',
-                          filter_condition: str = 'equal to',
-                          filter_value: str = 'Windows',
-                          value: str = '1') -> dict:
+    def create_smart_rule(
+        self,
+        filter_rule: str = "OS Type",
+        filter_condition: str = "equal to",
+        filter_value: str = "Windows",
+        value: str = "1",
+    ) -> dict:
         """Create a smart rule dictionary for client group creation based on specified filter parameters.
 
         This method prepares a rule definition used for smart client group creation, allowing you to specify
@@ -769,167 +786,167 @@ class ClientGroups(object):
         """
 
         filter_dict = {
-            'equal to': 100,
-            'not equal': 101,
-            'any in selection': 108,
-            'not in selection': 109,
-            'is true': 1,
-            'is false': 2,
-            'contains': 10,
-            'starts with': 14,
-            'ends with': 15,
-            'does not contain': 11,
-            }
+            "equal to": 100,
+            "not equal": 101,
+            "any in selection": 108,
+            "not in selection": 109,
+            "is true": 1,
+            "is false": 2,
+            "contains": 10,
+            "starts with": 14,
+            "ends with": 15,
+            "does not contain": 11,
+        }
         prop_id_dict = {
-            'Name': 1,
-            'Client': 2,
-            'Agents Installed': 3,
-            'Associated Client Group': 4,
-            'Timezone': 5,
-            'Hostname': 6,
-            'Client Version': 7,
-            'OS Type': 8,
-            'Package Installed': 9,
-            'Client offline (days)': 10,
-            'User as client owner': 11,
-            'Local user group as client owner': 12,
-            'External group as client owner': 13,
-            'Associated library name': 14,
-            'OS Version': 15,
-            'Product Version': 16,
-            'Client Version Same as CS Version': 17,
-            'Days since client created': 18,
-            'Days since last backup': 19,
-            'SnapBackup clients': 20,
-            'Clients with attached storages': 21,
-            'Case manager hold clients': 22,
-            'MediaAgents for clients in group': 23,
-            'Client acts as proxy': 24,
-            'Backup activity enabled': 25,
-            'Restore activity enabled': 26,
-            'Client online (days)': 27,
-            'Inactive AD user as client owner': 28,
-            'Client excluded from SLA report': 29,
-            'Client uses storage policy': 30,
-            'Client is not ready': 31,
-            'Associated Storage Policy': 32,
-            'MediaAgent has Lucene Index Roles': 33,
-            'Client associated with plan': 34,
-            'Client by Schedule Interval': 35,
-            'Client needs Updates': 36,
-            'Subclient Name': 37,
-            'CommCell Psuedo Client': 38,
-            'Client Description': 39,
-            'Clients discovered using VSA Subclient': 40,
-            'Clients with no Archive Data': 41,
-            'User Client Provider Associations': 42,
-            'User Group Client Provider Associations': 43,
-            'Company Client Provider Associations': 44,
-            'Clients Meet SLA': 45,
-            'Index Servers': 46,
-            'Clients with OnePass enabled': 49,
-            'Clients by Role': 50,
-            'Clients by Permission': 51,
-            'User description contains': 52,
-            'User Group description contains': 53,
-            'Content Analyzer Cloud': 54,
-            'Company Installed Client Associations': 55,
-            'Client Online in Last 30 Days': 56,
-            'Clients With Subclients Having Associated Storage Policy': 60,
-            'Clients With Improperly Deconfigured Subclients': 61,
-            'Strikes count': 62,
-            'Clients With Backup Schedule': 63,
-            'Clients With Long Running Jobs': 64,
-            'Clients With Synthetic Full Backup N Days': 67,
-            'MediaAgents for clients in group list': 70,
-            'Associated Client Group List': 71,
-            'Timezone List': 72,
-            'MediaAgent has Lucene Index Role List': 73,
-            'Associated Storage Policy List': 74,
-            'Timezone Region List': 75,
-            'Clients With Encryption': 80,
-            'Client CIDR Address Range': 81,
-            'HAC Cluster': 85,
-            'Client Display Name': 116,
-            'Clients associated to any company': 158,
-            'VMs not in any Subclient Content': 166,
-            'Pseudo Clients': 115,
-            }
+            "Name": 1,
+            "Client": 2,
+            "Agents Installed": 3,
+            "Associated Client Group": 4,
+            "Timezone": 5,
+            "Hostname": 6,
+            "Client Version": 7,
+            "OS Type": 8,
+            "Package Installed": 9,
+            "Client offline (days)": 10,
+            "User as client owner": 11,
+            "Local user group as client owner": 12,
+            "External group as client owner": 13,
+            "Associated library name": 14,
+            "OS Version": 15,
+            "Product Version": 16,
+            "Client Version Same as CS Version": 17,
+            "Days since client created": 18,
+            "Days since last backup": 19,
+            "SnapBackup clients": 20,
+            "Clients with attached storages": 21,
+            "Case manager hold clients": 22,
+            "MediaAgents for clients in group": 23,
+            "Client acts as proxy": 24,
+            "Backup activity enabled": 25,
+            "Restore activity enabled": 26,
+            "Client online (days)": 27,
+            "Inactive AD user as client owner": 28,
+            "Client excluded from SLA report": 29,
+            "Client uses storage policy": 30,
+            "Client is not ready": 31,
+            "Associated Storage Policy": 32,
+            "MediaAgent has Lucene Index Roles": 33,
+            "Client associated with plan": 34,
+            "Client by Schedule Interval": 35,
+            "Client needs Updates": 36,
+            "Subclient Name": 37,
+            "CommCell Psuedo Client": 38,
+            "Client Description": 39,
+            "Clients discovered using VSA Subclient": 40,
+            "Clients with no Archive Data": 41,
+            "User Client Provider Associations": 42,
+            "User Group Client Provider Associations": 43,
+            "Company Client Provider Associations": 44,
+            "Clients Meet SLA": 45,
+            "Index Servers": 46,
+            "Clients with OnePass enabled": 49,
+            "Clients by Role": 50,
+            "Clients by Permission": 51,
+            "User description contains": 52,
+            "User Group description contains": 53,
+            "Content Analyzer Cloud": 54,
+            "Company Installed Client Associations": 55,
+            "Client Online in Last 30 Days": 56,
+            "Clients With Subclients Having Associated Storage Policy": 60,
+            "Clients With Improperly Deconfigured Subclients": 61,
+            "Strikes count": 62,
+            "Clients With Backup Schedule": 63,
+            "Clients With Long Running Jobs": 64,
+            "Clients With Synthetic Full Backup N Days": 67,
+            "MediaAgents for clients in group list": 70,
+            "Associated Client Group List": 71,
+            "Timezone List": 72,
+            "MediaAgent has Lucene Index Role List": 73,
+            "Associated Storage Policy List": 74,
+            "Timezone Region List": 75,
+            "Clients With Encryption": 80,
+            "Client CIDR Address Range": 81,
+            "HAC Cluster": 85,
+            "Client Display Name": 116,
+            "Clients associated to any company": 158,
+            "VMs not in any Subclient Content": 166,
+            "Pseudo Clients": 115,
+        }
         ptype_dict = {
-            'Name': 2,
-            'Client': 4,
-            'Agents Installed': 6,
-            'Associated Client Group': 4,
-            'Timezone': 4,
-            'Hostname': 2,
-            'Client Version': 4,
-            'OS Type': 4,
-            'Package Installed': 6,
-            'Client offline (days)': 3,
-            'User as client owner': 2,
-            'Local user group as client owner': 2,
-            'External group as client owner': 2,
-            'Associated library name': 2,
-            'OS Version': 2,
-            'Product Version': 2,
-            'Client Version Same as CS Version': 1,
-            'Days since client created': 3,
-            'Days since last backup': 3,
-            'SnapBackup clients': 1,
-            'Clients with attached storages': 1,
-            'Case manager hold clients': 1,
-            'MediaAgents for clients in group': 2,
-            'Client acts as proxy': 1,
-            'Backup activity enabled': 1,
-            'Restore activity enabled': 1,
-            'Client online (days)': 3,
-            'Inactive AD user as client owner': 1,
-            'Client excluded from SLA report': 1,
-            'Client uses storage policy': 2,
-            'Client is not ready': 1,
-            'Associated Storage Policy': 4,
-            'MediaAgent has Lucene Index Roles': 4,
-            'Client associated with plan': 2,
-            'Client by Schedule Interval': 4,
-            'Client needs Updates': 1,
-            'Subclient Name': 2,
-            'CommCell Psuedo Client': 1,
-            'Client Description': 2,
-            'Clients discovered using VSA Subclient': 6,
-            'Clients with no Archive Data': 1,
-            'User Client Provider Associations': 2,
-            'User Group Client Provider Associations': 2,
-            'Company Client Provider Associations': 4,
-            'Clients Meet SLA': 4,
-            'Index Servers': 1,
-            'Clients with OnePass enabled': 1,
-            'Clients by Role': 4,
-            'Clients by Permission': 4,
-            'User description contains': 2,
-            'User Group description contains': 2,
-            'Content Analyzer Cloud': 1,
-            'Company Installed Client Associations': 4,
-            'Client Online in Last 30 Days': 1,
-            'Clients With Subclients Having Associated Storage Policy': 1,
-            'Clients With Improperly Deconfigured Subclients': 1,
-            'Strikes count': 3,
-            'Clients With Backup Schedule': 1,
-            'Clients With Long Running Jobs': 3,
-            'Clients With Synthetic Full Backup N Days': 3,
-            'MediaAgents for clients in group list': 7,
-            'Associated Client Group List': 7,
-            'Timezone List': 7,
-            'MediaAgent has Lucene Index Role List': 7,
-            'Associated Storage Policy List': 7,
-            'Timezone Region List': 7,
-            'Clients With Encryption': 1,
-            'Client CIDR Address Range': 10,
-            'HAC Cluster': 1,
-            'Client Display Name': 2,
-            'Clients associated to any company': 1,
-            'VMs not in any Subclient Content': 1,
-            'Pseudo Clients': 1,
-            }
+            "Name": 2,
+            "Client": 4,
+            "Agents Installed": 6,
+            "Associated Client Group": 4,
+            "Timezone": 4,
+            "Hostname": 2,
+            "Client Version": 4,
+            "OS Type": 4,
+            "Package Installed": 6,
+            "Client offline (days)": 3,
+            "User as client owner": 2,
+            "Local user group as client owner": 2,
+            "External group as client owner": 2,
+            "Associated library name": 2,
+            "OS Version": 2,
+            "Product Version": 2,
+            "Client Version Same as CS Version": 1,
+            "Days since client created": 3,
+            "Days since last backup": 3,
+            "SnapBackup clients": 1,
+            "Clients with attached storages": 1,
+            "Case manager hold clients": 1,
+            "MediaAgents for clients in group": 2,
+            "Client acts as proxy": 1,
+            "Backup activity enabled": 1,
+            "Restore activity enabled": 1,
+            "Client online (days)": 3,
+            "Inactive AD user as client owner": 1,
+            "Client excluded from SLA report": 1,
+            "Client uses storage policy": 2,
+            "Client is not ready": 1,
+            "Associated Storage Policy": 4,
+            "MediaAgent has Lucene Index Roles": 4,
+            "Client associated with plan": 2,
+            "Client by Schedule Interval": 4,
+            "Client needs Updates": 1,
+            "Subclient Name": 2,
+            "CommCell Psuedo Client": 1,
+            "Client Description": 2,
+            "Clients discovered using VSA Subclient": 6,
+            "Clients with no Archive Data": 1,
+            "User Client Provider Associations": 2,
+            "User Group Client Provider Associations": 2,
+            "Company Client Provider Associations": 4,
+            "Clients Meet SLA": 4,
+            "Index Servers": 1,
+            "Clients with OnePass enabled": 1,
+            "Clients by Role": 4,
+            "Clients by Permission": 4,
+            "User description contains": 2,
+            "User Group description contains": 2,
+            "Content Analyzer Cloud": 1,
+            "Company Installed Client Associations": 4,
+            "Client Online in Last 30 Days": 1,
+            "Clients With Subclients Having Associated Storage Policy": 1,
+            "Clients With Improperly Deconfigured Subclients": 1,
+            "Strikes count": 3,
+            "Clients With Backup Schedule": 1,
+            "Clients With Long Running Jobs": 3,
+            "Clients With Synthetic Full Backup N Days": 3,
+            "MediaAgents for clients in group list": 7,
+            "Associated Client Group List": 7,
+            "Timezone List": 7,
+            "MediaAgent has Lucene Index Role List": 7,
+            "Associated Storage Policy List": 7,
+            "Timezone Region List": 7,
+            "Clients With Encryption": 1,
+            "Client CIDR Address Range": 10,
+            "HAC Cluster": 1,
+            "Client Display Name": 2,
+            "Clients associated to any company": 1,
+            "VMs not in any Subclient Content": 1,
+            "Pseudo Clients": 1,
+        }
 
         rule_mk = {
             "rule": {
@@ -937,13 +954,15 @@ class ClientGroups(object):
                 "secValue": filter_value,
                 "propID": prop_id_dict[filter_rule],
                 "propType": ptype_dict[filter_rule],
-                "value": value
+                "value": value,
             }
-            }
+        }
 
         return rule_mk
 
-    def merge_smart_rules(self, rule_list: list, op_value: str = 'all', scg_op: str = 'all') -> dict:
+    def merge_smart_rules(
+        self, rule_list: list, op_value: str = "all", scg_op: str = "all"
+    ) -> dict:
         """Merge multiple smart rules into a single rule group for creating a smart client group.
 
         Args:
@@ -968,23 +987,9 @@ class ClientGroups(object):
         #ai-gen-doc
         """
 
-        op_dict = {
-            'all': 0,
-            'any': 1,
-            'not any': 2
-        }
-        scg_rule = {
-            "op": op_dict[scg_op],
-            "rules": [
-            ]
-        }
-        rules_dict = {
-            "rule": {
-                "op": op_dict[op_value],
-                "rules": [
-                ]
-            }
-        }
+        op_dict = {"all": 0, "any": 1, "not any": 2}
+        scg_rule = {"op": op_dict[scg_op], "rules": []}
+        rules_dict = {"rule": {"op": op_dict[op_value], "rules": []}}
 
         for each_rule in rule_list:
             rules_dict["rule"]["rules"].append(each_rule)
@@ -1028,32 +1033,18 @@ class ClientGroups(object):
 
         #ai-gen-doc
         """
-        scgscope = {
-            "entity": {}
-        }
-        if client_scope.lower() == 'clients in this commcell':
-            scgscope["entity"] = {
-                "commCellName": self._commcell_object.commserv_name,
-                "_type_": 1
-            }
-        elif client_scope.lower() == 'clients of companies' and value is not None:
-            scgscope["entity"] = {
-                "providerDomainName": value,
-                "_type_": 61
-            }
-        elif client_scope.lower() == 'clients of user' and value is not None:
-            scgscope["entity"] = {
-                "userName": value,
-                "_type_": 13
-            }
-        elif client_scope.lower() == 'clients of user group' and value is not None:
-            scgscope["entity"] = {
-                "userGroupName": value,
-                "_type_": 15
-            }
+        scgscope = {"entity": {}}
+        if client_scope.lower() == "clients in this commcell":
+            scgscope["entity"] = {"commCellName": self._commcell_object.commserv_name, "_type_": 1}
+        elif client_scope.lower() == "clients of companies" and value is not None:
+            scgscope["entity"] = {"providerDomainName": value, "_type_": 61}
+        elif client_scope.lower() == "clients of user" and value is not None:
+            scgscope["entity"] = {"userName": value, "_type_": 13}
+        elif client_scope.lower() == "clients of user group" and value is not None:
+            scgscope["entity"] = {"userGroupName": value, "_type_": 15}
         return scgscope
 
-    def add(self, clientgroup_name: str, clients: list = [], **kwargs) -> 'ClientGroup':
+    def add(self, clientgroup_name: str, clients: list = [], **kwargs) -> "ClientGroup":
         """Add a new Client Group to the Commcell.
 
         Creates a new client group with the specified name and adds the provided clients to it.
@@ -1093,38 +1084,38 @@ class ClientGroups(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(clientgroup_name, str) and
-                isinstance(kwargs.get('clientgroup_description', ''), str)):
-            raise SDKException('ClientGroup', '101')
+        if not (
+            isinstance(clientgroup_name, str)
+            and isinstance(kwargs.get("clientgroup_description", ""), str)
+        ):
+            raise SDKException("ClientGroup", "101")
 
         if not self.has_clientgroup(clientgroup_name):
             if isinstance(clients, list):
                 clients = self._valid_clients(clients)
             elif isinstance(clients, str):
-                clients = self._valid_clients(clients.split(','))
+                clients = self._valid_clients(clients.split(","))
             else:
-                raise SDKException('ClientGroup', '101')
+                raise SDKException("ClientGroup", "101")
 
             clients_list = []
 
             for client in clients:
-                clients_list.append({'clientName': client})
+                clients_list.append({"clientName": client})
 
-            smart_client_group = bool(kwargs.get('scg_rule'))
-            if kwargs.get('scg_rule') is None:
-                kwargs['scg_rule'] = {}
+            smart_client_group = bool(kwargs.get("scg_rule"))
+            if kwargs.get("scg_rule") is None:
+                kwargs["scg_rule"] = {}
 
             request_json = {
                 "clientGroupOperationType": 1,
                 "clientGroupDetail": {
-                    "description": kwargs.get('clientgroup_description', ''),
+                    "description": kwargs.get("clientgroup_description", ""),
                     "isSmartClientGroup": smart_client_group,
-                    "scgRule": kwargs.get('scg_rule'),
-                    "clientGroup": {
-                        "clientGroupName": clientgroup_name
-                    },
-                    "associatedClients": clients_list
-                }
+                    "scgRule": kwargs.get("scg_rule"),
+                    "clientGroup": {"clientGroupName": clientgroup_name},
+                    "associatedClients": clients_list,
+                },
             }
 
             scg_scope = None
@@ -1134,70 +1125,82 @@ class ClientGroups(object):
                     scg_scope = [self._create_scope_dict(kwargs.get("client_scope"))]
                 else:
                     if kwargs.get("client_scope_value") is not None:
-                        scg_scope = [self._create_scope_dict(kwargs.get("client_scope"), kwargs.get("client_scope_value"))]
+                        scg_scope = [
+                            self._create_scope_dict(
+                                kwargs.get("client_scope"), kwargs.get("client_scope_value")
+                            )
+                        ]
                     else:
-                        raise SDKException('ClientGroup', '102',
-                                           "Client Scope {0} requires a value".format(kwargs.get("client_scope")))
+                        raise SDKException(
+                            "ClientGroup",
+                            "102",
+                            "Client Scope {0} requires a value".format(kwargs.get("client_scope")),
+                        )
 
             if scg_scope is not None:
                 request_json["clientGroupDetail"]["scgScope"] = scg_scope
 
-            if kwargs.get("enable_backup") or kwargs.get("enable_data_aging") or kwargs.get("enable_restore"):
+            if (
+                kwargs.get("enable_backup")
+                or kwargs.get("enable_data_aging")
+                or kwargs.get("enable_restore")
+            ):
                 client_group_activity_control = {
-                        "activityControlOptions": [
-                            {
-                                "activityType": 1,
-                                "enableAfterADelay": False,
-                                "enableActivityType": kwargs.get('enable_backup', True)
-                            }, {
-                                "activityType": 16,
-                                "enableAfterADelay": False,
-                                "enableActivityType": kwargs.get('enable_data_aging', True)
-                            }, {
-                                "activityType": 2,
-                                "enableAfterADelay": False,
-                                "enableActivityType": kwargs.get('enable_restore', True)
-                            }
-                        ]
-                    }
-                request_json["clientGroupDetail"]["clientGroupActivityControl"] = client_group_activity_control
+                    "activityControlOptions": [
+                        {
+                            "activityType": 1,
+                            "enableAfterADelay": False,
+                            "enableActivityType": kwargs.get("enable_backup", True),
+                        },
+                        {
+                            "activityType": 16,
+                            "enableAfterADelay": False,
+                            "enableActivityType": kwargs.get("enable_data_aging", True),
+                        },
+                        {
+                            "activityType": 2,
+                            "enableAfterADelay": False,
+                            "enableActivityType": kwargs.get("enable_restore", True),
+                        },
+                    ]
+                }
+                request_json["clientGroupDetail"]["clientGroupActivityControl"] = (
+                    client_group_activity_control
+                )
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._CLIENTGROUPS, request_json
+                "POST", self._CLIENTGROUPS, request_json
             )
 
             if flag:
                 if response.json():
                     error_message = None
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
-                        o_str = 'Failed to create new ClientGroup\nError:"{0}"'.format(
-                            error_message
-                        )
-                        raise SDKException('ClientGroup', '102', o_str)
-                    elif 'clientGroupDetail' in response.json():
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
+                        o_str = f'Failed to create new ClientGroup\nError:"{error_message}"'
+                        raise SDKException("ClientGroup", "102", o_str)
+                    elif "clientGroupDetail" in response.json():
                         self.refresh()
-                        clientgroup_id = response.json()['clientGroupDetail'][
-                            'clientGroup']['clientGroupId']
+                        clientgroup_id = response.json()["clientGroupDetail"]["clientGroup"][
+                            "clientGroupId"
+                        ]
 
-                        return ClientGroup(
-                            self._commcell_object, clientgroup_name, clientgroup_id
-                        )
+                        return ClientGroup(self._commcell_object, clientgroup_name, clientgroup_id)
                     else:
-                        o_str = 'Failed to create new ClientGroup'
-                        raise SDKException('ClientGroup', '102', o_str)
+                        o_str = "Failed to create new ClientGroup"
+                        raise SDKException("ClientGroup", "102", o_str)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
             raise SDKException(
-                'ClientGroup', '102', 'Client Group "{0}" already exists.'.format(clientgroup_name)
+                "ClientGroup", "102", f'Client Group "{clientgroup_name}" already exists.'
             )
 
-    def get(self, clientgroup_name: str) -> 'ClientGroup':
+    def get(self, clientgroup_name: str) -> "ClientGroup":
         """Retrieve a ClientGroup object by its name.
 
         Args:
@@ -1217,7 +1220,7 @@ class ClientGroups(object):
         #ai-gen-doc
         """
         if not isinstance(clientgroup_name, str):
-            raise SDKException('ClientGroup', '101')
+            raise SDKException("ClientGroup", "101")
         else:
             clientgroup_name = clientgroup_name.lower()
 
@@ -1227,9 +1230,7 @@ class ClientGroups(object):
                 )
 
             raise SDKException(
-                'ClientGroup',
-                '102',
-                'No ClientGroup exists with name: {0}'.format(clientgroup_name)
+                "ClientGroup", "102", f"No ClientGroup exists with name: {clientgroup_name}"
             )
 
     def delete(self, clientgroup_name: str) -> None:
@@ -1253,46 +1254,42 @@ class ClientGroups(object):
         """
 
         if not isinstance(clientgroup_name, str):
-            raise SDKException('ClientGroup', '101')
+            raise SDKException("ClientGroup", "101")
         else:
             clientgroup_name = clientgroup_name.lower()
 
             if self.has_clientgroup(clientgroup_name):
                 clientgroup_id = self._clientgroups[clientgroup_name]
 
-                delete_clientgroup_service = self._commcell_object._services['CLIENTGROUP']
+                delete_clientgroup_service = self._commcell_object._services["CLIENTGROUP"]
 
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'DELETE', delete_clientgroup_service % clientgroup_id
+                    "DELETE", delete_clientgroup_service % clientgroup_id
                 )
 
                 if flag:
                     if response.json():
-                        if 'errorCode' in response.json():
-                            error_code = str(response.json()['errorCode'])
-                            error_message = response.json()['errorMessage']
+                        if "errorCode" in response.json():
+                            error_code = str(response.json()["errorCode"])
+                            error_message = response.json()["errorMessage"]
 
-                            if error_code == '0':
+                            if error_code == "0":
                                 # initialize the clientgroups again
                                 # so the clientgroups object has all the client groups
                                 self.refresh()
                             else:
-                                o_str = 'Failed to delete ClientGroup\nError: "{0}"'.format(
-                                    error_message
-                                )
-                                raise SDKException('ClientGroup', '102', o_str)
+                                o_str = f'Failed to delete ClientGroup\nError: "{error_message}"'
+                                raise SDKException("ClientGroup", "102", o_str)
                         else:
-                            raise SDKException('Response', '102')
+                            raise SDKException("Response", "102")
                     else:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
                 else:
                     response_string = self._commcell_object._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
             else:
                 raise SDKException(
-                    'ClientGroup',
-                    '102',
-                    'No ClientGroup exists with name: "{0}"'.format(clientgroup_name)
+                    "ClientGroup", "102", f'No ClientGroup exists with name: "{clientgroup_name}"'
                 )
 
     def refresh(self, **kwargs: dict) -> None:
@@ -1313,8 +1310,8 @@ class ClientGroups(object):
 
         #ai-gen-doc
         """
-        mongodb = kwargs.get('mongodb', False)
-        hard = kwargs.get('hard', False)
+        mongodb = kwargs.get("mongodb", False)
+        hard = kwargs.get("hard", False)
 
         self._clientgroups = self._get_clientgroups()
         if mongodb:
@@ -1337,11 +1334,11 @@ class ClientGroups(object):
 
         #ai-gen-doc
         """
-        self._all_client_groups_prop = self._get_clientgroups(full_response=True).get("groups",[])
+        self._all_client_groups_prop = self._get_clientgroups(full_response=True).get("groups", [])
         return self._all_client_groups_prop
 
 
-class ClientGroup(object):
+class ClientGroup:
     """
     Manages operations and properties for a specific ClientGroup within a CommCell environment.
 
@@ -1375,7 +1372,9 @@ class ClientGroup(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: object, clientgroup_name: str, clientgroup_id: str = None) -> None:
+    def __init__(
+        self, commcell_object: object, clientgroup_name: str, clientgroup_id: str = None
+    ) -> None:
         """Initialize a ClientGroup instance.
 
         Args:
@@ -1402,7 +1401,7 @@ class ClientGroup(object):
             # Get the id associated with this client group
             self._clientgroup_id = self._get_clientgroup_id()
 
-        self._CLIENTGROUP = self._commcell_object._services['CLIENTGROUP'] % (self.clientgroup_id)
+        self._CLIENTGROUP = self._commcell_object._services["CLIENTGROUP"] % (self.clientgroup_id)
 
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
@@ -1472,17 +1471,17 @@ class ClientGroup(object):
         """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._CLIENTGROUP
+            "GET", self._CLIENTGROUP
         )
 
         if flag:
-            if response.json() and 'clientGroupDetail' in response.json():
-                return response.json()['clientGroupDetail']
+            if response.json() and "clientGroupDetail" in response.json():
+                return response.json()["clientGroupDetail"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _initialize_clientgroup_properties(self) -> None:
         """Initialize the common properties for the client group.
@@ -1500,44 +1499,50 @@ class ClientGroup(object):
         clientgroup_props = self._get_clientgroup_properties()
         self._properties = clientgroup_props
 
-        if 'clientGroupName' in clientgroup_props['clientGroup']:
-            self._clientgroup_name = clientgroup_props['clientGroup']['clientGroupName'].lower()
+        if "clientGroupName" in clientgroup_props["clientGroup"]:
+            self._clientgroup_name = clientgroup_props["clientGroup"]["clientGroupName"].lower()
         else:
             raise SDKException(
-                'ClientGroup', '102', 'Client Group name is not specified in the response'
+                "ClientGroup", "102", "Client Group name is not specified in the response"
             )
 
         self._description = None
 
-        if 'description' in clientgroup_props:
-            self._description = clientgroup_props['description']
+        if "description" in clientgroup_props:
+            self._description = clientgroup_props["description"]
 
         self._associated_clients = []
 
-        if 'associatedClients' in clientgroup_props:
-            for client in clientgroup_props['associatedClients']:
-                self._associated_clients.append(client['clientName'])
+        if "associatedClients" in clientgroup_props:
+            for client in clientgroup_props["associatedClients"]:
+                self._associated_clients.append(client["clientName"])
 
-        self._is_smart_client_group = self._properties['isSmartClientGroup']
+        self._is_smart_client_group = self._properties["isSmartClientGroup"]
         self._is_backup_enabled = False
         self._is_restore_enabled = False
         self._is_data_aging_enabled = False
 
-        if 'clientGroupActivityControl' in clientgroup_props:
-            cg_activity_control = clientgroup_props['clientGroupActivityControl']
+        if "clientGroupActivityControl" in clientgroup_props:
+            cg_activity_control = clientgroup_props["clientGroupActivityControl"]
 
-            if 'activityControlOptions' in cg_activity_control:
-                for control_options in cg_activity_control['activityControlOptions']:
-                    if control_options['activityType'] == 1:
-                        self._is_backup_enabled = control_options['enableActivityType']
-                    elif control_options['activityType'] == 2:
-                        self._is_restore_enabled = control_options['enableActivityType']
-                    elif control_options['activityType'] == 16:
-                        self._is_data_aging_enabled = control_options['enableActivityType']
+            if "activityControlOptions" in cg_activity_control:
+                for control_options in cg_activity_control["activityControlOptions"]:
+                    if control_options["activityType"] == 1:
+                        self._is_backup_enabled = control_options["enableActivityType"]
+                    elif control_options["activityType"] == 2:
+                        self._is_restore_enabled = control_options["enableActivityType"]
+                    elif control_options["activityType"] == 16:
+                        self._is_data_aging_enabled = control_options["enableActivityType"]
 
-        self._company_name = clientgroup_props.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName')
+        self._company_name = (
+            clientgroup_props.get("securityAssociations", {})
+            .get("tagWithCompany", {})
+            .get("providerDomainName")
+        )
 
-    def _request_json_(self, option: str, enable: bool = True, enable_time: str = None, **kwargs: dict) -> dict:
+    def _request_json_(
+        self, option: str, enable: bool = True, enable_time: str = None, **kwargs: dict
+    ) -> dict:
         """Generate the JSON request payload for the API based on the selected operation option.
 
         Args:
@@ -1564,46 +1569,44 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        options_dict = {
-            "Backup": 1,
-            "Restore": 2,
-            "Data Aging": 16
-        }
+        options_dict = {"Backup": 1, "Restore": 2, "Data Aging": 16}
 
         request_json1 = {
             "clientGroupOperationType": 2,
             "clientGroupDetail": {
                 "clientGroupActivityControl": {
-                    "activityControlOptions": [{
-                        "activityType": options_dict[option],
-                        "enableAfterADelay": False,
-                        "enableActivityType": enable
-                    }]
+                    "activityControlOptions": [
+                        {
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": False,
+                            "enableActivityType": enable,
+                        }
+                    ]
                 },
-                "clientGroup": {
-                    "newName": self.name
-                }
-            }
+                "clientGroup": {"newName": self.name},
+            },
         }
 
         request_json2 = {
             "clientGroupOperationType": 2,
             "clientGroupDetail": {
                 "clientGroupActivityControl": {
-                    "activityControlOptions": [{
-                        "activityType": options_dict[option],
-                        "enableAfterADelay": True,
-                        "enableActivityType": False,
-                        "dateTime": {
-                            "TimeZoneName": kwargs.get("timezone", self._commcell_object.default_timezone),
-                            "timeValue": enable_time
+                    "activityControlOptions": [
+                        {
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": True,
+                            "enableActivityType": False,
+                            "dateTime": {
+                                "TimeZoneName": kwargs.get(
+                                    "timezone", self._commcell_object.default_timezone
+                                ),
+                                "timeValue": enable_time,
+                            },
                         }
-                    }]
+                    ]
                 },
-                "clientGroup": {
-                    "newName": self.name
-                }
-            }
+                "clientGroup": {"newName": self.name},
+            },
         }
 
         if enable_time:
@@ -1635,32 +1638,30 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._CLIENTGROUP, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request("POST", self._CLIENTGROUP, request_json)
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
-                if 'errorMessage' in response.json():
-                    error_message = response.json()['errorMessage']
+                if "errorMessage" in response.json():
+                    error_message = response.json()["errorMessage"]
                 else:
                     error_message = ""
 
                 self.refresh()
                 return error_code, error_message
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         response_string = self._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def _update(
-            self,
-            clientgroup_name: str,
-            clientgroup_description: str,
-            associated_clients: 'Optional[Union[str, List[str]]]' = None,
-            operation_type: str = "NONE"
-        ) -> None:
+        self,
+        clientgroup_name: str,
+        clientgroup_description: str,
+        associated_clients: "Optional[Union[str, List[str]]]" = None,
+        operation_type: str = "NONE",
+    ) -> None:
         """Update the properties of this client group.
 
         This method updates the client group with a new name, description, and optionally modifies
@@ -1696,52 +1697,49 @@ class ClientGroup(object):
             "OVERWRITE": 1,
             "ADD": 2,
             "DELETE": 3,
-            "CLEAR": 4
+            "CLEAR": 4,
         }
 
         for client in associated_clients:
-            clients_list.append({'clientName': client})
+            clients_list.append({"clientName": client})
 
         request_json = {
             "clientGroupOperationType": 2,
             "clientGroupDetail": {
                 "description": clientgroup_description,
-                "clientGroup": {
-                    "newName": clientgroup_name
-                },
+                "clientGroup": {"newName": clientgroup_name},
                 "associatedClientsOperationType": associated_clients_op_types[operation_type],
-                "associatedClients": clients_list
-            }
+                "associatedClients": clients_list,
+            },
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENTGROUP, request_json
+            "POST", self._CLIENTGROUP, request_json
         )
 
         self.refresh()
 
         if flag:
             if response.json():
+                error_message = response.json()["errorMessage"]
+                error_code = str(response.json()["errorCode"])
 
-                error_message = response.json()['errorMessage']
-                error_code = str(response.json()['errorCode'])
-
-                if error_code == '0':
+                if error_code == "0":
                     return (True, "0", "")
                 else:
                     return (False, error_code, error_message)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _add_or_remove_clients(self, clients: Union[str, list], operation_type: str) -> None:
         """Add or remove clients to or from the ClientGroup.
 
         This method allows you to add, overwrite, or delete clients in the client group by specifying
-        the operation type and the clients to be affected. The clients parameter can be either a 
+        the operation type and the clients to be affected. The clients parameter can be either a
         comma-separated string of client names or a list of client names.
 
         Args:
@@ -1766,37 +1764,37 @@ class ClientGroup(object):
             if isinstance(clients, list):
                 validated_clients_list = clientgroups_object._valid_clients(clients)
             elif isinstance(clients, str):
-                validated_clients_list = clientgroups_object._valid_clients(clients.split(','))
+                validated_clients_list = clientgroups_object._valid_clients(clients.split(","))
 
-            if operation_type in ['ADD', 'OVERWRITE']:
+            if operation_type in ["ADD", "OVERWRITE"]:
                 for client in validated_clients_list:
                     if client in self._associated_clients:
                         validated_clients_list.remove(client)
 
             if not validated_clients_list:
-                raise SDKException('ClientGroup', '102', 'No valid clients were found')
+                raise SDKException("ClientGroup", "102", "No valid clients were found")
 
             output = self._update(
                 clientgroup_name=self.name,
                 clientgroup_description=self.description,
                 associated_clients=validated_clients_list,
-                operation_type=operation_type
+                operation_type=operation_type,
             )
 
             exception_message_dict = {
-                'ADD': 'Failed to add clients to the ClientGroup\nError: "{0}"',
-                'OVERWRITE': 'Failed to add clients to the ClientGroup\nError: "{0}"',
-                'DELETE': 'Failed to remove clients from the ClientGroup\nError: "{0}"'
+                "ADD": 'Failed to add clients to the ClientGroup\nError: "{0}"',
+                "OVERWRITE": 'Failed to add clients to the ClientGroup\nError: "{0}"',
+                "DELETE": 'Failed to remove clients from the ClientGroup\nError: "{0}"',
             }
 
             if output[0]:
                 return
             else:
                 o_str = exception_message_dict[operation_type]
-                raise SDKException('ClientGroup', '102', o_str.format(output[2]))
+                raise SDKException("ClientGroup", "102", o_str.format(output[2]))
         else:
             raise SDKException(
-                'ClientGroup', '102', 'Client\'s name should be a list or string value'
+                "ClientGroup", "102", "Client's name should be a list or string value"
             )
 
     @property
@@ -1830,7 +1828,7 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        return self._properties['clientGroup']['clientGroupName']
+        return self._properties["clientGroup"]["clientGroupName"]
 
     @property
     def clientgroup_id(self) -> int:
@@ -1986,9 +1984,9 @@ class ClientGroup(object):
         #ai-gen-doc
         """
         return self._company_name
-    
+
     @property
-    def network(self) -> 'Network':
+    def network(self) -> "Network":
         """Get the Network object associated with this ClientGroup.
 
         Returns:
@@ -2007,7 +2005,7 @@ class ClientGroup(object):
         return self._networkprop
 
     @property
-    def network_throttle(self) -> 'NetworkThrottle':
+    def network_throttle(self) -> "NetworkThrottle":
         """Get the NetworkThrottle object associated with this ClientGroup.
 
         Returns:
@@ -2043,14 +2041,12 @@ class ClientGroup(object):
         """
         client_group_filters = {}
 
-        os_type_map = {
-            1: 'windows_filters',
-            2: 'unix_filters'
-        }
+        os_type_map = {1: "windows_filters", 2: "unix_filters"}
 
-        for filters_root in self._properties['globalFiltersInfo']['globalFiltersInfoList']:
-            client_group_filters[os_type_map[filters_root['operatingSystemType']]] = filters_root.get(
-                'globalFilters', {}).get('filters', [])
+        for filters_root in self._properties["globalFiltersInfo"]["globalFiltersInfoList"]:
+            client_group_filters[os_type_map[filters_root["operatingSystemType"]]] = (
+                filters_root.get("globalFilters", {}).get("filters", [])
+            )
 
         return client_group_filters
 
@@ -2070,7 +2066,7 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        return self._properties.get('enableAutoDiscovery', False)
+        return self._properties.get("enableAutoDiscovery", False)
 
     @client_group_filter.setter
     def client_group_filter(self, filters: dict) -> None:
@@ -2087,22 +2083,24 @@ class ClientGroup(object):
         #ai-gen-doc
         """
         request_json = {}
-        request_json['clientGroupDetail'] = self._properties
-        filters_root = request_json['clientGroupDetail']['globalFiltersInfo']['globalFiltersInfoList']
+        request_json["clientGroupDetail"] = self._properties
+        filters_root = request_json["clientGroupDetail"]["globalFiltersInfo"][
+            "globalFiltersInfoList"
+        ]
 
         for var in filters_root:
-            if var['operatingSystemType'] == 1:
-                var['globalFilters'] = {
-                    'filters': filters.get('windows_filters', var['globalFilters'].get(
-                        'filters', []))
+            if var["operatingSystemType"] == 1:
+                var["globalFilters"] = {
+                    "filters": filters.get(
+                        "windows_filters", var["globalFilters"].get("filters", [])
+                    )
                 }
-            if var['operatingSystemType'] == 2:
-                var['globalFilters'] = {
-                    'filters': filters.get('unix_filters', var['globalFilters'].get(
-                        'filters', []))
+            if var["operatingSystemType"] == 2:
+                var["globalFilters"] = {
+                    "filters": filters.get("unix_filters", var["globalFilters"].get("filters", []))
                 }
-            var['globalFilters']['opType'] = 1
-        request_json['clientGroupOperationType'] = 2
+            var["globalFilters"]["opType"] = 1
+        request_json["clientGroupOperationType"] = 2
 
         self._process_update_request(request_json)
         self.refresh()
@@ -2110,7 +2108,7 @@ class ClientGroup(object):
     def enable_backup(self) -> None:
         """Enable backup operations for this ClientGroup.
 
-        This method activates backup functionality for the client group, allowing 
+        This method activates backup functionality for the client group, allowing
         backup jobs to be performed on all clients within the group.
 
         Raises:
@@ -2123,37 +2121,37 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Backup')
+        request_json = self._request_json_("Backup")
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             self._is_backup_enabled = True
             return
         else:
             if error_message:
-                o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable Backup\nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable Backup'
+                o_str = "Failed to enable Backup"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def enable_backup_at_time(self, enable_time: str, **kwargs: dict) -> None:
         """Schedule backup enablement at a specified UTC time for the client group.
 
-        This method disables backup if it is not already disabled, and then schedules 
-        backup to be enabled at the specified UTC time. The time must be provided in 
-        24-hour format: 'YYYY-MM-DD HH:mm:ss'. An optional timezone can be specified 
+        This method disables backup if it is not already disabled, and then schedules
+        backup to be enabled at the specified UTC time. The time must be provided in
+        24-hour format: 'YYYY-MM-DD HH:mm:ss'. An optional timezone can be specified
         using the 'timezone' keyword argument.
 
         Args:
             enable_time: The UTC time to enable backup, in 'YYYY-MM-DD HH:mm:ss' format.
             **kwargs: Optional keyword arguments.
-                - timezone (str): The timezone to use for the operation. Refer to the TIMEZONES 
+                - timezone (str): The timezone to use for the operation. Refer to the TIMEZONES
                   dictionary in constants.py for valid values.
 
         Raises:
-            SDKException: If the provided time is earlier than the current time, 
+            SDKException: If the provided time is earlier than the current time,
                 if the time format is incorrect, or if enabling backup fails.
 
         Example:
@@ -2169,23 +2167,23 @@ class ClientGroup(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('ClientGroup', '103')
+                raise SDKException("ClientGroup", "103")
         except ValueError:
-            raise SDKException('ClientGroup', '104')
+            raise SDKException("ClientGroup", "104")
 
-        request_json = self._request_json_('Backup', False, enable_time, **kwargs)
+        request_json = self._request_json_("Backup", False, enable_time, **kwargs)
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             return
         else:
             if error_message:
-                o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable Backup\nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable Backup'
+                o_str = "Failed to enable Backup"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def disable_backup(self) -> None:
         """Disable backup operations for this ClientGroup.
@@ -2203,20 +2201,20 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Backup', False)
+        request_json = self._request_json_("Backup", False)
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             self._is_backup_enabled = False
             return
         else:
             if error_message:
-                o_str = 'Failed to disable Backup\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to disable Backup\nError: "{error_message}"'
             else:
-                o_str = 'Failed to diable Backup'
+                o_str = "Failed to diable Backup"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def enable_restore(self) -> None:
         """Enable restore functionality for this ClientGroup.
@@ -2234,20 +2232,20 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Restore')
+        request_json = self._request_json_("Restore")
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             self._is_restore_enabled = True
             return
         else:
             if error_message:
-                o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable Restore\nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable Restore'
+                o_str = "Failed to enable Restore"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def enable_restore_at_time(self, enable_time: str, **kwargs: dict) -> None:
         """Schedule restore enablement at a specified UTC time for the client group.
@@ -2277,23 +2275,23 @@ class ClientGroup(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('ClientGroup', '103')
+                raise SDKException("ClientGroup", "103")
         except ValueError:
-            raise SDKException('ClientGroup', '104')
+            raise SDKException("ClientGroup", "104")
 
-        request_json = self._request_json_('Restore', False, enable_time, **kwargs)
+        request_json = self._request_json_("Restore", False, enable_time, **kwargs)
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             return
         else:
             if error_message:
-                o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable Restore\nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable Restore'
+                o_str = "Failed to enable Restore"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def disable_restore(self) -> None:
         """Disable restore operations for this ClientGroup.
@@ -2311,20 +2309,20 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Restore', False)
+        request_json = self._request_json_("Restore", False)
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             self._is_restore_enabled = False
             return
         else:
             if error_message:
-                o_str = 'Failed to disable Restore\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to disable Restore\nError: "{error_message}"'
             else:
-                o_str = 'Failed to disable Restore'
+                o_str = "Failed to disable Restore"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def enable_data_aging(self) -> None:
         """Enable Data Aging for this ClientGroup.
@@ -2342,35 +2340,35 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Data Aging')
+        request_json = self._request_json_("Data Aging")
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             self._is_data_aging_enabled = True
             return
         else:
             if error_message:
-                o_str = 'Failed to enable Data Aging\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable Data Aging\nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable Data Aging'
+                o_str = "Failed to enable Data Aging"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def enable_data_aging_at_time(self, enable_time: str, **kwargs: dict) -> None:
         """Schedule Data Aging to be enabled at a specified UTC time.
 
-        This method disables Data Aging if it is currently enabled, and then schedules it to be enabled 
+        This method disables Data Aging if it is currently enabled, and then schedules it to be enabled
         at the provided UTC time. The time must be specified in 24-hour format as 'YYYY-MM-DD HH:mm:ss'.
 
         Args:
             enable_time: The UTC time at which to enable Data Aging, in the format 'YYYY-MM-DD HH:mm:ss'.
             **kwargs: Optional keyword arguments.
-                - timezone (str): The timezone to use for the operation. 
+                - timezone (str): The timezone to use for the operation.
                   Refer to the TIMEZONES dictionary in constants.py for valid values.
 
         Raises:
-            SDKException: If the provided time is earlier than the current time, 
+            SDKException: If the provided time is earlier than the current time,
                 if the time format is incorrect, or if enabling Data Aging fails.
 
         Example:
@@ -2383,23 +2381,23 @@ class ClientGroup(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('ClientGroup', '103')
+                raise SDKException("ClientGroup", "103")
         except ValueError:
-            raise SDKException('ClientGroup', '104')
+            raise SDKException("ClientGroup", "104")
 
-        request_json = self._request_json_('Data Aging', False, enable_time, **kwargs)
+        request_json = self._request_json_("Data Aging", False, enable_time, **kwargs)
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             return
         else:
             if error_message:
-                o_str = 'Failed to enable Data Aging\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable Data Aging\nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable Data Aging'
+                o_str = "Failed to enable Data Aging"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def disable_data_aging(self) -> None:
         """Disable Data Aging for this ClientGroup.
@@ -2417,20 +2415,20 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Data Aging', False)
+        request_json = self._request_json_("Data Aging", False)
 
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code == '0':
+        if error_code == "0":
             self._is_data_aging_enabled = False
             return
         else:
             if error_message:
-                o_str = 'Failed to disable Data Aging\nError: "{0}"'.format(error_message)
+                o_str = f'Failed to disable Data Aging\nError: "{error_message}"'
             else:
-                o_str = 'Failed to disable Data Aging'
+                o_str = "Failed to disable Data Aging"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     @clientgroup_name.setter
     def clientgroup_name(self, value: str) -> None:
@@ -2450,18 +2448,16 @@ class ClientGroup(object):
             output = self._update(
                 clientgroup_name=value,
                 clientgroup_description=self.description,
-                associated_clients=self._associated_clients
+                associated_clients=self._associated_clients,
             )
 
             if output[0]:
                 return
             else:
                 o_str = 'Failed to update the ClientGroup name\nError: "{0}"'
-                raise SDKException('ClientGroup', '102', o_str.format(output[2]))
+                raise SDKException("ClientGroup", "102", o_str.format(output[2]))
         else:
-            raise SDKException(
-                'ClientGroup', '102', 'Clientgroup name should be a string value'
-            )
+            raise SDKException("ClientGroup", "102", "Clientgroup name should be a string value")
 
     @description.setter
     def description(self, value: str) -> None:
@@ -2481,17 +2477,17 @@ class ClientGroup(object):
             output = self._update(
                 clientgroup_name=self.name,
                 clientgroup_description=value,
-                associated_clients=self._associated_clients
+                associated_clients=self._associated_clients,
             )
 
             if output[0]:
                 return
             else:
                 o_str = 'Failed to update the ClientGroup description\nError: "{0}"'
-                raise SDKException('ClientGroup', '102', o_str.format(output[2]))
+                raise SDKException("ClientGroup", "102", o_str.format(output[2]))
         else:
             raise SDKException(
-                'ClientGroup', '102', 'Clientgroup description should be a string value'
+                "ClientGroup", "102", "Clientgroup description should be a string value"
             )
 
     def add_clients(self, clients: Union[str, List[str]], overwrite: bool = False) -> None:
@@ -2525,9 +2521,9 @@ class ClientGroup(object):
         #ai-gen-doc
         """
         if overwrite is True:
-            return self._add_or_remove_clients(clients, 'OVERWRITE')
+            return self._add_or_remove_clients(clients, "OVERWRITE")
         else:
-            return self._add_or_remove_clients(clients, 'ADD')
+            return self._add_or_remove_clients(clients, "ADD")
 
     def remove_clients(self, clients: Union[str, list]) -> None:
         """Remove one or more clients from the ClientGroup.
@@ -2548,7 +2544,7 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        return self._add_or_remove_clients(clients, 'DELETE')
+        return self._add_or_remove_clients(clients, "DELETE")
 
     def remove_all_clients(self) -> None:
         """Remove all clients associated with this client group.
@@ -2570,14 +2566,14 @@ class ClientGroup(object):
             clientgroup_name=self.name,
             clientgroup_description=self.description,
             associated_clients=self._associated_clients,
-            operation_type="CLEAR"
+            operation_type="CLEAR",
         )
 
         if output[0]:
             return
         else:
             o_str = 'Failed to remove clients from the ClientGroup\nError: "{0}"'
-            raise SDKException('ClientGroup', '102', o_str.format(output[2]))
+            raise SDKException("ClientGroup", "102", o_str.format(output[2]))
 
     def push_network_config(self) -> None:
         """Push the network configuration to all clients in the client group.
@@ -2596,51 +2592,49 @@ class ClientGroup(object):
         #ai-gen-doc
         """
 
-        xml_execute_command = """
+        xml_execute_command = f"""
                         <App_PushFirewallConfigurationRequest>
-                        <entity clientGroupName="{0}"/>
+                        <entity clientGroupName="{self.clientgroup_name}"/>
                         </App_PushFirewallConfigurationRequest>
-            """.format(self.clientgroup_name)
+            """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], xml_execute_command
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], xml_execute_command
         )
 
         if flag:
             if response.json():
                 error_code = -1
                 error_message = ""
-                if 'entityResponse' in response.json():
-                    error_code = response.json()['entityResponse'][0]['errorCode']
+                if "entityResponse" in response.json():
+                    error_code = response.json()["entityResponse"][0]["errorCode"]
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
 
-                elif 'errorMessage' in response.json():
-                    error_message = response.json()['errorMessage']
+                elif "errorMessage" in response.json():
+                    error_message = response.json()["errorMessage"]
 
-                    if 'errorCode' in response.json():
-                        error_code = response.json()['errorCode']
+                    if "errorCode" in response.json():
+                        error_code = response.json()["errorCode"]
 
                 if error_code != 0:
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException("ClientGroup", "102", error_message)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def push_servicepack_and_hotfix(
-            self,
-            reboot_client: bool = False,
-            run_db_maintenance: bool = True
-        ) -> 'Job':
+        self, reboot_client: bool = False, run_db_maintenance: bool = True
+    ) -> "Job":
         """Trigger the installation of service packs and hotfixes on all clients in the group.
 
-        This method initiates a job to push the latest service pack and hotfix updates to all clients 
-        within the client group. You can optionally specify whether to reboot the clients after installation 
+        This method initiates a job to push the latest service pack and hotfix updates to all clients
+        within the client group. You can optionally specify whether to reboot the clients after installation
         and whether to run database maintenance as part of the process.
 
         Args:
@@ -2670,14 +2664,12 @@ class ClientGroup(object):
         return install.push_servicepack_and_hotfix(
             client_computer_groups=[self.name],
             reboot_client=reboot_client,
-            run_db_maintenance=run_db_maintenance)
+            run_db_maintenance=run_db_maintenance,
+        )
 
     def repair_software(
-            self,
-            username: str = None,
-            password: str = None,
-            reboot_client: bool = False
-        ) -> 'Job':
+        self, username: str = None, password: str = None, reboot_client: bool = False
+    ) -> "Job":
         """Trigger a repair of the software on all clients in the client group.
 
         This method initiates a repair operation for the software installed on the client group.
@@ -2707,7 +2699,7 @@ class ClientGroup(object):
             client_group=self.name,
             username=username,
             password=password,
-            reboot_client=reboot_client
+            reboot_client=reboot_client,
         )
 
     def update_properties(self, properties_dict: dict) -> None:
@@ -2735,30 +2727,28 @@ class ClientGroup(object):
         """
         request_json = {
             "clientGroupOperationType": 2,
-            "clientGroupDetail": {
-                "clientGroup": {
-                    "clientGroupName": self.name
-                }
-            }
+            "clientGroupDetail": {"clientGroup": {"clientGroupName": self.name}},
         }
 
-        request_json['clientGroupDetail'].update(properties_dict)
+        request_json["clientGroupDetail"].update(properties_dict)
         error_code, error_message = self._process_update_request(request_json)
 
-        if error_code != '0':
+        if error_code != "0":
             raise SDKException(
-                'ClientGroup', '102', 'Failed to update client group property\nError: "{0}"'.format(error_message)
+                "ClientGroup",
+                "102",
+                f'Failed to update client group property\nError: "{error_message}"',
             )
 
     def add_additional_setting(
-            self,
-            category: str = None,
-            key_name: str = None,
-            data_type: str = None,
-            value: str = None,
-            comment: str = None,
-            enabled: int = 1
-        ) -> None:
+        self,
+        category: str = None,
+        key_name: str = None,
+        data_type: str = None,
+        value: str = None,
+        comment: str = None,
+        enabled: int = 1,
+    ) -> None:
         """Add an additional registry key setting to the client group property.
 
         This method allows you to add a custom registry key (additional setting) to the client group,
@@ -2793,24 +2783,24 @@ class ClientGroup(object):
         """
 
         properties_dict = {
-            "registryKeys": [{"deleted": 0,
-                              "hidden": False,
-                              "relativepath": category,
-                              "keyName": key_name,
-                              "isInheritedFromClientGroup": False,
-                              "comment": comment,
-                              "type": data_type,
-                              "value": value,
-                              "enabled": enabled}]
+            "registryKeys": [
+                {
+                    "deleted": 0,
+                    "hidden": False,
+                    "relativepath": category,
+                    "keyName": key_name,
+                    "isInheritedFromClientGroup": False,
+                    "comment": comment,
+                    "type": data_type,
+                    "value": value,
+                    "enabled": enabled,
+                }
+            ]
         }
 
         self.update_properties(properties_dict)
 
-    def delete_additional_setting(
-            self,
-            category: str = None,
-            key_name: str = None
-        ) -> None:
+    def delete_additional_setting(self, category: str = None, key_name: str = None) -> None:
         """Delete a registry key from the client group property.
 
         This method removes a specified registry key from the client group's additional settings,
@@ -2832,9 +2822,7 @@ class ClientGroup(object):
         """
 
         properties_dict = {
-            "registryKeys": [{"deleted": 1,
-                              "relativepath": category,
-                              "keyName": key_name}]
+            "registryKeys": [{"deleted": 1, "relativepath": category, "keyName": key_name}]
         }
 
         self.update_properties(properties_dict)
@@ -2856,21 +2844,19 @@ class ClientGroup(object):
         """
         request_json = {
             "clientGroupOperationType": 2,
-            'clientGroupDetail': {
-                    'enableAutoDiscovery': True,
-                    "clientGroup": {
-                            "clientGroupName": self.clientgroup_name
-            }
-        }
+            "clientGroupDetail": {
+                "enableAutoDiscovery": True,
+                "clientGroup": {"clientGroupName": self.clientgroup_name},
+            },
         }
         error_code, error_message = self._process_update_request(request_json)
-        if error_code != '0':
+        if error_code != "0":
             if error_message:
-                o_str = 'Failed to enable autodiscover \nError: "{0}"'.format(error_message)
+                o_str = f'Failed to enable autodiscover \nError: "{error_message}"'
             else:
-                o_str = 'Failed to enable autodiscover'
+                o_str = "Failed to enable autodiscover"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def disable_auto_discover(self) -> None:
         """Disable autodiscover functionality at the ClientGroup level.
@@ -2890,21 +2876,19 @@ class ClientGroup(object):
         """
         request_json = {
             "clientGroupOperationType": 2,
-            'clientGroupDetail': {
-                    'enableAutoDiscovery': False,
-                    "clientGroup": {
-                            "clientGroupName": self.clientgroup_name
-            }
-        }
+            "clientGroupDetail": {
+                "enableAutoDiscovery": False,
+                "clientGroup": {"clientGroupName": self.clientgroup_name},
+            },
         }
         error_code, error_message = self._process_update_request(request_json)
-        if error_code != '0':
+        if error_code != "0":
             if error_message:
-                o_str = 'Failed to Disable autodiscover \nError: "{0}"'.format(error_message)
+                o_str = f'Failed to Disable autodiscover \nError: "{error_message}"'
             else:
-                o_str = 'Failed to Disable autodiscover'
+                o_str = "Failed to Disable autodiscover"
 
-            raise SDKException('ClientGroup', '102', o_str)
+            raise SDKException("ClientGroup", "102", o_str)
 
     def refresh(self) -> None:
         """Reload the properties of the ClientGroup to reflect the latest state.
@@ -2927,7 +2911,7 @@ class ClientGroup(object):
     def refresh_clients(self) -> None:
         """Reload the list of clients associated with this client group.
 
-        This method refreshes the internal client list, ensuring that any changes 
+        This method refreshes the internal client list, ensuring that any changes
         to the group membership are reflected in the current object.
 
         Example:
@@ -2937,23 +2921,23 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        refresh_client_api = self._services['SERVERGROUPS_V4'] + f"/{self._clientgroup_id}/Refresh"
+        refresh_client_api = self._services["SERVERGROUPS_V4"] + f"/{self._clientgroup_id}/Refresh"
 
         flag, response = self._cvpysdk_object.make_request("PUT", refresh_client_api)
 
         if not flag:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         response_json = response.json()
         if not response_json:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
         error_code = response_json.get("errorCode")
         error_message = response_json.get("errorMessage")
 
         if error_code:
-            raise SDKException("ClientGroup", '102', error_message)
+            raise SDKException("ClientGroup", "102", error_message)
 
         self.refresh()
 
@@ -2975,38 +2959,50 @@ class ClientGroup(object):
 
         #ai-gen-doc
         """
-        if target_company_name.lower() == 'commcell':
+        if target_company_name.lower() == "commcell":
             company_id = 0
         else:
-            company_id = int(self._commcell_object.organizations.get(target_company_name).organization_id)
+            company_id = int(
+                self._commcell_object.organizations.get(target_company_name).organization_id
+            )
 
         request_json = {
             "entities": [
                 {
                     "name": self._clientgroup_name,
                     "clientGroupId": int(self._clientgroup_id),
-                    "_type_": 28
+                    "_type_": 28,
                 }
             ]
         }
 
-        req_url = self._services['ORGANIZATION_ASSOCIATION'] % company_id
-        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+        req_url = self._services["ORGANIZATION_ASSOCIATION"] % company_id
+        flag, response = self._cvpysdk_object.make_request("PUT", req_url, request_json)
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
-                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['errorMessage']))
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
+                    raise SDKException(
+                        "Organization", "110", "Error: {0}".format(response.json()["errorMessage"])
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
-    def add_http_proxy(self, use_client_os_proxy_settings=False, proxy_server="", proxy_port=0,
-                       use_authentication=False, use_with_network_topology=False,
-                       proxy_credential_name=None, proxy_credential_id=None, proxy_bypass_list="") -> None:
+    def add_http_proxy(
+        self,
+        use_client_os_proxy_settings=False,
+        proxy_server="",
+        proxy_port=0,
+        use_authentication=False,
+        use_with_network_topology=False,
+        proxy_credential_name=None,
+        proxy_credential_id=None,
+        proxy_bypass_list="",
+    ) -> None:
         """Add an HTTP proxy configuration to the client group
 
         Args:
@@ -3032,18 +3028,20 @@ class ClientGroup(object):
 
         if proxy_type == "EXPLICIT":
             if not proxy_server or not isinstance(proxy_server, str):
-                raise SDKException( 'ClientGroup', 102,
-                    "proxy_server is required and must be a non-empty string when using EXPLICIT proxy."
+                raise SDKException(
+                    "ClientGroup",
+                    102,
+                    "proxy_server is required and must be a non-empty string when using EXPLICIT proxy.",
                 )
             if not isinstance(proxy_port, int) or not (1 <= proxy_port <= 65535):
-                raise SDKException( 'ClientGroup', 102,
-                    "proxy_port must be an integer between 1 and 65535 when using EXPLICIT proxy."
+                raise SDKException(
+                    "ClientGroup",
+                    102,
+                    "proxy_port must be an integer between 1 and 65535 when using EXPLICIT proxy.",
                 )
 
         request_json = {
-            "entity": {
-                "clientGroupId": int(self.clientgroup_id)
-            },
+            "entity": {"clientGroupId": int(self.clientgroup_id)},
             "httpProxy": {
                 "server": proxy_server,
                 "port": proxy_port,
@@ -3051,70 +3049,65 @@ class ClientGroup(object):
                 "proxyBypassList": proxy_bypass_list,
                 "configureHTTPProxy": True,
                 "useAuthentication": use_authentication,
-                "proxyType": proxy_type
-            }
+                "proxyType": proxy_type,
+            },
         }
 
         if proxy_credential_id and proxy_credential_name:
             request_json["httpProxy"]["credentials"] = {
                 "credentialId": proxy_credential_id,
-                "credentialName": proxy_credential_name
+                "credentialName": proxy_credential_name,
             }
         else:
             request_json["httpProxy"]["selectedCredential"] = None
 
-
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._services['HTTP_PROXY'], request_json
+            "POST", self._services["HTTP_PROXY"], request_json
         )
 
         if flag:
             if response.json():
                 error_code = -1
-                error_message ="Failed to add HTTP proxy configuration to the client group."
-                if 'errorCode' in response.json():
-                        error_code = response.json()['errorCode']
+                error_message = "Failed to add HTTP proxy configuration to the client group."
+                if "errorCode" in response.json():
+                    error_code = response.json()["errorCode"]
                 if error_code != 0:
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException("ClientGroup", "102", error_message)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def remove_http_proxy(self) -> None:
         """Remove the HTTP proxy configuration from the client group."""
 
         request_json = {
-            "entity": {
-                "clientGroupId": int(self.clientgroup_id)
-            },
-            "httpProxy": {
-                "configureHTTPProxy": False
-            }
+            "entity": {"clientGroupId": int(self.clientgroup_id)},
+            "httpProxy": {"configureHTTPProxy": False},
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._services['HTTP_PROXY'], request_json
+            "POST", self._services["HTTP_PROXY"], request_json
         )
 
         if flag:
             if response.json():
                 error_code = -1
                 error_message = "Failed to remove HTTP proxy configuration to the client group."
-                if 'errorCode' in response.json():
-                    error_code = response.json()['errorCode']
+                if "errorCode" in response.json():
+                    error_code = response.json()["errorCode"]
                 if error_code != 0:
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException("ClientGroup", "102", error_message)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def additional_settings(self) -> dict:

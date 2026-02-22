@@ -47,7 +47,7 @@ AuxCopyOptions:
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 class ScheduleOptions:
@@ -64,12 +64,11 @@ class ScheduleOptions:
     __metaclass__ = ABCMeta
 
     # This map has to be updated with the subdict option_name for every new option class added
-    policy_to_options_map = {
-        'Data Protection': 'backupOpts',
-        'Auxiliary Copy': 'auxcopyJobOption'
-    }
+    policy_to_options_map = {"Data Protection": "backupOpts", "Auxiliary Copy": "auxcopyJobOption"}
 
-    def __new__(cls, options_type: str, current_options: Optional[Dict[str, Any]] = None) -> 'ScheduleOptions':
+    def __new__(
+        cls, options_type: str, current_options: Optional[Dict[str, Any]] = None
+    ) -> "ScheduleOptions":
         """Returns the respective class object based on the option_type.
 
         Args:
@@ -88,16 +87,15 @@ class ScheduleOptions:
             aux_copy_options = ScheduleOptions('auxcopyJobOption', current_options)
         """
         # This dict has to be update with the option_name and corresponding Option class created
-        options = {
-            'backupOpts': BackupOptions,
-            'auxcopyJobOption': AuxCopyOptions
-        }
+        options = {"backupOpts": BackupOptions, "auxcopyJobOption": AuxCopyOptions}
         # subclass inherit __new__ method so we need this if check to initialize parent.
         if cls is not ScheduleOptions:
             return super().__new__(cls)
         return options[options_type](options_type, current_options)
 
-    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self, options_type: str, current_options: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Initialises Schedule Options class.
 
         Args:
@@ -139,7 +137,9 @@ class BackupOptions(ScheduleOptions):
         backup_options = BackupOptions('backupOpts')
     """
 
-    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self, options_type: str, current_options: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Initialises the BackupOptions class.
 
         Args:
@@ -183,16 +183,12 @@ class BackupOptions(ScheduleOptions):
         if self.current_options:
             for key, value in new_options.items():
                 self.current_options[key] = value
-            return {'backupOpts': self.current_options}
+            return {"backupOpts": self.current_options}
 
-        default_dict = {
-            "backupLevel": "Incremental",
-            "incLevel": 1,
-            "runIncrementalBackup": False
-        }
+        default_dict = {"backupLevel": "Incremental", "incLevel": 1, "runIncrementalBackup": False}
 
         new_options = dict(default_dict, **new_options)
-        return {'backupOpts': new_options}
+        return {"backupOpts": new_options}
 
 
 class AuxCopyOptions(ScheduleOptions):
@@ -203,7 +199,9 @@ class AuxCopyOptions(ScheduleOptions):
         aux_copy_options = AuxCopyOptions('auxcopyJobOption')
     """
 
-    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self, options_type: str, current_options: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Initialises the AuxCopyOptions class.
 
         Args:
@@ -261,14 +259,7 @@ class AuxCopyOptions(ScheduleOptions):
         if self.current_options:
             for key, value in new_options.items():
                 self.current_options[key] = value
-            return {'backupOpts':
-                        {
-                            'mediaOpt':
-                                {
-                                    'auxcopyJobOption': self.current_options
-                                }
-                        }
-                    }
+            return {"backupOpts": {"mediaOpt": {"auxcopyJobOption": self.current_options}}}
 
         default_dict = {
             "maxNumberOfStreams": 0,
@@ -276,19 +267,9 @@ class AuxCopyOptions(ScheduleOptions):
             "useScallableResourceManagement": True,
             "totalJobsToProcess": 1000,
             "allCopies": True,
-            "mediaAgent": {
-                "mediaAgentName": "<ANY MEDIAAGENT>"
-            }
+            "mediaAgent": {"mediaAgentName": "<ANY MEDIAAGENT>"},
         }
 
         new_options = dict(default_dict, **new_options)
 
-        return {
-            'backupOpts':
-            {
-                'mediaOpt':
-                    {
-                        'auxcopyJobOption': new_options
-                    }
-            }
-        }
+        return {"backupOpts": {"mediaOpt": {"auxcopyJobOption": new_options}}}

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -133,8 +131,8 @@ LiveSyncVMPair Attributes:
 import uuid
 
 from ....constants import HypervisorType as hv_type
-from ....constants import VSALiveSyncStatus as sync_status
 from ....constants import VSAFailOverStatus as failover_status
+from ....constants import VSALiveSyncStatus as sync_status
 from ....exception import SDKException
 from ....schedules import SchedulePattern
 
@@ -148,36 +146,42 @@ class VsaLiveSync:
 
         if instance_name == hv_type.MS_VIRTUAL_SERVER.value.lower():
             from .hyperv_live_sync import HyperVLiveSync
+
             return object.__new__(HyperVLiveSync)
         if instance_name == hv_type.AZURE_V2.value.lower():
             from .azure_live_sync import AzureLiveSync
+
             return object.__new__(AzureLiveSync)
 
         if instance_name == hv_type.VIRTUAL_CENTER.value.lower():
             from .vmware_live_sync import VMWareLiveSync
+
             return object.__new__(VMWareLiveSync)
 
         if instance_name == hv_type.AMAZON_AWS.value.lower():
             from .amazon_live_sync import AmazonLiveSync
+
             return object.__new__(AmazonLiveSync)
 
         if instance_name == hv_type.VCLOUD.value.lower():
             from .vcloud_live_sync import vCloudLiveSync
+
             return object.__new__(vCloudLiveSync)
-        
+
         if instance_name == hv_type.GOOGLE_CLOUD.value.lower():
             from .google_cloud_live_sync import GCPLiveSync
+
             return object.__new__(GCPLiveSync)
 
         if instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
             from .oracle_live_sync import OCILiveSync
-            return  object.__new__(OCILiveSync)
 
+            return object.__new__(OCILiveSync)
 
         raise SDKException(
-            'LiveSync',
-            '102',
-            'Virtual server Live Sync for Instance: "{0}" is not yet supported'.format(instance_name)
+            "LiveSync",
+            "102",
+            f'Virtual server Live Sync for Instance: "{instance_name}" is not yet supported',
         )
 
     def __init__(self, subclient_object):
@@ -200,7 +204,7 @@ class VsaLiveSync:
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-        self._ALL_LIVE_SYNC_PAIRS = self._services['GET_ALL_LIVE_SYNC_PAIRS'] % self._subclient_id
+        self._ALL_LIVE_SYNC_PAIRS = self._services["GET_ALL_LIVE_SYNC_PAIRS"] % self._subclient_id
 
         self.refresh()
 
@@ -211,10 +215,10 @@ class VsaLiveSync:
             str - string of all the live sync pairs associated with the subclient
 
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'LiveSyncPair')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "LiveSyncPair")
 
         for index, live_sync in enumerate(self.live_sync_pairs):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, live_sync)
+            sub_str = f"{index + 1:^5}\t{live_sync:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -226,7 +230,7 @@ class VsaLiveSync:
             str - string about the details of the VSALiveSync class instance
 
         """
-        return 'VSALiveSync class instance for the Subclient: "{0}"'.format(self._subclient_name)
+        return f'VSALiveSync class instance for the Subclient: "{self._subclient_name}"'
 
     def _get_live_sync_pairs(self):
         """Gets all the live sync pairs associated with the subclient
@@ -250,30 +254,28 @@ class VsaLiveSync:
                     if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._ALL_LIVE_SYNC_PAIRS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._ALL_LIVE_SYNC_PAIRS)
 
         if flag:
             live_sync_pairs_dict = {}
             if not bool(response.json()):
                 return live_sync_pairs_dict
-            if response.json() and 'siteInfo' not in response.json():
+            if response.json() and "siteInfo" not in response.json():
                 return live_sync_pairs_dict
-            elif response.json() and 'siteInfo' in response.json():
-                for dictionary in response.json()['siteInfo']:
+            elif response.json() and "siteInfo" in response.json():
+                for dictionary in response.json()["siteInfo"]:
                     if dictionary["replicationGroup"]["replicationGroupName"] != "":
                         temp_name = dictionary["replicationGroup"]["replicationGroupName"]
                     else:
-                        temp_name = dictionary['subTask']['subtaskName']
-                    temp_id = str(dictionary['subTask']['taskId'])
-                    live_sync_pairs_dict[temp_name.lower()] = {
-                        'id': temp_id
-                    }
+                        temp_name = dictionary["subTask"]["subtaskName"]
+                    temp_id = str(dictionary["subTask"]["taskId"])
+                    live_sync_pairs_dict[temp_name.lower()] = {"id": temp_id}
 
                 return live_sync_pairs_dict
 
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     @staticmethod
     def _live_sync_subtask_json(schedule_name):
@@ -286,7 +288,7 @@ class VsaLiveSync:
         return {
             "subTaskType": "RESTORE",
             "operationType": "SITE_REPLICATION",
-            "subTaskName": schedule_name
+            "subTaskName": schedule_name,
         }
 
     def _configure_live_sync(self, schedule_name, restore_options, pattern_dict=None):
@@ -346,16 +348,18 @@ class VsaLiveSync:
 
         """
         # To generate a random UUID for replication
-        restore_options['replication_guid'] = str(uuid.uuid1())
+        restore_options["replication_guid"] = str(uuid.uuid1())
 
         request_json = self._subclient_object._prepare_fullvm_restore_json(restore_options)
 
         # To include the schedule pattern
         request_json = self.schedule_pattern.create_schedule(
-            request_json,
-            pattern_dict or {'freq_type': 'after_job_completes'})
+            request_json, pattern_dict or {"freq_type": "after_job_completes"}
+        )
 
-        request_json['taskInfo']['subTasks'][0]['subTask'] = self._live_sync_subtask_json(schedule_name)
+        request_json["taskInfo"]["subTasks"][0]["subTask"] = self._live_sync_subtask_json(
+            schedule_name
+        )
 
         return self._subclient_object._process_restore_response(request_json)
 
@@ -393,15 +397,14 @@ class VsaLiveSync:
 
         """
         if not isinstance(live_sync_name, str):
-            raise SDKException('LiveSync', '101')
+            raise SDKException("LiveSync", "101")
         live_sync_name = live_sync_name.lower()
         if self.has_live_sync_pair(live_sync_name):
             return LiveSyncPairs(
-                self._subclient_object,
-                live_sync_name,
-                self.live_sync_pairs[live_sync_name]['id'])
+                self._subclient_object, live_sync_name, self.live_sync_pairs[live_sync_name]["id"]
+            )
         raise SDKException(
-            'LiveSync', '102', 'No Live Sync exists with given name: {0}'.format(live_sync_name)
+            "LiveSync", "102", f"No Live Sync exists with given name: {live_sync_name}"
         )
 
     def has_live_sync_pair(self, live_sync_name):
@@ -431,12 +434,12 @@ class LiveSyncPairs:
     def __init__(self, subclient_object, live_sync_name, live_sync_id=None):
         """Initializing instance of the LiveSyncPairs class
 
-         Args:
-            subclient_object    (obj)   -- Instance of Subclient class
+        Args:
+           subclient_object    (obj)   -- Instance of Subclient class
 
-            live_sync_name      (str)   -- Name of the Live sync
+           live_sync_name      (str)   -- Name of the Live sync
 
-            live_sync_id        (str)   -- Task ID of the live sync
+           live_sync_id        (str)   -- Task ID of the live sync
 
         """
         self._subclient_object = subclient_object
@@ -452,9 +455,9 @@ class LiveSyncPairs:
 
         self._live_sync_id = live_sync_id or self._get_live_sync_id()
 
-        self._LIVE_SYNC_VM_PAIRS = self._services['GET_ALL_LIVE_SYNC_VM_PAIRS'] % (
+        self._LIVE_SYNC_VM_PAIRS = self._services["GET_ALL_LIVE_SYNC_VM_PAIRS"] % (
             self._subclient_id,
-            self.live_sync_id
+            self.live_sync_id,
         )
 
         self._vm_pairs = None
@@ -468,10 +471,10 @@ class LiveSyncPairs:
             str - string of all the live sync pairs associated with the subclient
 
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'LiveSyncVMPair')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "LiveSyncVMPair")
 
         for index, vm_pair in enumerate(self.vm_pairs):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, vm_pair)
+            sub_str = f"{index + 1:^5}\t{vm_pair:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -512,25 +515,23 @@ class LiveSyncPairs:
                 if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._LIVE_SYNC_VM_PAIRS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._LIVE_SYNC_VM_PAIRS)
 
         if flag:
             live_sync_vm_pairs = {}
             if not bool(response.json()):
                 return live_sync_vm_pairs
-            elif response.json() and 'siteInfo' in response.json():
-                for dictionary in response.json()['siteInfo']:
-                    temp_name = dictionary['sourceName']
-                    temp_id = str(dictionary['replicationId'])
-                    live_sync_vm_pairs[temp_name] = {
-                        'id': temp_id
-                    }
+            elif response.json() and "siteInfo" in response.json():
+                for dictionary in response.json()["siteInfo"]:
+                    temp_name = dictionary["sourceName"]
+                    temp_id = str(dictionary["replicationId"])
+                    live_sync_vm_pairs[temp_name] = {"id": temp_id}
 
                 return live_sync_vm_pairs
 
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def vm_pairs(self):
@@ -566,16 +567,10 @@ class LiveSyncPairs:
 
         """
         if not isinstance(vm_pair_name, str):
-            raise SDKException('LiveSync', '101')
+            raise SDKException("LiveSync", "101")
         if self.has_vm_pair(vm_pair_name):
-            return LiveSyncVMPair(
-                self,
-                vm_pair_name,
-                self.vm_pairs[vm_pair_name]['id']
-            )
-        raise SDKException(
-            'LiveSync', '102', 'No VM pair exists with given name: {0}'.format(vm_pair_name)
-        )
+            return LiveSyncVMPair(self, vm_pair_name, self.vm_pairs[vm_pair_name]["id"])
+        raise SDKException("LiveSync", "102", f"No VM pair exists with given name: {vm_pair_name}")
 
     def has_vm_pair(self, vm_pair_name):
         """Checks if a live sync pair exists with the given name
@@ -614,12 +609,12 @@ class LiveSyncVMPair:
     def __init__(self, live_sync_pair_object, vm_pair_name, vm_pair_id=None):
         """Initializing instance of the LiveSyncPair class
 
-         Args:
-            live_sync_pair_object   (obj)   -- Instance of LiveSyncPairs class
+        Args:
+           live_sync_pair_object   (obj)   -- Instance of LiveSyncPairs class
 
-            vm_pair_name            (str)   -- Name of the vm pair
+           vm_pair_name            (str)   -- Name of the vm pair
 
-            vm_pair_id              (str)   -- ID of the live sync VM pair
+           vm_pair_id              (str)   -- ID of the live sync VM pair
 
         """
         self.live_sync_pair = live_sync_pair_object
@@ -637,9 +632,9 @@ class LiveSyncVMPair:
 
         self._vm_pair_id = vm_pair_id or self._get_vm_pair_id()
 
-        self._VM_PAIR = self._services['GET_LIVE_SYNC_VM_PAIR'] % (
+        self._VM_PAIR = self._services["GET_LIVE_SYNC_VM_PAIR"] % (
             self._subclient_id,
-            self._vm_pair_id
+            self._vm_pair_id,
         )
 
         self._properties = None
@@ -664,7 +659,7 @@ class LiveSyncVMPair:
 
     def __str__(self):
         """String representation of the instance of BLR pair"""
-        return f'Live sync pair: {self._source_vm} -> {self._destination_vm}'
+        return f"Live sync pair: {self._source_vm} -> {self._destination_vm}"
 
     def _get_vm_pair_id(self):
         """Gets the VM pair id associated with the LiveSyncPair
@@ -685,39 +680,48 @@ class LiveSyncVMPair:
                 if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._VM_PAIR)
+        flag, response = self._cvpysdk_object.make_request("GET", self._VM_PAIR)
 
         if flag:
             if not bool(response.json()):
                 pass
-            elif response.json() and 'siteInfo' in response.json():
-                self._properties = response.json()['siteInfo'][0]
-                self._replication_guid = self._properties['replicationGuid']
-                self._status = self._properties['status']
-                self._failover_status = self._properties['FailoverStatus']
-                self._source_vm = self._properties['sourceName']
-                self._destination_vm = self._properties['destinationName']
-                self._destination_client = self._properties['destinationInstance'].get(
-                    'clientName') or self._commcell_object.clients.get(
-                    self._properties['destinationInstance'].get('clientId')).name
-                self._destination_proxy = self._properties['destProxy'].get(
-                    'clientName') or self._commcell_object.clients.get(
-                    self._properties['destProxy'].get('clientId')).name
-                self._destination_instance = self._properties['destinationInstance'].get(
-                    'instanceName') or self._agent_object.instances.get(
-                    self._properties['destinationInstance'].get('instanceId')).name
-                self._last_backup_job = self._properties['lastSyncedBkpJob']
-                self._is_warm_sync_pair = self._properties.get('isWarmSyncPair', False)
+            elif response.json() and "siteInfo" in response.json():
+                self._properties = response.json()["siteInfo"][0]
+                self._replication_guid = self._properties["replicationGuid"]
+                self._status = self._properties["status"]
+                self._failover_status = self._properties["FailoverStatus"]
+                self._source_vm = self._properties["sourceName"]
+                self._destination_vm = self._properties["destinationName"]
+                self._destination_client = (
+                    self._properties["destinationInstance"].get("clientName")
+                    or self._commcell_object.clients.get(
+                        self._properties["destinationInstance"].get("clientId")
+                    ).name
+                )
+                self._destination_proxy = (
+                    self._properties["destProxy"].get("clientName")
+                    or self._commcell_object.clients.get(
+                        self._properties["destProxy"].get("clientId")
+                    ).name
+                )
+                self._destination_instance = (
+                    self._properties["destinationInstance"].get("instanceName")
+                    or self._agent_object.instances.get(
+                        self._properties["destinationInstance"].get("instanceId")
+                    ).name
+                )
+                self._last_backup_job = self._properties["lastSyncedBkpJob"]
+                self._is_warm_sync_pair = self._properties.get("isWarmSyncPair", False)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def task_id(self):
-        """ Returns: (int) The ID of the replication schedule task"""
-        return self._properties.get('subTask', {}).get('taskId')
+        """Returns: (int) The ID of the replication schedule task"""
+        return self._properties.get("subTask", {}).get("taskId")
 
     @property
     def vm_pair_id(self):
@@ -741,8 +745,8 @@ class LiveSyncVMPair:
 
     @property
     def source_vm_guid(self):
-        """ Returns (str): The GUID of the source VM """
-        return self._properties.get('sourceGuid')
+        """Returns (str): The GUID of the source VM"""
+        return self._properties.get("sourceGuid")
 
     @property
     def destination_vm(self):
@@ -751,8 +755,8 @@ class LiveSyncVMPair:
 
     @property
     def destination_vm_guid(self):
-        """ Returns (str): The GUID of the destination VM """
-        return self._properties.get('destinationGuid')
+        """Returns (str): The GUID of the destination VM"""
+        return self._properties.get("destinationGuid")
 
     @property
     def destination_client(self):
@@ -787,34 +791,34 @@ class LiveSyncVMPair:
     @property
     def last_replication_job(self):
         """Returns (int): the last replication job that has been run for the Live sync VM pair"""
-        for prop in self._properties.get('VMReplInfoProperties', []):
-            if prop.get('propertyId', 0) == 2215 and prop.get('propertyValue'):
-                return int(prop.get('propertyValue'))
+        for prop in self._properties.get("VMReplInfoProperties", []):
+            if prop.get("propertyId", 0) == 2215 and prop.get("propertyValue"):
+                return int(prop.get("propertyValue"))
         return None
 
     @property
     def latest_replication_job(self):
         """Returns (int): the latest successful replication job for the Live sync VM pair"""
-        for prop in self._properties.get('VMReplInfoProperties', []):
-            if prop.get('propertyId', 0) == 2208 and prop.get('propertyValue'):
-                self._latest_replication_job = int(prop.get('propertyValue'))
+        for prop in self._properties.get("VMReplInfoProperties", []):
+            if prop.get("propertyId", 0) == 2208 and prop.get("propertyValue"):
+                self._latest_replication_job = int(prop.get("propertyValue"))
                 return self._latest_replication_job
         return None
 
     @property
     def failover_job_id(self):
         """Returns (int): the job ID of the failover job"""
-        for prop in self._properties.get('VMReplInfoProperties', []):
-            if prop.get('propertyId', 0) == 2216 and prop.get('propertyValue'):
-                return int(prop.get('propertyValue'))
+        for prop in self._properties.get("VMReplInfoProperties", []):
+            if prop.get("propertyId", 0) == 2216 and prop.get("propertyValue"):
+                return int(prop.get("propertyValue"))
         return None
 
     @property
     def reverse_replication_schedule_id(self):
         """Returns (int): The schedule ID of the reverse replication schedule"""
-        for prop in self._properties.get('VMReplInfoProperties', []):
-            if prop.get('propertyId', 0) == 2212 and prop.get('propertyValue'):
-                return int(prop.get('propertyValue'))
+        for prop in self._properties.get("VMReplInfoProperties", []):
+            if prop.get("propertyId", 0) == 2212 and prop.get("propertyValue"):
+                return int(prop.get("propertyValue"))
         return None
 
     @property
@@ -822,9 +826,10 @@ class LiveSyncVMPair:
         """Returns (str): The name of the replication group associated to the VM pair
         Note: This also removes the CV prefix for new replication groups
         """
-        group_name = (self._properties.get('replicationGroup', {}).get('replicationGroupName')
-                      or self._properties.get('subTask', {}).get('subTaskName'))
-        return group_name.replace('_ReplicationPlan__ReplicationGroup', '')
+        group_name = self._properties.get("replicationGroup", {}).get(
+            "replicationGroupName"
+        ) or self._properties.get("subTask", {}).get("subTaskName")
+        return group_name.replace("_ReplicationPlan__ReplicationGroup", "")
 
     @property
     def is_warm_sync_pair(self):

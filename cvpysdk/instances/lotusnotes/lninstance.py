@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -27,15 +25,13 @@ LNInstance:
 
 """
 
-from __future__ import unicode_literals
-
 from typing import TYPE_CHECKING
 
 from ...instance import Instance
-from ...exception import SDKException
 
 if TYPE_CHECKING:
     from ...job import Job
+
 
 class LNInstance(Instance):
     """
@@ -58,20 +54,20 @@ class LNInstance(Instance):
     """
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore files or folders to their original location within the LNInstance.
 
-        This method restores the specified files or folders, as provided in the `paths` list, 
-        to their original location on the source client. Various options allow you to control 
-        overwrite behavior, data and ACL restoration, copy precedence, and time-based filtering. 
+        This method restores the specified files or folders, as provided in the `paths` list,
+        to their original location on the source client. Various options allow you to control
+        overwrite behavior, data and ACL restoration, copy precedence, and time-based filtering.
         Additional restore options can be provided via keyword arguments.
 
         Args:
@@ -94,7 +90,7 @@ class LNInstance(Instance):
             Job: An instance of the Job class representing the restore job.
 
         Raises:
-            SDKException: If `paths` is not a list, if the job fails to initialize, 
+            SDKException: If `paths` is not a list, if the job fails to initialize,
                 or if the restore response is empty or unsuccessful.
 
         Example:
@@ -123,23 +119,23 @@ class LNInstance(Instance):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            **kwargs
+            **kwargs,
         )
 
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore files or folders to a different client and destination path.
 
         This method restores the specified files or folders from backup to a given client at the provided
@@ -197,7 +193,7 @@ class LNInstance(Instance):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            **kwargs
+            **kwargs,
         )
 
         return self._process_restore_response(request_json)

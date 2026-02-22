@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -43,7 +41,6 @@ MSDynamics365Instance:
     idx_app_type                        --      Returns the App type of the MS Dynamics 365 instance
 """
 
-from __future__ import unicode_literals
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 
@@ -82,7 +79,7 @@ class MSDynamics365Instance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        super(MSDynamics365Instance, self)._get_instance_properties()
+        super()._get_instance_properties()
         # Common properties for Cloud Apps
         self._ca_instance_type = None
         self._manage_content_automatically = None
@@ -95,33 +92,44 @@ class MSDynamics365Instance(CloudAppsInstance):
         self._access_node = None
         self._index_server = None
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties["cloudAppsInstance"]
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
-            if 'v2CloudAppsInstance' in cloud_apps_instance:
-                d365_instance = cloud_apps_instance['v2CloudAppsInstance']
+            if "v2CloudAppsInstance" in cloud_apps_instance:
+                d365_instance = cloud_apps_instance["v2CloudAppsInstance"]
 
-                self._manage_content_automatically = d365_instance['manageContentAutomatically']
-                self._auto_discovery_enabled = d365_instance['isAutoDiscoveryEnabled']
+                self._manage_content_automatically = d365_instance["manageContentAutomatically"]
+                self._auto_discovery_enabled = d365_instance["isAutoDiscoveryEnabled"]
 
-                if 'clientId' in d365_instance:
-                    self._client_id = d365_instance.get('clientId')
-                    self._tenant = d365_instance.get('tenant')
+                if "clientId" in d365_instance:
+                    self._client_id = d365_instance.get("clientId")
+                    self._tenant = d365_instance.get("tenant")
                 else:
-                    self._client_id = d365_instance.get(
-                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureAppId')
-                    self._tenant = d365_instance.get(
-                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureDirectoryId')
+                    self._client_id = (
+                        d365_instance.get("azureAppList", {})
+                        .get("azureApps", [{}])[0]
+                        .get("azureAppId")
+                    )
+                    self._tenant = (
+                        d365_instance.get("azureAppList", {})
+                        .get("azureApps", [{}])[0]
+                        .get("azureDirectoryId")
+                    )
 
                 if self._client_id is None:
-                    raise SDKException('Instance', '102', 'Azure App has not been configured')
+                    raise SDKException("Instance", "102", "Azure App has not been configured")
 
-            if 'generalCloudProperties' in cloud_apps_instance:
-                general_cloud_properties = cloud_apps_instance['generalCloudProperties']
-                self._access_node = general_cloud_properties.get("memberServers", {})[0].get("client", {}).get(
-                    "clientName", None)
-                self._index_server = general_cloud_properties.get("indexServer", {}).get("clientName", None)
+            if "generalCloudProperties" in cloud_apps_instance:
+                general_cloud_properties = cloud_apps_instance["generalCloudProperties"]
+                self._access_node = (
+                    general_cloud_properties.get("memberServers", {})[0]
+                    .get("client", {})
+                    .get("clientName", None)
+                )
+                self._index_server = general_cloud_properties.get("indexServer", {}).get(
+                    "clientName", None
+                )
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve the instance properties as a JSON dictionary.
@@ -138,7 +146,7 @@ class MSDynamics365Instance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        return {'instanceProperties': self._properties}
+        return {"instanceProperties": self._properties}
 
     @property
     def access_node(self) -> str:
@@ -175,12 +183,12 @@ class MSDynamics365Instance(CloudAppsInstance):
     def discover_content(self, environment_discovery: bool = False) -> dict:
         """Run discovery for a Microsoft Dynamics 365 Instance.
 
-        This method performs content discovery on the MS Dynamics 365 instance. 
+        This method performs content discovery on the MS Dynamics 365 instance.
         If `environment_discovery` is set to True, the discovery process will target Dynamics 365 environments.
         If set to False (default), the discovery will be performed at the table level.
 
         Args:
-            environment_discovery: Whether to run discovery for Dynamics 365 environments (True) 
+            environment_discovery: Whether to run discovery for Dynamics 365 environments (True)
                 or at the table level (False).
 
         Returns:
@@ -202,24 +210,27 @@ class MSDynamics365Instance(CloudAppsInstance):
         else:
             discovery_type = 5
 
-        url = self._services['GET_CLOUDAPPS_USERS'] % (
-            self.instance_id, self._agent_object._client_object.client_id, discovery_type)
+        url = self._services["GET_CLOUDAPPS_USERS"] % (
+            self.instance_id,
+            self._agent_object._client_object.client_id,
+            discovery_type,
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', url)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", url)
 
         if flag:
             if response and response.json():
                 discover_content = response.json()
 
-                if discover_content.get('error', {}).get('errorCode', 0) == -304283248:
-                    raise SDKException('Response', '101', discover_content)
+                if discover_content.get("error", {}).get("errorCode", 0) == -304283248:
+                    raise SDKException("Response", "101", discover_content)
 
-                if 'userAccounts' in response.json():
-                    _discover_content = discover_content['userAccounts']
+                if "userAccounts" in response.json():
+                    _discover_content = discover_content["userAccounts"]
                     return _discover_content
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)

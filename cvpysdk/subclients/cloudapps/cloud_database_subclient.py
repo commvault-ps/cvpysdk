@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -39,11 +37,13 @@ CloudDatabaseSubclient:
     restore()                           --  Restores a cloud database from the specified source and restore options
 
 """
+
 from typing import Any, Dict, Optional
 
-from ..casubclient import CloudAppsSubclient
 from ...exception import SDKException
 from ...job import Job
+from ..casubclient import CloudAppsSubclient
+
 
 class CloudDatabaseSubclient(CloudAppsSubclient):
     """
@@ -82,9 +82,9 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
 
-        super(CloudDatabaseSubclient, self)._get_subclient_properties()
+        super()._get_subclient_properties()
 
-        if 'cloudDbContent' in self._subclient_properties:
+        if "cloudDbContent" in self._subclient_properties:
             self._cloud_db_content = self._subclient_properties["cloudDbContent"]
         else:
             self._cloud_db_content = {}
@@ -104,19 +104,16 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "commonProperties": self._commonProperties,
-                    "cloudAppsSubClientProp": {
-                        "instanceType": self._backupset_object._instance_object.ca_instance_type
-                    },
-                    "planEntity": {
-                        "planName": self.storage_policy
-                    },
-                    "cloudDbContent": self._cloud_db_content
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "commonProperties": self._commonProperties,
+                "cloudAppsSubClientProp": {
+                    "instanceType": self._backupset_object._instance_object.ca_instance_type
+                },
+                "planEntity": {"planName": self.storage_policy},
+                "cloudDbContent": self._cloud_db_content,
+            }
         }
         return subclient_json
 
@@ -134,9 +131,7 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         if content is not None:
-            self._cloud_db_content = {
-                "children": content
-            }
+            self._cloud_db_content = {"children": content}
 
         self._set_subclient_properties("_cloud_db_content", self._cloud_db_content)
 
@@ -183,7 +178,7 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
             self._set_content(content=subclient_content)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient content should be a list value and not empty'
+                "Subclient", "102", "Subclient content should be a list value and not empty"
             )
 
     def browse(self, *args: Any, **kwargs: Any) -> dict:
@@ -236,12 +231,7 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         """
         return self._instance_object.browse(*args, **kwargs)
 
-    def restore(
-            self,
-            destination: str,
-            source: str,
-            restore_options: dict
-        ) -> 'Job':
+    def restore(self, destination: str, source: str, restore_options: dict) -> "Job":
         """Restore the content of this subclient's instance from a specified snapshot.
 
         This method initiates a restore operation for the subclient, restoring data from the given source snapshot

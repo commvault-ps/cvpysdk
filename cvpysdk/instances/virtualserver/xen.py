@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -40,9 +38,10 @@ XenInstance:
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -65,7 +64,7 @@ class Xen(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize the Xen Instance object for a given Virtual Server instance.
 
         Args:
@@ -80,7 +79,7 @@ class Xen(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(Xen, self).__init__(agent, instance_name, instance_id)
+        super().__init__(agent, instance_name, instance_id)
         self._vendor_id = 3
         self._server_name = None
         self._server_host_name = None
@@ -96,8 +95,8 @@ class Xen(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(Xen, self)._get_instance_properties()
-        self._server_name = self._instance.get('clientName', '')
+        super()._get_instance_properties()
+        self._server_name = self._instance.get("clientName", "")
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient as a dictionary.
@@ -113,10 +112,10 @@ class Xen(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": {},
+                },
             }
         }
         return instance_json
@@ -135,7 +134,7 @@ class Xen(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        # This property will be set during TC execution. 
+        # This property will be set during TC execution.
         return self._server_host_name
 
     @server_host_name.setter

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -47,11 +45,13 @@ CloudStorageSubclient:
                                             proxy passing explicit credentials of destination cloud
 
 """
+
 from typing import Optional
 
-from ..casubclient import CloudAppsSubclient
 from ...exception import SDKException
 from ...job import Job
+from ..casubclient import CloudAppsSubclient
+
 
 class CloudStorageSubclient(CloudAppsSubclient):
     """
@@ -87,9 +87,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
 
         #ai-gen-doc
         """
-        super(CloudStorageSubclient, self)._get_subclient_properties()
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
+        super()._get_subclient_properties()
+        if "content" in self._subclient_properties:
+            self._content = self._subclient_properties["content"]
 
     def _get_subclient_properties_json(self) -> dict:
         """Retrieve the properties JSON for the Cloud Storage Subclient.
@@ -106,17 +106,16 @@ class CloudStorageSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "cloudAppsSubClientProp": {
-                        "instanceType": self._backupset_object._instance_object.ca_instance_type
-                    },
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "cloudAppsSubClientProp": {
+                    "instanceType": self._backupset_object._instance_object.ca_instance_type
+                },
+                "content": self._content,
+                "commonProperties": self._commonProperties,
+                "contentOperationType": 1,
+            }
         }
         return subclient_json
 
@@ -141,9 +140,7 @@ class CloudStorageSubclient(CloudAppsSubclient):
 
         update_content = []
         for path in content:
-            cloud_dict = {
-                "path": path
-            }
+            cloud_dict = {"path": path}
             update_content.append(cloud_dict)
 
         self._set_subclient_properties("_content", update_content)
@@ -165,7 +162,7 @@ class CloudStorageSubclient(CloudAppsSubclient):
         content = []
 
         for path in self._content:
-            if 'path' in path:
+            if "path" in path:
                 content.append(path["path"])
 
         return content
@@ -196,16 +193,16 @@ class CloudStorageSubclient(CloudAppsSubclient):
             self._set_content(content=subclient_content)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient content should be a list value and not empty'
+                "Subclient", "102", "Subclient content should be a list value and not empty"
             )
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            copy_precedence: int = None,
-            no_of_streams: int = 2
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        no_of_streams: int = 2,
+    ) -> "Job":
         """Restore the specified files or folders to their original location in the cloud storage subclient.
 
         Args:
@@ -232,19 +229,20 @@ class CloudStorageSubclient(CloudAppsSubclient):
             paths=paths,
             overwrite=overwrite,
             copy_precedence=copy_precedence,
-            no_of_streams=no_of_streams)
+            no_of_streams=no_of_streams,
+        )
 
     def restore_out_of_place(
-            self,
-            paths: list,
-            destination_client: str,
-            destination_instance_name: str,
-            destination_path: str,
-            overwrite: bool = True,
-            copy_precedence: int = None,
-            no_of_streams: int = 2,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        destination_client: str,
+        destination_instance_name: str,
+        destination_path: str,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        no_of_streams: int = 2,
+        **kwargs,
+    ) -> "Job":
         """Restore specified files or folders to a different client and location.
 
         This method restores the files or folders listed in `paths` to the specified
@@ -298,17 +296,18 @@ class CloudStorageSubclient(CloudAppsSubclient):
             overwrite=overwrite,
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
-            **kwargs)
+            **kwargs,
+        )
 
     def restore_to_fs(
-            self,
-            paths: list,
-            destination_path: str,
-            destination_client: str = None,
-            overwrite: bool = True,
-            copy_precedence: int = None,
-            no_of_streams: int = 2
-        ) -> 'Job':
+        self,
+        paths: list,
+        destination_path: str,
+        destination_client: str = None,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        no_of_streams: int = 2,
+    ) -> "Job":
         """Restore specified files or folders from cloud storage to a file system client.
 
         This method initiates a restore job to copy the given files or folders from cloud storage
@@ -352,7 +351,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_client=destination_client,
             overwrite=overwrite,
             copy_precedence=copy_precedence,
-            no_of_streams=no_of_streams)
+            no_of_streams=no_of_streams,
+        )
 
     def restore_using_proxy(
         self,
@@ -361,8 +361,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
         destination_path: str,
         overwrite: bool = True,
         copy_precedence: int = None,
-        destination_cloud: dict = None
-    ) -> 'Job':
+        destination_cloud: dict = None,
+    ) -> "Job":
         """Restore files or folders to a different cloud using a proxy and explicit destination cloud credentials.
 
         This method allows you to restore specified files or folders to a different cloud storage provider
@@ -425,10 +425,11 @@ class CloudStorageSubclient(CloudAppsSubclient):
         """
         self._instance_object._restore_association = self._subClientEntity
 
-        return self._instance_object.restore_using_proxy(paths=paths,
-                                                         destination_client_proxy=destination_client_proxy,
-                                                         destination_path=destination_path,
-                                                         overwrite=overwrite,
-                                                         copy_precedence=copy_precedence,
-                                                         destination_cloud=destination_cloud
-                                                         )
+        return self._instance_object.restore_using_proxy(
+            paths=paths,
+            destination_client_proxy=destination_client_proxy,
+            destination_path=destination_path,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            destination_cloud=destination_cloud,
+        )

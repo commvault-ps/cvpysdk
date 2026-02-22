@@ -57,8 +57,9 @@ BackupJobSummary:
 """
 
 from enum import Enum
+from typing import List, Optional
+
 from cvpysdk.exception import SDKException
-from typing import Optional, List
 
 
 class FormatType(Enum):
@@ -70,6 +71,7 @@ class FormatType(Enum):
         TEXT (int): Represents TEXT format with value 2.
         XML (int): Represents XML format with value 12.
     """
+
     HTML = 1
     PDF = 6
     TEXT = 2
@@ -89,7 +91,7 @@ class Report:
     """
 
     def __init__(self, commcell):
-        """ Initialize the report object
+        """Initialize the report object
 
         Args:
             commcell (Commcell): the commcell object
@@ -132,13 +134,15 @@ class Report:
         for each_format_type in FormatType:
             if each_format_type.name == format_type.name:
                 self._report_extension = each_format_type.name
-                self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']\
-                ['reportOption']['commonOpt']['outputFormat']['outputType'] = \
-                    str(each_format_type.value)
+                self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"][
+                    "reportOption"
+                ]["commonOpt"]["outputFormat"]["outputType"] = str(each_format_type.value)
                 return
         raise Exception("Invalid format type,format should be one among the type in FormatType")
 
-    def select_local_drive(self, report_copy_location: str, client_name: Optional[str] = None) -> None:
+    def select_local_drive(
+        self, report_copy_location: str, client_name: Optional[str] = None
+    ) -> None:
         """Select local drive
 
         Args:
@@ -158,11 +162,13 @@ class Report:
         else:
             if not self._commcell.clients.has_client(client_name):
                 raise Exception(f"Client [{client_name}] does not exist")
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption']\
-        ['commonOpt']['savedTo']['reportSavedToClient']['clientName'] = client_name
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "commonOpt"
+        ]["savedTo"]["reportSavedToClient"]["clientName"] = client_name
 
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['commonOpt']['savedTo']['locationURL'] = report_copy_location
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "commonOpt"
+        ]["savedTo"]["locationURL"] = report_copy_location
 
     def select_network_share(self) -> None:
         """Select network share
@@ -171,11 +177,12 @@ class Report:
             >>> report = Report(commcell_object)
             >>> report.select_network_share()
         """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption']\
-            ['commonOpt']['savedTo']['isNetworkDrive'] = 1
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "commonOpt"
+        ]["savedTo"]["isNetworkDrive"] = 1
 
     def set_report_custom_name(self, name: str) -> None:
-        """ Sets report custom name
+        """Sets report custom name
 
         Args:
             name (str): Custom name of the report
@@ -184,11 +191,12 @@ class Report:
             >>> report = Report(commcell_object)
             >>> report.set_report_custom_name(name='MyReport')
         """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption']\
-        ['commonOpt']['reportCustomName'] = (name + "." + self._report_extension)
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "commonOpt"
+        ]["reportCustomName"] = name + "." + self._report_extension
 
     def run_report(self) -> str:
-        """ Executes the report
+        """Executes the report
 
         Returns:
             str: Job ID
@@ -200,13 +208,13 @@ class Report:
             >>> report = Report(commcell_object)
             >>> job_id = report.run_report()
         """
-        flag, response = self._cvpysdk_commcell_object.make_request('POST',
-                                                                    self._services['CREATE_TASK'],
-                                                                    self._request_json)
+        flag, response = self._cvpysdk_commcell_object.make_request(
+            "POST", self._services["CREATE_TASK"], self._request_json
+        )
         try:
-            return response.json()['jobIds'][0]
+            return response.json()["jobIds"][0]
         except Exception:
-            raise SDKException("RunReportError", '101', response.json()["errorMessage"])
+            raise SDKException("RunReportError", "101", response.json()["errorMessage"])
 
 
 class BackupJobSummary(Report):
@@ -215,8 +223,9 @@ class BackupJobSummary(Report):
     Attributes:
         _request_json (dict): JSON request for the backup job summary report.
     """
+
     def __init__(self, commcell_object):
-        """ Initialize the backup job summary report object
+        """Initialize the backup job summary report object
 
         Args:
             commcell_object (Commcell): Commcell object.
@@ -230,18 +239,13 @@ class BackupJobSummary(Report):
                     "ownerName": commcell_object.commcell_username,
                     "sequenceNumber": 0,
                     "initiatedFrom": 1,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "appGroup": {},
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4004
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4004},
                         "options": {
                             "adminOpts": {
                                 "reportOption": {
@@ -253,20 +257,8 @@ class BackupJobSummary(Report):
                                     "jobOption": False,
                                     "excludeHiddenSubclients": False,
                                     "failedFilesThreshold": 0,
-                                    "mediaAgentList": [
-                                        {
-                                            "_type_": 11,
-                                            "flags": {
-                                                "include": True
-                                            }
-                                        }
-                                    ],
-                                    "storagePolicyCopyList": [
-                                        {
-                                            "_type_": 17,
-                                            "allCopies": True
-                                        }
-                                    ],
+                                    "mediaAgentList": [{"_type_": 11, "flags": {"include": True}}],
+                                    "storagePolicyCopyList": [{"_type_": 17, "allCopies": True}],
                                     "commonOpt": {
                                         "dateFormat": "mm/dd/yyyy",
                                         "overrideDateTimeFormat": 0,
@@ -284,9 +276,9 @@ class BackupJobSummary(Report):
                                             "reportSavedToClient": {
                                                 "hostName": "",
                                                 "clientName": "",
-                                                "_type_": 3
+                                                "_type_": 3,
                                             },
-                                            "ftpDetails": {}
+                                            "ftpDetails": {},
                                         },
                                         "locale": {
                                             "_type_": 66,
@@ -294,21 +286,18 @@ class BackupJobSummary(Report):
                                             "displayString": "English-Australia",
                                             "locale": "en-au",
                                             "localeName": "en",
-                                            "localeId": 0
+                                            "localeId": 0,
                                         },
                                         "outputFormat": {
                                             "textDelimiter": "\t",
                                             "outputType": 1,
-                                            "isNetworkDrive": False
-                                        }
+                                            "isNetworkDrive": False,
+                                        },
                                     },
                                     "computerSelectionList": {
                                         "includeAll": True,
-                                        "clientGroupList": [
-                                        ],
-                                        "clientList": [
-                                        ]
-
+                                        "clientGroupList": [],
+                                        "clientList": [],
                                     },
                                     "jobSummaryReport": {
                                         "subClientDescription": "",
@@ -349,7 +338,7 @@ class BackupJobSummary(Report):
                                             "numberOfObjects": 100,
                                             "failureReason": True,
                                             "IncludeMediaDeletedJobs": False,
-                                            "drive": False
+                                            "drive": False,
                                         },
                                         "jobOptions": {
                                             "numberOfMostFreqErrors": 0,
@@ -360,7 +349,7 @@ class BackupJobSummary(Report):
                                                 "basicRetention": False,
                                                 "manualRetention": False,
                                                 "extendedRetention": False,
-                                                "retentionAll": False
+                                                "retentionAll": False,
                                             },
                                             "backupTypes": {
                                                 "all": True,
@@ -368,40 +357,25 @@ class BackupJobSummary(Report):
                                                 "automatedSystemRecovery": False,
                                                 "incremental": True,
                                                 "full": True,
-                                                "differential": True
+                                                "differential": True,
                                             },
-                                            "jobStatus": {
-                                                "all": True
-                                            },
-                                            "increaseInDataSize": {
-                                                "value": 10,
-                                                "selected": False
-                                            },
-                                            "decreaseInDataSize": {
-                                                "value": 10,
-                                                "selected": False
-                                            }
-                                        }
+                                            "jobStatus": {"all": True},
+                                            "increaseInDataSize": {"value": 10, "selected": False},
+                                            "decreaseInDataSize": {"value": 10, "selected": False},
+                                        },
                                     },
-                                    "agentList": [
-                                        {
-                                            "_type_": 4,
-                                            "flags": {
-                                                "include": True
-                                            }
-                                        }
-                                    ],
+                                    "agentList": [{"_type_": 4, "flags": {"include": True}}],
                                     "timeRangeOption": {
                                         "type": 13,
                                         "_type_": 54,
                                         "TimeZoneID": 42,
-                                        "toTime": 86400
-                                    }
+                                        "toTime": 86400,
+                                    },
                                 }
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
@@ -412,8 +386,9 @@ class BackupJobSummary(Report):
             >>> backup_job_summary = BackupJobSummary(commcell_object)
             >>> backup_job_summary.select_protected_objects()
         """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['jobSummaryReport']['rptSelections']['protectedObjects'] = True
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "jobSummaryReport"
+        ]["rptSelections"]["protectedObjects"] = True
 
     def __set_include_all(self, status: bool = True) -> None:
         """
@@ -422,8 +397,9 @@ class BackupJobSummary(Report):
                 status     (Boolean)    --  Set True to include all the clients otherwise set false
 
         """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['computerSelectionList']['includeAll'] = status
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "computerSelectionList"
+        ]["includeAll"] = status
 
     def __select_client_groups(self, client_groups: list) -> None:
         """
@@ -434,8 +410,9 @@ class BackupJobSummary(Report):
         client_group_list_dict = []
         for each_client_group in client_groups:
             client_group_list_dict.append({"clientGroupName": each_client_group})
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['computerSelectionList']['clientGroupList'] = client_group_list_dict
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "computerSelectionList"
+        ]["clientGroupList"] = client_group_list_dict
 
     def __select_clients(self, client_list: list) -> None:
         """
@@ -446,8 +423,9 @@ class BackupJobSummary(Report):
         client_list_dict = []
         for each_client in client_list:
             client_list_dict.append({"clientName": each_client})
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['computerSelectionList']['clientList'] = client_list_dict
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "computerSelectionList"
+        ]["clientList"] = client_list_dict
 
     def set_last_hours(self, number_of_hours: int = 24) -> None:
         """
@@ -455,10 +433,12 @@ class BackupJobSummary(Report):
         Args:
                 number_of_hours     (Int)    --  number of hours
         """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['timeRangeOption']['type'] = 13
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['timeRangeOption']['toTimeValue'] = str(number_of_hours)
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "timeRangeOption"
+        ]["type"] = 13
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "timeRangeOption"
+        ]["toTimeValue"] = str(number_of_hours)
 
     def set_last_days(self, number_of_days: int = 24) -> None:
         """
@@ -466,12 +446,16 @@ class BackupJobSummary(Report):
         Args:
                 number_of_hours     (Int)    --  number of hours
         """
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['timeRangeOption']['type'] = 11
-        self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['reportOption'] \
-            ['timeRangeOption']['toTimeValue'] = str(number_of_days)
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "timeRangeOption"
+        ]["type"] = 11
+        self._request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["reportOption"][
+            "timeRangeOption"
+        ]["toTimeValue"] = str(number_of_days)
 
-    def select_computers(self, clients: Optional[List[str]] = None, client_groups: Optional[List[str]] = None) -> None:
+    def select_computers(
+        self, clients: Optional[List[str]] = None, client_groups: Optional[List[str]] = None
+    ) -> None:
         """
         Select clients and client groups for generating the report
         Args:

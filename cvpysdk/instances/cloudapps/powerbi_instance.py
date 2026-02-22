@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -28,12 +26,9 @@ PowerBIInstance:
 
 """
 
-from __future__ import unicode_literals
-import time
-
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
-from ...job import Job
+
 
 class PowerBIInstance(CloudAppsInstance):
     """
@@ -68,27 +63,39 @@ class PowerBIInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        super(PowerBIInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties["cloudAppsInstance"]
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
-            if 'generalCloudProperties' in cloud_apps_instance:
-                if 'proxyServers' in cloud_apps_instance['generalCloudProperties']:
-                    self._proxy_client = cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('proxyServers', [{}])[0].get('clientName')
+            if "generalCloudProperties" in cloud_apps_instance:
+                if "proxyServers" in cloud_apps_instance["generalCloudProperties"]:
+                    self._proxy_client = (
+                        cloud_apps_instance.get("generalCloudProperties", {})
+                        .get("proxyServers", [{}])[0]
+                        .get("clientName")
+                    )
                 else:
-                    if 'clientName' in cloud_apps_instance.get(
-                            'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientName')
+                    if "clientName" in cloud_apps_instance.get("generalCloudProperties", {}).get(
+                        "memberServers", [{}]
+                    )[0].get("client"):
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientName")
+                        )
                     else:
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientGroupName')
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientGroupName")
+                        )
 
                 if self._proxy_client is None:
-                    raise SDKException('Instance', '102', 'Access Node has not been configured')
+                    raise SDKException("Instance", "102", "Access Node has not been configured")
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve the instance properties as a JSON dictionary.
@@ -105,7 +112,7 @@ class PowerBIInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        return {'instanceProperties': self._properties}
+        return {"instanceProperties": self._properties}
 
     def update_instance(self, request_json: dict) -> dict:
         """Update the properties of the Power Bi instance.
@@ -133,18 +140,19 @@ class PowerBIInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        url = self._services['INSTANCE_PROPERTIES'] % (self.instance_id)
-        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+        url = self._services["INSTANCE_PROPERTIES"] % (self.instance_id)
+        flag, response = self._cvpysdk_object.make_request("POST", url, request_json)
         if response.json():
-
-            if 'processinginstructioninfo' in response.json():
+            if "processinginstructioninfo" in response.json():
                 return response.json()
 
             elif "errorCode" in response.json():
-                error_message = response.json()['errorMessage']
-                raise SDKException('Subclient', '102', f"Update failed, error message : {error_message}")
+                error_message = response.json()["errorMessage"]
+                raise SDKException(
+                    "Subclient", "102", f"Update failed, error message : {error_message}"
+                )
 
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)

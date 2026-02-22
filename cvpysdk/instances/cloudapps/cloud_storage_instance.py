@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-""" File for operating on a cloud storage instance.
+"""File for operating on a cloud storage instance.
 
 CloudStorageInstance is the only class defined in this file.
 
@@ -55,10 +53,12 @@ CloudStorageInstance:
                                                 proxy passing explicit credentials of destination cloud
 
 """
-from cvpysdk.instances.cainstance import CloudAppsInstance
+
 from cvpysdk.client import Client
 from cvpysdk.exception import SDKException
+from cvpysdk.instances.cainstance import CloudAppsInstance
 from cvpysdk.job import Job
+
 
 class CloudStorageInstance(CloudAppsInstance):
     """
@@ -122,12 +122,7 @@ class CloudStorageInstance(CloudAppsInstance):
         self._set_cloud_destination_options_json = None
         self._set_cloud_restore_options_json = None
 
-        super(
-            CloudStorageInstance,
-            self).__init__(
-            agent_object,
-            instance_name,
-            instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self) -> dict:
         """Retrieve the properties of the current cloud storage instance.
@@ -143,64 +138,72 @@ class CloudStorageInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        super(CloudStorageInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties.get('cloudAppsInstance', {})
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties.get("cloudAppsInstance", {})
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
-            if 's3Instance' in cloud_apps_instance:
-                s3instance = cloud_apps_instance.get('s3Instance', {})
+            if "s3Instance" in cloud_apps_instance:
+                s3instance = cloud_apps_instance.get("s3Instance", {})
 
-                self._host_url = s3instance.get('hostURL', '')
-                self._access_keyid = s3instance.get('accessKeyId', '')
+                self._host_url = s3instance.get("hostURL", "")
+                self._access_keyid = s3instance.get("accessKeyId", "")
 
-            if 'azureInstance' in cloud_apps_instance:
-                azureinstance = cloud_apps_instance.get('azureInstance', {})
+            if "azureInstance" in cloud_apps_instance:
+                azureinstance = cloud_apps_instance.get("azureInstance", {})
 
-                self._host_url = azureinstance.get('hostURL', '')
-                self._account_name = azureinstance.get('accountName', '')
-                self._access_key = azureinstance.get('accessKey', '')
+                self._host_url = azureinstance.get("hostURL", "")
+                self._account_name = azureinstance.get("accountName", "")
+                self._access_key = azureinstance.get("accessKey", "")
 
-            if 'openStackInstance' in cloud_apps_instance:
-                openstackinstance = cloud_apps_instance.get('openStackInstance', {})
+            if "openStackInstance" in cloud_apps_instance:
+                openstackinstance = cloud_apps_instance.get("openStackInstance", {})
 
-                self._server_name = openstackinstance.get('serverName', '')
-                self._username = openstackinstance.get('credentials', {}).get('userName', '')
+                self._server_name = openstackinstance.get("serverName", "")
+                self._username = openstackinstance.get("credentials", {}).get("userName", "")
 
-            if 'oraCloudInstance' in cloud_apps_instance:
-                oraclecloudinstance = cloud_apps_instance.get('oraCloudInstance')
+            if "oraCloudInstance" in cloud_apps_instance:
+                oraclecloudinstance = cloud_apps_instance.get("oraCloudInstance")
 
-                self._endpointurl = oraclecloudinstance.get('endpointURL', '')
-                self._username = oraclecloudinstance.get('user', {}).get('userName', '')
+                self._endpointurl = oraclecloudinstance.get("endpointURL", "")
+                self._username = oraclecloudinstance.get("user", {}).get("userName", "")
 
             # Google Cloud Instance porperties
-            if 'googleCloudInstance' in cloud_apps_instance:
-                googlecloudinstance = cloud_apps_instance.get('googleCloudInstance', {})
+            if "googleCloudInstance" in cloud_apps_instance:
+                googlecloudinstance = cloud_apps_instance.get("googleCloudInstance", {})
 
-                self._google_host_url = googlecloudinstance.get('serverName', '')
-                self._google_access_key = googlecloudinstance.get('credentials', {}).get('userName', '')
+                self._google_host_url = googlecloudinstance.get("serverName", "")
+                self._google_access_key = googlecloudinstance.get("credentials", {}).get(
+                    "userName", ""
+                )
 
             # Ali Cloud
-            if 'alibabaInstance' in cloud_apps_instance:
-                alibabainstance = cloud_apps_instance.get('alibabaInstance', {})
+            if "alibabaInstance" in cloud_apps_instance:
+                alibabainstance = cloud_apps_instance.get("alibabaInstance", {})
 
-                self._host_url = alibabainstance.get('hostURL', '')
-                self._access_key = alibabainstance.get('accessKey', '')
+                self._host_url = alibabainstance.get("hostURL", "")
+                self._access_key = alibabainstance.get("accessKey", "")
 
             # IBM Cloud
-            if 'ibmCosInstance' in cloud_apps_instance:
-                ibminstance = cloud_apps_instance.get('ibmCosInstance', {})
+            if "ibmCosInstance" in cloud_apps_instance:
+                ibminstance = cloud_apps_instance.get("ibmCosInstance", {})
 
-                self._host_url = ibminstance.get('hostURL', '')
-                self._access_key = ibminstance.get('credentials', {}).get('username', '')
+                self._host_url = ibminstance.get("hostURL", "")
+                self._access_key = ibminstance.get("credentials", {}).get("username", "")
 
-            if 'generalCloudProperties' in cloud_apps_instance:
-                self._access_node = cloud_apps_instance.get(
-                    'generalCloudProperties', {}).get(
-                    'proxyServers', [{}])[0].get('clientName', cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('memberServers', [{}])[
-                        0].get('client', {}).get('clientName'))
+            if "generalCloudProperties" in cloud_apps_instance:
+                self._access_node = (
+                    cloud_apps_instance.get("generalCloudProperties", {})
+                    .get("proxyServers", [{}])[0]
+                    .get(
+                        "clientName",
+                        cloud_apps_instance.get("generalCloudProperties", {})
+                        .get("memberServers", [{}])[0]
+                        .get("client", {})
+                        .get("clientName"),
+                    )
+                )
 
     @property
     def google_host_url(self) -> str:
@@ -391,7 +394,7 @@ class CloudStorageInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        return self._properties.get('instance', {}).get('clientName')
+        return self._properties.get("instance", {}).get("clientName")
 
     @property
     def access_node(self) -> str:
@@ -430,16 +433,11 @@ class CloudStorageInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        cloud_restore_json = super(
-            CloudStorageInstance,
-            self)._restore_json(
-            **kwargs)
+        cloud_restore_json = super()._restore_json(**kwargs)
         restore_options = {}
         if kwargs.get("restore_options"):
-
             restore_options = kwargs["restore_options"]
             for key in kwargs:
-
                 if not key == "restore_options":
                     restore_options[key] = kwargs[key]
 
@@ -451,28 +449,32 @@ class CloudStorageInstance(CloudAppsInstance):
         self._set_common_options_json(restore_options)
 
         cloud_restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "destination"] = self._set_cloud_destination_options_json
+            "destination"
+        ] = self._set_cloud_destination_options_json
         cloud_restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "cloudAppsRestoreOptions"] = self._set_cloud_restore_options_json
-        cloud_restore_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["commonOptions"] = self._common_options_json
-        cloud_restore_json["taskInfo"]["associations"][0]["backupsetId"] = int(self._agent_object.backupsets.get(
-            'defaultBackupSet').backupset_id)
+            "cloudAppsRestoreOptions"
+        ] = self._set_cloud_restore_options_json
+        cloud_restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "commonOptions"
+        ] = self._common_options_json
+        cloud_restore_json["taskInfo"]["associations"][0]["backupsetId"] = int(
+            self._agent_object.backupsets.get("defaultBackupSet").backupset_id
+        )
 
         return cloud_restore_json
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            copy_precedence: int = None,
-            no_of_streams: int = 2
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        no_of_streams: int = 2,
+    ) -> "Job":
         """Restore files or folders to their original location in the cloud storage instance.
 
-        This method restores the specified files or folders, provided as a list of full paths, 
-        to their original location within the cloud storage instance. You can control whether 
-        existing files are overwritten, specify a storage policy copy precedence, and set the 
+        This method restores the specified files or folders, provided as a list of full paths,
+        to their original location within the cloud storage instance. You can control whether
+        existing files are overwritten, specify a storage policy copy precedence, and set the
         number of streams to use for the restore operation.
 
         Args:
@@ -485,7 +487,7 @@ class CloudStorageInstance(CloudAppsInstance):
             Job: An instance of the Job class representing the restore job.
 
         Raises:
-            SDKException: If `paths` is not a list, if the job fails to initialize, 
+            SDKException: If `paths` is not a list, if the job fails to initialize,
                 if the response is empty, or if the response indicates failure.
 
         Example:
@@ -501,9 +503,8 @@ class CloudStorageInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        if not (isinstance(paths, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (isinstance(paths, list) and isinstance(overwrite, bool)):
+            raise SDKException("Instance", "101")
 
         request_json = self._generate_json(
             paths=paths,
@@ -513,21 +514,22 @@ class CloudStorageInstance(CloudAppsInstance):
             in_place=True,
             copy_precedence=copy_precedence,
             restore_To_FileSystem=False,
-            no_of_streams=no_of_streams)
+            no_of_streams=no_of_streams,
+        )
 
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            paths: list,
-            destination_client: str,
-            destination_instance_name: str,
-            destination_path: str,
-            overwrite: bool = True,
-            copy_precedence: int = None,
-            no_of_streams: int = 2,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        destination_client: str,
+        destination_instance_name: str,
+        destination_path: str,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        no_of_streams: int = 2,
+        **kwargs,
+    ) -> "Job":
         """Restore specified files or folders to a different client and location.
 
         This method restores the files or folders listed in `paths` to the specified
@@ -579,13 +581,14 @@ class CloudStorageInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        if not ((isinstance(destination_client, str) or
-                 isinstance(destination_client, Client)) and
-                isinstance(destination_instance_name, str) and
-                isinstance(destination_path, str) and
-                isinstance(paths, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (
+            (isinstance(destination_client, str) or isinstance(destination_client, Client))
+            and isinstance(destination_instance_name, str)
+            and isinstance(destination_path, str)
+            and isinstance(paths, list)
+            and isinstance(overwrite, bool)
+        ):
+            raise SDKException("Instance", "101")
 
         request_json = self._generate_json(
             paths=paths,
@@ -597,19 +600,20 @@ class CloudStorageInstance(CloudAppsInstance):
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
             restore_To_FileSystem=False,
-            **kwargs)
+            **kwargs,
+        )
 
         return self._process_restore_response(request_json)
 
     def restore_to_fs(
-            self,
-            paths: list,
-            destination_path: str,
-            destination_client: str = None,
-            overwrite: bool = True,
-            copy_precedence: int = None,
-            no_of_streams: int = 2
-        ) -> 'Job':
+        self,
+        paths: list,
+        destination_path: str,
+        destination_client: str = None,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        no_of_streams: int = 2,
+    ) -> "Job":
         """Restore specified files or folders to a file system client at a given destination path.
 
         This method initiates a restore job for the provided list of file or folder paths, restoring them
@@ -650,15 +654,19 @@ class CloudStorageInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        if not ((isinstance(destination_client, str) or
-                 isinstance(destination_client, Client)) and
-                isinstance(destination_path, str) and
-                isinstance(paths, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (
+            (isinstance(destination_client, str) or isinstance(destination_client, Client))
+            and isinstance(destination_path, str)
+            and isinstance(paths, list)
+            and isinstance(overwrite, bool)
+        ):
+            raise SDKException("Instance", "101")
 
         destination_appTypeId = int(
-            self._commcell_object.clients.get(destination_client).agents.get('file system').agent_id)
+            self._commcell_object.clients.get(destination_client)
+            .agents.get("file system")
+            .agent_id
+        )
 
         request_json = self._generate_json(
             paths=paths,
@@ -669,7 +677,8 @@ class CloudStorageInstance(CloudAppsInstance):
             copy_precedence=copy_precedence,
             restore_To_FileSystem=True,
             no_of_streams=no_of_streams,
-            destination_appTypeId=destination_appTypeId)
+            destination_appTypeId=destination_appTypeId,
+        )
 
         return self._process_restore_response(request_json)
 
@@ -701,21 +710,17 @@ class CloudStorageInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        proxy_option = value.get('destination_proxy', False)
+        proxy_option = value.get("destination_proxy", False)
         if value.get("restore_To_FileSystem"):
-
             self._set_cloud_destination_options_json = {
                 "isLegalHold": False,
-                "noOfStreams": value.get('no_of_streams', 2),
+                "noOfStreams": value.get("no_of_streams", 2),
                 "inPlace": value.get("in_place", ""),
                 "destPath": [value.get("destination_path", "")],
-                "destClient": {
-                    "clientName": value.get("destination_client", "")
-                }
+                "destClient": {"clientName": value.get("destination_client", "")},
             }
 
         else:
-
             if value.get("destination_client"):
                 dest_client = value.get("destination_client", "")
 
@@ -730,23 +735,22 @@ class CloudStorageInstance(CloudAppsInstance):
 
             regular_instance_restore_json = {
                 "isLegalHold": False,
-                "noOfStreams": value.get('no_of_streams', 2),
+                "noOfStreams": value.get("no_of_streams", 2),
                 "inPlace": value.get("in_place"),
                 "destPath": [value.get("destination_path")],
-                "destClient": {
-                    "clientName": value.get("destination_client")
-                }
+                "destClient": {"clientName": value.get("destination_client")},
             }
             if not proxy_option:
                 destination_client_object = self._commcell_object.clients.get(dest_client)
-                destination_agent_object = destination_client_object.agents.get('cloud apps')
+                destination_agent_object = destination_client_object.agents.get("cloud apps")
                 destination_instance_object = destination_agent_object.instances.get(dest_instance)
                 destination_instance_details = {
                     "destinationInstance": {
                         "instanceName": value.get("destination_instance_name"),
-                        "instanceId": int(destination_instance_object.instance_id)}}
-                regular_instance_restore_json.update(
-                    destination_instance_details)
+                        "instanceId": int(destination_instance_object.instance_id),
+                    }
+                }
+                regular_instance_restore_json.update(destination_instance_details)
             self._set_cloud_destination_options_json = regular_instance_restore_json
 
     def _set_restore_options_json(self, value: dict) -> None:
@@ -771,10 +775,8 @@ class CloudStorageInstance(CloudAppsInstance):
             "cloudStorageRestoreOptions": {
                 "restoreToFileSystem": value.get("restore_To_FileSystem"),
                 "overrideCloudLogin": False,
-                "restoreDestination": {
-                    "instanceType": int(self.ca_instance_type)
-                }
-            }
+                "restoreDestination": {"instanceType": int(self.ca_instance_type)},
+            },
         }
 
     def _set_common_options_json(self, value: dict) -> None:
@@ -795,12 +797,12 @@ class CloudStorageInstance(CloudAppsInstance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._common_options_json = {
             "overwriteFiles": True,
             "unconditionalOverwrite": value.get("overwrite", False),
-            "stripLevelType": 1
+            "stripLevelType": 1,
         }
 
     def _set_proxy_credential_json(self, destination_cloud: dict) -> None:
@@ -857,37 +859,52 @@ class CloudStorageInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        if 'amazon_s3' in destination_cloud:
+        if "amazon_s3" in destination_cloud:
             self._proxy_credential_json = {
                 "instanceType": 5,
                 "s3Instance": {
-                    "hostURL": destination_cloud.get('amazon_s3', {}).get('s3_host_url', 's3.amazonaws.com'),
-                    "accessKeyId": destination_cloud.get('amazon_s3', {}).get('s3_access_key', ""),
-                    "secretAccessKey": destination_cloud.get('amazon_s3', {}).get('s3_secret_key', "")
-                }
+                    "hostURL": destination_cloud.get("amazon_s3", {}).get(
+                        "s3_host_url", "s3.amazonaws.com"
+                    ),
+                    "accessKeyId": destination_cloud.get("amazon_s3", {}).get("s3_access_key", ""),
+                    "secretAccessKey": destination_cloud.get("amazon_s3", {}).get(
+                        "s3_secret_key", ""
+                    ),
+                },
             }
 
-        elif 'google_cloud' in destination_cloud:
+        elif "google_cloud" in destination_cloud:
             self._proxy_credential_json = {
                 "instanceType": 20,
                 "googleCloudInstance": {
-                    "serverName": destination_cloud.get('google_cloud', {}).get('google_host_url',
-                                                                                'storage.googleapis.com'),
+                    "serverName": destination_cloud.get("google_cloud", {}).get(
+                        "google_host_url", "storage.googleapis.com"
+                    ),
                     "credentials": {
-                        "userName": destination_cloud.get('google_cloud', {}).get('google_access_key', ""),
-                        "password": destination_cloud.get('google_cloud', {}).get('google_secret_key', "")
-                    }
-                }
+                        "userName": destination_cloud.get("google_cloud", {}).get(
+                            "google_access_key", ""
+                        ),
+                        "password": destination_cloud.get("google_cloud", {}).get(
+                            "google_secret_key", ""
+                        ),
+                    },
+                },
             }
 
-        elif 'azure_blob' in destination_cloud:
+        elif "azure_blob" in destination_cloud:
             self._proxy_credential_json = {
                 "instanceType": 6,
                 "azureInstance": {
-                    "hostURL": destination_cloud.get('azure_blob', {}).get('azure_host_url', 'blob.core.windows.net'),
-                    "accountName": destination_cloud.get('azure_blob', {}).get('azure_account_name', ""),
-                    "accessKey": destination_cloud.get('azure_blob', {}).get('azure_access_key', "")
-                }
+                    "hostURL": destination_cloud.get("azure_blob", {}).get(
+                        "azure_host_url", "blob.core.windows.net"
+                    ),
+                    "accountName": destination_cloud.get("azure_blob", {}).get(
+                        "azure_account_name", ""
+                    ),
+                    "accessKey": destination_cloud.get("azure_blob", {}).get(
+                        "azure_access_key", ""
+                    ),
+                },
             }
 
     def restore_using_proxy(
@@ -897,8 +914,8 @@ class CloudStorageInstance(CloudAppsInstance):
         destination_path: str,
         overwrite: bool = True,
         copy_precedence: int = None,
-        destination_cloud: dict = None
-    ) -> 'Job':
+        destination_cloud: dict = None,
+    ) -> "Job":
         """Restore files or folders to a different cloud using a proxy and explicit destination cloud credentials.
 
         This method initiates a restore operation to a specified cloud storage destination, using a proxy client
@@ -979,15 +996,14 @@ class CloudStorageInstance(CloudAppsInstance):
         """
         # Check if destination cloud credentials are empty
         if destination_cloud is None:
-            raise SDKException(
-                'Instance',
-                '102',
-                'Destination Cloud Credentials empty')
+            raise SDKException("Instance", "102", "Destination Cloud Credentials empty")
 
         if len(destination_cloud) > 1:
             raise SDKException(
-                'Instance', '102', 'only one cloud vendor details can'
-                                   'be passed.Multiple entries not allowed')
+                "Instance",
+                "102",
+                "only one cloud vendor details canbe passed.Multiple entries not allowed",
+            )
 
         cloud_vendors = ["google_cloud", "amazon_s3", "azure_blob"]
         # Check if destination cloud falls within supported cloud vendors
@@ -995,17 +1011,18 @@ class CloudStorageInstance(CloudAppsInstance):
         # Check if destination cloud falls within supported cloud vendors
         dict_keys = list(destination_cloud.keys())
         if dict_keys[0] not in cloud_vendors:
-            raise SDKException(
-                'Instance',
-                '102',
-                'Unsupported destination cloud for restore')
+            raise SDKException("Instance", "102", "Unsupported destination cloud for restore")
 
-        if not ((isinstance(destination_client_proxy, str) or
-                 isinstance(destination_client_proxy, Client)) and
-                isinstance(destination_path, str) and
-                isinstance(paths, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (
+            (
+                isinstance(destination_client_proxy, str)
+                or isinstance(destination_client_proxy, Client)
+            )
+            and isinstance(destination_path, str)
+            and isinstance(paths, list)
+            and isinstance(overwrite, bool)
+        ):
+            raise SDKException("Instance", "101")
 
         request_json = self._generate_json(
             paths=paths,
@@ -1016,15 +1033,18 @@ class CloudStorageInstance(CloudAppsInstance):
             overwrite=overwrite,
             in_place=False,
             copy_precedence=copy_precedence,
-            restore_To_FileSystem=False)
+            restore_To_FileSystem=False,
+        )
         self._set_proxy_credential_json(destination_cloud)
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["cloudAppsRestoreOptions"]["cloudStorageRestoreOptions"][
-            "restoreDestination"] = self._proxy_credential_json
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "cloudAppsRestoreOptions"]["cloudStorageRestoreOptions"]["overrideCloudLogin"] = True
+            "cloudAppsRestoreOptions"
+        ]["cloudStorageRestoreOptions"]["restoreDestination"] = self._proxy_credential_json
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "browseOption"]["backupset"].update({"backupsetName": "defaultBackupSet"})
+            "cloudAppsRestoreOptions"
+        ]["cloudStorageRestoreOptions"]["overrideCloudLogin"] = True
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+            "backupset"
+        ].update({"backupsetName": "defaultBackupSet"})
         request_json["taskInfo"]["associations"][0]["backupsetName"] = "defaultBackupSet"
 
         return self._process_restore_response(request_json)

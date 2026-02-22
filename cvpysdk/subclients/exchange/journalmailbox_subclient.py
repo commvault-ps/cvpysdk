@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -31,13 +29,12 @@ JournalMailboxSubclient:
 
 """
 
-from __future__ import unicode_literals
-
+import time
 from typing import List
 
 from ...exception import SDKException
 from ..exchsubclient import ExchangeSubclient
-import time
+
 
 class JournalMailboxSubclient(ExchangeSubclient):
     """
@@ -63,7 +60,9 @@ class JournalMailboxSubclient(ExchangeSubclient):
     #ai-gen-doc
     """
 
-    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -> None:
+    def __init__(
+        self, backupset_object: object, subclient_name: str, subclient_id: int = None
+    ) -> None:
         """Initialize a JournalMailboxSubclient instance.
 
         Args:
@@ -78,18 +77,20 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         #ai-gen-doc
         """
-        super(JournalMailboxSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
         self._instance_object = backupset_object._instance_object
         self._discover_journal_users = None
         self._client_object = self._instance_object._agent_object._client_object
         self._SET_EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            'SET_EMAIL_POLICY_ASSOCIATIONS']
+            "SET_EMAIL_POLICY_ASSOCIATIONS"
+        ]
 
         self.refresh()
 
-    def _get_discover_journal_users(self, use_without_refresh_url: bool = False, retry_attempts: int = 0) -> list:
+    def _get_discover_journal_users(
+        self, use_without_refresh_url: bool = False, retry_attempts: int = 0
+    ) -> list:
         """Retrieve the list of discovered users associated with the journal mailbox subclient.
 
         Args:
@@ -105,40 +106,44 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         #ai-gen-doc
         """
-        self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY'] % (
-            int(self._backupset_object.backupset_id), 'Journal Mailbox')
+        self._DISCOVERY = self._commcell_object._services["EMAIL_DISCOVERY"] % (
+            int(self._backupset_object.backupset_id),
+            "Journal Mailbox",
+        )
 
         if use_without_refresh_url:
-            self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY_WITHOUT_REFRESH'] % (
-                int(self._backupset_object.backupset_id), 'Journal Mailbox'
-            )
+            self._DISCOVERY = self._commcell_object._services[
+                "EMAIL_DISCOVERY_WITHOUT_REFRESH"
+            ] % (int(self._backupset_object.backupset_id), "Journal Mailbox")
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._DISCOVERY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._DISCOVERY)
 
         if flag:
             if response and response.json():
                 discover_content = response.json()
-                _error_code = discover_content.get('resp', {}).get('errorCode', 0)
+                _error_code = discover_content.get("resp", {}).get("errorCode", 0)
                 if _error_code == 469762468 or _error_code == 469762470:
-                    time.sleep(60) # the results might take some time depending on domains
+                    time.sleep(60)  # the results might take some time depending on domains
                     if retry_attempts > 10:
-                        raise SDKException('Subclient', '102', 'Failed to perform discovery.')
+                        raise SDKException("Subclient", "102", "Failed to perform discovery.")
 
-                    return self._get_discover_journal_users(use_without_refresh_url=True ,
-                                                            retry_attempts=retry_attempts + 1)
+                    return self._get_discover_journal_users(
+                        use_without_refresh_url=True, retry_attempts=retry_attempts + 1
+                    )
 
-                if 'discoverInfo' in discover_content.keys():
-
-                    if 'mailBoxes' in discover_content['discoverInfo']:
-                        self._discover_journal_users = discover_content['discoverInfo']['mailBoxes']
+                if "discoverInfo" in discover_content.keys():
+                    if "mailBoxes" in discover_content["discoverInfo"]:
+                        self._discover_journal_users = discover_content["discoverInfo"][
+                            "mailBoxes"
+                        ]
 
                         return self._discover_journal_users
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_journal_user_assocaitions(self) -> List[str]:
         """Retrieve the list of journal user associations for this Subclient.
@@ -156,48 +161,49 @@ class JournalMailboxSubclient(ExchangeSubclient):
         """
         users = []
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'Journal Mailbox')
+            "GET_EMAIL_POLICY_ASSOCIATIONS"
+        ] % (self.subclient_id, "Journal Mailbox")
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._EMAIL_POLICY_ASSOCIATIONS
+            "GET", self._EMAIL_POLICY_ASSOCIATIONS
         )
 
         if flag:
             subclient_content = response.json()
 
-            if 'associations' in subclient_content:
-                children = subclient_content['associations']
+            if "associations" in subclient_content:
+                children = subclient_content["associations"]
 
                 for child in children:
                     journal_policy = None
                     retention_policy = None
-                    display_name = str(child['userMailBoxInfo']['displayName'])
-                    alias_name = str(child['userMailBoxInfo']['aliasName'])
-                    smtp_address = str(child['userMailBoxInfo']['smtpAdrress'])
-                    database_name = str(child['userMailBoxInfo']['databaseName'])
-                    exchange_server = str(child['userMailBoxInfo']['exchangeServer'])
-                    user_guid = str(child['userMailBoxInfo']['user']['userGUID'])
-                    is_auto_discover_user = str(child['userMailBoxInfo']['isAutoDiscoveredUser'])
+                    display_name = str(child["userMailBoxInfo"]["displayName"])
+                    alias_name = str(child["userMailBoxInfo"]["aliasName"])
+                    smtp_address = str(child["userMailBoxInfo"]["smtpAdrress"])
+                    database_name = str(child["userMailBoxInfo"]["databaseName"])
+                    exchange_server = str(child["userMailBoxInfo"]["exchangeServer"])
+                    user_guid = str(child["userMailBoxInfo"]["user"]["userGUID"])
+                    is_auto_discover_user = str(child["userMailBoxInfo"]["isAutoDiscoveredUser"])
 
-                    for policy in child['policies']['emailPolicies']:
-                        if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 4:
-                            journal_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
-                            retention_policy = str(policy['policyEntity']['policyName'])
+                    for policy in child["policies"]["emailPolicies"]:
+                        if policy["detail"].get("emailPolicy", {}).get("emailPolicyType") == 4:
+                            journal_policy = str(policy["policyEntity"]["policyName"])
+                        elif policy["detail"].get("emailPolicy", {}).get("emailPolicyType") == 3:
+                            retention_policy = str(policy["policyEntity"]["policyName"])
 
                     temp_dict = {
-                        'display_name': display_name,
-                        'alias_name': alias_name,
-                        'smtp_address': smtp_address,
-                        'database_name': database_name,
-                        'exchange_server': exchange_server,
-                        'user_guid': user_guid,
-                        'is_auto_discover_user': is_auto_discover_user,
-                        'journal_policy': journal_policy,
-                        'retention_policy': retention_policy,
+                        "display_name": display_name,
+                        "alias_name": alias_name,
+                        "smtp_address": smtp_address,
+                        "database_name": database_name,
+                        "exchange_server": exchange_server,
+                        "user_guid": user_guid,
+                        "is_auto_discover_user": is_auto_discover_user,
+                        "journal_policy": journal_policy,
+                        "retention_policy": retention_policy,
                     }
-                    if child['plan'].get('planName', None):
-                        temp_dict['plan']= child['plan']['planName']
+                    if child["plan"].get("planName", None):
+                        temp_dict["plan"] = child["plan"]["planName"]
 
                     users.append(temp_dict)
 
@@ -228,25 +234,23 @@ class JournalMailboxSubclient(ExchangeSubclient):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
+            "POST", self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
         )
 
         if flag:
             try:
                 if response.json():
-                    if response.json()['resp']['errorCode'] != 0:
-                        error_message = response.json()['errorMessage']
+                    if response.json()["resp"]["errorCode"] != 0:
+                        error_message = response.json()["errorMessage"]
                         output_string = 'Failed to create assocaition\nError: "{0}"'
-                        raise SDKException(
-                            'Subclient', '102', output_string.format(error_message)
-                        )
+                        raise SDKException("Subclient", "102", output_string.format(error_message))
                     else:
                         self.refresh()
             except ValueError:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def discover_journal_users(self) -> list:
@@ -314,101 +318,82 @@ class JournalMailboxSubclient(ExchangeSubclient):
         #ai-gen-doc
         """
         if not isinstance(subclient_content, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         from ...policies.configuration_policies import ConfigurationPolicy
 
-        if not (isinstance(subclient_content[
-                'journal_policy'], (ConfigurationPolicy, str)) and
-                isinstance(subclient_content[
-                    'retention_policy'], (ConfigurationPolicy, str)) and
-                isinstance(subclient_content['mailboxNames'], list)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(subclient_content["journal_policy"], (ConfigurationPolicy, str))
+            and isinstance(subclient_content["retention_policy"], (ConfigurationPolicy, str))
+            and isinstance(subclient_content["mailboxNames"], list)
+        ):
+            raise SDKException("Subclient", "101")
 
-        if isinstance(subclient_content['journal_policy'], ConfigurationPolicy):
-            journal_policy = subclient_content['journal_policy']
-        elif isinstance(subclient_content['journal_policy'], str):
+        if isinstance(subclient_content["journal_policy"], ConfigurationPolicy):
+            journal_policy = subclient_content["journal_policy"]
+        elif isinstance(subclient_content["journal_policy"], str):
             journal_policy = ConfigurationPolicy(
-                self._commcell_object, subclient_content['journal_policy'])
+                self._commcell_object, subclient_content["journal_policy"]
+            )
 
-        if isinstance(subclient_content['retention_policy'], ConfigurationPolicy):
-            retention_policy = subclient_content['retention_policy']
-        elif isinstance(subclient_content['retention_policy'], str):
+        if isinstance(subclient_content["retention_policy"], ConfigurationPolicy):
+            retention_policy = subclient_content["retention_policy"]
+        elif isinstance(subclient_content["retention_policy"], str):
             retention_policy = ConfigurationPolicy(
-                self._commcell_object, subclient_content['retention_policy'])
+                self._commcell_object, subclient_content["retention_policy"]
+            )
 
         try:
             discover_journal_users = self.discover_journal_users
 
-            for mailbox_item in subclient_content['mailboxNames']:
-
+            for mailbox_item in subclient_content["mailboxNames"]:
                 for mb_item in discover_journal_users:
-
-                    if mailbox_item.lower() == mb_item['aliasName'].lower():
+                    if mailbox_item.lower() == mb_item["aliasName"].lower():
                         mailbox_dict = {
-                            'smtpAdrress': mb_item['smtpAdrress'],
-                            'aliasName': mb_item['aliasName'],
-                            'mailBoxType': mb_item['mailBoxType'],
-                            'displayName': mb_item['displayName'],
-                            'exchangeServer': mb_item['exchangeServer'],
-                            'isAutoDiscoveredUser': mb_item['isAutoDiscoveredUser'],
+                            "smtpAdrress": mb_item["smtpAdrress"],
+                            "aliasName": mb_item["aliasName"],
+                            "mailBoxType": mb_item["mailBoxType"],
+                            "displayName": mb_item["displayName"],
+                            "exchangeServer": mb_item["exchangeServer"],
+                            "isAutoDiscoveredUser": mb_item["isAutoDiscoveredUser"],
                             "associated": False,
-                            'databaseName': mb_item['databaseName'],
-                            'user': {
-                                '_type_': 13,
-                                'userGUID': mb_item['user']['userGUID']
-                            }
+                            "databaseName": mb_item["databaseName"],
+                            "user": {"_type_": 13, "userGUID": mb_item["user"]["userGUID"]},
                         }
                         users.append(mailbox_dict)
 
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
 
         associations_json = {
             "emailAssociation": {
                 "advanceOptions": {},
                 "subclientEntity": self._subClientEntity,
-                "emailDiscoverinfo": {
-                    "discoverByType": 5,
-                    "mailBoxes": None
-                },
+                "emailDiscoverinfo": {"discoverByType": 5, "mailBoxes": None},
                 "policies": {
                     "emailPolicies": [
                         {
                             "policyType": 1,
                             "flags": 0,
-                            "agentType": {
-                                "appTypeId": 137
-                            },
-                            "detail": {
-                                "emailPolicy": {
-                                    "emailPolicyType": 4
-                                }
-                            },
+                            "agentType": {"appTypeId": 137},
+                            "detail": {"emailPolicy": {"emailPolicyType": 4}},
                             "policyEntity": {
                                 "policyId": int(journal_policy.configuration_policy_id),
-                                "policyName": journal_policy.configuration_policy_name
-                            }
-
+                                "policyName": journal_policy.configuration_policy_name,
+                            },
                         },
                         {
                             "policyType": 1,
                             "flags": 0,
-                            "agentType": {
-                                "appTypeId": 137
-                            },
-                            "detail": {
-                                "emailPolicy": {
-                                    "emailPolicyType": 3
-                                }
-                            },
+                            "agentType": {"appTypeId": 137},
+                            "detail": {"emailPolicy": {"emailPolicyType": 3}},
                             "policyEntity": {
                                 "policyId": int(retention_policy.configuration_policy_id),
-                                "policyName": retention_policy.configuration_policy_name
-                            }
-                        }
+                                "policyName": retention_policy.configuration_policy_name,
+                            },
+                        },
                     ]
-                }
+                },
             }
         }
 
@@ -435,30 +420,28 @@ class JournalMailboxSubclient(ExchangeSubclient):
         """
 
         try:
-            if not self._commcell_object.plans.has_plan(plan_details['plan_name']):
-                raise SDKException('Subclient', '102',
-                                   'Plan Name {} not found'.format(plan_details['plan_name']))
-            if 'plan_id' not in plan_details or plan_details['plan_id'] is None:
-                plan_id = self._commcell_object.plans[plan_details['plan_name'].lower()]
+            if not self._commcell_object.plans.has_plan(plan_details["plan_name"]):
+                raise SDKException(
+                    "Subclient", "102", "Plan Name {} not found".format(plan_details["plan_name"])
+                )
+            if "plan_id" not in plan_details or plan_details["plan_id"] is None:
+                plan_id = self._commcell_object.plans[plan_details["plan_name"].lower()]
             else:
-                plan_id = plan_details['plan_id']
+                plan_id = plan_details["plan_id"]
 
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
 
-        plan_details = {
-            'planId': int(plan_id)
-        }
+        plan_details = {"planId": int(plan_id)}
 
         association_json = {
-            "emailAssociation": {
-                "subclientEntity": self._subClientEntity,
-                "plan": plan_details
-            }
+            "emailAssociation": {"subclientEntity": self._subClientEntity, "plan": plan_details}
         }
         return association_json
 
-    def set_journal_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+    def set_journal_user_assocaition(
+        self, subclient_content: dict, use_policies: bool = True
+    ) -> None:
         """Create a journal association for the JournalMailboxSubclient.
 
         This method associates users or mailboxes with the JournalMailboxSubclient, using either policies or plans
@@ -497,41 +480,37 @@ class JournalMailboxSubclient(ExchangeSubclient):
         """
         users = []
 
-
-
         try:
             discover_journal_users = self.discover_journal_users
 
-            for mailbox_item in subclient_content['mailboxNames']:
-
+            for mailbox_item in subclient_content["mailboxNames"]:
                 for mb_item in discover_journal_users:
-
-                    if mailbox_item.lower() == mb_item['aliasName'].lower():
+                    if mailbox_item.lower() == mb_item["aliasName"].lower():
                         mailbox_dict = {
-                            'smtpAdrress': mb_item['smtpAdrress'],
-                            'aliasName': mb_item['aliasName'],
-                            'mailBoxType': mb_item['mailBoxType'],
-                            'displayName': mb_item['displayName'],
-                            'exchangeServer': mb_item['exchangeServer'],
-                            'isAutoDiscoveredUser': mb_item['isAutoDiscoveredUser'],
+                            "smtpAdrress": mb_item["smtpAdrress"],
+                            "aliasName": mb_item["aliasName"],
+                            "mailBoxType": mb_item["mailBoxType"],
+                            "displayName": mb_item["displayName"],
+                            "exchangeServer": mb_item["exchangeServer"],
+                            "isAutoDiscoveredUser": mb_item["isAutoDiscoveredUser"],
                             "associated": False,
-                            'databaseName': mb_item['databaseName'],
-                            'user': {
-                                '_type_': 13,
-                                'userGUID': mb_item['user']['userGUID']
-                            }
+                            "databaseName": mb_item["databaseName"],
+                            "user": {"_type_": 13, "userGUID": mb_item["user"]["userGUID"]},
                         }
                         users.append(mailbox_dict)
 
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
 
         if use_policies:
             _association_json_ = self._association_json(subclient_content)
             _association_json_["emailAssociation"]["emailDiscoverinfo"]["mailBoxes"] = users
         else:
             _association_json_ = self._association_json_with_plan(subclient_content)
-            _association_json_["emailAssociation"]["emailDiscoverinfo"] = {"discoverByType":5, "mailBoxes" : users}
+            _association_json_["emailAssociation"]["emailDiscoverinfo"] = {
+                "discoverByType": 5,
+                "mailBoxes": users,
+            }
         self._set_association_request(_association_json_)
 
     def set_pst_assocaition(self, subclient_content: dict) -> None:
@@ -568,54 +547,52 @@ class JournalMailboxSubclient(ExchangeSubclient):
         #ai-gen-doc
         """
         if not isinstance(subclient_content, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         try:
-
-            if 'createPstDestFolder' not in subclient_content['pstOwnerManagement']:
-                subclient_content['pstOwnerManagement']['createPstDestFolder'] = True
-            if 'pstDestFolder' not in subclient_content['pstOwnerManagement']:
-                subclient_content['pstOwnerManagement']['pstDestFolder'] = (f'Archived From '
-                                                                            f'Automation')
+            if "createPstDestFolder" not in subclient_content["pstOwnerManagement"]:
+                subclient_content["pstOwnerManagement"]["createPstDestFolder"] = True
+            if "pstDestFolder" not in subclient_content["pstOwnerManagement"]:
+                subclient_content["pstOwnerManagement"]["pstDestFolder"] = (
+                    "Archived From Automation"
+                )
 
             pst_dict = {
-                'pstTaskName': subclient_content['pstTaskName'],
-                'taskType': 1,
-                'folders': subclient_content['folders'],
-                'pstOwnerManagement': {
-                    'adProperty': "",
-                    'startingFolderPath': "",
-                    'pstStubsAction': 1,
-                    'managePSTStubs': False,
-                    'mergeintoMailBox': True,
-                    'pstOwnerBasedOnACL': True,
-                    'pstOwnerBasedOnLaptop': False,
-                    'usePSTNameToCreateChildForNoOwner': True,
-                    'createPstDestFolder':
-                        subclient_content["pstOwnerManagement"]["createPstDestFolder"],
-                    'orphanFolder': subclient_content['pstOwnerManagement']['defaultOwner'],
-                    'pstDestFolder': subclient_content['pstOwnerManagement']['pstDestFolder'],
-                    'usePSTNameToCreateChild':
-                        subclient_content['pstOwnerManagement']['usePSTNameToCreateChild'],
-                }
+                "pstTaskName": subclient_content["pstTaskName"],
+                "taskType": 1,
+                "folders": subclient_content["folders"],
+                "pstOwnerManagement": {
+                    "adProperty": "",
+                    "startingFolderPath": "",
+                    "pstStubsAction": 1,
+                    "managePSTStubs": False,
+                    "mergeintoMailBox": True,
+                    "pstOwnerBasedOnACL": True,
+                    "pstOwnerBasedOnLaptop": False,
+                    "usePSTNameToCreateChildForNoOwner": True,
+                    "createPstDestFolder": subclient_content["pstOwnerManagement"][
+                        "createPstDestFolder"
+                    ],
+                    "orphanFolder": subclient_content["pstOwnerManagement"]["defaultOwner"],
+                    "pstDestFolder": subclient_content["pstOwnerManagement"]["pstDestFolder"],
+                    "usePSTNameToCreateChild": subclient_content["pstOwnerManagement"][
+                        "usePSTNameToCreateChild"
+                    ],
+                },
             }
 
             subclient_entity = {"_type_": 7, "subclientId": int(self._subclient_id)}
-            discover_info = {
-                'discoverByType': 9,
-                'pstIngestion': pst_dict
-            }
+            discover_info = {"discoverByType": 9, "pstIngestion": pst_dict}
             _associations_json = {
-                "emailAssociation":
-                    {
-                        "emailDiscoverinfo": discover_info,
-                        "subclientEntity": subclient_entity
-                    }
+                "emailAssociation": {
+                    "emailDiscoverinfo": discover_info,
+                    "subclientEntity": subclient_entity,
+                }
             }
 
             self._set_association_request(_associations_json)
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
         except Exception as excp:
             raise excp
 

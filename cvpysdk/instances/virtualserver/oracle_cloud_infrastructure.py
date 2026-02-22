@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright ©2016 Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
@@ -30,9 +28,10 @@ VMwareInstance:
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -55,7 +54,7 @@ class OracleCloudInfrastructureInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize an OracleCloudInfrastructureInstance object for a Virtual Server instance.
 
         Args:
@@ -74,7 +73,7 @@ class OracleCloudInfrastructureInstance(VirtualServerInstance):
         self._vmwarvendor = None
         self._server_name = []
         self._server_host_name = []
-        super(OracleCloudInfrastructureInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this Oracle Cloud Infrastructure instance.
@@ -87,13 +86,13 @@ class OracleCloudInfrastructureInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(OracleCloudInfrastructureInstance, self)._get_instance_properties()
-        print (self._properties)
+        super()._get_instance_properties()
+        print(self._properties)
         if "vmwareVendor" in self._virtualserverinstance:
-            self._vmwarvendor = self._virtualserverinstance['vmwareVendor']['virtualCenter']
-            self._instance_guid = self._instance['instanceGUID']
-            self._instance_id = self._instance['instanceId']
-            self._server_name.append(self._instance['clientName'])
+            self._vmwarvendor = self._virtualserverinstance["vmwareVendor"]["virtualCenter"]
+            self._instance_guid = self._instance["instanceGUID"]
+            self._instance_id = self._instance["instanceId"]
+            self._server_name.append(self._instance["clientName"])
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient as a dictionary.
@@ -109,10 +108,10 @@ class OracleCloudInfrastructureInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": self._virtualserverinstance['vmwareVendor']
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": self._virtualserverinstance["vmwareVendor"],
+                },
             }
         }
 

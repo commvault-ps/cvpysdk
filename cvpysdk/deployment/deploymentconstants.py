@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -27,6 +25,7 @@ class DownloadOptions(Enum):
     """
     Enum with list of all options available under Download software
     """
+
     LATEST_SERVICEPACK = "latest service pack"
     LATEST_HOTFIXES = "latest hotfixes for the installed service pack"
     SERVICEPACK_AND_HOTFIXES = "service pack and hotfixes"
@@ -36,6 +35,7 @@ class DownloadPackages(Enum):
     """
     List of supported OS groups.
     """
+
     WINDOWS_32 = "WINDOWS_X32"
     WINDOWS_64 = "WINDOWS_X64"
     WINDOWS_ARM64 = "WINDOWS_ARM64"
@@ -62,6 +62,7 @@ class UnixDownloadFeatures(Enum):
     """
     list of Unix features supported
     """
+
     COMMSERVE = 1020
     CASSANDRA = 1211
     CLOUD_APPS = 1140
@@ -91,6 +92,7 @@ class WindowsDownloadFeatures(Enum):
     """
     list of Windows features supported
     """
+
     COMMSERVE = 20
     ACTIVE_DIRECTORY = 703
     CLOUD_APPS = 730
@@ -125,6 +127,7 @@ class OSNameIDMapping(Enum):
     """
     Class for os name to id mapping
     """
+
     WINDOWS_32 = 1
     WINDOWS_64 = 3
     UNIX_AIX = 14
@@ -143,10 +146,12 @@ class OSNameIDMapping(Enum):
     UNIX_SOLARIS_SPARC86 = 30
     UNIX_LINUX64LE = 32
 
+
 class InstallUpdateOptions(Enum):
     """
     Enum with list of all options available under Upgrade software
     """
+
     UPDATE_INSTALL_CV = 1
     UPDATE_INSTALL_SQL = 2
     UPDATE_INSTALL_WINOS = 4

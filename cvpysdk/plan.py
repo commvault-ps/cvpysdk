@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -125,11 +123,11 @@ Plan
     edit_plan()                 --  edit plan options
 
     edit_risk_analysis_dc_plan()--  Edit Risk Analysis Data Classification Plan options
-    
+
     update_security_associations() -- to update security associations of a plan
 
     get_plan_properties()       --  method to get the properties of the plan fetched via v4 API
-    
+
     get_storage_copy_details()  --  method to get storage copy details
 
     get_storage_copy_id()       --  method to get storage copy id
@@ -202,7 +200,7 @@ Plan Attributes
     **company**                 --  Returns the company of the plan
 
     **resources**               --  Returns the resources stored in storage resource pool
-    
+
     **applicable_solutions**    --  returns applicable solutions configured on server plan
 
     **data_schedule_policy**    --  returns the data schedule policy of the plan
@@ -218,27 +216,27 @@ Plan Attributes
     **is_log_backup_to_disk_enabled**  -- returns true if log backup to disk is enabled
 
 """
-from __future__ import unicode_literals
 
 import copy
-from enum import Enum
-from typing import List, Dict, Union, Any, Optional, TYPE_CHECKING
 import math
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
+from .activateapps.constants import PlanConstants, TargetApps
 from .constants import threat_detection_plan_json
 from .exception import SDKException
-from .security.security_association import SecurityAssociation
-from .activateapps.constants import TargetApps, PlanConstants
-from .policies.storage_policies import StoragePolicy
 from .policies.schedule_policies import SchedulePolicy
-from .storage_pool import StorageType, StoragePoolType
+from .policies.storage_policies import StoragePolicy
+from .security.security_association import SecurityAssociation
+from .storage_pool import StoragePoolType, StorageType
 
 if TYPE_CHECKING:
     from .commcell import Commcell
     from .policies.storage_policies import StoragePolicyCopy
 
-from functools import reduce
 ARCHIVER_PLAN_MIN_RETENTION = 1825  # 5 years in days
+
+
 class PlanTypes(Enum):
     """Class Enum to represent different plan types
 
@@ -259,6 +257,7 @@ class PlanTypes(Enum):
         >>> print(plan_type.value)
         1
     """
+
     Any = 0
     DLO = 1
     MSP = 2
@@ -270,9 +269,10 @@ class PlanTypes(Enum):
     EDISCOVERY = 8
     ARCHIVER = 9
 
+
 class PlanSubTypes(Enum):
     """Class Enum to represent different plan subtypes
-    
+
     Attributes:
         SERVER: Represents the Server plan subtype
         SERVER_FS: Represents the Server plan File System subtype
@@ -285,12 +285,13 @@ class PlanSubTypes(Enum):
         DYNAMICS_365: Represents the Dynamics 365 Plan subtype
         DATA_CLASSIFICATION: Represents the Data Classification Plan subtype
         ARCHIVER: Represents the Archiver Plan subtype
-    
+
     Usage:
         >>> plan_subtype = PlanSubTypes.SERVER_FS
         >>> print(plan_subtype.value)
         50331655
     """
+
     SERVER = 33554437
     SERVER_FS = 50331655
     SERVER_VSA = 83886085
@@ -303,6 +304,7 @@ class PlanSubTypes(Enum):
     DATA_CLASSIFICATION = 117506053
     ARCHIVER = 150994951
 
+
 class _PayloadGeneratorPlanV4:
     """Class to provide payload for creating/modifying server plans using V4 API.
 
@@ -314,11 +316,13 @@ class _PayloadGeneratorPlanV4:
         payload_generator = _PayloadGeneratorPlanV4(commcell)
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize the _PayloadGeneratorPlanV4 class instance"""
         self.__commcell = commcell
 
-    def get_copy_payload(self, copy_details: dict, is_aux_copy: bool = False, gacp: bool = False, worm: bool = False) -> dict:
+    def get_copy_payload(
+        self, copy_details: dict, is_aux_copy: bool = False, gacp: bool = False, worm: bool = False
+    ) -> dict:
         """
         Method to get single copy details payload based on the provided configuration.
 
@@ -354,10 +358,14 @@ class _PayloadGeneratorPlanV4:
             payload = payload_generator.get_copy_payload(copy_details, is_aux_copy=True)
         """
         # validate the input
-        if 'storageTemplateTags' not in copy_details and 'storage_name' not in copy_details:
-            raise SDKException('Plan', '102', 'Storage details is required for copy configuration.')
+        if "storageTemplateTags" not in copy_details and "storage_name" not in copy_details:
+            raise SDKException(
+                "Plan", "102", "Storage details is required for copy configuration."
+            )
 
-        temp_dict = copy_details.copy()  # make a copy of the input to avoid modifying the original input
+        temp_dict = (
+            copy_details.copy()
+        )  # make a copy of the input to avoid modifying the original input
 
         payload = {
             "backupDestinationName": copy_details.get("backupDestinationName", "Primary"),
@@ -370,19 +378,23 @@ class _PayloadGeneratorPlanV4:
             if copy_details.get("retentionPeriodDays") is not None:
                 payload["retentionPeriodDays"] = copy_details.get("retentionPeriodDays")
             else:
-                payload.update({'overrideRetentionSettings': False})
-                del payload['retentionPeriodDays']
+                payload.update({"overrideRetentionSettings": False})
+                del payload["retentionPeriodDays"]
 
         # If storage_name is provided, update the payload with storage details
-        if 'storage_name' in copy_details:
+        if "storage_name" in copy_details:
             storage_pool = self.__commcell.storage_pools.get(copy_details["storage_name"])
-            payload['storagePool'] = {
+            payload["storagePool"] = {
                 "id": int(storage_pool.storage_pool_id),
-                "name": storage_pool.storage_pool_name
+                "name": storage_pool.storage_pool_name,
             }
-            payload['storageType'] = StorageType(storage_pool.storage_pool_properties['storagePoolDetails']['storageType']).name
+            payload["storageType"] = StorageType(
+                storage_pool.storage_pool_properties["storagePoolDetails"]["storageType"]
+            ).name
             if gacp:
-                payload['storagePool']['type'] = StoragePoolType.SECONDARY_COPY.value #To fetch maxstreamNums from the pool to inherit in copy
+                payload["storagePool"]["type"] = (
+                    StoragePoolType.SECONDARY_COPY.value
+                )  # To fetch maxstreamNums from the pool to inherit in copy
 
         # Add aux copy specific properties
         if is_aux_copy:
@@ -395,7 +407,7 @@ class _PayloadGeneratorPlanV4:
             payload["region"] = {"id": int(self.__commcell.regions.get(region_name).region_id)}
 
             # remove the keys that are already set and doesnot match payload keys
-            temp_dict.pop('region_name')
+            temp_dict.pop("region_name")
 
         # If the input as advanced properties like extended retention or others, update the payload
         payload = self.update_payload(original_payload=payload, update_info_dict=temp_dict)
@@ -468,48 +480,52 @@ class _PayloadGeneratorPlanV4:
             payload = payload_generator.get_schedule_payload(schedule_details)
         """
         # Validate the input
-        if 'backupType' not in schedule_details:
-            raise SDKException('Plan', '102', 'backupType is required for schedule configuration.')
+        if "backupType" not in schedule_details:
+            raise SDKException("Plan", "102", "backupType is required for schedule configuration.")
 
-        operation_type = schedule_details.get('scheduleOperation', 'ADD')
-        if operation_type in ['MODIFY', 'DELETE']:
-            if 'scheduleId' not in schedule_details or 'policyId' not in schedule_details:
-                raise SDKException('Plan', '102', 'scheduleId and policyId are required for MODIFY / DELETE operations.')
+        operation_type = schedule_details.get("scheduleOperation", "ADD")
+        if operation_type in ["MODIFY", "DELETE"]:
+            if "scheduleId" not in schedule_details or "policyId" not in schedule_details:
+                raise SDKException(
+                    "Plan",
+                    "102",
+                    "scheduleId and policyId are required for MODIFY / DELETE operations.",
+                )
 
         payload = dict()
-        backup_type = schedule_details['backupType']
+        backup_type = schedule_details["backupType"]
 
         # Set default values for the payload
         if backup_type == "TRANSACTIONLOG":
-            payload['schedulePattern'] = {
+            payload["schedulePattern"] = {
                 "scheduleFrequencyType": "AUTOMATIC",
-                "maxBackupIntervalInMins": 240
+                "maxBackupIntervalInMins": 240,
             }
-            payload['scheduleOption'] = {
+            payload["scheduleOption"] = {
                 "useDiskCacheForLogBackups": False,
                 "commitFrequencyInHours": 8,
                 "logsDiskUtilizationPercent": 80,
-                "logFilesThreshold": 50
+                "logFilesThreshold": 50,
             }
-            payload['forDatabasesOnly'] = True
+            payload["forDatabasesOnly"] = True
         elif backup_type == "INCREMENTAL":
-            payload['schedulePattern'] = {
+            payload["schedulePattern"] = {
                 "scheduleFrequencyType": "DAILY",
                 "startTime": 75600,
-                "frequency": 1
+                "frequency": 1,
             }
-            payload['forDatabasesOnly'] = False
+            payload["forDatabasesOnly"] = False
         elif backup_type == "SYNTHETICFULL":
-            payload['schedulePattern'] = {
+            payload["schedulePattern"] = {
                 "scheduleFrequencyType": "AUTOMATIC",
                 "startTime": 75600,
                 "frequency": 90,
-                "daysBetweenSyntheticFulls": 90
+                "daysBetweenSyntheticFulls": 90,
             }
-            payload['forDatabasesOnly'] = False
-            payload['scheduleName'] = "Synthetic Fulls"
+            payload["forDatabasesOnly"] = False
+            payload["scheduleName"] = "Synthetic Fulls"
 
-        payload['scheduleOperation'] = operation_type
+        payload["scheduleOperation"] = operation_type
 
         # Update the payload with the provided input details
         # This will override the default values
@@ -547,7 +563,13 @@ class _PayloadGeneratorPlanV4:
 
         return {"schedules": schedules_payload}
 
-    def get_create_server_plan_payload(self, plan_name: str, backup_destinations: List[dict], schedules: List[dict], **additional_params) -> dict:
+    def get_create_server_plan_payload(
+        self,
+        plan_name: str,
+        backup_destinations: List[dict],
+        schedules: List[dict],
+        **additional_params,
+    ) -> dict:
         """
         Method to get a payload for creating a server plan.
 
@@ -583,20 +605,22 @@ class _PayloadGeneratorPlanV4:
             "rpo": {
                 "backupFrequency": self.get_rpo_payload(schedules),
                 "backupWindow": additional_params.get("rpo_backup_window", []),
-                "fullBackupWindow": additional_params.get("full_backup_window", [])
+                "fullBackupWindow": additional_params.get("full_backup_window", []),
             },
             "snapshotOptions": {
                 "enableBackupCopy": additional_params.get("enable_backup_copy", True),
-                "backupCopyRPOMins": additional_params.get("backup_copy_rpo_mins", 240)
-            }
+                "backupCopyRPOMins": additional_params.get("backup_copy_rpo_mins", 240),
+            },
         }
 
         if snap_recovery_points := additional_params.get("snap_recovery_points"):
             plan_payload["snapshotOptions"]["snapRecoveryPoints"] = snap_recovery_points
-            plan_payload["snapshotOptions"]["retentionRuleType"] = 'SNAP_RECOVERY_POINTS'
+            plan_payload["snapshotOptions"]["retentionRuleType"] = "SNAP_RECOVERY_POINTS"
         else:
-            plan_payload["snapshotOptions"]["retentionPeriodDays"] = additional_params.get("snap_retention_days", 30)
-            plan_payload["snapshotOptions"]["retentionRuleType"] = 'RETENTION_PERIOD'
+            plan_payload["snapshotOptions"]["retentionPeriodDays"] = additional_params.get(
+                "snap_retention_days", 30
+            )
+            plan_payload["snapshotOptions"]["retentionRuleType"] = "RETENTION_PERIOD"
 
         return plan_payload
 
@@ -626,7 +650,8 @@ class _PayloadGeneratorPlanV4:
                 original_payload[key] = value
         return original_payload
 
-class Plans(object):
+
+class Plans:
     """Class for representing all the plans in the commcell.
 
     Attributes:
@@ -647,7 +672,7 @@ class Plans(object):
         >>> plans = Plans(commcell_object)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of Plans class.
 
         Args:
@@ -664,16 +689,15 @@ class Plans(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
-        self._PLANS = self._services['PLANS']
-        self._V4_DC_PLANS = self._services['V4_DC_PLANS']
-        self._V4_PLANS = self._services['V4_SERVER_PLANS']
-        self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
-        self._V4_ARCHIVER_PLAN = self._services['V4_ARCHIVER_PLAN']
+        self._PLANS = self._services["PLANS"]
+        self._V4_DC_PLANS = self._services["V4_DC_PLANS"]
+        self._V4_PLANS = self._services["V4_SERVER_PLANS"]
+        self._V4_GLOBAL_PLANS = self._services["V4_GLOBAL_SERVER_PLANS"]
+        self._V4_ARCHIVER_PLAN = self._services["V4_ARCHIVER_PLAN"]
         self._plans = None
         self._plans_cache = None
         self.filter_query_count = 0
         self.refresh()
-
 
     def __str__(self) -> str:
         """Representation string consisting of all plans of the Commcell.
@@ -681,14 +705,13 @@ class Plans(object):
         Returns:
             str: String of all the plans for a commcell.
         """
-        representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'Plan')
+        representation_string = "{:^5}\t{:^50}\n\n".format("S. No.", "Plan")
 
         for index, plan in enumerate(self._plans):
-            sub_str = '{:^5}\t{:30}\n'.format(index + 1, plan)
+            sub_str = f"{index + 1:^5}\t{plan:30}\n"
             representation_string += sub_str
 
         return representation_string.strip()
-
 
     def __repr__(self) -> str:
         """Representation string for the instance of the Plans class.
@@ -698,7 +721,6 @@ class Plans(object):
         """
         return "Plans class instance for Commcell"
 
-
     def __len__(self) -> int:
         """Returns the number of the plans added to the Commcell.
 
@@ -706,7 +728,6 @@ class Plans(object):
             int: The number of plans in the Commcell.
         """
         return len(self.all_plans)
-
 
     def __getitem__(self, value: str) -> str:
         """Returns the name of the plan for the given plan ID or
@@ -732,10 +753,9 @@ class Plans(object):
             return self.all_plans[value]
         else:
             try:
-                return list(filter(lambda x: x[1]['id'] == value, self.all_plans.items()))[0][0]
+                return list(filter(lambda x: x[1]["id"] == value, self.all_plans.items()))[0][0]
             except IndexError:
-                raise IndexError('No plan exists with the given Name / Id')
-
+                raise IndexError("No plan exists with the given Name / Id")
 
     def _get_plans(self, full_response: bool = False) -> dict:
         """Gets all the plans associated with the commcell.
@@ -760,30 +780,34 @@ class Plans(object):
             >>> plans = self._get_plans()
             >>> full_plans = self._get_plans(full_response=True)
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._PLANS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._PLANS)
 
         if flag:
             plans = {}
 
-            if response.json() and 'plans' in response.json():
+            if response.json() and "plans" in response.json():
                 if full_response:
                     return response.json()
 
                 name_count = {}
 
-                for temp in response.json()['plans']:
-                    temp_name = temp.get('plan', {}).get('planName', '').lower()
-                    temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
+                for temp in response.json()["plans"]:
+                    temp_name = temp.get("plan", {}).get("planName", "").lower()
+                    temp_company = (
+                        temp.get("plan", {}).get("entityInfo", {}).get("companyName", "").lower()
+                    )
 
                     if temp_name in name_count:
                         name_count[temp_name].add(temp_company)
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for temp in response.json()['plans']:
-                    temp_name = temp.get('plan', {}).get('planName', '').lower()
-                    temp_id = str(temp['plan']['planId']).lower()
-                    temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
+                for temp in response.json()["plans"]:
+                    temp_name = temp.get("plan", {}).get("planName", "").lower()
+                    temp_id = str(temp["plan"]["planId"]).lower()
+                    temp_company = (
+                        temp.get("plan", {}).get("entityInfo", {}).get("companyName", "").lower()
+                    )
 
                     if len(name_count[temp_name]) > 1:
                         unique_key = f"{temp_name}_({temp_company})"
@@ -795,8 +819,7 @@ class Plans(object):
             return plans
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def _get_plan_template(self, plan_sub_type: str, plan_type: str = "MSP") -> dict:
         """Gets the Plan subtype's JSON template.
@@ -826,23 +849,21 @@ class Plans(object):
             >>> server_template = self._get_plan_template("Server")
             >>> laptop_template = self._get_plan_template("Laptop", plan_type="MSP")
         """
-        if not (isinstance(plan_sub_type, str) and
-                isinstance(plan_type, str)):
-            raise SDKException('Plan', '101')
+        if not (isinstance(plan_sub_type, str) and isinstance(plan_type, str)):
+            raise SDKException("Plan", "101")
         else:
-            template_url = self._services['GET_PLAN_TEMPLATE'] % (plan_type, plan_sub_type)
+            template_url = self._services["GET_PLAN_TEMPLATE"] % (plan_type, plan_sub_type)
 
-            flag, response = self._cvpysdk_object.make_request('GET', template_url)
+            flag, response = self._cvpysdk_object.make_request("GET", template_url)
 
             if flag:
-                if response.json() and 'plan' in response.json():
+                if response.json() and "plan" in response.json():
                     return response.json()
                 else:
-                    raise SDKException('Plan', '102', 'Failed to get Plan template')
+                    raise SDKException("Plan", "102", "Failed to get Plan template")
             else:
                 response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
-
+                raise SDKException("Response", "101", response_string)
 
     def _get_fl_parameters(self, fl: list = None) -> str:
         """
@@ -861,30 +882,29 @@ class Plans(object):
             >>> fl_params = self._get_fl_parameters(fl=['planName', 'planId'])
         """
         self.valid_columns = {
-            'planName': 'plans.plan.planName',
-            'planId': 'plans.plan.planId',
-            'planType': 'plans.subtype',
-            'description': 'plans.description',
-            'numAssocEntities': 'plans.numAssocEntities',
-            'rpoInMinutes': 'plans.rpoInMinutes',
-            'numCopies': 'plans.numCopies',
-            'planStatusFlag': 'plans.planStatusFlag',
-            'storage': 'plans.storageResourcePoolMaps.resources.resourcePool',
-            'companyName': 'plans.plan.entityInfo.companyName',
-            'tags': 'tags'
+            "planName": "plans.plan.planName",
+            "planId": "plans.plan.planId",
+            "planType": "plans.subtype",
+            "description": "plans.description",
+            "numAssocEntities": "plans.numAssocEntities",
+            "rpoInMinutes": "plans.rpoInMinutes",
+            "numCopies": "plans.numCopies",
+            "planStatusFlag": "plans.planStatusFlag",
+            "storage": "plans.storageResourcePoolMaps.resources.resourcePool",
+            "companyName": "plans.plan.entityInfo.companyName",
+            "tags": "tags",
         }
-        default_columns = 'plans.plan.planName,plans.plan.planId'
+        default_columns = "plans.plan.planName,plans.plan.planId"
 
         if fl:
             if all(col in self.valid_columns for col in fl):
                 fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
             else:
-                raise SDKException('Plan', '102', 'Invalid column name passed')
+                raise SDKException("Plan", "102", "Invalid column name passed")
         else:
             fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
 
         return fl_parameters
-
 
     def _get_sort_parameters(self, sort: list = None) -> str:
         """
@@ -906,12 +926,11 @@ class Plans(object):
         """
         sort_type = str(sort[1])
         col = sort[0]
-        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
-            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        if col in self.valid_columns.keys() and sort_type in ["1", "-1"]:
+            sort_parameter = "&sort=" + self.valid_columns[col] + ":" + sort_type
         else:
-            raise SDKException('Plan', '102', 'Invalid column name passed')
+            raise SDKException("Plan", "102", "Invalid column name passed")
         return sort_parameter
-
 
     def _get_fq_parameters(self, fq: list = None) -> str:
         """
@@ -935,7 +954,7 @@ class Plans(object):
 
         for column, condition, *value in fq or []:
             if column not in self.valid_columns:
-                raise SDKException('Plan', '102', 'Invalid column name passed')
+                raise SDKException("Plan", "102", "Invalid column name passed")
 
             # Handle 'tags' column separately
             if column == "tags" and condition == "contains":
@@ -949,10 +968,9 @@ class Plans(object):
                 params.append(f"&fq={self.valid_columns[column]}:gteq:{start}")
                 params.append(f"&fq={self.valid_columns[column]}:lteq:{end}")
             else:
-                raise SDKException('Plan', '102', 'Invalid condition passed')
+                raise SDKException("Plan", "102", "Invalid condition passed")
 
         return "".join(params)
-
 
     def get_plans_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -984,17 +1002,31 @@ class Plans(object):
             >>> plans_cache_filtered = self.get_plans_cache(fl=['planName', 'planId'], sort=['planName', '1'], limit=['0', '50'], search='test', fq=[['planName', 'contains', 'test']])
         """
         # computing parameters
-        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
-        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', None)
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
-        hard_refresh = '&hardRefresh=true' if hard else ''
-        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        fl_parameters = self._get_fl_parameters(kwargs.get("fl", None))
+        fq_parameters = self._get_fq_parameters(kwargs.get("fq", None))
+        limit = kwargs.get("limit", None)
+        limit_parameters = f"start={limit[0]}&limit={limit[1]}" if limit else ""
+        hard_refresh = "&hardRefresh=true" if hard else ""
+        sort_parameters = (
+            self._get_sort_parameters(kwargs.get("sort", None)) if kwargs.get("sort", None) else ""
+        )
 
         # Search operation can only be performed on limited columns, so filtering out the columns on which search works
-        searchable_columns = ["planName","planType","planStatusFlag","companyName","description"]
-        search_parameter = (f'&search=tagName,tagValue,{",".join(self.valid_columns[col] for col in searchable_columns)}'
-                            f':contains:{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+        searchable_columns = [
+            "planName",
+            "planType",
+            "planStatusFlag",
+            "companyName",
+            "description",
+        ]
+        search_parameter = (
+            (
+                f"&search=tagName,tagValue,{','.join(self.valid_columns[col] for col in searchable_columns)}"
+                f":contains:{kwargs.get('search', None)}"
+            )
+            if kwargs.get("search", None)
+            else ""
+        )
 
         params = [
             limit_parameters,
@@ -1002,49 +1034,51 @@ class Plans(object):
             fl_parameters,
             hard_refresh,
             search_parameter,
-            fq_parameters
+            fq_parameters,
         ]
         request_url = f"{self._PLANS}?" + "".join(params)
         flag, response = self._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         plans_summary = {}
-        if response.json() and 'plans' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount',0)
-            for plan in response.json()['plans']:
+        if response.json() and "plans" in response.json():
+            self.filter_query_count = response.json().get("filterQueryCount", 0)
+            for plan in response.json()["plans"]:
                 name = plan.get("plan", {}).get("planName", None)
-                company = plan.get('plan', {}).get('entityInfo', {}).get('companyName', None)
+                company = plan.get("plan", {}).get("entityInfo", {}).get("companyName", None)
 
                 plan_config = {
-                    'planName':name,
-                    'planId': plan.get('plan', {}).get('planId', None),
-                    'planType': plan.get('subtype'),
-                    'description': plan.get('description'),
-                    'numCopies': plan.get('numCopies'),
-                    'numAssocEntities': plan.get('numAssocEntities'),
-                    'rpoInMinutes': plan.get('rpoInMinutes',0),
-                    'planStatusFlag': plan.get('planStatusFlag'),
-                    'companyName': company,
-                    'tags': (plan.get('plan') or {}).get('tags') or []
+                    "planName": name,
+                    "planId": plan.get("plan", {}).get("planId", None),
+                    "planType": plan.get("subtype"),
+                    "description": plan.get("description"),
+                    "numCopies": plan.get("numCopies"),
+                    "numAssocEntities": plan.get("numAssocEntities"),
+                    "rpoInMinutes": plan.get("rpoInMinutes", 0),
+                    "planStatusFlag": plan.get("planStatusFlag"),
+                    "companyName": company,
+                    "tags": (plan.get("plan") or {}).get("tags") or [],
                 }
-                if 'storageResourcePoolMaps' in plan and 'resources' in plan.get('storageResourcePoolMaps', {})[0]:
-                    plan_config['resourcePool'] = [
-                        resource.get('resourcePool', {}).get('resourcePoolName')
-                        for resource in plan.get('storageResourcePoolMaps', {})[0].get('resources')
+                if (
+                    "storageResourcePoolMaps" in plan
+                    and "resources" in plan.get("storageResourcePoolMaps", {})[0]
+                ):
+                    plan_config["resourcePool"] = [
+                        resource.get("resourcePool", {}).get("resourcePoolName")
+                        for resource in plan.get("storageResourcePoolMaps", {})[0].get("resources")
                     ]
                 # Check if plan name already exists for a different company
                 unique_name = name
-                if name in plans_summary and plans_summary[name].get('companyName') != company:
+                if name in plans_summary and plans_summary[name].get("companyName") != company:
                     unique_name = f"{name}_({company})"
                 plans_summary[unique_name] = plan_config
 
             return plans_summary
         else:
             raise SDKException("Plan", "102", "Failed to get plans summary")
-
 
     @property
     def all_plans(self) -> dict:
@@ -1063,7 +1097,6 @@ class Plans(object):
             >>> all_plans = plans.all_plans
         """
         return self._plans
-
 
     @property
     def all_plans_cache(self) -> dict:
@@ -1107,7 +1140,6 @@ class Plans(object):
             self._plans_cache = self.get_plans_cache()
         return self._plans_cache
 
-
     def filter_plans(self, plan_type: str, company_name: str = None) -> dict:
         """
         Returns the dictionary consisting of specified type and company plans.
@@ -1136,38 +1168,52 @@ class Plans(object):
             >>> commcell_plans = self.filter_plans("Server", company_name="Commcell")
         """
         if not isinstance(plan_type, str):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
 
         plan_type_lower = plan_type.lower()
 
-        if plan_type_lower not in ["dlo", "server", "laptop", "database", "fsserver", "fsibmivtl", "snap",
-                                   "vsaserver", "vsareplication", "exchangeuser", "exchangejournal",
-                                   "office365", "dynamics365", "dataclassification", "archiver"]:
-            raise SDKException('Plan', '102', 'Invalid Plan Type Passed as Parameter')
+        if plan_type_lower not in [
+            "dlo",
+            "server",
+            "laptop",
+            "database",
+            "fsserver",
+            "fsibmivtl",
+            "snap",
+            "vsaserver",
+            "vsareplication",
+            "exchangeuser",
+            "exchangejournal",
+            "office365",
+            "dynamics365",
+            "dataclassification",
+            "archiver",
+        ]:
+            raise SDKException("Plan", "102", "Invalid Plan Type Passed as Parameter")
 
         params = f"fq=plans.subtype%3Ain%3A{plan_type}&fl=plans.plan.planId%2Cplans.plan.planName%2Cplans.subtype%2Cplans.type"
 
         if company_name:
             company_id = (
                 self._commcell_object.organizations.get(company_name).organization_id
-                if company_name != 'Commcell' else 0
+                if company_name != "Commcell"
+                else 0
             )
             params += f"&fq=companyId%3Aeq%3A{company_id}"
 
-        template_url = self._services['PLAN_SUMMARY'] % params
+        template_url = self._services["PLAN_SUMMARY"] % params
 
-        flag, response = self._cvpysdk_object.make_request('GET', template_url)
+        flag, response = self._cvpysdk_object.make_request("GET", template_url)
 
         if flag:
             result = dict()
-            if 'plans' in response.json():
-                for plan in response.json()['plans']:
-                    result[plan['plan']['name']] = plan['plan']['id']
+            if "plans" in response.json():
+                for plan in response.json()["plans"]:
+                    result[plan["plan"]["name"]] = plan["plan"]["id"]
             return result
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def has_plan(self, plan_name: str) -> bool:
         """Checks if a plan exists in the commcell with the input plan name.
@@ -1185,11 +1231,11 @@ class Plans(object):
             >>> has_plan = plans.has_plan("MyPlan")
         """
         if not isinstance(plan_name, str):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
 
         return self._plans and plan_name.lower() in self._plans
 
-    def get(self, plan_name: str) -> 'Plan':
+    def get(self, plan_name: str) -> "Plan":
         """Returns a plan object of the specified plan name.
 
         Args:
@@ -1208,22 +1254,14 @@ class Plans(object):
             plan = plans.get('MyPlan')
         """
         if not isinstance(plan_name, str):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
         else:
             plan_name = plan_name.lower()
 
             if self.has_plan(plan_name):
-                return Plan(
-                    self._commcell_object,
-                    plan_name,
-                    self._plans[plan_name]
-                )
+                return Plan(self._commcell_object, plan_name, self._plans[plan_name])
 
-            raise SDKException(
-                'Plan', '102', 'No plan exists with name: {0}'.format(
-                    plan_name)
-            )
-
+            raise SDKException("Plan", "102", f"No plan exists with name: {plan_name}")
 
     def delete(self, plan_name: str) -> None:
         """Deletes the plan from the commcell.
@@ -1247,34 +1285,34 @@ class Plans(object):
             plans.delete('MyPlan')
         """
         if not isinstance(plan_name, str):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
         else:
             plan_name = plan_name.lower()
 
             if self.has_plan(plan_name):
                 plan_id = self._plans[plan_name]
 
-                delete_plan = self._services['DELETE_PLAN'] % (plan_id)
+                delete_plan = self._services["DELETE_PLAN"] % (plan_id)
 
-                flag, response = self._cvpysdk_object.make_request('DELETE', delete_plan)
+                flag, response = self._cvpysdk_object.make_request("DELETE", delete_plan)
 
                 error_code = 0
 
                 if flag:
-                    if 'error' in response.json():
-                        if isinstance(response.json()['error'], list):
-                            error_code = response.json()['error'][0]['status']['errorCode']
+                    if "error" in response.json():
+                        if isinstance(response.json()["error"], list):
+                            error_code = response.json()["error"][0]["status"]["errorCode"]
                         else:
-                            error_code = response.json()['errorCode']
+                            error_code = response.json()["errorCode"]
 
                     if error_code != 0:
-                        o_str = 'Failed to delete plan'
-                        if isinstance(response.json()['error'], list):
-                            error_message = response.json()['error'][0]['status']['errorMessage']
+                        o_str = "Failed to delete plan"
+                        if isinstance(response.json()["error"], list):
+                            error_message = response.json()["error"][0]["status"]["errorMessage"]
                         else:
-                            error_message = response.json()['errorMessage']
-                        o_str += '\nError: "{0}"'.format(error_message)
-                        raise SDKException('Plan', '102', o_str)
+                            error_message = response.json()["errorMessage"]
+                        o_str += f'\nError: "{error_message}"'
+                        raise SDKException("Plan", "102", o_str)
                     else:
                         # initialize the plan again
                         # so the plan object has all the plan
@@ -1282,16 +1320,19 @@ class Plans(object):
                         self._commcell_object.storage_policies.refresh()
                 else:
                     response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
             else:
-                raise SDKException(
-                    'Plan',
-                    '102',
-                    'No plan exists with name: {0}'.format(plan_name)
-                )
-    
-    def add_archiver_plan(self, plan_name: str, copy_dict: list[dict], archiving_rules: dict, plan_sub_type: str = 'Archiver',
-                          override_restrictions: dict = None, schedule_policy: dict = None):
+                raise SDKException("Plan", "102", f"No plan exists with name: {plan_name}")
+
+    def add_archiver_plan(
+        self,
+        plan_name: str,
+        copy_dict: list[dict],
+        archiving_rules: dict,
+        plan_sub_type: str = "Archiver",
+        override_restrictions: dict = None,
+        schedule_policy: dict = None,
+    ):
         """
         Adds a new archiver plan to the commcell.
         Args:
@@ -1318,7 +1359,7 @@ class Plans(object):
                     "FileSizeUnit": "KB" / "MB" / "GB",
                     "afterArchiving": "REPLACE_FILE_WITH_STUB" / "DELETE_THE_FILE"
                 }
-            override_restrictions (dict) <OPTIONAL> -- Dictionary containing override restrictions 
+            override_restrictions (dict) <OPTIONAL> -- Dictionary containing override restrictions
             Example:
             {
                 "storagePool": "OPTIONAL" / "MUST" / "NOT_ALLOWED",
@@ -1346,30 +1387,34 @@ class Plans(object):
 
                 if error in creating the plan
         """
-        if plan_sub_type.lower() != 'archiver':
-            raise SDKException('Plan', '101', "Plan subtype should be Archiver.")
+        if plan_sub_type.lower() != "archiver":
+            raise SDKException("Plan", "101", "Plan subtype should be Archiver.")
         if self.has_plan(plan_name):
-            raise SDKException('Plan', '102', 'Plan "{0}" already exists'.format(plan_name))
+            raise SDKException("Plan", "102", f'Plan "{plan_name}" already exists')
         request_copy_dict = []
         for copy in copy_dict:
             if not isinstance(copy, dict):
-                raise SDKException('Plan', '101', 'Each copy should be a dictionary.')
-            if 'copyName' not in copy or 'storagePool' not in copy:
-                raise SDKException('Plan', '101', 'Each copy should contain copyName and storagePool.')
-            if not isinstance(copy['copyName'], str) or not isinstance(copy['storagePool'], str):
-                raise SDKException('Plan', '101', 'copyName and storagePool should be a string.')
-            if 'retention' in copy and not isinstance(copy['retention'], int):
-                raise SDKException('Plan', '101', 'retention should be an integer.')
-            if not self._commcell_object.storage_pools.has_storage_pool(copy['storagePool']):
-                raise SDKException('Plan', '102', 'Storage Pool does not exist in commcell.')
-            if 'retention' not in copy:
-                copy['retention'] = -1  # Infinite retention by default
+                raise SDKException("Plan", "101", "Each copy should be a dictionary.")
+            if "copyName" not in copy or "storagePool" not in copy:
+                raise SDKException(
+                    "Plan", "101", "Each copy should contain copyName and storagePool."
+                )
+            if not isinstance(copy["copyName"], str) or not isinstance(copy["storagePool"], str):
+                raise SDKException("Plan", "101", "copyName and storagePool should be a string.")
+            if "retention" in copy and not isinstance(copy["retention"], int):
+                raise SDKException("Plan", "101", "retention should be an integer.")
+            if not self._commcell_object.storage_pools.has_storage_pool(copy["storagePool"]):
+                raise SDKException("Plan", "102", "Storage Pool does not exist in commcell.")
+            if "retention" not in copy:
+                copy["retention"] = -1  # Infinite retention by default
             else:
-                copy['retention'] = int(copy['retention'])*365
-            if copy['retention']!= -1 and (copy['retention'] < ARCHIVER_PLAN_MIN_RETENTION):
-                raise SDKException('Plan', '101', f'Retention period should be greater than 5 years.')
-            
-            storage_pool_obj = self._commcell_object.storage_pools.get(copy['storagePool'])
+                copy["retention"] = int(copy["retention"]) * 365
+            if copy["retention"] != -1 and (copy["retention"] < ARCHIVER_PLAN_MIN_RETENTION):
+                raise SDKException(
+                    "Plan", "101", "Retention period should be greater than 5 years."
+                )
+
+            storage_pool_obj = self._commcell_object.storage_pools.get(copy["storagePool"])
             storage_pool_id = int(storage_pool_obj.storage_pool_id)
             # Build new dictionary
             new_copy = {
@@ -1378,167 +1423,200 @@ class Plans(object):
                 "useExtendedRetentionRules": False,
                 "overrideRetentionSettings": True,
                 "backupStartTime": -1,
-                "storagePool": {
-                    "id": storage_pool_id,
-                    "name": copy["storagePool"]
-                }
+                "storagePool": {"id": storage_pool_id, "name": copy["storagePool"]},
             }
 
             request_copy_dict.append(new_copy)
-        if not isinstance(archiving_rules['Method'], str) or archiving_rules['Method'].upper() not in ['LAST_MODIFIED', 'LAST_ACCESSED']:
-            raise SDKException('Plan', '101', 'Method should be LAST_MODIFIED or LAST_ACCESSED.')
-        if not isinstance(archiving_rules['DurationUnit'], str) or archiving_rules['DurationUnit'].upper() not in ['DAYS', 'MONTHS', 'YEARS']:
-            raise SDKException('Plan', '101', 'DurationUnit should be DAYS, MONTHS or YEARS.')
-        if not isinstance(archiving_rules['FileSizeUnit'], str) or archiving_rules['FileSizeUnit'].upper() not in ['KB', 'MB', 'GB']:
-            raise SDKException('Plan', '101', 'FileSizeUnit should be KB, MB or GB.')
-        if not isinstance(archiving_rules['afterArchiving'], str) or archiving_rules['afterArchiving'].upper() not in ['REPLACE_FILE_WITH_STUB', 'DELETE_THE_FILE']:
-            raise SDKException('Plan', '101', 'afterArchiving should be REPLACE_FILE_WITH_STUB or DELETE_THE_FILE.')
-        if not isinstance(archiving_rules['Duration'], int) or archiving_rules['Duration'] < 0:
-            raise SDKException('Plan', '101', 'Duration should be a positive integer.')
-        if not isinstance(archiving_rules['FileSize'], int) or archiving_rules['FileSize'] < 0:
-            raise SDKException('Plan', '101', 'FileSize should be a positive integer.')
-        
-        if archiving_rules['DurationUnit'].upper() == 'YEARS':
-            duration = int(archiving_rules['Duration']) * 365
-        elif archiving_rules['DurationUnit'].upper() == 'MONTHS':
-            duration = math.floor(int(archiving_rules['Duration']) * 30.41)
+        if not isinstance(archiving_rules["Method"], str) or archiving_rules[
+            "Method"
+        ].upper() not in ["LAST_MODIFIED", "LAST_ACCESSED"]:
+            raise SDKException("Plan", "101", "Method should be LAST_MODIFIED or LAST_ACCESSED.")
+        if not isinstance(archiving_rules["DurationUnit"], str) or archiving_rules[
+            "DurationUnit"
+        ].upper() not in ["DAYS", "MONTHS", "YEARS"]:
+            raise SDKException("Plan", "101", "DurationUnit should be DAYS, MONTHS or YEARS.")
+        if not isinstance(archiving_rules["FileSizeUnit"], str) or archiving_rules[
+            "FileSizeUnit"
+        ].upper() not in ["KB", "MB", "GB"]:
+            raise SDKException("Plan", "101", "FileSizeUnit should be KB, MB or GB.")
+        if not isinstance(archiving_rules["afterArchiving"], str) or archiving_rules[
+            "afterArchiving"
+        ].upper() not in ["REPLACE_FILE_WITH_STUB", "DELETE_THE_FILE"]:
+            raise SDKException(
+                "Plan",
+                "101",
+                "afterArchiving should be REPLACE_FILE_WITH_STUB or DELETE_THE_FILE.",
+            )
+        if not isinstance(archiving_rules["Duration"], int) or archiving_rules["Duration"] < 0:
+            raise SDKException("Plan", "101", "Duration should be a positive integer.")
+        if not isinstance(archiving_rules["FileSize"], int) or archiving_rules["FileSize"] < 0:
+            raise SDKException("Plan", "101", "FileSize should be a positive integer.")
+
+        if archiving_rules["DurationUnit"].upper() == "YEARS":
+            duration = int(archiving_rules["Duration"]) * 365
+        elif archiving_rules["DurationUnit"].upper() == "MONTHS":
+            duration = math.floor(int(archiving_rules["Duration"]) * 30.41)
         else:
-            duration = int(archiving_rules['Duration'])
-        if archiving_rules['FileSizeUnit'].upper() == 'MB':
-            file_size = int(archiving_rules['FileSize']) * 1024
-        elif archiving_rules['FileSizeUnit'].upper() == 'GB':
-            file_size = int(archiving_rules['FileSize']) * 1024 * 1024
+            duration = int(archiving_rules["Duration"])
+        if archiving_rules["FileSizeUnit"].upper() == "MB":
+            file_size = int(archiving_rules["FileSize"]) * 1024
+        elif archiving_rules["FileSizeUnit"].upper() == "GB":
+            file_size = int(archiving_rules["FileSize"]) * 1024 * 1024
         else:
-            file_size = int(archiving_rules['FileSize'])
+            file_size = int(archiving_rules["FileSize"])
 
         request_archiving_rules = {
-            "fileTimestampMethod": archiving_rules['Method'].upper(),
+            "fileTimestampMethod": archiving_rules["Method"].upper(),
             "fileTimestamp": duration,
             "fileSize": file_size,
-            "afterArchiving": archiving_rules['afterArchiving'].upper()
+            "afterArchiving": archiving_rules["afterArchiving"].upper(),
         }
-        
+
         if override_restrictions:
             if not isinstance(override_restrictions, dict):
-                raise SDKException('Plan', '101', 'override_restrictions should be a dictionary.')
-            if not all(key in ['storagePool', 'RPO', 'archivingRules'] for key in override_restrictions.keys()):
-                raise SDKException('Plan', '101', 'Invalid keys in override_restrictions.')
-            if not all(value in ['OPTIONAL', 'MUST', 'NOT_ALLOWED'] for value in override_restrictions.values()):
-                raise SDKException('Plan', '101', 'Invalid values in override_restrictions.')
-            override_restrictions['backupContent'] = override_restrictions.get('backupContent', 'OPTIONAL')
-        
+                raise SDKException("Plan", "101", "override_restrictions should be a dictionary.")
+            if not all(
+                key in ["storagePool", "RPO", "archivingRules"]
+                for key in override_restrictions.keys()
+            ):
+                raise SDKException("Plan", "101", "Invalid keys in override_restrictions.")
+            if not all(
+                value in ["OPTIONAL", "MUST", "NOT_ALLOWED"]
+                for value in override_restrictions.values()
+            ):
+                raise SDKException("Plan", "101", "Invalid values in override_restrictions.")
+            override_restrictions["backupContent"] = override_restrictions.get(
+                "backupContent", "OPTIONAL"
+            )
+
         schedules = {
-                "backupType": "INCREMENTAL",
-                "forDatabasesOnly": False,
-                "scheduleOperation": "ADD",
-                "scheduleOption": {
-                        "daysBetweenAutoConvert": 7
-                }
+            "backupType": "INCREMENTAL",
+            "forDatabasesOnly": False,
+            "scheduleOperation": "ADD",
+            "scheduleOption": {"daysBetweenAutoConvert": 7},
         }
         if schedule_policy:
             if not isinstance(schedule_policy, dict):
-                raise SDKException('Plan', '101', 'schedule_policy should be a dictionary.')
-            if 'frequency' not in schedule_policy or 'interval' not in schedule_policy:
-                raise SDKException('Plan', '101', 'schedule_policy should contain frequency and interval.')
-            if not isinstance(schedule_policy['frequency'], str) or schedule_policy['frequency'].upper() not in ['MINUTES', 'HOURS', 'DAYS']:
-                raise SDKException('Plan', '101', 'frequency should be MINUTES, HOURS or DAYS.')
-            if not isinstance(schedule_policy['interval'], int) or schedule_policy['interval'] <= 0:
-                raise SDKException('Plan', '101', 'interval should be a positive integer.')
-            if schedule_policy['frequency'].upper() == 'MINUTES' and schedule_policy['interval'] < 5:
-                raise SDKException('Plan', '101', 'Interval should be greater than 5 minutes for frequency MINUTES.')
-            
+                raise SDKException("Plan", "101", "schedule_policy should be a dictionary.")
+            if "frequency" not in schedule_policy or "interval" not in schedule_policy:
+                raise SDKException(
+                    "Plan", "101", "schedule_policy should contain frequency and interval."
+                )
+            if not isinstance(schedule_policy["frequency"], str) or schedule_policy[
+                "frequency"
+            ].upper() not in ["MINUTES", "HOURS", "DAYS"]:
+                raise SDKException("Plan", "101", "frequency should be MINUTES, HOURS or DAYS.")
+            if (
+                not isinstance(schedule_policy["interval"], int)
+                or schedule_policy["interval"] <= 0
+            ):
+                raise SDKException("Plan", "101", "interval should be a positive integer.")
+            if (
+                schedule_policy["frequency"].upper() == "MINUTES"
+                and schedule_policy["interval"] < 5
+            ):
+                raise SDKException(
+                    "Plan",
+                    "101",
+                    "Interval should be greater than 5 minutes for frequency MINUTES.",
+                )
+
             start_time = 75600  # 21:00:00 in seconds
-            if schedule_policy['frequency'].upper() == 'MINUTES':
-                schedule_frequency_type = 'MINUTES'
-                interval = schedule_policy['interval']
-            elif schedule_policy['frequency'].upper() == 'HOURS':
-                schedule_frequency_type = 'MINUTES'
-                interval = schedule_policy['interval'] * 60
+            if schedule_policy["frequency"].upper() == "MINUTES":
+                schedule_frequency_type = "MINUTES"
+                interval = schedule_policy["interval"]
+            elif schedule_policy["frequency"].upper() == "HOURS":
+                schedule_frequency_type = "MINUTES"
+                interval = schedule_policy["interval"] * 60
             else:  # DAYS
-                schedule_frequency_type = 'DAILY'
-                if schedule_policy.get('starttime'):
-                    h, m, s = map(int, schedule_policy['starttime'].split(':'))
+                schedule_frequency_type = "DAILY"
+                if schedule_policy.get("starttime"):
+                    h, m, s = map(int, schedule_policy["starttime"].split(":"))
                     start_time = h * 3600 + m * 60 + s
-                interval = schedule_policy['interval']
-             
+                interval = schedule_policy["interval"]
+
             rpo = {
                 "archiveFrequency": {
                     "scheduleFrequencyType": schedule_frequency_type,
                     "startTime": start_time,  # 21:00:00 in seconds
-                    "frequency": interval
+                    "frequency": interval,
                 },
-                "archiveWindow": []
+                "archiveWindow": [],
             }
-            schedules['schedulePattern'] = {
-                "scheduleFrequencyType": schedule_policy['frequency'] if schedule_policy['frequency'] == 'HOURS' else schedule_frequency_type,
+            schedules["schedulePattern"] = {
+                "scheduleFrequencyType": schedule_policy["frequency"]
+                if schedule_policy["frequency"] == "HOURS"
+                else schedule_frequency_type,
                 "startTime": start_time,  # 21:00:00 in seconds
-                "frequency": interval
+                "frequency": interval,
             }
 
         else:
             rpo = {
                 "archiveFrequency": {
-                "scheduleFrequencyType": "DAILY",
-                "startTime": 75600,
-                "frequency": 1
+                    "scheduleFrequencyType": "DAILY",
+                    "startTime": 75600,
+                    "frequency": 1,
                 },
-                "archiveWindow": []
+                "archiveWindow": [],
             }
-            schedules['schedulePattern'] = {
+            schedules["schedulePattern"] = {
                 "scheduleFrequencyType": "DAILY",
                 "startTime": 75600,  # 21:00:00 in seconds
-                "frequency": 1
+                "frequency": 1,
             }
-        
-        request_json = {   
-                "planName": plan_name,
-                "backupDestinations": request_copy_dict,
-                "rpo":  rpo,
-                "backupFrequency": {
-                    "schedules": [schedules]
-                },
-                "archivingRules": request_archiving_rules,
-                "allowPlanOverride": True if override_restrictions else False,
-            }
+
+        request_json = {
+            "planName": plan_name,
+            "backupDestinations": request_copy_dict,
+            "rpo": rpo,
+            "backupFrequency": {"schedules": [schedules]},
+            "archivingRules": request_archiving_rules,
+            "allowPlanOverride": True if override_restrictions else False,
+        }
         if override_restrictions:
-            request_json['overrideRestrictions'] = override_restrictions
-        
-        flag, response = self._cvpysdk_object.make_request('POST', self._V4_ARCHIVER_PLAN, request_json)
+            request_json["overrideRestrictions"] = override_restrictions
+
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._V4_ARCHIVER_PLAN, request_json
+        )
         if flag:
             if response.json():
                 response_value = response.json()
                 error_message = None
                 error_code = None
 
-                if 'errors' in response_value:
-                    error_code = response_value['errors'][0]['status']['errorCode']
-                    error_message = response_value['errors'][0]['status']['errorMessage']
+                if "errors" in response_value:
+                    error_code = response_value["errors"][0]["status"]["errorCode"]
+                    error_message = response_value["errors"][0]["status"]["errorMessage"]
 
                 if error_code and error_code > 1:
-                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                        error_message
-                    )
-                    raise SDKException('Plan', '102', o_str)
+                    o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", o_str)
 
-                if 'plan' in response_value:
-                    plan_name = response_value['plan']['name']
+                if "plan" in response_value:
+                    plan_name = response_value["plan"]["name"]
                     # initialize the plans again
                     self.refresh()
 
                     return self.get(plan_name)
                 else:
-                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                                'Please check the documentation for '
-                                'more details on the error').format(error_code)
+                    o_str = (
+                        f'Failed to create new plan due to error code: "{error_code}"\n'
+                        "Please check the documentation for "
+                        "more details on the error"
+                    )
 
-                    raise SDKException('Plan', '102', o_str)
+                    raise SDKException("Plan", "102", o_str)
             else:
-                raise SDKException('Response', 102)
+                raise SDKException("Response", 102)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def add_exchange_plan(self, plan_name: str, plan_sub_type: str = 'ExchangeUser', **kwargs) -> 'Plan':
+    def add_exchange_plan(
+        self, plan_name: str, plan_sub_type: str = "ExchangeUser", **kwargs
+    ) -> "Plan":
         """Adds a new exchange plan to the commcell.
 
         Args:
@@ -1586,71 +1664,96 @@ class Plans(object):
             plans.add_exchange_plan('MyExchangePlan', retain_msgs_deletion_time=30)
             plans.add_exchange_plan('MyExchangePlan', enable_content_search=True, num_days_backup_version=730)
         """
-        if plan_sub_type not in ['ExchangeUser', 'ExchangeJournal']:
-            raise SDKException('Plan', '101', "Plan subtype should be ExchangeUser or ExchangeJournal.")
+        if plan_sub_type not in ["ExchangeUser", "ExchangeJournal"]:
+            raise SDKException(
+                "Plan", "101", "Plan subtype should be ExchangeUser or ExchangeJournal."
+            )
         elif self.has_plan(plan_name):
-                raise SDKException('Plan', '102', 'Plan "{0}" already exists'.format(plan_name))
+            raise SDKException("Plan", "102", f'Plan "{plan_name}" already exists')
         request_json = self._get_plan_template(plan_sub_type)
-        request_json['plan']['summary']['plan']['planName'] = plan_name
-        exch_retention = request_json['plan']['exchange']['mbRetention']['detail']['emailPolicy']['retentionPolicy']
-        exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_deletion_time', -1)
-        exch_retention['type'] = 1
-        exch_retention['numOfDaysForMediaPruningForDeletedMb'] = -1
-        if plan_sub_type == 'ExchangeUser':
-            exch_arch = request_json['plan']['exchange']['mbArchiving']['detail']['emailPolicy']['archivePolicy']
-            exch_cleanup = request_json['plan']['exchange']['mbCleanup']['detail']['emailPolicy']['cleanupPolicy']
-            exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].remove('Drafts')
-            exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].append('Drafts')
-            if kwargs.get('enable_message_rules'):
-                exch_cleanup['enableMessageRules'] = True
-            exclude_folders = kwargs.get('exclude_folder_filter', [])
+        request_json["plan"]["summary"]["plan"]["planName"] = plan_name
+        exch_retention = request_json["plan"]["exchange"]["mbRetention"]["detail"]["emailPolicy"][
+            "retentionPolicy"
+        ]
+        exch_retention["numOfDaysForMediaPruning"] = kwargs.get("retain_msgs_deletion_time", -1)
+        exch_retention["type"] = 1
+        exch_retention["numOfDaysForMediaPruningForDeletedMb"] = -1
+        if plan_sub_type == "ExchangeUser":
+            exch_arch = request_json["plan"]["exchange"]["mbArchiving"]["detail"]["emailPolicy"][
+                "archivePolicy"
+            ]
+            exch_cleanup = request_json["plan"]["exchange"]["mbCleanup"]["detail"]["emailPolicy"][
+                "cleanupPolicy"
+            ]
+            exch_cleanup["excludeFolderFilter"]["folderPatternsSelected"].remove("Drafts")
+            exch_cleanup["excludeFolderFilter"]["folderPatternsAvailable"].append("Drafts")
+            if kwargs.get("enable_message_rules"):
+                exch_cleanup["enableMessageRules"] = True
+            exclude_folders = kwargs.get("exclude_folder_filter", [])
             for folder in exclude_folders:
-                if folder in exch_cleanup['excludeFolderFilter']['folderPatternsAvailable']:
-                    exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].remove(folder)
-                exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].append(folder)
-            include_folders = kwargs.get('include_folder_filter', [])
-            exch_cleanup['includeFolderFilter']['folderPatternsSelected'] = []
+                if folder in exch_cleanup["excludeFolderFilter"]["folderPatternsAvailable"]:
+                    exch_cleanup["excludeFolderFilter"]["folderPatternsAvailable"].remove(folder)
+                exch_cleanup["excludeFolderFilter"]["folderPatternsSelected"].append(folder)
+            include_folders = kwargs.get("include_folder_filter", [])
+            exch_cleanup["includeFolderFilter"]["folderPatternsSelected"] = []
             for folder in include_folders:
-                if folder in exch_cleanup['includeFolderFilter']['folderPatternsAvailable']:
-                    exch_cleanup['includeFolderFilter']['folderPatternsAvailable'].remove(folder)
-                exch_cleanup['includeFolderFilter']['folderPatternsSelected'].append(folder)
-            if kwargs.get('truncate_body'):
-                exch_cleanup['truncateBody'] = True
-                exch_cleanup['truncateBodyToSize'] = kwargs.get('truncate_body_to_size', 1024)
-            exch_cleanup['archiveMailbox'] = kwargs.get('enable_cleanup_archive_mailbox', False)
-            exch_cleanup['collectMsgsDaysAfter'] = kwargs.get('cleanup_msg_older_than', 0)
-            exch_cleanup['collectMsgsLargerThan'] = kwargs.get('cleanup_msg_larger_than', 0)
-            exch_cleanup['skipUnreadMsgs'] = kwargs.get('skip_unread_msgs', False)
-            exch_cleanup['collectMsgWithAttach'] = kwargs.get('collect_msg_with_attach', False)
-            exch_cleanup['createStubs'] = kwargs.get('create_stubs', True)
-            exch_cleanup['pruneStubs'] = kwargs.get('prune_stubs', False)
-            exch_cleanup['pruneMsgs'] = kwargs.get('prune_msgs', False)
-            exch_cleanup['numOfDaysForSourcePruning'] = kwargs.get('number_of_days_src_pruning', 0)
-            exch_arch['backupDeletedItemRetention'] = kwargs.get('backup_deleted_item_retention', False)
-            if 'includeDiscoveryHoldsFolder' in kwargs:
-                exch_arch['includeDiscoveryHoldsFolder'] = kwargs.get('include_discovery_holds_folder')
-            if 'includePurgesFolder' in kwargs:
-                exch_arch['includePurgesFolder'] = kwargs.get('include_purges_folder')
-            if 'includeVersionsFolder' in kwargs:
-                exch_arch['includeVersionsFolder'] = kwargs.get('include_versions_folder')
-            exch_arch['includeOnlyMsgsWithAttachemts'] = kwargs.get('include_only_msgs_with_attachemts', False)
-            exch_arch['includeMsgsOlderThan'] = kwargs.get('include_msgs_older_than', 0)
-            exch_arch['includeMsgsLargerThan'] = kwargs.get('include_msgs_larger_than', 0)
-            exch_arch['archiveMailbox'] = kwargs.get('enable_archive_on_archive_mailbox', False)
-            exch_retention['numOfDaysForRetainingBackupVersions'] = kwargs.get('num_days_backup_version', 365)
+                if folder in exch_cleanup["includeFolderFilter"]["folderPatternsAvailable"]:
+                    exch_cleanup["includeFolderFilter"]["folderPatternsAvailable"].remove(folder)
+                exch_cleanup["includeFolderFilter"]["folderPatternsSelected"].append(folder)
+            if kwargs.get("truncate_body"):
+                exch_cleanup["truncateBody"] = True
+                exch_cleanup["truncateBodyToSize"] = kwargs.get("truncate_body_to_size", 1024)
+            exch_cleanup["archiveMailbox"] = kwargs.get("enable_cleanup_archive_mailbox", False)
+            exch_cleanup["collectMsgsDaysAfter"] = kwargs.get("cleanup_msg_older_than", 0)
+            exch_cleanup["collectMsgsLargerThan"] = kwargs.get("cleanup_msg_larger_than", 0)
+            exch_cleanup["skipUnreadMsgs"] = kwargs.get("skip_unread_msgs", False)
+            exch_cleanup["collectMsgWithAttach"] = kwargs.get("collect_msg_with_attach", False)
+            exch_cleanup["createStubs"] = kwargs.get("create_stubs", True)
+            exch_cleanup["pruneStubs"] = kwargs.get("prune_stubs", False)
+            exch_cleanup["pruneMsgs"] = kwargs.get("prune_msgs", False)
+            exch_cleanup["numOfDaysForSourcePruning"] = kwargs.get("number_of_days_src_pruning", 0)
+            exch_arch["backupDeletedItemRetention"] = kwargs.get(
+                "backup_deleted_item_retention", False
+            )
+            if "includeDiscoveryHoldsFolder" in kwargs:
+                exch_arch["includeDiscoveryHoldsFolder"] = kwargs.get(
+                    "include_discovery_holds_folder"
+                )
+            if "includePurgesFolder" in kwargs:
+                exch_arch["includePurgesFolder"] = kwargs.get("include_purges_folder")
+            if "includeVersionsFolder" in kwargs:
+                exch_arch["includeVersionsFolder"] = kwargs.get("include_versions_folder")
+            exch_arch["includeOnlyMsgsWithAttachemts"] = kwargs.get(
+                "include_only_msgs_with_attachemts", False
+            )
+            exch_arch["includeMsgsOlderThan"] = kwargs.get("include_msgs_older_than", 0)
+            exch_arch["includeMsgsLargerThan"] = kwargs.get("include_msgs_larger_than", 0)
+            exch_arch["archiveMailbox"] = kwargs.get("enable_archive_on_archive_mailbox", False)
+            exch_retention["numOfDaysForRetainingBackupVersions"] = kwargs.get(
+                "num_days_backup_version", 365
+            )
 
-            if 'retain_msgs_received_time' in kwargs and kwargs.get('retain_msgs_received_time') > 0:
-                exch_retention['type'] = 0
-                exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_received_time')
+            if (
+                "retain_msgs_received_time" in kwargs
+                and kwargs.get("retain_msgs_received_time") > 0
+            ):
+                exch_retention["type"] = 0
+                exch_retention["numOfDaysForMediaPruning"] = kwargs.get(
+                    "retain_msgs_received_time"
+                )
         else:
-            exch_arch = request_json['plan']['exchange']['mbJournal']['detail']['emailPolicy']['journalPolicy']
-        exch_arch['contentIndexProps']['enableContentIndex'] = kwargs.get('enable_content_search', False)
+            exch_arch = request_json["plan"]["exchange"]["mbJournal"]["detail"]["emailPolicy"][
+                "journalPolicy"
+            ]
+        exch_arch["contentIndexProps"]["enableContentIndex"] = kwargs.get(
+            "enable_content_search", False
+        )
 
         headers = self._commcell_object._headers.copy()
-        headers['LookupNames'] = 'False'
+        headers["LookupNames"] = "False"
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._PLANS, request_json, headers=headers
+            "POST", self._PLANS, request_json, headers=headers
         )
 
         if flag:
@@ -1659,37 +1762,41 @@ class Plans(object):
                 error_message = None
                 error_code = None
 
-                if 'errors' in response_value:
-                    error_code = response_value['errors'][0]['status']['errorCode']
-                    error_message = response_value['errors'][0]['status']['errorMessage']
+                if "errors" in response_value:
+                    error_code = response_value["errors"][0]["status"]["errorCode"]
+                    error_message = response_value["errors"][0]["status"]["errorMessage"]
 
                 if error_code > 1:
-                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                        error_message
-                    )
-                    raise SDKException('Plan', '102', o_str)
+                    o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", o_str)
 
-                if 'plan' in response_value:
-                    plan_name = response_value['plan']['summary']['plan']['planName']
+                if "plan" in response_value:
+                    plan_name = response_value["plan"]["summary"]["plan"]["planName"]
 
                     self.refresh()
                     self._commcell_object.storage_policies.refresh()
                     return self.get(plan_name)
                 else:
-                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                             'Please check the documentation for '
-                             'more details on the error').format(error_code)
+                    o_str = (
+                        f'Failed to create new plan due to error code: "{error_code}"\n'
+                        "Please check the documentation for "
+                        "more details on the error"
+                    )
 
-                    raise SDKException('Plan', '102', o_str)
+                    raise SDKException("Plan", "102", o_str)
             else:
-                raise SDKException('Response', 102)
+                raise SDKException("Response", 102)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def create_server_plan(
-        self, plan_name: str, backup_destinations: Union[List[dict], dict], schedules: Union[List[dict], dict]=None, **additional_params: Any
-    ) -> 'Plan':
+        self,
+        plan_name: str,
+        backup_destinations: Union[List[dict], dict],
+        schedules: Union[List[dict], dict] = None,
+        **additional_params: Any,
+    ) -> "Plan":
         """Method to create a server plan using V4 API
 
         Args:
@@ -1799,8 +1906,8 @@ class Plans(object):
         """
         if schedules is None:
             schedules = [
-                {'backupType': 'INCREMENTAL'},
-                {'backupType': 'TRANSACTIONLOG'},
+                {"backupType": "INCREMENTAL"},
+                {"backupType": "TRANSACTIONLOG"},
             ]  # default schedules
 
         if isinstance(backup_destinations, dict):
@@ -1809,44 +1916,54 @@ class Plans(object):
         if isinstance(schedules, dict):
             schedules = [schedules]
 
-        request_json = _PayloadGeneratorPlanV4(self._commcell_object).get_create_server_plan_payload(
+        request_json = _PayloadGeneratorPlanV4(
+            self._commcell_object
+        ).get_create_server_plan_payload(
             plan_name, backup_destinations, schedules, **additional_params
         )
 
-        if gcm_options := additional_params.get('gcm_options'):
-            service_commcell_ids = gcm_options.get('commcells', [])  # [{'id': 1}, {'id': 2}]
+        if gcm_options := additional_params.get("gcm_options"):
+            service_commcell_ids = gcm_options.get("commcells", [])  # [{'id': 1}, {'id': 2}]
             apply_on_all_commcells = False if service_commcell_ids else True
             request_json = {
                 "globalConfigInfo": {
                     "commcells": service_commcell_ids,
                     "scope": "",
                     "scopeFilterQuery": "",
-                    "applyOnAllCommCells": apply_on_all_commcells
+                    "applyOnAllCommCells": apply_on_all_commcells,
                 },
-                "plan": request_json
+                "plan": request_json,
             }
 
         endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
-        flag, response = self._cvpysdk_object.make_request('POST', endpoint, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", endpoint, request_json)
 
         if flag:
             if response.json():
                 response_value = response.json()
-                if 'errors' in response_value:
-                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
-                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
+                if "errors" in response_value:
+                    error_message = response_value.get("errors", [{}])[0].get("errorMessage")
+                    error_code = response_value.get("errors", [{}])[0].get("errorCode", 0)
                 else:
-                    error_message = response_value.get('errorMessage')
-                    error_code = response_value.get('errorCode', 0)
+                    error_message = response_value.get("errorMessage")
+                    error_code = response_value.get("errorCode", 0)
 
                 # corner case condition
                 if error_code == 587207454:
-                    raise SDKException('Plan', '102', f'Successfully created plan {response_value["plan"]["name"]} '
-                                                      f'with error: {error_message}')
+                    raise SDKException(
+                        "Plan",
+                        "102",
+                        f"Successfully created plan {response_value['plan']['name']} "
+                        f"with error: {error_message}",
+                    )
                 if error_code != 0:
-                    raise SDKException('Plan', '102', f'Failed to create new V4 Server Plan\nError: "{error_message}"')
+                    raise SDKException(
+                        "Plan",
+                        "102",
+                        f'Failed to create new V4 Server Plan\nError: "{error_message}"',
+                    )
 
-                plan_name = response_value['plan']['name']
+                plan_name = response_value["plan"]["name"]
 
                 self.refresh()
                 self._commcell_object.policies.refresh()
@@ -1857,17 +1974,19 @@ class Plans(object):
 
                 return self.get(plan_name)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def add(self,
-            plan_name: str,
-            plan_sub_type: str,
-            storage_pool_name: str=None,
-            sla_in_minutes: int=1440,
-            override_entities: dict=None) -> 'Plan':
+    def add(
+        self,
+        plan_name: str,
+        plan_sub_type: str,
+        storage_pool_name: str = None,
+        sla_in_minutes: int = 1440,
+        override_entities: dict = None,
+    ) -> "Plan":
         """Adds a new Plan to the CommCell.
 
         Args:
@@ -1905,124 +2024,125 @@ class Plans(object):
             }
             Plans.add(plan_name='test_plan', plan_sub_type='Server', storage_pool_name='test_storage_pool', override_entities=override_entities)
         """
-        if not (isinstance(plan_name, str) and
-                isinstance(plan_sub_type, str)):
-            raise SDKException('Plan', '101')
+        if not (isinstance(plan_name, str) and isinstance(plan_sub_type, str)):
+            raise SDKException("Plan", "101")
         else:
             if self.has_plan(plan_name):
-                raise SDKException(
-                    'Plan', '102', 'Plan "{0}" already exists'.format(plan_name)
-                )
-        storage_pool_obj = self._commcell_object.storage_pools.get(
-            storage_pool_name)
+                raise SDKException("Plan", "102", f'Plan "{plan_name}" already exists')
+        storage_pool_obj = self._commcell_object.storage_pools.get(storage_pool_name)
         is_dedupe = True
-        if 'dedupDBDetailsList' not in storage_pool_obj._storage_pool_properties['storagePoolDetails']:
+        if (
+            "dedupDBDetailsList"
+            not in storage_pool_obj._storage_pool_properties["storagePoolDetails"]
+        ):
             is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
-        if plan_sub_type == "Laptop" and 'accessPolicies' in request_json['plan']['laptop']:
-            del request_json['plan']['laptop']['accessPolicies']
+        if plan_sub_type == "Laptop" and "accessPolicies" in request_json["plan"]["laptop"]:
+            del request_json["plan"]["laptop"]["accessPolicies"]
 
-        request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
-        request_json['plan']['summary']['description'] = "Created from CvPySDK."
-        request_json['plan']['summary']['plan']['planName'] = plan_name
+        request_json["plan"]["summary"]["rpoInMinutes"] = sla_in_minutes
+        request_json["plan"]["summary"]["description"] = "Created from CvPySDK."
+        request_json["plan"]["summary"]["plan"]["planName"] = plan_name
 
-        template_schedules = [schedule['subTask']['subTaskName'] for schedule in request_json['plan']['schedule']['subTasks']]
-        if 'Synthetic Fulls' in template_schedules:
-            synth_full_index = template_schedules.index('Synthetic Fulls')
-            request_json['plan']['schedule']['subTasks'][synth_full_index]['options']['commonOpts'][
-                'automaticSchedulePattern'].update({
-                    'minBackupInterval': 0,
-                    'maxBackupIntervalMinutes': 0,
-                    'minSyncInterval': 0,
-                    'minSyncIntervalMinutes': 0
-                })
-            request_json['plan']['schedule']['subTasks'][synth_full_index]['options']['commonOpts'][
-                'automaticSchedulePattern']['ignoreOpWindowPastMaxInterval'] = True
-        del request_json['plan']['schedule']['task']['taskName']
-        request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+        template_schedules = [
+            schedule["subTask"]["subTaskName"]
+            for schedule in request_json["plan"]["schedule"]["subTasks"]
+        ]
+        if "Synthetic Fulls" in template_schedules:
+            synth_full_index = template_schedules.index("Synthetic Fulls")
+            request_json["plan"]["schedule"]["subTasks"][synth_full_index]["options"][
+                "commonOpts"
+            ]["automaticSchedulePattern"].update(
+                {
+                    "minBackupInterval": 0,
+                    "maxBackupIntervalMinutes": 0,
+                    "minSyncInterval": 0,
+                    "minSyncIntervalMinutes": 0,
+                }
+            )
+            request_json["plan"]["schedule"]["subTasks"][synth_full_index]["options"][
+                "commonOpts"
+            ]["automaticSchedulePattern"]["ignoreOpWindowPastMaxInterval"] = True
+        del request_json["plan"]["schedule"]["task"]["taskName"]
+        request_json["plan"]["storage"]["copy"][0]["useGlobalPolicy"] = {
             "storagePolicyId": int(storage_pool_obj.storage_pool_id)
         }
         if is_dedupe:
-            request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                'useGlobalDedupStore'] = 1
+            request_json["plan"]["storage"]["copy"][0]["dedupeFlags"]["useGlobalDedupStore"] = 1
         else:
-            del request_json['plan']['storage']['copy'][0]['storagePolicyFlags']
-            del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                'enableDeduplication']
-            del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                'enableClientSideDedup']
-            del request_json['plan']['storage']['copy'][0]['DDBPartitionInfo']
-            request_json['plan']['storage']['copy'][0]['extendedFlags'] = {
-                'useGlobalStoragePolicy': 1
-                }
+            del request_json["plan"]["storage"]["copy"][0]["storagePolicyFlags"]
+            del request_json["plan"]["storage"]["copy"][0]["dedupeFlags"]["enableDeduplication"]
+            del request_json["plan"]["storage"]["copy"][0]["dedupeFlags"]["enableClientSideDedup"]
+            del request_json["plan"]["storage"]["copy"][0]["DDBPartitionInfo"]
+            request_json["plan"]["storage"]["copy"][0]["extendedFlags"] = {
+                "useGlobalStoragePolicy": 1
+            }
 
         # Configurations for database and snap addons
-        if plan_sub_type == "Server" and 'database' in request_json['plan']:
-            request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
-                'useGlobalDedupStore'] = 1
-            request_json['plan']['database']['storageLog']['copy'][0].pop(
-                'DDBPartitionInfo', None
-            )
-            request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
-                'useGlobalPolicy'] = {
-                    "storagePolicyId": int(storage_pool_obj.storage_pool_id)
-                }
+        if plan_sub_type == "Server" and "database" in request_json["plan"]:
+            request_json["plan"]["database"]["storageLog"]["copy"][0]["dedupeFlags"][
+                "useGlobalDedupStore"
+            ] = 1
+            request_json["plan"]["database"]["storageLog"]["copy"][0].pop("DDBPartitionInfo", None)
+            request_json["plan"]["database"]["storageLog"]["copy"][0]["dedupeFlags"][
+                "useGlobalPolicy"
+            ] = {"storagePolicyId": int(storage_pool_obj.storage_pool_id)}
 
             # From SP36, snap copy wont be created by default during plan creation or present in the template
-            if len(request_json['plan']['storage']['copy']) > 1:
-                request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
-                    'useGlobalStoragePolicy': 1
+            if len(request_json["plan"]["storage"]["copy"]) > 1:
+                request_json["plan"]["storage"]["copy"][1]["extendedFlags"] = {
+                    "useGlobalStoragePolicy": 1
                 }
-                request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
+                request_json["plan"]["storage"]["copy"][1]["useGlobalPolicy"] = {
                     "storagePolicyId": int(storage_pool_obj.storage_pool_id)
                 }
 
         # Enable full backup schedule
         if plan_sub_type != "Laptop":
-            for subtask in request_json['plan']['schedule']['subTasks']:
-                if 'flags' in subtask['subTask'] and subtask['subTask']['flags'] == 65536:
+            for subtask in request_json["plan"]["schedule"]["subTasks"]:
+                if "flags" in subtask["subTask"] and subtask["subTask"]["flags"] == 65536:
                     import copy
+
                     full_schedule = copy.deepcopy(subtask)
                     del copy
-                    full_schedule['subTask'].update({
-                        'subTaskName': 'Full backup schedule',
-                        'flags': 4194304
-                    })
-                    full_schedule['pattern'].update({
-                        'freq_type': 4,
-                        'freq_interval': 1,
-                        'name': 'Full backup schedule',
-                        'active_end_time': 0
-                    })
-                    full_schedule['options']['backupOpts']['backupLevel'] = 'FULL'
-                    request_json['plan']['schedule']['subTasks'].append(full_schedule)
+                    full_schedule["subTask"].update(
+                        {"subTaskName": "Full backup schedule", "flags": 4194304}
+                    )
+                    full_schedule["pattern"].update(
+                        {
+                            "freq_type": 4,
+                            "freq_interval": 1,
+                            "name": "Full backup schedule",
+                            "active_end_time": 0,
+                        }
+                    )
+                    full_schedule["options"]["backupOpts"]["backupLevel"] = "FULL"
+                    request_json["plan"]["schedule"]["subTasks"].append(full_schedule)
                     break
 
         if isinstance(override_entities, dict):
-            request_json['plan']['summary']['restrictions'] = 0
-            request_json['plan']['inheritance'] = {
-                'isSealed': False
-            }
+            request_json["plan"]["summary"]["restrictions"] = 0
+            request_json["plan"]["inheritance"] = {"isSealed": False}
 
-            if 'enforcedEntities' in override_entities:
-                request_json['plan']['inheritance']['enforcedEntities'] = override_entities[
-                    'enforcedEntities']
+            if "enforcedEntities" in override_entities:
+                request_json["plan"]["inheritance"]["enforcedEntities"] = override_entities[
+                    "enforcedEntities"
+                ]
 
-            if 'privateEntities' in override_entities:
-                request_json['plan']['inheritance']['privateEntities'] = override_entities[
-                    'privateEntities']
+            if "privateEntities" in override_entities:
+                request_json["plan"]["inheritance"]["privateEntities"] = override_entities[
+                    "privateEntities"
+                ]
         else:
-            request_json['plan']['summary']['restrictions'] = 1
-            request_json['plan']['inheritance'] = {
-                'isSealed': True
-            }
+            request_json["plan"]["summary"]["restrictions"] = 1
+            request_json["plan"]["inheritance"] = {"isSealed": True}
 
         headers = self._commcell_object._headers.copy()
-        headers['LookupNames'] = 'False'
+        headers["LookupNames"] = "False"
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._PLANS, request_json, headers=headers
+            "POST", self._PLANS, request_json, headers=headers
         )
 
         if flag:
@@ -2031,18 +2151,16 @@ class Plans(object):
                 error_message = None
                 error_code = None
 
-                if 'errors' in response_value:
-                    error_code = response_value['errors'][0]['status']['errorCode']
-                    error_message = response_value['errors'][0]['status']['errorMessage']
+                if "errors" in response_value:
+                    error_code = response_value["errors"][0]["status"]["errorCode"]
+                    error_message = response_value["errors"][0]["status"]["errorMessage"]
 
                 if error_code > 1:
-                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                        error_message
-                    )
-                    raise SDKException('Plan', '102', o_str)
+                    o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", o_str)
 
-                if 'plan' in response_value:
-                    plan_name = response_value['plan']['summary']['plan']['planName']
+                if "plan" in response_value:
+                    plan_name = response_value["plan"]["summary"]["plan"]["planName"]
 
                     # initialize the plans again
                     # so that the plans object has all the plans
@@ -2053,16 +2171,18 @@ class Plans(object):
 
                     return self.get(plan_name)
                 else:
-                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                             'Please check the documentation for '
-                             'more details on the error').format(error_code)
+                    o_str = (
+                        f'Failed to create new plan due to error code: "{error_code}"\n'
+                        "Please check the documentation for "
+                        "more details on the error"
+                    )
 
-                    raise SDKException('Plan', '102', o_str)
+                    raise SDKException("Plan", "102", o_str)
             else:
-                raise SDKException('Response', 102)
+                raise SDKException("Response", 102)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def get_eligible_plans(self, entities: dict) -> dict:
         """Returns dict of plans that are eligible for the specified entities
@@ -2087,28 +2207,28 @@ class Plans(object):
             >>> entities = {'clientId': 1, 'appId': 2, 'backupsetId': 3}
             >>> plans = commcell_object.plans.get_eligible_plans(entities)
         """
-        query = ''
+        query = ""
         for i in entities:
-            query += '{0}={1}&'.format(i, entities[i])
-        requset_url = self._services['ELIGIBLE_PLANS'] % query[0:-1]
-        flag, response = self._cvpysdk_object.make_request('GET', requset_url)
+            query += f"{i}={entities[i]}&"
+        requset_url = self._services["ELIGIBLE_PLANS"] % query[0:-1]
+        flag, response = self._cvpysdk_object.make_request("GET", requset_url)
         del query
 
         if flag:
             plans = {}
 
-            if response.json() and 'plans' in response.json():
-                response_value = response.json()['plans']
+            if response.json() and "plans" in response.json():
+                response_value = response.json()["plans"]
 
                 for temp in response_value:
-                    temp_name = temp['plan']['planName'].lower()
-                    temp_id = str(temp['plan']['planId']).lower()
+                    temp_name = temp["plan"]["planName"].lower()
+                    temp_id = str(temp["plan"]["planId"]).lower()
                     plans[temp_name] = temp_id
 
             return plans
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def get_supported_solutions(self) -> dict:
         """Method to get supported solutions for plans
@@ -2124,17 +2244,16 @@ class Plans(object):
             >>> solutions = commcell_object.plans.get_supported_solutions()
         """
         flag, response = self._cvpysdk_object.make_request(
-            'GET',
-            self._services['PLAN_SUPPORTED_SOLUTIONS']
+            "GET", self._services["PLAN_SUPPORTED_SOLUTIONS"]
         )
 
         if not flag:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-        if response.json() and 'id' in response.json():
-            return {solution['name']: solution['id'] for solution in response.json()['id']}
+        if response.json() and "id" in response.json():
+            return {solution["name"]: solution["id"] for solution in response.json()["id"]}
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     def refresh(self, **kwargs: Any) -> None:
         """
@@ -2149,14 +2268,20 @@ class Plans(object):
             >>> commcell_object.plans.refresh()
             >>> commcell_object.plans.refresh(mongodb=True, hard=True)
         """
-        mongodb = kwargs.get('mongodb', False)
-        hard = kwargs.get('hard', False)
+        mongodb = kwargs.get("mongodb", False)
+        hard = kwargs.get("hard", False)
 
         self._plans = self._get_plans()
         if mongodb:
             self._plans_cache = self.get_plans_cache(hard=hard)
 
-    def add_data_classification_plan(self, plan_name: str, index_server: str, target_app: TargetApps = TargetApps.FSO, **kwargs: Any) -> 'Plan':
+    def add_data_classification_plan(
+        self,
+        plan_name: str,
+        index_server: str,
+        target_app: TargetApps = TargetApps.FSO,
+        **kwargs: Any,
+    ) -> "Plan":
         """Adds data classification plan to the commcell
 
         Args:
@@ -2215,88 +2340,93 @@ class Plans(object):
         """
         extraction_policy_list = []
         if not (isinstance(plan_name, str)):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
         request_json = self._get_plan_template("DataClassification", "MSP")
-        request_json['plan']['summary']['description'] = "DC Plan Created from CvPySDK."
-        request_json['plan']['summary']['plan']['planName'] = plan_name
-        request_json['plan']['options'] = {
+        request_json["plan"]["summary"]["description"] = "DC Plan Created from CvPySDK."
+        request_json["plan"]["summary"]["plan"]["planName"] = plan_name
+        request_json["plan"]["options"] = {
             "enableThreatAnalysis": False,
-            "targetApps": [
-                target_app.value
-            ]
+            "targetApps": [target_app.value],
         }
         if index_server is not None:
             # change to support SaaS and unification project
-            index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
-            request_json['plan']['eDiscoveryInfo']['analyticsIndexServer'] = {
-                'clientId': index_server_client_id
+            index_server_client_id = self._commcell_object.index_servers.get(
+                index_server
+            ).index_server_client_id
+            request_json["plan"]["eDiscoveryInfo"]["analyticsIndexServer"] = {
+                "clientId": index_server_client_id
             }
         if target_app.value == TargetApps.FSO.value:
-            del request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']
-            request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = PlanConstants.INDEXING_ONLY_METADATA
+            del request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]
+            request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["opType"] = (
+                PlanConstants.INDEXING_ONLY_METADATA
+            )
         elif target_app.value == TargetApps.SDG.value:
-            if 'content_analyzer' in kwargs:
+            if "content_analyzer" in kwargs:
                 # change to support SaaS and unification project
                 ca_list = []
-                for ca in kwargs.get('content_analyzer', []):
+                for ca in kwargs.get("content_analyzer", []):
                     ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
-                    ca_list.append({
-                        'clientId': ca_client_id
-                    })
-                request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
-            if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
-                raise SDKException('Plan', '104')
+                    ca_list.append({"clientId": ca_client_id})
+                request_json["plan"]["eDiscoveryInfo"]["contentAnalyzerClient"] = ca_list
+            if "entity_list" not in kwargs and "classifier_list" not in kwargs:
+                raise SDKException("Plan", "104")
             activate_obj = self._commcell_object.activate
-            if 'entity_list' in kwargs or 'classifier_list' in kwargs:
+            if "entity_list" in kwargs or "classifier_list" in kwargs:
                 entity_mgr_obj = activate_obj.entity_manager()
-                if 'classifier_list' in kwargs:
-                    entity_mgr_obj.refresh() # to get the latest classifiers
+                if "classifier_list" in kwargs:
+                    entity_mgr_obj.refresh()  # to get the latest classifiers
                 # classifier is also an activate entity with type alone different so append this to entity list itself
                 entity_list = []
-                for entity in kwargs.get('entity_list', []):
+                for entity in kwargs.get("entity_list", []):
                     entity_list.append(entity)
-                for entity in kwargs.get('classifier_list', []):
+                for entity in kwargs.get("classifier_list", []):
                     entity_list.append(entity)
                 for entity in entity_list:
                     entity_obj = entity_mgr_obj.get(entity)
                     extraction_policy_list.append(entity_obj.container_details)
 
-            request_json['plan']['eePolicy']['policyType'] = 3
-            request_json['plan']['eePolicy']['flags'] = 8
-            request_json['plan']['eePolicy']['detail'] = {
+            request_json["plan"]["eePolicy"]["policyType"] = 3
+            request_json["plan"]["eePolicy"]["flags"] = 8
+            request_json["plan"]["eePolicy"]["detail"] = {
                 "eePolicy": {
                     "copyPrecedence": 0,
                     "extractionPolicyType": 6,  # container entities
-                    "extractionPolicy": {
-                        "extractionPolicyList": extraction_policy_list
-                    }
-
+                    "extractionPolicy": {"extractionPolicyList": extraction_policy_list},
                 }
             }
-            request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
-                'index_content', PlanConstants.INDEXING_ONLY_METADATA)
-            if 'enable_ocr' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['enableImageExtraction'] = kwargs.get(
-                    'enable_ocr', False)
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['ocrLanguages'] = [kwargs.get('ocr_language', 1)]
-            if 'include_docs' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters']['includeDocTypes'] = kwargs.get(
-                    'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
-            if 'min_doc_size' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters']['minDocSize'] = kwargs.get(
-                    'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
-            if 'max_doc_size' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-                    'maxDocSize'] = kwargs.get('max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
-            if 'exclude_path' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-                    'excludePaths'] = kwargs.get('exclude_path', PlanConstants.DEFAULT_EXCLUDE_LIST)
+            request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["opType"] = kwargs.get(
+                "index_content", PlanConstants.INDEXING_ONLY_METADATA
+            )
+            if "enable_ocr" in kwargs:
+                request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["enableImageExtraction"] = (
+                    kwargs.get("enable_ocr", False)
+                )
+                request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["ocrLanguages"] = [
+                    kwargs.get("ocr_language", 1)
+                ]
+            if "include_docs" in kwargs:
+                request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+                    "includeDocTypes"
+                ] = kwargs.get("include_docs", PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+            if "min_doc_size" in kwargs:
+                request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+                    "minDocSize"
+                ] = kwargs.get("min_doc_size", PlanConstants.DEFAULT_MIN_DOC_SIZE)
+            if "max_doc_size" in kwargs:
+                request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+                    "maxDocSize"
+                ] = kwargs.get("max_doc_size", PlanConstants.DEFAULT_MAX_DOC_SIZE)
+            if "exclude_path" in kwargs:
+                request_json["plan"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+                    "excludePaths"
+                ] = kwargs.get("exclude_path", PlanConstants.DEFAULT_EXCLUDE_LIST)
 
         headers = self._commcell_object._headers.copy()
-        headers['LookupNames'] = 'False'
+        headers["LookupNames"] = "False"
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._PLANS, request_json, headers=headers
+            "POST", self._PLANS, request_json, headers=headers
         )
 
         if flag:
@@ -2305,124 +2435,134 @@ class Plans(object):
                 error_message = None
                 error_code = None
 
-                if 'errors' in response_value:
-                    error_code = response_value['errors'][0]['status']['errorCode']
-                    error_message = response_value['errors'][0]['status']['errorMessage']
+                if "errors" in response_value:
+                    error_code = response_value["errors"][0]["status"]["errorCode"]
+                    error_message = response_value["errors"][0]["status"]["errorMessage"]
 
                 if error_code > 1:
-                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                        error_message
-                    )
-                    raise SDKException('Plan', '102', o_str)
+                    o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", o_str)
 
-                if 'plan' in response_value:
-                    plan_name = response_value['plan']['summary']['plan']['planName']
+                if "plan" in response_value:
+                    plan_name = response_value["plan"]["summary"]["plan"]["planName"]
                     # initialize the plans again
                     self.refresh()
 
                     return self.get(plan_name)
                 else:
-                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                             'Please check the documentation for '
-                             'more details on the error').format(error_code)
+                    o_str = (
+                        f'Failed to create new plan due to error code: "{error_code}"\n'
+                        "Please check the documentation for "
+                        "more details on the error"
+                    )
 
-                    raise SDKException('Plan', '102', o_str)
+                    raise SDKException("Plan", "102", o_str)
             else:
-                raise SDKException('Response', 102)
+                raise SDKException("Response", 102)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def add_risk_analysis_dc_plan(self, plan_name: str, app_type: PlanConstants.RAPlanAppType = PlanConstants.RAPlanAppType.CLASSIFIED,
-                                  content_analyzer: Optional[List[str]] = None, index_server: Optional[str] = None, **kwargs: Any) -> 'Plan':
+    def add_risk_analysis_dc_plan(
+        self,
+        plan_name: str,
+        app_type: PlanConstants.RAPlanAppType = PlanConstants.RAPlanAppType.CLASSIFIED,
+        content_analyzer: Optional[List[str]] = None,
+        index_server: Optional[str] = None,
+        **kwargs: Any,
+    ) -> "Plan":
         """Adds Risk Analysis data classification plan to the commcell
-            Args:
-                plan_name         (str)             --  Name of plan
-                app_type          (RAPlanAppType)   --  Application Type of the plan
-                content_analyzer  (list)            --  list of Content analyzer client name
-                index_server      (str)             --  Index server name
-                **kwargs
-                    entity_list     (list)          --  list of entities which needs to be extracted
-                    classifier_list (list)          --  list of classifier which needs to be classified
-                    index_content   (RAPlanType)    --  Specifies whether to index content or not to index server
-                    enable_ocr      (bool)          --  specifies whether OCR is enabled or not
-                    ocr_language    (int)           --  Language to be used when doing OCR
-                                                                Default : English (Value-1)
-                        Supported Languages:
-                                    ENGLISH = 1,
-                                    HEBREW = 2,
-                                    SPANISH = 3,
-                                    FRENCH = 4,
-                                    ITALIAN = 5,
-                                    DANISH = 6
-                    include_docs        (str)       --  Include documents type separated by comma
-                    exclude_path        (list)      --  List of paths which needs to be excluded
-                    min_doc_size        (int)       --  Minimum document size in MB
-                    max_doc_size        (int)       --  Maximum document size in MB
-            Returns:
-                object  - Plan object
-            Raises:
-                SDKException:
-                        if input is not valid
-                        if failed to create plan
-                        if failed to find entities/classifier details
+        Args:
+            plan_name         (str)             --  Name of plan
+            app_type          (RAPlanAppType)   --  Application Type of the plan
+            content_analyzer  (list)            --  list of Content analyzer client name
+            index_server      (str)             --  Index server name
+            **kwargs
+                entity_list     (list)          --  list of entities which needs to be extracted
+                classifier_list (list)          --  list of classifier which needs to be classified
+                index_content   (RAPlanType)    --  Specifies whether to index content or not to index server
+                enable_ocr      (bool)          --  specifies whether OCR is enabled or not
+                ocr_language    (int)           --  Language to be used when doing OCR
+                                                            Default : English (Value-1)
+                    Supported Languages:
+                                ENGLISH = 1,
+                                HEBREW = 2,
+                                SPANISH = 3,
+                                FRENCH = 4,
+                                ITALIAN = 5,
+                                DANISH = 6
+                include_docs        (str)       --  Include documents type separated by comma
+                exclude_path        (list)      --  List of paths which needs to be excluded
+                min_doc_size        (int)       --  Minimum document size in MB
+                max_doc_size        (int)       --  Maximum document size in MB
+        Returns:
+            object  - Plan object
+        Raises:
+            SDKException:
+                    if input is not valid
+                    if failed to create plan
+                    if failed to find entities/classifier details
         """
         if not (isinstance(plan_name, str)):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
         request_json = copy.deepcopy(PlanConstants.CREATE_V4_DC_PLAN_REQ)
 
-        request_json['name'] = plan_name
-        request_json['application'] = app_type.value
-        request_json['threatAnalysis'] = False
+        request_json["name"] = plan_name
+        request_json["application"] = app_type.value
+        request_json["threatAnalysis"] = False
 
         if index_server is not None:
             # change to support SaaS and unification project
-            index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
-            request_json['indexServer'] = {
-                'id': index_server_client_id
-            }
+            index_server_client_id = self._commcell_object.index_servers.get(
+                index_server
+            ).index_server_client_id
+            request_json["indexServer"] = {"id": index_server_client_id}
         if content_analyzer is not None:
             # change to support SaaS and unification project
             ca_list = []
             for ca in content_analyzer:
                 ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
-                ca_list.append({
-                    'id': ca_client_id
-                })
-            request_json['contentAnalyzer'] = ca_list
-        if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
-            raise SDKException('Plan', '104')
+                ca_list.append({"id": ca_client_id})
+            request_json["contentAnalyzer"] = ca_list
+        if "entity_list" not in kwargs and "classifier_list" not in kwargs:
+            raise SDKException("Plan", "104")
         activate_obj = self._commcell_object.activate
-        if 'entity_list' in kwargs or 'classifier_list' in kwargs:
+        if "entity_list" in kwargs or "classifier_list" in kwargs:
             entity_mgr_obj = activate_obj.entity_manager()
             entity_list = []
             classifier_list = []
-            entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get('entity_list', []))
+            entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get("entity_list", []))
             for entity_id in entity_ids:
                 entity_list.append({"id": entity_id})
-            request_json['entityDetection']["entities"] = entity_list
+            request_json["entityDetection"]["entities"] = entity_list
 
-            classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get('classifier_list', []))
+            classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get("classifier_list", []))
             for classifier_id in classifier_ids:
                 classifier_list.append({"id": classifier_id})
-            request_json['entityDetection']["classifiers"] = classifier_list
-        request_json['contentIndexing']["searchType"] = kwargs.get(
-            'index_content', PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA).value
-        request_json['contentIndexing']["extractTextFromImage"] = kwargs.get('enable_ocr', False)
-        if 'enable_ocr' in kwargs:
-            request_json['contentIndexing']["contentLanguage"] = kwargs.get('ocr_language', 1)
-        request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
-            'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
-        request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
-            'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
-        request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
-            'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
-        request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+            request_json["entityDetection"]["classifiers"] = classifier_list
+        request_json["contentIndexing"]["searchType"] = kwargs.get(
+            "index_content", PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA
+        ).value
+        request_json["contentIndexing"]["extractTextFromImage"] = kwargs.get("enable_ocr", False)
+        if "enable_ocr" in kwargs:
+            request_json["contentIndexing"]["contentLanguage"] = kwargs.get("ocr_language", 1)
+        request_json["contentIndexing"]["fileFilters"]["includeDocTypes"] = kwargs.get(
+            "include_docs", PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+        )
+        request_json["contentIndexing"]["fileFilters"]["minDocSize"] = kwargs.get(
+            "min_doc_size", PlanConstants.DEFAULT_MIN_DOC_SIZE
+        )
+        request_json["contentIndexing"]["fileFilters"]["maxDocSize"] = kwargs.get(
+            "max_doc_size", PlanConstants.DEFAULT_MAX_DOC_SIZE
+        )
+        request_json["contentIndexing"]["fileFilters"]["excludePaths"] = kwargs.get(
+            "exclude_path", []
+        )
 
         headers = self._commcell_object._headers.copy()
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._V4_DC_PLANS, request_json, headers=headers
+            "POST", self._V4_DC_PLANS, request_json, headers=headers
         )
 
         if flag:
@@ -2431,33 +2571,33 @@ class Plans(object):
                 error_message = None
                 error_code = 0
 
-                if 'errors' in response_value:
-                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
-                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
+                if "errors" in response_value:
+                    error_code = response_value.get("errors", [{}])[0].get("errorCode", 0)
+                    error_message = response_value.get("errors", [{}])[0].get("errorMessage")
 
                 if error_code > 1:
-                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                        error_message
-                    )
-                    raise SDKException('Plan', '102', o_str)
+                    o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", o_str)
 
-                if 'plan' in response_value:
-                    plan_name = response_value['plan']['name']
+                if "plan" in response_value:
+                    plan_name = response_value["plan"]["name"]
                     # initialize the plans again
                     self.refresh()
 
                     return self.get(plan_name)
                 else:
-                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                             'Please check the documentation for '
-                             'more details on the error').format(error_code)
+                    o_str = (
+                        f'Failed to create new plan due to error code: "{error_code}"\n'
+                        "Please check the documentation for "
+                        "more details on the error"
+                    )
 
-                    raise SDKException('Plan', '102', o_str)
+                    raise SDKException("Plan", "102", o_str)
             else:
-                raise SDKException('Response', 102)
+                raise SDKException("Response", 102)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def get_plans_summary(self) -> dict:
         """Returns plan summary in response
@@ -2474,24 +2614,28 @@ class Plans(object):
 
         **NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE**
         """
-        params = "fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent" \
-                 "%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C" \
-                 "plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool" \
-                 "&hardRefresh=true"
-        request_url = self._services['PLAN_SUMMARY'] % params
+        params = (
+            "fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent"
+            "%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C"
+            "plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool"
+            "&hardRefresh=true"
+        )
+        request_url = self._services["PLAN_SUMMARY"] % params
 
-        flags,response = self._cvpysdk_object.make_request('GET',request_url)
+        flags, response = self._cvpysdk_object.make_request("GET", request_url)
 
         if flags:
             if response.json():
-                plans_summary = {entry.get("plan", {}).get("name", None): entry.get("associatedEntities", None)
-                                 for entry in response.json()["plans"]}
+                plans_summary = {
+                    entry.get("plan", {}).get("name", None): entry.get("associatedEntities", None)
+                    for entry in response.json()["plans"]
+                }
                 return plans_summary
             else:
                 raise SDKException("Plan", "102", "Failed to get plans summary")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def add_office365_plan(self, plan_name: str) -> None:
         """
@@ -2511,26 +2655,31 @@ class Plans(object):
             plans.add_office365_plan('MyOffice365Plan')
         """
         if not isinstance(plan_name, str):
-            raise SDKException('Plan','102','Plan name should be passed as String')
+            raise SDKException("Plan", "102", "Plan name should be passed as String")
         plan_sub_type = "Office365"
         plan_type = "EXCHANGE"
-        office365_plan_template = self._get_plan_template(plan_type=plan_type,plan_sub_type=plan_sub_type)
+        office365_plan_template = self._get_plan_template(
+            plan_type=plan_type, plan_sub_type=plan_sub_type
+        )
         office365_plan_template["plan"]["summary"]["plan"]["planName"] = plan_name
-        flag, response = self._cvpysdk_object.make_request("POST", self._PLANS ,office365_plan_template)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._PLANS, office365_plan_template
+        )
         if flag:
             if response:
                 if response.status_code == 200:
                     self.refresh()
                 elif response.status_code == 400:
-                    raise SDKException("Plan","102","Bad request")
+                    raise SDKException("Plan", "102", "Bad request")
                 elif response.status_code == 401:
-                    raise SDKException("Plan", "102", "User is unauthorized to perform create operation")
+                    raise SDKException(
+                        "Plan", "102", "User is unauthorized to perform create operation"
+                    )
             else:
-                raise SDKException("Plan","102","Response received is empty")
+                raise SDKException("Plan", "102", "Response received is empty")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_plans_prop(self) -> list[dict]:
@@ -2543,12 +2692,20 @@ class Plans(object):
         Usage:
             all_plans = plans.all_plans_prop
         """
-        self._all_plans_props = self._get_plans(full_response=True).get("plans",[])
+        self._all_plans_props = self._get_plans(full_response=True).get("plans", [])
         return self._all_plans_props
 
-    def create_threat_detection_plan(self, plan_name, access_nodes, storage_policy=None,
-                                     anomaly_detection_flag=True, FDA_flag=True, TA_flag=True, yara_rules=None,
-                                     **kwargs):
+    def create_threat_detection_plan(
+        self,
+        plan_name,
+        access_nodes,
+        storage_policy=None,
+        anomaly_detection_flag=True,
+        FDA_flag=True,
+        TA_flag=True,
+        yara_rules=None,
+        **kwargs,
+    ):
         """Creates a Threat Detection Plan for Indexing
 
         Args:
@@ -2567,23 +2724,33 @@ class Plans(object):
 
         """
         if not isinstance(plan_name, str):
-            raise SDKException('Plan', '102', 'Plan name should be passed as String')
+            raise SDKException("Plan", "102", "Plan name should be passed as String")
 
         if not isinstance(access_nodes, list) and access_nodes is not None:
-            raise SDKException('Plan', '102', 'Access nodes should be passed as list of strings')
+            raise SDKException("Plan", "102", "Access nodes should be passed as list of strings")
 
         if not anomaly_detection_flag and not FDA_flag and not TA_flag:
-            raise SDKException('Plan', '102', 'At least one of the anomaly detection, FDA or TA must be enabled')
+            raise SDKException(
+                "Plan", "102", "At least one of the anomaly detection, FDA or TA must be enabled"
+            )
 
         request_json = copy.deepcopy(threat_detection_plan_json)
         request_json["application"] = PlanTypes.DC.value
         request_json["name"] = plan_name
 
         if anomaly_detection_flag:
-            request_json["threatIndicator"]["threatDetection"]["backupSize"] = anomaly_detection_flag
-            request_json["threatIndicator"]["threatDetection"]["canaryFile"] = anomaly_detection_flag
-            request_json["threatIndicator"]["threatDetection"]["fileActivity"] = anomaly_detection_flag
-            request_json["threatIndicator"]["threatDetection"]["fileExtension"] = anomaly_detection_flag
+            request_json["threatIndicator"]["threatDetection"]["backupSize"] = (
+                anomaly_detection_flag
+            )
+            request_json["threatIndicator"]["threatDetection"]["canaryFile"] = (
+                anomaly_detection_flag
+            )
+            request_json["threatIndicator"]["threatDetection"]["fileActivity"] = (
+                anomaly_detection_flag
+            )
+            request_json["threatIndicator"]["threatDetection"]["fileExtension"] = (
+                anomaly_detection_flag
+            )
             request_json["threatIndicator"]["threatDetection"]["fileType"] = anomaly_detection_flag
 
         if FDA_flag:
@@ -2592,40 +2759,41 @@ class Plans(object):
         if TA_flag:
             request_json["threatIndicator"]["threatScan"]["threatAnalysis"] = TA_flag
 
-        request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
-            'include_docs', "*")
-        request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
-            'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
-        request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
-            'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
-        request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+        request_json["contentIndexing"]["fileFilters"]["includeDocTypes"] = kwargs.get(
+            "include_docs", "*"
+        )
+        request_json["contentIndexing"]["fileFilters"]["minDocSize"] = kwargs.get(
+            "min_doc_size", PlanConstants.DEFAULT_MIN_DOC_SIZE
+        )
+        request_json["contentIndexing"]["fileFilters"]["maxDocSize"] = kwargs.get(
+            "max_doc_size", PlanConstants.DEFAULT_MAX_DOC_SIZE
+        )
+        request_json["contentIndexing"]["fileFilters"]["excludePaths"] = kwargs.get(
+            "exclude_path", []
+        )
 
         if access_nodes:
             access_nodes_list = []
             for access_node in access_nodes:
                 access_node_id = int(self._commcell_object.clients.get(access_node).client_id)
-                access_nodes_list.append({
-                    "id": access_node_id,
-                    "name": access_node,
-                    "selected": True
-                })
+                access_nodes_list.append(
+                    {"id": access_node_id, "name": access_node, "selected": True}
+                )
             request_json["threatIndicator"]["accessNodesInfo"]["accessNodes"] = access_nodes_list
 
         if storage_policy:
             backup_copy_list = []
-            storage_policy_id = int(self._commcell_object.storage_policies.get(storage_policy).storage_policy_id)
+            storage_policy_id = int(
+                self._commcell_object.storage_policies.get(storage_policy).storage_policy_id
+            )
 
-            backup_copy_list.append({
-                "storagePolicyId": storage_policy_id
-            })
+            backup_copy_list.append({"storagePolicyId": storage_policy_id})
             request_json["contentIndexing"]["backupCopy"] = backup_copy_list
 
         if yara_rules:
             request_json["threatIndicator"]["threatScan"]["yaraRules"] = yara_rules
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._V4_DC_PLANS, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request("POST", self._V4_DC_PLANS, request_json)
 
         if flag:
             if response.json():
@@ -2633,36 +2801,36 @@ class Plans(object):
                 error_message = None
                 error_code = 0
 
-                if 'errors' in response_value:
-                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
-                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
+                if "errors" in response_value:
+                    error_code = response_value.get("errors", [{}])[0].get("errorCode", 0)
+                    error_message = response_value.get("errors", [{}])[0].get("errorMessage")
 
                 if error_code > 1:
-                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                        error_message
-                    )
-                    raise SDKException('Plan', '102', o_str)
+                    o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", o_str)
 
-                if 'plan' in response_value:
-                    plan_name = response_value['plan']['name']
+                if "plan" in response_value:
+                    plan_name = response_value["plan"]["name"]
                     # initialize the plans again
                     self.refresh()
 
                     return self.get(plan_name)
                 else:
-                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                             'Please check the documentation for '
-                             'more details on the error').format(error_code)
+                    o_str = (
+                        f'Failed to create new plan due to error code: "{error_code}"\n'
+                        "Please check the documentation for "
+                        "more details on the error"
+                    )
 
-                    raise SDKException('Plan', '102', o_str)
+                    raise SDKException("Plan", "102", o_str)
             else:
-                raise SDKException('Response', 102)
+                raise SDKException("Response", 102)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
 
-class Plan(object):
+class Plan:
     """Class for performing operations for a specific Plan.
 
     Attributes:
@@ -2712,7 +2880,9 @@ class Plan(object):
         _snap_schedule_policy (None): Placeholder for snap schedule policy.
     """
 
-    def __init__(self, commcell_object: 'Commcell', plan_name: str, plan_id: Optional[str] = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", plan_name: str, plan_id: Optional[str] = None
+    ) -> None:
         """Initialize the Plan class instance.
 
         Args:
@@ -2742,18 +2912,20 @@ class Plan(object):
         else:
             self._plan_id = self._get_plan_id()
 
-        self._PLAN = self._services['PLAN'] % (self.plan_id)
-        self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
-        self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
-        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE'] 
-        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE'] 
-        self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services['V5_ARCHIVER_PLAN_COPY_CLONE'] 
-        self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
-        self._PLAN_RPO_RUN = self._services['SERVER_PLAN_RPO_RUN'] % (self.plan_id)
-        self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
-        self._API_SECURITY = self._services['SECURITY_ASSOCIATION']
-        self._API_SECURITY_ENTITY = self._services['ENTITY_SECURITY_ASSOCIATION']
-        self._SERVER_PLAN_BACKUP_DESTINATION = self._services['V4_SERVER_PLAN_BACKUP_DESTINATION'] % (self.plan_id)
+        self._PLAN = self._services["PLAN"] % (self.plan_id)
+        self._V4_PLAN = self._services["V4_SERVER_PLAN"] % (self.plan_id)
+        self._V4_DC_PLAN = self._services["V4_DC_PLAN"] % (self.plan_id)
+        self._V5_SERVER_PLAN_COPY_CLONE = self._services["V5_SERVER_PLAN_COPY_CLONE"]
+        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services["V5_LAPTOP_PLAN_COPY_CLONE"]
+        self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services["V5_ARCHIVER_PLAN_COPY_CLONE"]
+        self._PLAN_RPO = self._services["SERVER_PLAN_RPO"] % (self.plan_id)
+        self._PLAN_RPO_RUN = self._services["SERVER_PLAN_RPO_RUN"] % (self.plan_id)
+        self._ADD_USERS_TO_PLAN = self._services["ADD_USERS_TO_PLAN"] % (self.plan_id)
+        self._API_SECURITY = self._services["SECURITY_ASSOCIATION"]
+        self._API_SECURITY_ENTITY = self._services["ENTITY_SECURITY_ASSOCIATION"]
+        self._SERVER_PLAN_BACKUP_DESTINATION = self._services[
+            "V4_SERVER_PLAN_BACKUP_DESTINATION"
+        ] % (self.plan_id)
 
         self._properties = None
         self._sla_in_minutes = None
@@ -2766,9 +2938,9 @@ class Plan(object):
         self._resources = None
         self._storage_pool = None
         self._child_policies = {
-            'storagePolicy': None,
-            'schedulePolicy': {},
-            'subclientPolicyIds': []
+            "storagePolicy": None,
+            "schedulePolicy": {},
+            "subclientPolicyIds": [],
         }
         self._storage_copies = {}
         self._all_copies = None
@@ -2800,9 +2972,7 @@ class Plan(object):
         """
         representation_string = 'Plan class instance for plan: "{0}", of Commcell: "{1}"'
 
-        return representation_string.format(
-            self._plan_name, self._commcell_object.commserv_name
-        )
+        return representation_string.format(self._plan_name, self._commcell_object.commserv_name)
 
     def _get_plan_id(self) -> str:
         """Gets the plan id associated with this plan.
@@ -2831,17 +3001,17 @@ class Plan(object):
         Usage:
             >>> properties = plan_object._get_v4_plan_properties()
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._V4_PLAN)
+        flag, response = self._cvpysdk_object.make_request("GET", self._V4_PLAN)
 
         if flag:
             if response.json():
                 self._v4_plan_properties = response.json()
                 return self._v4_plan_properties
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_plan_properties(self) -> Dict:
         """Gets the plan properties of this plan.
@@ -2858,414 +3028,447 @@ class Plan(object):
         Usage:
             >>> properties = plan_object._get_plan_properties()
         """
-        plan_properties_url = '{0}?propertyLevel=30'.format(self._PLAN)
-        flag, response = self._cvpysdk_object.make_request('GET', plan_properties_url)
+        plan_properties_url = f"{self._PLAN}?propertyLevel=30"
+        flag, response = self._cvpysdk_object.make_request("GET", plan_properties_url)
 
         if flag:
-            if response.json() and 'plan' in response.json():
-                self._plan_properties = response.json()['plan']
+            if response.json() and "plan" in response.json():
+                self._plan_properties = response.json()["plan"]
 
-                if 'planName' in self._plan_properties['summary']['plan']:
-                    self._plan_name = self._plan_properties['summary']['plan']['planName'].lower()
+                if "planName" in self._plan_properties["summary"]["plan"]:
+                    self._plan_name = self._plan_properties["summary"]["plan"]["planName"].lower()
 
-                if 'slaInMinutes' in self._plan_properties['summary']:
-                    self._sla_in_minutes = self._plan_properties['summary']['slaInMinutes']
+                if "slaInMinutes" in self._plan_properties["summary"]:
+                    self._sla_in_minutes = self._plan_properties["summary"]["slaInMinutes"]
 
-                if 'type' in self._plan_properties['summary']:
-                    self._plan_type = self._plan_properties['summary']['type']
+                if "type" in self._plan_properties["summary"]:
+                    self._plan_type = self._plan_properties["summary"]["type"]
 
-                if 'subtype' in self._plan_properties['summary']:
-                    self._subtype = self._plan_properties['summary']['subtype']
+                if "subtype" in self._plan_properties["summary"]:
+                    self._subtype = self._plan_properties["summary"]["subtype"]
 
-                if 'storage' in self._plan_properties:
-                    if 'copy' in self._plan_properties['storage']:
-                        self._all_copies = self._plan_properties.get('storage',{}).get('copy',[])
-                        for copy in self._plan_properties['storage']['copy']:
-                            if 'useGlobalPolicy' in copy:
-                                storage_pool_name = copy['useGlobalPolicy']['storagePolicyName'].lower()
+                if "storage" in self._plan_properties:
+                    if "copy" in self._plan_properties["storage"]:
+                        self._all_copies = self._plan_properties.get("storage", {}).get("copy", [])
+                        for copy in self._plan_properties["storage"]["copy"]:
+                            if "useGlobalPolicy" in copy:
+                                storage_pool_name = copy["useGlobalPolicy"][
+                                    "storagePolicyName"
+                                ].lower()
                             else:
-                                storage_pool_name = copy['library']['libraryName'].lower()
-                            self._storage_copies[copy['StoragePolicyCopy']['copyName']] = {
-                                'storagePool': storage_pool_name,
-                                'retainBackupDataForDays': copy[
-                                    'retentionRules']['retainBackupDataForDays'],
-                                'isDefault': False,
-                                'isSnapCopy': False,
+                                storage_pool_name = copy["library"]["libraryName"].lower()
+                            self._storage_copies[copy["StoragePolicyCopy"]["copyName"]] = {
+                                "storagePool": storage_pool_name,
+                                "retainBackupDataForDays": copy["retentionRules"][
+                                    "retainBackupDataForDays"
+                                ],
+                                "isDefault": False,
+                                "isSnapCopy": False,
                             }
-                            if 'extendedRetentionRuleOne' in copy['retentionRules']:
-                                self._storage_copies[
-                                    copy['StoragePolicyCopy']['copyName']]['extendedRetention'] = (
-                                        1,
-                                        True,
-                                        copy['retentionRules']['extendedRetentionRuleOne']['rule'],
-                                        copy['retentionRules']['extendedRetentionRuleOne']['endDays'],
-                                        copy['retentionRules']['extendedRetentionRuleOne']['graceDays']
-                                    )
-                            if copy['isDefault'] == 1:
-                                self._storage_copies[
-                                    copy['StoragePolicyCopy']['copyName']]['isDefault'] = True
+                            if "extendedRetentionRuleOne" in copy["retentionRules"]:
+                                self._storage_copies[copy["StoragePolicyCopy"]["copyName"]][
+                                    "extendedRetention"
+                                ] = (
+                                    1,
+                                    True,
+                                    copy["retentionRules"]["extendedRetentionRuleOne"]["rule"],
+                                    copy["retentionRules"]["extendedRetentionRuleOne"]["endDays"],
+                                    copy["retentionRules"]["extendedRetentionRuleOne"][
+                                        "graceDays"
+                                    ],
+                                )
+                            if copy["isDefault"] == 1:
+                                self._storage_copies[copy["StoragePolicyCopy"]["copyName"]][
+                                    "isDefault"
+                                ] = True
 
-                            if copy['isSnapCopy'] == 1:
-                                self._storage_copies[
-                                    copy['StoragePolicyCopy']['copyName']]['isSnapCopy'] = True
+                            if copy["isSnapCopy"] == 1:
+                                self._storage_copies[copy["StoragePolicyCopy"]["copyName"]][
+                                    "isSnapCopy"
+                                ] = True
 
                 if self._subtype == PlanSubTypes.LAPTOP.value:
-                    if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
+                    if "clientGroup" in self._plan_properties["autoCreatedEntities"]:
                         self._commcell_object.client_groups.refresh()
                         self._client_group = self._commcell_object.client_groups.get(
-                            self._plan_properties['autoCreatedEntities']['clientGroup'][
-                                'clientGroupName']
+                            self._plan_properties["autoCreatedEntities"]["clientGroup"][
+                                "clientGroupName"
+                            ]
                         )
 
-                    if 'localUserGroup' in self._plan_properties['autoCreatedEntities']:
-                        self._user_group = self._plan_properties['autoCreatedEntities'][
-                            'localUserGroup']['userGroupName']
+                    if "localUserGroup" in self._plan_properties["autoCreatedEntities"]:
+                        self._user_group = self._plan_properties["autoCreatedEntities"][
+                            "localUserGroup"
+                        ]["userGroupName"]
 
-                if self._plan_properties['operationWindow']['ruleId'] != 0:
-                    self._operation_window = self._plan_properties['operationWindow']
+                if self._plan_properties["operationWindow"]["ruleId"] != 0:
+                    self._operation_window = self._plan_properties["operationWindow"]
                 else:
                     self._operation_window = None
 
-                if self._plan_properties['fullOperationWindow']['ruleId'] != 0:
-                    self._full_operation_window = self._plan_properties['fullOperationWindow']
+                if self._plan_properties["fullOperationWindow"]["ruleId"] != 0:
+                    self._full_operation_window = self._plan_properties["fullOperationWindow"]
                 else:
                     self._full_operation_window = None
 
-                if 'laptop' in self._plan_properties:
-                    if 'backupContent' in self._plan_properties['laptop']['content']:
-                        self._child_policies['subclientPolicyIds'].clear()
-                        for ida in self._plan_properties['laptop']['content']['backupContent']:
-                            if ida['subClientPolicy'].get('backupSetEntity'):
-                                self._child_policies['subclientPolicyIds'].append(
-                                    ida['subClientPolicy']['backupSetEntity']['backupsetId']
+                if "laptop" in self._plan_properties:
+                    if "backupContent" in self._plan_properties["laptop"]["content"]:
+                        self._child_policies["subclientPolicyIds"].clear()
+                        for ida in self._plan_properties["laptop"]["content"]["backupContent"]:
+                            if ida["subClientPolicy"].get("backupSetEntity"):
+                                self._child_policies["subclientPolicyIds"].append(
+                                    ida["subClientPolicy"]["backupSetEntity"]["backupsetId"]
                                 )
 
-                if ('inheritance' in self._plan_properties and
-                        not self._plan_properties['inheritance']['isSealed']):
-                    temp_dict = self._plan_properties['inheritance']
-                    del temp_dict['isSealed']
-                    if 'enforcedEntities' not in temp_dict:
-                        temp_dict['enforcedEntities'] = []
-                    if 'privateEntities' not in temp_dict:
-                        temp_dict['privateEntities'] = []
+                if (
+                    "inheritance" in self._plan_properties
+                    and not self._plan_properties["inheritance"]["isSealed"]
+                ):
+                    temp_dict = self._plan_properties["inheritance"]
+                    del temp_dict["isSealed"]
+                    if "enforcedEntities" not in temp_dict:
+                        temp_dict["enforcedEntities"] = []
+                    if "privateEntities" not in temp_dict:
+                        temp_dict["privateEntities"] = []
                     self._override_entities = temp_dict
 
-                if 'parent' in self._plan_properties['summary']:
-                    self._parent_plan_name = self._plan_properties['summary']['parent']['planName']
+                if "parent" in self._plan_properties["summary"]:
+                    self._parent_plan_name = self._plan_properties["summary"]["parent"]["planName"]
 
-                if 'eePolicy' in self._plan_properties:
-                    extraction_policy = self._plan_properties['eePolicy']
-                    if 'policyEntity' in extraction_policy:
-                        self._dc_plan_props['eePolicyId'] = extraction_policy['policyEntity']['policyId']
-                    if 'detail' in extraction_policy:
-                        self._dc_plan_props['eePolicy'] = extraction_policy['detail']['eePolicy']
+                if "eePolicy" in self._plan_properties:
+                    extraction_policy = self._plan_properties["eePolicy"]
+                    if "policyEntity" in extraction_policy:
+                        self._dc_plan_props["eePolicyId"] = extraction_policy["policyEntity"][
+                            "policyId"
+                        ]
+                    if "detail" in extraction_policy:
+                        self._dc_plan_props["eePolicy"] = extraction_policy["detail"]["eePolicy"]
 
-                if 'ciPolicy' in self._plan_properties:
-                    ci_policy = self._plan_properties['ciPolicy']
-                    if 'policyEntity' in ci_policy:
-                        self._dc_plan_props['ciPolicyId'] = ci_policy['policyEntity']['policyId']
-                    if 'detail' in ci_policy:
-                        self._dc_plan_props['ciPolicy'] = ci_policy['detail']['ciPolicy']
+                if "ciPolicy" in self._plan_properties:
+                    ci_policy = self._plan_properties["ciPolicy"]
+                    if "policyEntity" in ci_policy:
+                        self._dc_plan_props["ciPolicyId"] = ci_policy["policyEntity"]["policyId"]
+                    if "detail" in ci_policy:
+                        self._dc_plan_props["ciPolicy"] = ci_policy["detail"]["ciPolicy"]
 
-                if 'eDiscoveryInfo' in self._plan_properties:
-                    if 'analyticsIndexServer' in self._plan_properties['eDiscoveryInfo']:
-                        self._dc_plan_props['analyticsIndexServer'] = self._plan_properties['eDiscoveryInfo']['analyticsIndexServer']
+                if "eDiscoveryInfo" in self._plan_properties:
+                    if "analyticsIndexServer" in self._plan_properties["eDiscoveryInfo"]:
+                        self._dc_plan_props["analyticsIndexServer"] = self._plan_properties[
+                            "eDiscoveryInfo"
+                        ]["analyticsIndexServer"]
 
-                if 'options' in self._plan_properties:
-                    plan_options = self._plan_properties['options']
-                    if 'targetApps' in plan_options:
-                        self._dc_plan_props['targetApps'] = plan_options['targetApps']
+                if "options" in self._plan_properties:
+                    plan_options = self._plan_properties["options"]
+                    if "targetApps" in plan_options:
+                        self._dc_plan_props["targetApps"] = plan_options["targetApps"]
 
-                    if 'supportedWorkloads' in plan_options:
-                        self._applicable_solutions = [soln['solutionName'] for soln in plan_options['supportedWorkloads'].get('solutions', [])]
+                    if "supportedWorkloads" in plan_options:
+                        self._applicable_solutions = [
+                            soln["solutionName"]
+                            for soln in plan_options["supportedWorkloads"].get("solutions", [])
+                        ]
 
-                if 'securityAssociations' in self._plan_properties:
+                if "securityAssociations" in self._plan_properties:
                     self._security_associations = {}
-                    for association in self._plan_properties['securityAssociations'].get('associations', []):
+                    for association in self._plan_properties["securityAssociations"].get(
+                        "associations", []
+                    ):
                         temp_key = None
-                        if 'externalGroupName' in association['userOrGroup'][0]:
-                            temp_key = '{0}\\{1}'.format(
-                                    association['userOrGroup'][0]['providerDomainName'],
-                                    association['userOrGroup'][0]['externalGroupName']
-                                )
-                        elif 'userGroupName' in association['userOrGroup'][0]:
-                            temp_key = association['userOrGroup'][0]['userGroupName']
+                        if "externalGroupName" in association["userOrGroup"][0]:
+                            temp_key = "{0}\\{1}".format(
+                                association["userOrGroup"][0]["providerDomainName"],
+                                association["userOrGroup"][0]["externalGroupName"],
+                            )
+                        elif "userGroupName" in association["userOrGroup"][0]:
+                            temp_key = association["userOrGroup"][0]["userGroupName"]
                         else:
-                            temp_key = association['userOrGroup'][0]['userName']
-                        if 'role' in association['properties']:
+                            temp_key = association["userOrGroup"][0]["userName"]
+                        if "role" in association["properties"]:
                             if temp_key in self._security_associations:
                                 self._security_associations[temp_key].append(
-                                    association['properties']['role']['roleName']
+                                    association["properties"]["role"]["roleName"]
                                 )
                             else:
-                                self._security_associations[temp_key] = [association['properties']['role']['roleName']]
-                    if 'tagWithCompany' in self._plan_properties.get('securityAssociations'):
-                        self._provider_domain_name = self._plan_properties.get('securityAssociations', {}).\
-                            get('tagWithCompany', {}).get('providerDomainName')
+                                self._security_associations[temp_key] = [
+                                    association["properties"]["role"]["roleName"]
+                                ]
+                    if "tagWithCompany" in self._plan_properties.get("securityAssociations"):
+                        self._provider_domain_name = (
+                            self._plan_properties.get("securityAssociations", {})
+                            .get("tagWithCompany", {})
+                            .get("providerDomainName")
+                        )
 
                 if "storageRules" in self._plan_properties:
-                    self._region_id = [x["regions"]["region"][0]["regionId"]
-                                       for x in self._plan_properties["storageRules"]["rules"]]
+                    self._region_id = [
+                        x["regions"]["region"][0]["regionId"]
+                        for x in self._plan_properties["storageRules"]["rules"]
+                    ]
 
-                if 'storageResourcePoolMap' in self._plan_properties:
-                    self._resources = self._plan_properties.get('storageResourcePoolMap', {})[0].get('resources')
+                if "storageResourcePoolMap" in self._plan_properties:
+                    self._resources = self._plan_properties.get("storageResourcePoolMap", {})[
+                        0
+                    ].get("resources")
 
                 self._get_associated_entities()
 
                 return self._plan_properties
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def derive_and_add(self,
-                       plan_name: str,
-                       storage_pool_name: Optional[str] = None,
-                       sla_in_minutes: Optional[int] = None,
-                       override_entities: Optional[dict] = None) -> 'Plan':
+    def derive_and_add(
+        self,
+        plan_name: str,
+        storage_pool_name: Optional[str] = None,
+        sla_in_minutes: Optional[int] = None,
+        override_entities: Optional[dict] = None,
+    ) -> "Plan":
         """Derives the base plan based on the the inheritance properties to created a derived plan
 
-            Args:
-                plan_name           (str)        :  name of the new plan to add
-                storage_pool_name   (str)   :  name of the storage pool to be used for the plan
-                                                    default: None   :   when the name is left to default, it inherits the base plan
-                                                                        storage pool if overriding is optional/not allowed
-                sla_in_minutes        (int)        :  Backup SLA in hours
-                                                    default: None   :   when the SLA is left to default, it inherits the base plan
-                                                                        SLA if overriding is optional/not allowed
-                override_entities   (dict)  :  Specify the entities with respective overriding.
-                                                    default: None
-                                                        {
-                                                            'privateEntities': [1, 4],
-                                                            'enforcedEntities': [256, 512, 1024]
-                                                        }
-                                                        - where,
-                                                                privateEntities are set when respective entity overriding is must
-                                                                enforcedEntities are set when respective entity overriding is
-                                                                not allowed
-                                                                left blank if overriding is optional
+        Args:
+            plan_name           (str)        :  name of the new plan to add
+            storage_pool_name   (str)   :  name of the storage pool to be used for the plan
+                                                default: None   :   when the name is left to default, it inherits the base plan
+                                                                    storage pool if overriding is optional/not allowed
+            sla_in_minutes        (int)        :  Backup SLA in hours
+                                                default: None   :   when the SLA is left to default, it inherits the base plan
+                                                                    SLA if overriding is optional/not allowed
+            override_entities   (dict)  :  Specify the entities with respective overriding.
+                                                default: None
+                                                    {
+                                                        'privateEntities': [1, 4],
+                                                        'enforcedEntities': [256, 512, 1024]
+                                                    }
+                                                    - where,
+                                                            privateEntities are set when respective entity overriding is must
+                                                            enforcedEntities are set when respective entity overriding is
+                                                            not allowed
+                                                            left blank if overriding is optional
 
-                                                        - entity IDs,
-                                                                1    - Storage
-                                                                4    - SLA/Schedules
-                                                                256  - Windows content
-                                                                512  - Unix content
-                                                                1024 - Mac content
+                                                    - entity IDs,
+                                                            1    - Storage
+                                                            4    - SLA/Schedules
+                                                            256  - Windows content
+                                                            512  - Unix content
+                                                            1024 - Mac content
 
 
-            Returns:
-                object: instance of the Plan class created by this method
+        Returns:
+            object: instance of the Plan class created by this method
 
-            Raises:
-                SDKException:
-                    if plan name is in incorrect format
+        Raises:
+            SDKException:
+                if plan name is in incorrect format
 
-                    if plan already exists
+                if plan already exists
 
-                    if neccessary arguments are not passed
+                if neccessary arguments are not passed
 
-                    if inheritance rules are not followed
+                if inheritance rules are not followed
 
-            Usage:
-                # Example 1: Derive a plan with a new name, inheriting storage pool and SLA
-                # new_plan = plan_object.derive_and_add('new_derived_plan')
+        Usage:
+            # Example 1: Derive a plan with a new name, inheriting storage pool and SLA
+            # new_plan = plan_object.derive_and_add('new_derived_plan')
 
-                # Example 2: Derive a plan with a specific storage pool and SLA
-                # new_plan = plan_object.derive_and_add('new_derived_plan', storage_pool_name='new_sp', sla_in_minutes=60)
+            # Example 2: Derive a plan with a specific storage pool and SLA
+            # new_plan = plan_object.derive_and_add('new_derived_plan', storage_pool_name='new_sp', sla_in_minutes=60)
 
-                # Example 3: Derive a plan with override entities
-                # override_config = {'privateEntities': [1, 4], 'enforcedEntities': [256, 512, 1024]}
-                # new_plan = plan_object.derive_and_add('new_derived_plan', override_entities=override_config)
-                pass
+            # Example 3: Derive a plan with override entities
+            # override_config = {'privateEntities': [1, 4], 'enforcedEntities': [256, 512, 1024]}
+            # new_plan = plan_object.derive_and_add('new_derived_plan', override_entities=override_config)
+            pass
         """
         if not isinstance(plan_name, str):
-            raise SDKException('Plan', '101', 'Plan name must be string value')
+            raise SDKException("Plan", "101", "Plan name must be string value")
         else:
             if self._commcell_object.plans.has_plan(plan_name):
-                raise SDKException(
-                    'Plan', '102', 'Plan "{0}" already exists'.format(
-                        plan_name)
-                )
+                raise SDKException("Plan", "102", f'Plan "{plan_name}" already exists')
         if self._override_entities is not None:
             request_json = self._commcell_object.plans._get_plan_template(
-                str(self._subtype), "MSP")
+                str(self._subtype), "MSP"
+            )
 
-            request_json['plan']['summary']['description'] = "Created from CvPySDK."
-            request_json['plan']['summary']['plan']['planName'] = plan_name
-            request_json['plan']['summary']['parent'] = {
-                'planId': int(self._plan_id)
-            }
+            request_json["plan"]["summary"]["description"] = "Created from CvPySDK."
+            request_json["plan"]["summary"]["plan"]["planName"] = plan_name
+            request_json["plan"]["summary"]["parent"] = {"planId": int(self._plan_id)}
 
             is_dedupe = True
             if storage_pool_name is not None:
-                storage_pool_obj = self._commcell_object.storage_pools.get(
-                    storage_pool_name
-                )
-                if 'dedupDBDetailsList' \
-                        not in storage_pool_obj._storage_pool_properties['storagePoolDetails']:
+                storage_pool_obj = self._commcell_object.storage_pools.get(storage_pool_name)
+                if (
+                    "dedupDBDetailsList"
+                    not in storage_pool_obj._storage_pool_properties["storagePoolDetails"]
+                ):
                     is_dedupe = False
                 storage_pool_id = int(storage_pool_obj.storage_pool_id)
                 if is_dedupe:
-                    request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                        'useGlobalDedupStore'] = 1
+                    request_json["plan"]["storage"]["copy"][0]["dedupeFlags"][
+                        "useGlobalDedupStore"
+                    ] = 1
                 else:
-                    del request_json['plan']['storage']['copy'][0]['storagePolicyFlags']
-                    del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                        'enableDeduplication']
-                    del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                        'enableClientSideDedup']
-                    del request_json['plan']['storage']['copy'][0]['DDBPartitionInfo']
-                    request_json['plan']['storage']['copy'][0]['extendedFlags'] = {
-                        'useGlobalStoragePolicy': 1
+                    del request_json["plan"]["storage"]["copy"][0]["storagePolicyFlags"]
+                    del request_json["plan"]["storage"]["copy"][0]["dedupeFlags"][
+                        "enableDeduplication"
+                    ]
+                    del request_json["plan"]["storage"]["copy"][0]["dedupeFlags"][
+                        "enableClientSideDedup"
+                    ]
+                    del request_json["plan"]["storage"]["copy"][0]["DDBPartitionInfo"]
+                    request_json["plan"]["storage"]["copy"][0]["extendedFlags"] = {
+                        "useGlobalStoragePolicy": 1
                     }
             else:
                 storage_pool_id = None
 
-            if 1 in self._override_entities['enforcedEntities']:
+            if 1 in self._override_entities["enforcedEntities"]:
                 if storage_pool_id is None:
-                    request_json['plan']['storage'] = {
+                    request_json["plan"]["storage"] = {
                         "storagePolicyId": self.storage_policy.storage_policy_id
                     }
                     snap_copy_id = self.storage_policy.storage_policy_id
                 else:
                     raise SDKException(
-                        'Plan', '102', 'Storage is enforced by base plan, cannot be overridden')
-            elif 1 in self._override_entities['privateEntities']:
+                        "Plan", "102", "Storage is enforced by base plan, cannot be overridden"
+                    )
+            elif 1 in self._override_entities["privateEntities"]:
                 if storage_pool_id is not None:
-                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                    request_json["plan"]["storage"]["copy"][0]["useGlobalPolicy"] = {
                         "storagePolicyId": storage_pool_id
                     }
                     snap_copy_id = storage_pool_id
                 else:
-                    raise SDKException('Plan', '102', 'Storage must be input')
+                    raise SDKException("Plan", "102", "Storage must be input")
             else:
                 if storage_pool_id is not None:
-                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+                    request_json["plan"]["storage"]["copy"][0]["useGlobalPolicy"] = {
                         "storagePolicyId": storage_pool_id
                     }
                     snap_copy_id = storage_pool_id
                 else:
-                    request_json['plan']['storage'] = {
+                    request_json["plan"]["storage"] = {
                         "storagePolicyId": self.storage_policy.storage_policy_id
                     }
                     snap_copy_id = self.storage_policy.storage_policy_id
 
-            if 4 in self._override_entities['enforcedEntities']:
+            if 4 in self._override_entities["enforcedEntities"]:
                 if sla_in_minutes is None:
-                    request_json['plan']['summary']['slaInMinutes'] = self._sla_in_minutes
+                    request_json["plan"]["summary"]["slaInMinutes"] = self._sla_in_minutes
                 else:
                     raise SDKException(
-                        'Plan', '102', 'SLA is enforced by base plan, cannot be overridden')
-            elif 4 in self._override_entities['privateEntities']:
+                        "Plan", "102", "SLA is enforced by base plan, cannot be overridden"
+                    )
+            elif 4 in self._override_entities["privateEntities"]:
                 if sla_in_minutes is not None:
-                    request_json['plan']['summary']['slaInMinutes'] = sla_in_minutes
+                    request_json["plan"]["summary"]["slaInMinutes"] = sla_in_minutes
                 else:
-                    raise SDKException('Plan', '102', 'SLA must be input')
+                    raise SDKException("Plan", "102", "SLA must be input")
             else:
                 if sla_in_minutes is not None:
-                    request_json['plan']['summary']['slaInMinutes'] = sla_in_minutes
+                    request_json["plan"]["summary"]["slaInMinutes"] = sla_in_minutes
                 else:
-                    request_json['plan']['summary']['slaInMinutes'] = self._sla_in_minutes
+                    request_json["plan"]["summary"]["slaInMinutes"] = self._sla_in_minutes
 
             if isinstance(override_entities, dict):
-                request_json['plan']['summary']['restrictions'] = 0
-                request_json['plan']['inheritance'] = {
-                    'isSealed': False
-                }
-                for entity in self._override_entities['enforcedEntities']:
+                request_json["plan"]["summary"]["restrictions"] = 0
+                request_json["plan"]["inheritance"] = {"isSealed": False}
+                for entity in self._override_entities["enforcedEntities"]:
                     from functools import reduce
+
                     if override_entities and entity in reduce(
-                            lambda i, j: i + j, override_entities.values()):
-                        raise SDKException(
-                            'Plan', '102', 'Override not allowed')
-                if 'enforcedEntities' in override_entities:
-                    request_json['plan']['inheritance']['enforcedEntities'] = (
-                        override_entities['enforcedEntities']
-                    )
-                if 'privateEntities' in override_entities:
-                    request_json['plan']['inheritance']['privateEntities'] = (
-                        override_entities['privateEntities']
-                    )
+                        lambda i, j: i + j, override_entities.values()
+                    ):
+                        raise SDKException("Plan", "102", "Override not allowed")
+                if "enforcedEntities" in override_entities:
+                    request_json["plan"]["inheritance"]["enforcedEntities"] = override_entities[
+                        "enforcedEntities"
+                    ]
+                if "privateEntities" in override_entities:
+                    request_json["plan"]["inheritance"]["privateEntities"] = override_entities[
+                        "privateEntities"
+                    ]
             else:
-                request_json['plan']['summary']['restrictions'] = 1
-                request_json['plan']['inheritance'] = {
-                    'isSealed': True
-                }
+                request_json["plan"]["summary"]["restrictions"] = 1
+                request_json["plan"]["inheritance"] = {"isSealed": True}
 
             if sla_in_minutes is not None:
-                request_json['plan']['definesSchedule'] = {
-                    'definesEntity': True
-                }
+                request_json["plan"]["definesSchedule"] = {"definesEntity": True}
             else:
-                request_json['plan']['definesSchedule'] = {
-                    'definesEntity': False
-                }
+                request_json["plan"]["definesSchedule"] = {"definesEntity": False}
 
             if isinstance(self._override_entities, dict):
-                if (4 not in
-                        self._override_entities['enforcedEntities'] +
-                        self._override_entities['privateEntities']):
-                    request_json['plan']['definesSchedule']['overrideEntity'] = 0
-                elif 4 in self._override_entities['enforcedEntities']:
-                    request_json['plan']['definesSchedule']['overrideEntity'] = 2
-                elif 4 in self._override_entities['privateEntities']:
-                    request_json['plan']['definesSchedule']['overrideEntity'] = 1
+                if (
+                    4
+                    not in self._override_entities["enforcedEntities"]
+                    + self._override_entities["privateEntities"]
+                ):
+                    request_json["plan"]["definesSchedule"]["overrideEntity"] = 0
+                elif 4 in self._override_entities["enforcedEntities"]:
+                    request_json["plan"]["definesSchedule"]["overrideEntity"] = 2
+                elif 4 in self._override_entities["privateEntities"]:
+                    request_json["plan"]["definesSchedule"]["overrideEntity"] = 1
 
             if storage_pool_id is not None:
-                request_json['plan']['definesStorage'] = {
-                    'definesEntity': True
-                }
+                request_json["plan"]["definesStorage"] = {"definesEntity": True}
             else:
-                request_json['plan']['definesStorage'] = {
-                    'definesEntity': False
-                }
+                request_json["plan"]["definesStorage"] = {"definesEntity": False}
 
             if isinstance(self._override_entities, dict):
-                if (1 not in
-                        self._override_entities['enforcedEntities'] +
-                        self._override_entities['privateEntities']):
-                    request_json['plan']['definesStorage']['overrideEntity'] = 0
-                elif 1 in self._override_entities['enforcedEntities']:
-                    request_json['plan']['definesStorage']['overrideEntity'] = 2
-                elif 1 in self._override_entities['privateEntities']:
-                    request_json['plan']['definesStorage']['overrideEntity'] = 1
+                if (
+                    1
+                    not in self._override_entities["enforcedEntities"]
+                    + self._override_entities["privateEntities"]
+                ):
+                    request_json["plan"]["definesStorage"]["overrideEntity"] = 0
+                elif 1 in self._override_entities["enforcedEntities"]:
+                    request_json["plan"]["definesStorage"]["overrideEntity"] = 2
+                elif 1 in self._override_entities["privateEntities"]:
+                    request_json["plan"]["definesStorage"]["overrideEntity"] = 1
 
             if self._subtype != PlanSubTypes.SERVER.value:
-                temp_defines_key = {
-                    'definesEntity': False
-                }
+                temp_defines_key = {"definesEntity": False}
                 if isinstance(self._override_entities, dict):
-                    if (not all(entity in
-                                self._override_entities['enforcedEntities'] +
-                                self._override_entities['privateEntities']
-                                for entity in [256, 512, 1024])):
-                        temp_defines_key['overrideEntity'] = 0
-                    elif all(entity in self._override_entities['enforcedEntities']
-                             for entity in [256, 512, 1024]):
-                        temp_defines_key['overrideEntity'] = 2
-                    elif all(entity in self._override_entities['privateEntities']
-                             for entity in [256, 512, 1024]):
-                        temp_defines_key['overrideEntity'] = 1
-                request_json['plan']['laptop']['content']['definesSubclientLin'] = temp_defines_key
-                request_json['plan']['laptop']['content']['definesSubclientMac'] = temp_defines_key
-                request_json['plan']['laptop']['content']['definesSubclientWin'] = temp_defines_key
+                    if not all(
+                        entity
+                        in self._override_entities["enforcedEntities"]
+                        + self._override_entities["privateEntities"]
+                        for entity in [256, 512, 1024]
+                    ):
+                        temp_defines_key["overrideEntity"] = 0
+                    elif all(
+                        entity in self._override_entities["enforcedEntities"]
+                        for entity in [256, 512, 1024]
+                    ):
+                        temp_defines_key["overrideEntity"] = 2
+                    elif all(
+                        entity in self._override_entities["privateEntities"]
+                        for entity in [256, 512, 1024]
+                    ):
+                        temp_defines_key["overrideEntity"] = 1
+                request_json["plan"]["laptop"]["content"]["definesSubclientLin"] = temp_defines_key
+                request_json["plan"]["laptop"]["content"]["definesSubclientMac"] = temp_defines_key
+                request_json["plan"]["laptop"]["content"]["definesSubclientWin"] = temp_defines_key
 
-            if self._subtype == PlanSubTypes.SERVER.value and 'snap' in self.addons and 'copy' \
-                    in request_json['plan']['storage']:
-                request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
-                    'storagePolicyId': snap_copy_id
+            if (
+                self._subtype == PlanSubTypes.SERVER.value
+                and "snap" in self.addons
+                and "copy" in request_json["plan"]["storage"]
+            ):
+                request_json["plan"]["storage"]["copy"][1]["useGlobalPolicy"] = {
+                    "storagePolicyId": snap_copy_id
                 }
-                request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
-                    'useGlobalStoragePolicy': 1
+                request_json["plan"]["storage"]["copy"][1]["extendedFlags"] = {
+                    "useGlobalStoragePolicy": 1
                 }
 
             add_plan_service = self._commcell_object.plans._PLANS
             headers = self._commcell_object._headers.copy()
-            headers['LookupNames'] = 'False'
+            headers["LookupNames"] = "False"
 
             flag, response = self._cvpysdk_object.make_request(
-                'POST', add_plan_service, request_json, headers=headers
+                "POST", add_plan_service, request_json, headers=headers
             )
 
             if flag:
@@ -3274,19 +3477,17 @@ class Plan(object):
                     error_message = None
                     error_code = None
 
-                    if 'errors' in response_value:
-                        error_code = response_value['errors'][0]['status']['errorCode']
-                        error_message = response_value['errors'][0]['status']['errorMessage']
+                    if "errors" in response_value:
+                        error_code = response_value["errors"][0]["status"]["errorCode"]
+                        error_message = response_value["errors"][0]["status"]["errorMessage"]
 
                     # error_codes 0 - OK, 1 - plan without storage, 84 - restricted plan
                     if error_code not in [0, 1, 84]:
-                        o_str = 'Failed to create new Plan\nError: "{0}"'.format(
-                            error_message
-                        )
-                        raise SDKException('Plan', '102', o_str)
+                        o_str = f'Failed to create new Plan\nError: "{error_message}"'
+                        raise SDKException("Plan", "102", o_str)
 
-                    if 'plan' in response_value:
-                        plan_name = response_value['plan']['summary']['plan']['planName']
+                    if "plan" in response_value:
+                        plan_name = response_value["plan"]["summary"]["plan"]["planName"]
 
                         # initialize the plans again
                         # so that the plans object has all the plans
@@ -3294,87 +3495,92 @@ class Plan(object):
 
                         return self._commcell_object.plans.get(plan_name)
                     else:
-                        o_str = ('Failed to create new plan due to error code: "{0}"\n'
-                                 'Please check the documentation for '
-                                 'more details on the error').format(error_code)
+                        o_str = (
+                            f'Failed to create new plan due to error code: "{error_code}"\n'
+                            "Please check the documentation for "
+                            "more details on the error"
+                        )
 
-                        raise SDKException('Plan', '102', o_str)
+                        raise SDKException("Plan", "102", o_str)
                 else:
-                    raise SDKException('Response', 102)
+                    raise SDKException("Response", 102)
             else:
                 response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
-            raise SDKException('Plan', '102', 'Inheritance disabled for plan')
-
+            raise SDKException("Plan", "102", "Inheritance disabled for plan")
 
     def modify_schedule(self, schedule_json: dict, is_full_schedule: bool = False) -> None:
         """Modifies the incremental RPO schedule pattern of the plan with the given schedule json
 
-            Args:
-                schedule_json    (dict) :  {
-                                                pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                                                 pattern to be sent
+        Args:
+            schedule_json    (dict) :  {
+                                            pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
+                                                             pattern to be sent
 
-                                                                 eg: {
-                                                                        "freq_type": 'daily',
-                                                                        "active_start_time": time_in_%H/%S (str),
-                                                                        "repeat_days": days_to_repeat (int)
-                                                                     }
+                                                             eg: {
+                                                                    "freq_type": 'daily',
+                                                                    "active_start_time": time_in_%H/%S (str),
+                                                                    "repeat_days": days_to_repeat (int)
+                                                                 }
 
-                                                options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
+                                            options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
 
-                                                                eg:  {
-                                                                    "maxNumberOfStreams": 0,
-                                                                    "useMaximumStreams": True,
-                                                                    "useScallableResourceManagement": True,
-                                                                    "totalJobsToProcess": 1000,
-                                                                    "allCopies": True,
-                                                                    "mediaAgent": {
-                                                                        "mediaAgentName": "<ANY MEDIAAGENT>"
-                                                                    }
+                                                            eg:  {
+                                                                "maxNumberOfStreams": 0,
+                                                                "useMaximumStreams": True,
+                                                                "useScallableResourceManagement": True,
+                                                                "totalJobsToProcess": 1000,
+                                                                "allCopies": True,
+                                                                "mediaAgent": {
+                                                                    "mediaAgentName": "<ANY MEDIAAGENT>"
                                                                 }
-                                            }
-                is_full_schedule (bool) :  Pass True if he schedule to be modified is the full backup schedule
+                                                            }
+                                        }
+            is_full_schedule (bool) :  Pass True if he schedule to be modified is the full backup schedule
 
-            Raises:
-                IndexError: If full backup schedule is not enabled and is_full_schedule is True.
+        Raises:
+            IndexError: If full backup schedule is not enabled and is_full_schedule is True.
 
-            Usage:
-                # Example 1: Modify the incremental schedule
-                # schedule_json = {
-                #     'pattern': {'freq_type': 'daily', 'active_start_time': '00/00', 'repeat_days': 1},
-                #     'options': {'maxNumberOfStreams': 0, 'useMaximumStreams': True}
-                # }
-                # plan_object.modify_schedule(schedule_json)
+        Usage:
+            # Example 1: Modify the incremental schedule
+            # schedule_json = {
+            #     'pattern': {'freq_type': 'daily', 'active_start_time': '00/00', 'repeat_days': 1},
+            #     'options': {'maxNumberOfStreams': 0, 'useMaximumStreams': True}
+            # }
+            # plan_object.modify_schedule(schedule_json)
 
-                # Example 2: Modify the full backup schedule
-                # schedule_json = {
-                #     'pattern': {'freq_type': 'weekly', 'active_start_time': '00/00', 'repeat_weeks': 1, 'week_days': ['Sunday']},
-                #     'options': {'maxNumberOfStreams': 0, 'useMaximumStreams': True}
-                # }
-                # plan_object.modify_schedule(schedule_json, is_full_schedule=True)
-                pass
+            # Example 2: Modify the full backup schedule
+            # schedule_json = {
+            #     'pattern': {'freq_type': 'weekly', 'active_start_time': '00/00', 'repeat_weeks': 1, 'week_days': ['Sunday']},
+            #     'options': {'maxNumberOfStreams': 0, 'useMaximumStreams': True}
+            # }
+            # plan_object.modify_schedule(schedule_json, is_full_schedule=True)
+            pass
         """
         if is_full_schedule:
             try:
-                schedule_id = list(filter(
-                    lambda st: st['subTask']['flags'] == 4194304, self.schedule_policies['data']._subtasks
-                ))[0]['subTask']['subTaskId']
+                schedule_id = list(
+                    filter(
+                        lambda st: st["subTask"]["flags"] == 4194304,
+                        self.schedule_policies["data"]._subtasks,
+                    )
+                )[0]["subTask"]["subTaskId"]
             except IndexError:
-                raise IndexError('Full backup schedule not enabled')
+                raise IndexError("Full backup schedule not enabled")
         else:
-            schedule_id = list(filter(
-                lambda st: st['subTask']['subTaskName'] != 'Synthetic Fulls', self.schedule_policies['data']._subtasks
-            ))[0]['subTask']['subTaskId']
-        self.schedule_policies['data'].modify_schedule(
-            schedule_json,
-            schedule_id=schedule_id
-        )
+            schedule_id = list(
+                filter(
+                    lambda st: st["subTask"]["subTaskName"] != "Synthetic Fulls",
+                    self.schedule_policies["data"]._subtasks,
+                )
+            )[0]["subTask"]["subTaskId"]
+        self.schedule_policies["data"].modify_schedule(schedule_json, schedule_id=schedule_id)
         self.refresh()
 
-
-    def __handle_response(self, flag: bool, response: object, custom_error_message: str=None) -> None:
+    def __handle_response(
+        self, flag: bool, response: object, custom_error_message: str = None
+    ) -> None:
         """Handles the response received from the server
 
         Args:
@@ -3396,28 +3602,27 @@ class Plan(object):
         if flag:
             if response.json():
                 response_value = response.json()
-                error_info = response_value.get('error', response_value)
-                error_message = error_info.get('errorMessage', '')
-                error_code = error_info.get('errorCode', 0)
+                error_info = response_value.get("error", response_value)
+                error_message = error_info.get("errorMessage", "")
+                error_code = error_info.get("errorCode", 0)
 
                 if error_code != 0:
                     if custom_error_message:
-                        error_message = custom_error_message + '\nError: "{0}"'.format(error_message)
-                    raise SDKException('Plan', '102', error_message)
+                        error_message = custom_error_message + f'\nError: "{error_message}"'
+                    raise SDKException("Plan", "102", error_message)
 
                 self.refresh()
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def get_plan_properties(self) -> Dict:
         """
         Method to get the properties of this plan fetched from v4 API.
-        
+
         Returns:
             Dict: A dictionary containing the properties of the plan fetched from the v4 API.
 
@@ -3427,7 +3632,6 @@ class Plan(object):
             pass
         """
         return self._v4_plan_properties
-
 
     def get_storage_copy_details(self, copy_name: str, region_name: Optional[str] = None) -> Dict:
         """Method to get the storage copy details of the given copy name and region name
@@ -3452,36 +3656,69 @@ class Plan(object):
             # copy_details = plan_object.get_storage_copy_details('copy1', 'region1')
             pass
         """
-        if self.subtype == PlanSubTypes.SERVER.value: #Server Plan subtype, V4 Plan properties only work for Server plans. Other plans need to use default plan properties
-            backup_destinations = self._v4_plan_properties.get('backupDestinations', [])
+        if (
+            self.subtype == PlanSubTypes.SERVER.value
+        ):  # Server Plan subtype, V4 Plan properties only work for Server plans. Other plans need to use default plan properties
+            backup_destinations = self._v4_plan_properties.get("backupDestinations", [])
 
             # Filter by region name
             if region_name:
-                backup_destinations = list(filter(lambda item: item.get('region', {}).get("name") == region_name, backup_destinations))
+                backup_destinations = list(
+                    filter(
+                        lambda item: item.get("region", {}).get("name") == region_name,
+                        backup_destinations,
+                    )
+                )
 
             # Filter by copy name
             if copy_name:
-                backup_destinations = list(filter(lambda item: item.get('planBackupDestination', {}).get("name") == copy_name, backup_destinations))
+                backup_destinations = list(
+                    filter(
+                        lambda item: (
+                            item.get("planBackupDestination", {}).get("name") == copy_name
+                        ),
+                        backup_destinations,
+                    )
+                )
 
             if not backup_destinations:
-                raise SDKException('Plan', '102', f'No copy found with name: [{copy_name}] and region: [{region_name}]')
+                raise SDKException(
+                    "Plan",
+                    "102",
+                    f"No copy found with name: [{copy_name}] and region: [{region_name}]",
+                )
 
             if len(backup_destinations) > 1:
-                raise SDKException('Plan', '102', f'Multiple copies found with name: [{copy_name}] and region: [{region_name}]')
+                raise SDKException(
+                    "Plan",
+                    "102",
+                    f"Multiple copies found with name: [{copy_name}] and region: [{region_name}]",
+                )
 
             copy_details = next(iter(backup_destinations), None)
 
-        else: #Any other subtype like Laptop and Archiver Plan
-            backup_destinations = self._properties.get('storage', {}).get('copy', [])
+        else:  # Any other subtype like Laptop and Archiver Plan
+            backup_destinations = self._properties.get("storage", {}).get("copy", [])
             if copy_name:
-                backup_destinations = list(filter(lambda item: item.get('StoragePolicyCopy', {}).get("copyName") == copy_name, backup_destinations))
+                backup_destinations = list(
+                    filter(
+                        lambda item: (
+                            item.get("StoragePolicyCopy", {}).get("copyName") == copy_name
+                        ),
+                        backup_destinations,
+                    )
+                )
             if not backup_destinations:
-                raise SDKException('Plan', '102', f'No copy found with name: [{copy_name}]')
+                raise SDKException("Plan", "102", f"No copy found with name: [{copy_name}]")
             if len(backup_destinations) > 1:
-                raise SDKException('Plan', '102', f'Multiple copies found with name: [{copy_name}]')
+                raise SDKException(
+                    "Plan", "102", f"Multiple copies found with name: [{copy_name}]"
+                )
             copy_details = next(iter(backup_destinations), None)
 
-        return copy.deepcopy(copy_details) # return a deep copy to avoid modifying the original properties
+        return copy.deepcopy(
+            copy_details
+        )  # return a deep copy to avoid modifying the original properties
 
     def get_storage_copy_id(self, copy_name: str, region_name: Optional[str] = None) -> int:
         """Gets the storage copy id of the given copy name
@@ -3502,11 +3739,20 @@ class Plan(object):
             pass
         """
         copy_details = self.get_storage_copy_details(copy_name, region_name)
-        if self.subtype != PlanSubTypes.SERVER.value: #For non-server plans
-            return copy_details.get('StoragePolicyCopy', {}).get('copyId', 0) if copy_details else 0
-        return copy_details.get('planBackupDestination', {}).get('id', 0) if copy_details else 0
+        if self.subtype != PlanSubTypes.SERVER.value:  # For non-server plans
+            return (
+                copy_details.get("StoragePolicyCopy", {}).get("copyId", 0) if copy_details else 0
+            )
+        return copy_details.get("planBackupDestination", {}).get("id", 0) if copy_details else 0
 
-    def add_copy(self, copy_name: str, storage_pool: str, retention: int=0, extended_retention: dict=None, region: str=None) -> None:
+    def add_copy(
+        self,
+        copy_name: str,
+        storage_pool: str,
+        retention: int = 0,
+        extended_retention: dict = None,
+        region: str = None,
+    ) -> None:
         """Method to add an aux copy to the plan
 
         Args:
@@ -3529,47 +3775,81 @@ class Plan(object):
             "backupDestinationName": copy_name,
             "storage_name": storage_pool,
         }
-        #Make changes for defaults if its Tape pool 
+        # Make changes for defaults if its Tape pool
         storage_pool_obj = self._commcell_object.storage_pools.get(storage_pool)
-        gacp = False; worm = False
+        gacp = False
+        worm = False
         if storage_pool_obj.storage_type == StorageType.TAPE.value:
             gacp = True
-            if retention: # If retention is provided, use it
-                copy_details['retentionPeriodDays'] = retention
+            if retention:  # If retention is provided, use it
+                copy_details["retentionPeriodDays"] = retention
             else:
-                copy_details['retentionPeriodDays'] = None  # Default retention -> inherit from tape pools
-            copy_details['backupsToCopy'] = "MONTHLY_FULLS" # Default backups to copy for tape pools
-            copy_details['fullBackupTypesToCopy'] = "LAST"  # Default full backup types to copy for tape pools
+                copy_details["retentionPeriodDays"] = (
+                    None  # Default retention -> inherit from tape pools
+                )
+            copy_details["backupsToCopy"] = (
+                "MONTHLY_FULLS"  # Default backups to copy for tape pools
+            )
+            copy_details["fullBackupTypesToCopy"] = (
+                "LAST"  # Default full backup types to copy for tape pools
+            )
         else:
             if retention:
-                copy_details['retentionPeriodDays'] = retention
+                copy_details["retentionPeriodDays"] = retention
             else:
-                copy_details['retentionPeriodDays'] = 30  # Default retention for non-tape pools
-        if storage_pool_obj.is_worm_storage_lock_enabled: #copies inhering worm pools should not be overriding pool retention
-            worm= True
-            copy_details['retentionPeriodDays'] = None
+                copy_details["retentionPeriodDays"] = 30  # Default retention for non-tape pools
+        if (
+            storage_pool_obj.is_worm_storage_lock_enabled
+        ):  # copies inhering worm pools should not be overriding pool retention
+            worm = True
+            copy_details["retentionPeriodDays"] = None
         if extended_retention:
-            if (storage_pool_obj.storage_type == StorageType.TAPE.value or storage_pool_obj.is_worm_storage_lock_enabled) and retention is None:
-                raise SDKException('Plan', '102', 'Retention period days must be specified when adding extended retention rules for Tape storage pool')
-            copy_details['useExtendedRetentionRules'] = True
+            if (
+                storage_pool_obj.storage_type == StorageType.TAPE.value
+                or storage_pool_obj.is_worm_storage_lock_enabled
+            ) and retention is None:
+                raise SDKException(
+                    "Plan",
+                    "102",
+                    "Retention period days must be specified when adding extended retention rules for Tape storage pool",
+                )
+            copy_details["useExtendedRetentionRules"] = True
             copy_details["extendedRetentionRules"] = extended_retention
 
         request_json = {
-            'destinations': [self.plan_v4_helper.get_copy_payload(copy_details, is_aux_copy=True, gacp=gacp, worm=worm)]
+            "destinations": [
+                self.plan_v4_helper.get_copy_payload(
+                    copy_details, is_aux_copy=True, gacp=gacp, worm=worm
+                )
+            ]
         }
-        for key in list(request_json['destinations'][0].keys()):
-            if request_json['destinations'][0][key] is None:
-                del request_json['destinations'][0][key]
+        for key in list(request_json["destinations"][0].keys()):
+            if request_json["destinations"][0][key] is None:
+                del request_json["destinations"][0][key]
         # during add copy, region should be specified as the separate blob
         if region:
-            request_json['region'] = {"id": int(self._commcell_object.regions.get(region).region_id)}
+            request_json["region"] = {
+                "id": int(self._commcell_object.regions.get(region).region_id)
+            }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._SERVER_PLAN_BACKUP_DESTINATION, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._SERVER_PLAN_BACKUP_DESTINATION, request_json
+        )
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to add new copy to the plan : [{self.plan_name}]')
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to add new copy to the plan : [{self.plan_name}]",
+        )
 
-
-    def edit_copy(self, copy_name: str, new_retention_days: int = None, new_recovery_points: int = None, new_extended_retention: dict = None, current_region_name: str = None) -> None:
+    def edit_copy(
+        self,
+        copy_name: str,
+        new_retention_days: int = None,
+        new_recovery_points: int = None,
+        new_extended_retention: dict = None,
+        current_region_name: str = None,
+    ) -> None:
         """Method to edit a copy settings
 
         Args:
@@ -3599,39 +3879,77 @@ class Plan(object):
         """
         copy_details = self.get_storage_copy_details(copy_name, current_region_name)
         copy_id = self.get_storage_copy_id(copy_name, current_region_name)
-        is_snap_copy = copy_details.get('isSnapCopy', False)
+        is_snap_copy = copy_details.get("isSnapCopy", False)
 
         # input validation
         if new_retention_days is not None and new_recovery_points is not None:
-            raise SDKException('Plan', '102', 'Both retention days and recovery points cannot be set at the same time')
+            raise SDKException(
+                "Plan",
+                "102",
+                "Both retention days and recovery points cannot be set at the same time",
+            )
 
         if new_recovery_points and not is_snap_copy:
-            raise SDKException('Plan', '102', 'Recovery points can be set only for snap copy')
+            raise SDKException("Plan", "102", "Recovery points can be set only for snap copy")
 
         # copy the old details to the required payload first
-        required_props = ['retentionPeriodDays', 'retentionRuleType', 'useExtendedRetentionRules', 'extendedRetentionRules']
-        new_retention_rules = {key: copy_details[key] for key in required_props if key in copy_details}
+        required_props = [
+            "retentionPeriodDays",
+            "retentionRuleType",
+            "useExtendedRetentionRules",
+            "extendedRetentionRules",
+        ]
+        new_retention_rules = {
+            key: copy_details[key] for key in required_props if key in copy_details
+        }
 
         # update the payload based on the input
         if new_retention_days is not None:
-            new_retention_rules.update({'retentionPeriodDays': new_retention_days, 'retentionRuleType': "RETENTION_PERIOD"})
+            new_retention_rules.update(
+                {
+                    "retentionPeriodDays": new_retention_days,
+                    "retentionRuleType": "RETENTION_PERIOD",
+                }
+            )
 
         if new_recovery_points is not None:
-            new_retention_rules.update({'retentionPeriodDays': new_recovery_points, 'retentionRuleType': "SNAP_RECOVERY_POINTS"})
+            new_retention_rules.update(
+                {
+                    "retentionPeriodDays": new_recovery_points,
+                    "retentionRuleType": "SNAP_RECOVERY_POINTS",
+                }
+            )
 
         if new_extended_retention:
-            new_retention_rules.update({'useExtendedRetentionRules': True, 'extendedRetentionRules': new_extended_retention})
+            new_retention_rules.update(
+                {
+                    "useExtendedRetentionRules": True,
+                    "extendedRetentionRules": new_extended_retention,
+                }
+            )
 
         # special property that needs to be sent during edit
-        new_retention_rules['fullBackupTypesToBeRetained'] = 'FIRST'
+        new_retention_rules["fullBackupTypesToBeRetained"] = "FIRST"
 
-        request_json = {'retentionRules': new_retention_rules}
+        request_json = {"retentionRules": new_retention_rules}
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._services['V5_SERVER_PLAN_COPY'] % (self.plan_id, copy_id), request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "PUT", self._services["V5_SERVER_PLAN_COPY"] % (self.plan_id, copy_id), request_json
+        )
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to edit copy settings for the plan : [{self.plan_name}] Copy: [{copy_name}] Region: [{current_region_name}]')
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to edit copy settings for the plan : [{self.plan_name}] Copy: [{copy_name}] Region: [{current_region_name}]",
+        )
 
-    def clone_copy(self, source_copy_name: str,  new_copy_name: str, storage_pool_name: str, source_region: str=None) -> 'StoragePolicyCopy':
+    def clone_copy(
+        self,
+        source_copy_name: str,
+        new_copy_name: str,
+        storage_pool_name: str,
+        source_region: str = None,
+    ) -> "StoragePolicyCopy":
         """
         Method to clone an existing copy in the plan
 
@@ -3639,39 +3957,64 @@ class Plan(object):
             source_copy_name (str)   -   name of the copy that is being cloned
             new_copy_name (str)      -   name of the new copy that is being created
             storage_pool_name (str)  -   name of the storage pool that is to be used for the new copy
-            source_region (str)      -   name of the region from which the copy needs to be cloned  
+            source_region (str)      -   name of the region from which the copy needs to be cloned
         """
         source_copy_id = self.get_storage_copy_id(source_copy_name, source_region)
-        storage_pool_id = self._commcell_object.storage_pools.get(storage_pool_name).storage_pool_id
-        api_storage_pool_name = self._commcell_object.storage_pools.get(storage_pool_name).storage_pool_name
+        storage_pool_id = self._commcell_object.storage_pools.get(
+            storage_pool_name
+        ).storage_pool_id
+        api_storage_pool_name = self._commcell_object.storage_pools.get(
+            storage_pool_name
+        ).storage_pool_name
         request_json = {
-                "backupDestinationName": new_copy_name,
-                "storage": {
-                    "id": int(storage_pool_id),
-                    "name": api_storage_pool_name
-            },
-                "cloneFromBackupDestination": {
-                    "id": source_copy_id,
-                    "name": source_copy_name
-            }
+            "backupDestinationName": new_copy_name,
+            "storage": {"id": int(storage_pool_id), "name": api_storage_pool_name},
+            "cloneFromBackupDestination": {"id": source_copy_id, "name": source_copy_name},
         }
         if self.plan_type == int(PlanTypes.ARCHIVER.value):
-            flag, response = self._cvpysdk_object.make_request('POST', self._V5_ARCHIVER_PLAN_COPY_CLONE % (self.plan_id, source_copy_id), request_json)
+            flag, response = self._cvpysdk_object.make_request(
+                "POST",
+                self._V5_ARCHIVER_PLAN_COPY_CLONE % (self.plan_id, source_copy_id),
+                request_json,
+            )
         elif self.plan_type == int(PlanTypes.MSP.value):
-            if self.subtype in (PlanSubTypes.SERVER_VSA.value, PlanSubTypes.SERVER.value): #Server Plan subtypes
-                flag, response = self._cvpysdk_object.make_request('POST', self._V5_SERVER_PLAN_COPY_CLONE % (self.plan_id, source_copy_id), request_json)
-            elif self.subtype == PlanSubTypes.LAPTOP.value: #Laptop Plan subtype
-                flag, response = self._cvpysdk_object.make_request('POST', self._V5_LAPTOP_PLAN_COPY_CLONE % (self.plan_id, source_copy_id), request_json)
+            if self.subtype in (
+                PlanSubTypes.SERVER_VSA.value,
+                PlanSubTypes.SERVER.value,
+            ):  # Server Plan subtypes
+                flag, response = self._cvpysdk_object.make_request(
+                    "POST",
+                    self._V5_SERVER_PLAN_COPY_CLONE % (self.plan_id, source_copy_id),
+                    request_json,
+                )
+            elif self.subtype == PlanSubTypes.LAPTOP.value:  # Laptop Plan subtype
+                flag, response = self._cvpysdk_object.make_request(
+                    "POST",
+                    self._V5_LAPTOP_PLAN_COPY_CLONE % (self.plan_id, source_copy_id),
+                    request_json,
+                )
             else:
-                raise SDKException('Plan', '102', f'Clone copy not supported for the plan subtype: [{PlanSubTypes(self.subtype).name}]')
+                raise SDKException(
+                    "Plan",
+                    "102",
+                    f"Clone copy not supported for the plan subtype: [{PlanSubTypes(self.subtype).name}]",
+                )
         else:
-            raise SDKException('Plan', '102', f'Clone copy not supported for the plan type: [{PlanTypes(self.plan_type).name}]')
-        
-        self.__handle_response(flag, response, custom_error_message=f'Failed to clone copy for the plan : [{self.plan_name}] Source Copy: [{source_copy_name}]')
+            raise SDKException(
+                "Plan",
+                "102",
+                f"Clone copy not supported for the plan type: [{PlanTypes(self.plan_type).name}]",
+            )
+
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to clone copy for the plan : [{self.plan_name}] Source Copy: [{source_copy_name}]",
+        )
         self.refresh()
         return self.storage_policy.get_copy(new_copy_name)
 
-    def delete_copy(self, copy_name: str, region_name: str=None) -> None:
+    def delete_copy(self, copy_name: str, region_name: str = None) -> None:
         """Method to remove a copy from the plan
 
         Args:
@@ -3688,10 +4031,15 @@ class Plan(object):
         """
         copy_id = self.get_storage_copy_id(copy_name, region_name)
 
-        flag, response = self._cvpysdk_object.make_request('DELETE', self._services['V4_SERVER_PLAN_COPY'] % (self.plan_id, copy_id))
+        flag, response = self._cvpysdk_object.make_request(
+            "DELETE", self._services["V4_SERVER_PLAN_COPY"] % (self.plan_id, copy_id)
+        )
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to remove copy from the plan: [{self.plan_name}]')
-
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to remove copy from the plan: [{self.plan_name}]",
+        )
 
     def add_region(self, region_name: str) -> None:
         """Method to add a region to the plan
@@ -3708,16 +4056,15 @@ class Plan(object):
         """
         region_id = self._commcell_object.regions.get(region_name).region_id
 
-        request_json = {
-            "regionToConfigure": {
-                "id": int(region_id)
-            }
-        }
+        request_json = {"regionToConfigure": {"id": int(region_id)}}
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_PLAN, request_json)
+        flag, response = self._cvpysdk_object.make_request("PUT", self._V4_PLAN, request_json)
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to add new region to the plan : [{self.plan_name}]')
-
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to add new region to the plan : [{self.plan_name}]",
+        )
 
     def remove_region(self, region_name: str) -> None:
         """Method to remove a region from the plan
@@ -3734,10 +4081,15 @@ class Plan(object):
         """
         region_id = self._commcell_object.regions.get(region_name).region_id
 
-        flag, response = self._cvpysdk_object.make_request('DELETE', self._services['SERVER_PLAN_REGIONS'] % (self.plan_id, region_id))
+        flag, response = self._cvpysdk_object.make_request(
+            "DELETE", self._services["SERVER_PLAN_REGIONS"] % (self.plan_id, region_id)
+        )
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to remove region from the plan: [{self.plan_name}]')
-
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to remove region from the plan: [{self.plan_name}]",
+        )
 
     def get_schedule_properties(self, schedule_filter: dict) -> dict:
         """Method to get the schedule properties of the plan
@@ -3762,17 +4114,30 @@ class Plan(object):
             schedule_filter = {"backupType": "INCREMENTAL", "forDatabasesOnly": False}
             properties = plan.get_schedule_properties(schedule_filter)
         """
-        schedules = self._v4_plan_properties['rpo']['backupFrequency']['schedules']
-        filtered_schedules = [schedule for schedule in schedules if all(schedule.get(key) == value for key, value in schedule_filter.items())]
+        schedules = self._v4_plan_properties["rpo"]["backupFrequency"]["schedules"]
+        filtered_schedules = [
+            schedule
+            for schedule in schedules
+            if all(schedule.get(key) == value for key, value in schedule_filter.items())
+        ]
 
         if not filtered_schedules:
-            raise SDKException('Plan', '102', f'No schedule found with the provided filter: {schedule_filter} for plan: [{self.plan_name}]')
+            raise SDKException(
+                "Plan",
+                "102",
+                f"No schedule found with the provided filter: {schedule_filter} for plan: [{self.plan_name}]",
+            )
 
         if len(filtered_schedules) > 1:
-            raise SDKException('Plan', '102', f'Multiple schedules found with the provided filter: {schedule_filter} for plan: [{self.plan_name}]')
+            raise SDKException(
+                "Plan",
+                "102",
+                f"Multiple schedules found with the provided filter: {schedule_filter} for plan: [{self.plan_name}]",
+            )
 
-        return copy.deepcopy(filtered_schedules[0]) # return a deep copy to avoid modifying the original schedule properties
-
+        return copy.deepcopy(
+            filtered_schedules[0]
+        )  # return a deep copy to avoid modifying the original schedule properties
 
     def add_schedule(self, schedule_options: dict) -> None:
         """Method to add a new schedule to the plan
@@ -3808,15 +4173,14 @@ class Plan(object):
         """
         schedule_payload = self.plan_v4_helper.get_schedule_payload(schedule_options)
 
-        payload = {
-            "backupFrequency": {
-                "schedules": [schedule_payload]
-            }
-        }
-        flag, response = self._cvpysdk_object.make_request('PUT', self._PLAN_RPO, payload)
+        payload = {"backupFrequency": {"schedules": [schedule_payload]}}
+        flag, response = self._cvpysdk_object.make_request("PUT", self._PLAN_RPO, payload)
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to add new schedule to the plan: [{self.plan_name}]')
-
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to add new schedule to the plan: [{self.plan_name}]",
+        )
 
     def edit_schedule(self, schedule_options: dict, schedule_filter: dict) -> None:
         """Method to edit the schedule options of the plan
@@ -3845,20 +4209,19 @@ class Plan(object):
         """
         schedule_payload = self.get_schedule_properties(schedule_filter)
 
-        schedule_payload['scheduleOperation'] = 'MODIFY'
+        schedule_payload["scheduleOperation"] = "MODIFY"
         # update the payload with the new provided options
         schedule_payload = self.plan_v4_helper.update_payload(schedule_payload, schedule_options)
 
-        payload = {
-            "backupFrequency": {
-                "schedules": [schedule_payload]
-            }
-        }
+        payload = {"backupFrequency": {"schedules": [schedule_payload]}}
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._PLAN_RPO, payload)
+        flag, response = self._cvpysdk_object.make_request("PUT", self._PLAN_RPO, payload)
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to edit schedule options for the plan: [{self.plan_name}]')
-
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to edit schedule options for the plan: [{self.plan_name}]",
+        )
 
     def delete_schedule(self, schedule_filter: dict) -> None:
         """Method to delete the schedule from the plan
@@ -3876,20 +4239,21 @@ class Plan(object):
             plan.delete_schedule(schedule_filter)
         """
         schedule_payload = self.get_schedule_properties(schedule_filter)
-        schedule_payload['scheduleOperation'] = 'DELETE'
+        schedule_payload["scheduleOperation"] = "DELETE"
 
-        payload = {
-            "backupFrequency": {
-                "schedules": [schedule_payload]
-            }
-        }
+        payload = {"backupFrequency": {"schedules": [schedule_payload]}}
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._PLAN_RPO, payload)
+        flag, response = self._cvpysdk_object.make_request("PUT", self._PLAN_RPO, payload)
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to delete schedule from the plan: [{self.plan_name}]')
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to delete schedule from the plan: [{self.plan_name}]",
+        )
 
-
-    def edit_snapshot_options(self, enable_backup_copy:bool=True, backup_copy_rpo: int=None) -> None:
+    def edit_snapshot_options(
+        self, enable_backup_copy: bool = True, backup_copy_rpo: int = None
+    ) -> None:
         """Method to edit the snapshot options of the plan
 
         Args:
@@ -3905,21 +4269,26 @@ class Plan(object):
             plan.edit_snapshot_options(enable_backup_copy=True)
             plan.edit_snapshot_options(backup_copy_rpo=60)
         """
-        request_json = {
-            "snapshotOptions": {
-                "enableBackupCopy": enable_backup_copy
-            }
-        }
+        request_json = {"snapshotOptions": {"enableBackupCopy": enable_backup_copy}}
 
         if backup_copy_rpo:
             request_json["snapshotOptions"]["backupCopyRPOMins"] = backup_copy_rpo
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_PLAN, request_json)
+        flag, response = self._cvpysdk_object.make_request("PUT", self._V4_PLAN, request_json)
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to edit snapshot settings for the plan : [{self.plan_name}]')
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to edit snapshot settings for the plan : [{self.plan_name}]",
+        )
 
-
-    def add_storage_copy(self, copy_name: str, storage_pool: str, retention: int=30, extended_retention: tuple=None) -> dict:
+    def add_storage_copy(
+        self,
+        copy_name: str,
+        storage_pool: str,
+        retention: int = 30,
+        extended_retention: tuple = None,
+    ) -> dict:
         """Add a storage copy as backup destination to this plan
         Args:
             copy_name    (str): name of the copy that is being added
@@ -3941,24 +4310,19 @@ class Plan(object):
         """
         if isinstance(copy_name, str) and isinstance(storage_pool, str):
             if not self.storage_policy.has_copy(copy_name):
-                self.storage_policy.create_secondary_copy(
-                    copy_name,
-                    global_policy=storage_pool
-                )
+                self.storage_policy.create_secondary_copy(copy_name, global_policy=storage_pool)
                 self.storage_policy.get_copy(copy_name).copy_retention = (retention, 0, 0)
                 if extended_retention:
                     self.storage_policy.get_copy(
-                        copy_name).extended_retention_rules = extended_retention
+                        copy_name
+                    ).extended_retention_rules = extended_retention
                 self.refresh()
                 return self.storage_copies
             else:
                 err_msg = f'Storage Policy copy "{copy_name}" already exists.'
-                raise SDKException('Storage', '102', err_msg)
+                raise SDKException("Storage", "102", err_msg)
         else:
-            raise SDKException(
-                'Plan', '102', 'Copy name and storage pool name must be a string.'
-            )
-
+            raise SDKException("Plan", "102", "Copy name and storage pool name must be a string.")
 
     def disable_full_schedule(self) -> None:
         """Disable the full backup schedule of the plan
@@ -3971,14 +4335,18 @@ class Plan(object):
             plan.disable_full_schedule()
         """
         try:
-            self.schedule_policies['data'].delete_schedule(schedule_id=list(filter(
-                lambda st: st['subTask']['flags'] == 4194304, self.schedule_policies['data']._subtasks
-            ))[0]['subTask']['subTaskId'])
+            self.schedule_policies["data"].delete_schedule(
+                schedule_id=list(
+                    filter(
+                        lambda st: st["subTask"]["flags"] == 4194304,
+                        self.schedule_policies["data"]._subtasks,
+                    )
+                )[0]["subTask"]["subTaskId"]
+            )
         except IndexError:
-            raise IndexError('Full backup schedule not enabled')
+            raise IndexError("Full backup schedule not enabled")
 
-
-    def edit_association(self, entities: list, new_plan: str=None) -> None:
+    def edit_association(self, entities: list, new_plan: str = None) -> None:
         """Reassociates or dissociates the entities from this plan
         Args:
             entities (list): list containing entity objects whose plan association must be edited
@@ -4000,35 +4368,21 @@ class Plan(object):
             plan.edit_association(entities)
             plan.edit_association(entities, new_plan='new_plan_name')
         """
-        req_json = {
-            'plan': {
-                'planName': self.plan_name
-            },
-            'entities': entities
-        }
+        req_json = {"plan": {"planName": self.plan_name}, "entities": entities}
         if new_plan is not None:
             if self._commcell_object.plans.has_plan(new_plan):
-                req_json.update({
-                    'planOperationType': 'OVERWRITE',
-                    'newPlan': {
-                        'planName': new_plan
-                    }
-                })
-            else:
-                SDKException('Plan', '102', 'No plan exists with name: {0}'.format(
-                    new_plan)
+                req_json.update(
+                    {"planOperationType": "OVERWRITE", "newPlan": {"planName": new_plan}}
                 )
+            else:
+                SDKException("Plan", "102", f"No plan exists with name: {new_plan}")
         else:
-            req_json.update({
-                'planOperationType': 'DELETE'
-            })
-        req_url = self._services['ASSOCIATED_ENTITIES'] % (self._plan_id)
-        flag, response = self._cvpysdk_object.make_request(
-            'PUT', req_url, req_json
-        )
+            req_json.update({"planOperationType": "DELETE"})
+        req_url = self._services["ASSOCIATED_ENTITIES"] % (self._plan_id)
+        flag, response = self._cvpysdk_object.make_request("PUT", req_url, req_json)
 
         if flag:
-            if 'response' in response.json():
+            if "response" in response.json():
                 error_code = str(response.json()["response"][0]["errorCode"])
 
                 if error_code == "0":
@@ -4037,11 +4391,10 @@ class Plan(object):
             else:
                 error_message = str(response.json()["errorMessage"])
                 o_str = 'Failed to edit plan associated entities\nError: "{0}"'
-                raise SDKException('Plan', '102', o_str.format(error_message))
+                raise SDKException("Plan", "102", o_str.format(error_message))
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def run_plan_schedule(self, schedule_id: int, policy_id: int) -> None:
         """Method to run a schedule for all the subclients associated with this plan.
@@ -4056,38 +4409,39 @@ class Plan(object):
         Usage:
             plan.run_plan_schedule(schedule_id=123, policy_id=456)
         """
-        request_json = {
-            "scheduleId": int(schedule_id),
-            "policyId": int(policy_id)
-        }
-        flag, response = self._cvpysdk_object.make_request('POST', self._PLAN_RPO_RUN, request_json)
+        request_json = {"scheduleId": int(schedule_id), "policyId": int(policy_id)}
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._PLAN_RPO_RUN, request_json
+        )
 
-        self.__handle_response(flag, response, custom_error_message=f'Failed to run schedule for the plan: [{self.plan_name}]')
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to run schedule for the plan: [{self.plan_name}]",
+        )
 
     def _update_plan_props(self, props: dict) -> tuple:
         """Updates the properties of the plan
 
-            Args:
-                props (dict): dictionary containing the properties to be updated
-                                    {
-                                        'planName': 'NewName'
-                                    }
+        Args:
+            props (dict): dictionary containing the properties to be updated
+                                {
+                                    'planName': 'NewName'
+                                }
 
-            Raises:
-                SDKException:
-                    if there is failure in updating the plan
+        Raises:
+            SDKException:
+                if there is failure in updating the plan
 
-            Returns:
-                tuple: A tuple containing the status of the update and the error code.
-                       If the update is successful, the tuple will contain (True, error_code).
-                       If the update fails, the tuple will contain (False, error_code, error_message).
+        Returns:
+            tuple: A tuple containing the status of the update and the error code.
+                   If the update is successful, the tuple will contain (True, error_code).
+                   If the update fails, the tuple will contain (False, error_code, error_message).
 
-            Usage:
-                plan._update_plan_props({'planName': 'NewName'})
+        Usage:
+            plan._update_plan_props({'planName': 'NewName'})
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._PLAN, props
-        )
+        flag, response = self._cvpysdk_object.make_request("PUT", self._PLAN, props)
         if flag:
             if response.json():
                 error_code = str(response.json()["errors"][0]["status"]["errorCode"])
@@ -4099,52 +4453,46 @@ class Plan(object):
                 else:
                     return (False, error_code, error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def _get_associated_entities(self) -> dict:
         """Gets all the backup entities associated with the plan.
 
-            Returns:
-                dict: dictionary containing list of entities that are
-                       associated with the plan.
+        Returns:
+            dict: dictionary containing list of entities that are
+                   associated with the plan.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-            Usage:
-                entities = plan._get_associated_entities()
+        Usage:
+            entities = plan._get_associated_entities()
         """
-        request_url = self._services['ASSOCIATED_ENTITIES'] % (self._plan_id)
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', request_url
-        )
+        request_url = self._services["ASSOCIATED_ENTITIES"] % (self._plan_id)
+        flag, response = self._cvpysdk_object.make_request("GET", request_url)
 
         if flag:
-            if response.json() and 'entities' in response.json():
-                self._associated_entities = response.json()['entities']
+            if response.json() and "entities" in response.json():
+                self._associated_entities = response.json()["entities"]
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     @property
     def plan_id(self) -> str:
         """Treats the plan id as a read-only attribute."""
         return self._plan_id
 
-
     @property
     def plan_name(self) -> str:
         """Treats the plan name as a read-only attribute."""
         return self._plan_name
-
 
     @plan_name.setter
     def plan_name(self, value: str) -> None:
@@ -4164,41 +4512,33 @@ class Plan(object):
         """
         # use v4 API for server plans
         if self.subtype == PlanSubTypes.SERVER.value:
-            req_json = {
-                "newName": value
-            }
+            req_json = {"newName": value}
 
-            flag, response = self._cvpysdk_object.make_request('PUT', self._V4_PLAN, req_json)
+            flag, response = self._cvpysdk_object.make_request("PUT", self._V4_PLAN, req_json)
 
-            self.__handle_response(flag, response, custom_error_message=f'Failed to update the plan name: [{self._plan_name}]')
+            self.__handle_response(
+                flag,
+                response,
+                custom_error_message=f"Failed to update the plan name: [{self._plan_name}]",
+            )
             return
 
         if isinstance(value, str):
-            req_json = {
-                'summary': {
-                    'plan': {
-                        'planName': value
-                    }
-                }
-            }
+            req_json = {"summary": {"plan": {"planName": value}}}
             resp = self._update_plan_props(req_json)
 
             if resp[0]:
                 return
             else:
                 o_str = 'Failed to update the plan name\nError: "{0}"'
-                raise SDKException('Plan', '102', o_str.format(resp[2]))
+                raise SDKException("Plan", "102", o_str.format(resp[2]))
         else:
-            raise SDKException(
-                'Plan', '102', 'Plan name must be a string value'
-            )
-
+            raise SDKException("Plan", "102", "Plan name must be a string value")
 
     @property
     def sla_in_minutes(self) -> int:
         """Treats the plan SLA/RPO as a read-only attribute."""
         return self._sla_in_minutes
-
 
     @sla_in_minutes.setter
     def sla_in_minutes(self, value: int) -> None:
@@ -4217,102 +4557,82 @@ class Plan(object):
             plan.sla_in_minutes = 60
         """
         if isinstance(value, int):
-            req_json = {
-                'summary': {
-                    'slaInMinutes': value
-                }
-            }
+            req_json = {"summary": {"slaInMinutes": value}}
             resp = self._update_plan_props(req_json)
 
             if resp[0]:
                 return
             else:
                 o_str = 'Failed to update the plan SLA\nError: "{0}"'
-                raise SDKException('Plan', '102', o_str.format(resp[2]))
+                raise SDKException("Plan", "102", o_str.format(resp[2]))
         else:
-            raise SDKException(
-                'Plan', '102', 'Plan SLA must be an int value'
-            )
-
+            raise SDKException("Plan", "102", "Plan SLA must be an int value")
 
     @property
     def operation_window(self) -> dict:
         """Treats the plan incremental operation window as a read-only attribute"""
         return self._operation_window
 
-
     @operation_window.setter
     def operation_window(self, value: list) -> None:
         """Modifies the incremental operation window of the plan
 
-            Args:
-                value (list): list of time slots for setting the backup window
+        Args:
+            value (list): list of time slots for setting the backup window
 
-                value (None): set value to None to clear the operation window
+            value (None): set value to None to clear the operation window
 
-            Raises:
-                SDKException:
-                    if the input is incorrect
+        Raises:
+            SDKException:
+                if the input is incorrect
 
-                    if the operation window configuration fails
+                if the operation window configuration fails
 
-            Usage:
-                plan.operation_window = [{'fromTime': '00:00', 'toTime': '23:59', 'days': ['Monday', 'Tuesday']}]
-                plan.operation_window = None
+        Usage:
+            plan.operation_window = [{'fromTime': '00:00', 'toTime': '23:59', 'days': ['Monday', 'Tuesday']}]
+            plan.operation_window = None
         """
         if isinstance(value, list):
-            req_json = {
-                "operationWindow": {
-                    "operations": [
-                        2,
-                        4
-                    ],
-                    "dayTime": value
-                }
-            }
+            req_json = {"operationWindow": {"operations": [2, 4], "dayTime": value}}
             resp = self._update_plan_props(req_json)
             if resp[0]:
                 self.refresh()
                 return
             else:
                 o_str = 'Failed to update the operation window\nError: "{0}"'
-                raise SDKException('Plan', '102', o_str.format(resp[2]))
+                raise SDKException("Plan", "102", o_str.format(resp[2]))
         elif value is None:
             self._commcell_object.operation_window.delete_operation_window(
-                rule_id=self._operation_window['ruleId']
+                rule_id=self._operation_window["ruleId"]
             )
             self.refresh()
             return
         else:
-            raise SDKException(
-                'Plan', '102', 'Plan operation window must be a list value or None'
-            )
-
+            raise SDKException("Plan", "102", "Plan operation window must be a list value or None")
 
     @property
     def full_operation_window(self) -> dict:
         """Treats the plan full backup operation window as a read-only attribute"""
         return self._full_operation_window
 
-
     @full_operation_window.setter
     def full_operation_window(self, value: list) -> None:
         """Modifies the full backup operation window of the plan
 
-            Args:
-                value (list): list of time slots for setting the backup window
+        Args:
+            value (list): list of time slots for setting the backup window
 
-                value (None): set value to None to clear the operation window
+            value (None): set value to None to clear the operation window
 
-            Raises:
-                SDKException:
-                    if the input is incorrect
+        Raises:
+            SDKException:
+                if the input is incorrect
 
-                    if the operation window configuration fails
+                if the operation window configuration fails
 
-            Usage:
-                plan.full_operation_window = [{'fromTime': '00:00', 'toTime': '23:59', 'days': ['Monday', 'Tuesday']}]
-                plan.full_operation_window = None
+        Usage:
+            plan.full_operation_window = [{'fromTime': '00:00', 'toTime': '23:59', 'days': ['Monday', 'Tuesday']}]
+            plan.full_operation_window = None
         """
         if isinstance(value, list):
             req_json = {
@@ -4320,7 +4640,7 @@ class Plan(object):
                     "operations": [
                         1,
                     ],
-                    "dayTime": value
+                    "dayTime": value,
                 }
             }
             resp = self._update_plan_props(req_json)
@@ -4329,36 +4649,32 @@ class Plan(object):
                 return
             else:
                 o_str = 'Failed to update the full operation window\nError: "{0}"'
-                raise SDKException('Plan', '102', o_str.format(resp[2]))
+                raise SDKException("Plan", "102", o_str.format(resp[2]))
         elif value is None:
             self._commcell_object.operation_window.delete_operation_window(
-                rule_id=self._full_operation_window['ruleId']
+                rule_id=self._full_operation_window["ruleId"]
             )
             self.refresh()
             return
         else:
             raise SDKException(
-                'Plan', '102', 'Plan full operation window must be a list value or None'
+                "Plan", "102", "Plan full operation window must be a list value or None"
             )
-
 
     @property
     def plan_type(self) -> int:
         """Treats the plan type as a read-only attribute."""
         return self._plan_type
 
-
     @property
     def subtype(self) -> int:
         """Treats the plan subtype as a read-only attribute."""
         return self._subtype
 
-
     @property
     def override_entities(self) -> dict:
         """Treats the plan override_entities as a read-only attribute."""
         return self._override_entities
-
 
     @override_entities.setter
     def override_entities(self, value: dict) -> None:
@@ -4384,22 +4700,19 @@ class Plan(object):
             "inheritance": {
                 "isSealed": False,
                 "enforcedEntitiesOperationType": 1,
-                "privateEntitiesOperationType": 1
+                "privateEntitiesOperationType": 1,
             }
         }
         if isinstance(value, dict):
-            req_json['inheritance'].update(value)
+            req_json["inheritance"].update(value)
             resp = self._update_plan_props(req_json)
             if resp[0]:
                 return
             else:
                 o_str = 'Failed to update the plan override restrictions\nError: "{0}"'
-                raise SDKException('Plan', '102', o_str.format(resp[2]))
+                raise SDKException("Plan", "102", o_str.format(resp[2]))
         else:
-            raise SDKException(
-                'Plan', '102', 'Override restrictions must be defined in a dict'
-            )
-
+            raise SDKException("Plan", "102", "Override restrictions must be defined in a dict")
 
     def __set_storage_policy(self) -> None:
         """Method to set the storage policy of the plan
@@ -4412,25 +4725,33 @@ class Plan(object):
             This method is called internally and not intended for direct use.
         """
         self._commcell_object.storage_policies.refresh()
-        storage_policy_name = self._plan_properties.get('storage', {}).get('storagePolicy', {}).get('storagePolicyName')
-        if storage_policy_name and self._commcell_object.storage_policies.has_policy(storage_policy_name):
-            self._child_policies['storagePolicy'] = self._commcell_object.storage_policies.get(storage_policy_name)
+        storage_policy_name = (
+            self._plan_properties.get("storage", {})
+            .get("storagePolicy", {})
+            .get("storagePolicyName")
+        )
+        if storage_policy_name and self._commcell_object.storage_policies.has_policy(
+            storage_policy_name
+        ):
+            self._child_policies["storagePolicy"] = self._commcell_object.storage_policies.get(
+                storage_policy_name
+            )
         else:
-            raise SDKException('Plan', '102', f'Failed to fetch storage policy: {storage_policy_name}')
-
+            raise SDKException(
+                "Plan", "102", f"Failed to fetch storage policy: {storage_policy_name}"
+            )
 
     @property
-    def storage_policy(self) -> 'StoragePolicy':
+    def storage_policy(self) -> "StoragePolicy":
         """Treats the plan storage policy as a read-only attribute
 
         Returns:
             object: The storage policy object.
         """
-        if not self._child_policies.get('storagePolicy'):
+        if not self._child_policies.get("storagePolicy"):
             self.__set_storage_policy()
 
-        return self._child_policies.get('storagePolicy')
-
+        return self._child_policies.get("storagePolicy")
 
     @property
     def all_copies(self) -> list:
@@ -4442,12 +4763,10 @@ class Plan(object):
         """
         return self._all_copies
 
-
     @property
     def storage_copies(self) -> list:
         """Treats the plan storage policy as a read-only attribute"""
         return self._storage_copies
-
 
     def __set_schedule_policies(self) -> None:
         """Sets the schedule policies for the plan
@@ -4456,19 +4775,30 @@ class Plan(object):
             This method is called internally and not intended for direct use.
         """
         self._commcell_object.schedule_policies.refresh()
-        data_schedule_policy_exists = self._plan_properties.get('schedule', {}).get('task', {}).get('taskName')
-        log_schedule_policy_exists = self._plan_properties.get('database', {}).get('scheduleLog', {}).get('task', {}).get('taskName')
-        snap_schedule_policy_exists = self._plan_properties.get('snapInfo', {}).get('snapTask', {}).get('task', {}).get('taskName')
+        data_schedule_policy_exists = (
+            self._plan_properties.get("schedule", {}).get("task", {}).get("taskName")
+        )
+        log_schedule_policy_exists = (
+            self._plan_properties.get("database", {})
+            .get("scheduleLog", {})
+            .get("task", {})
+            .get("taskName")
+        )
+        snap_schedule_policy_exists = (
+            self._plan_properties.get("snapInfo", {})
+            .get("snapTask", {})
+            .get("task", {})
+            .get("taskName")
+        )
 
         if data_schedule_policy_exists:
-            self._child_policies['schedulePolicy']['data'] = self.data_schedule_policy
+            self._child_policies["schedulePolicy"]["data"] = self.data_schedule_policy
 
         if log_schedule_policy_exists:
-            self._child_policies['schedulePolicy']['log'] = self.log_schedule_policy
+            self._child_policies["schedulePolicy"]["log"] = self.log_schedule_policy
 
         if snap_schedule_policy_exists:
-            self._child_policies['schedulePolicy']['snap'] = self.snap_schedule_policy
-
+            self._child_policies["schedulePolicy"]["snap"] = self.snap_schedule_policy
 
     @property
     def schedule_policies(self) -> dict:
@@ -4477,13 +4807,12 @@ class Plan(object):
         Returns:
             dict: A dictionary containing the schedule policies.
         """
-        if not self._child_policies.get('schedulePolicy'):
+        if not self._child_policies.get("schedulePolicy"):
             self.__set_schedule_policies()
 
-        return self._child_policies.get('schedulePolicy')
+        return self._child_policies.get("schedulePolicy")
 
-
-    def __get_schedule_policy(self, policy_type: str) -> 'SchedulePolicy':
+    def __get_schedule_policy(self, policy_type: str) -> "SchedulePolicy":
         """
         Returns the schedule policy object of the given policy type
 
@@ -4503,74 +4832,79 @@ class Plan(object):
         Usage:
             data_policy = plan.__get_schedule_policy('data')
         """
-        policy_name = ''
+        policy_name = ""
         policy_type = policy_type.lower()
 
-        if policy_type == 'data':
-            policy_name = self._plan_properties.get('schedule', {}).get('task', {}).get('taskName', '')
-        elif policy_type == 'log':
-            policy_name = self._plan_properties.get('database', {}).get('scheduleLog', {}).get('task', {}).get('taskName', '')
-        elif policy_type == 'snap':
-            policy_name = self._plan_properties.get('snapInfo', {}).get('snapTask', {}).get('task', {}).get('taskName', '')
+        if policy_type == "data":
+            policy_name = (
+                self._plan_properties.get("schedule", {}).get("task", {}).get("taskName", "")
+            )
+        elif policy_type == "log":
+            policy_name = (
+                self._plan_properties.get("database", {})
+                .get("scheduleLog", {})
+                .get("task", {})
+                .get("taskName", "")
+            )
+        elif policy_type == "snap":
+            policy_name = (
+                self._plan_properties.get("snapInfo", {})
+                .get("snapTask", {})
+                .get("task", {})
+                .get("taskName", "")
+            )
         else:
-            raise SDKException('Plan', '102', 'Invalid schedule policy type')
+            raise SDKException("Plan", "102", "Invalid schedule policy type")
 
         schedule_policies = self._commcell_object.schedule_policies
 
         if not schedule_policies.has_policy(policy_name):
-            raise SDKException('Plan', '102', 'Failed to fetch schedule policies')
+            raise SDKException("Plan", "102", "Failed to fetch schedule policies")
 
         return schedule_policies.get(policy_name)
 
-
     @property
-    def data_schedule_policy(self) -> 'SchedulePolicy':
+    def data_schedule_policy(self) -> "SchedulePolicy":
         """
-            Treats the plan data scheduler policy as read-only attribute
+        Treats the plan data scheduler policy as read-only attribute
 
-            Returns:
-                object: data schedule policy object
+        Returns:
+            object: data schedule policy object
         """
         if not self._data_schedule_policy:
-            self._data_schedule_policy = self.__get_schedule_policy('data')
+            self._data_schedule_policy = self.__get_schedule_policy("data")
         return self._data_schedule_policy
 
-
     @property
-    def log_schedule_policy(self) -> 'SchedulePolicy':
+    def log_schedule_policy(self) -> "SchedulePolicy":
         """
-            Treats the plan log schedule policy as read-only attribute
+        Treats the plan log schedule policy as read-only attribute
 
-            Returns:
-                object: log schedule policy object
+        Returns:
+            object: log schedule policy object
         """
         if not self._log_schedule_policy:
-            self._log_schedule_policy = self.__get_schedule_policy('log')
+            self._log_schedule_policy = self.__get_schedule_policy("log")
         return self._log_schedule_policy
 
-
     @property
-    def snap_schedule_policy(self) -> 'SchedulePolicy':
+    def snap_schedule_policy(self) -> "SchedulePolicy":
         """
-            Treats the plan snap schedule policy as read-only attribute
+        Treats the plan snap schedule policy as read-only attribute
 
-            Returns:
-                object: snap schedule policy object
+        Returns:
+            object: snap schedule policy object
         """
         if not self._snap_schedule_policy:
-            self._snap_schedule_policy = self.__get_schedule_policy('snap')
+            self._snap_schedule_policy = self.__get_schedule_policy("snap")
         return self._snap_schedule_policy
-
 
     @property
     def addons(self) -> list:
         """Treats the plan addons as read-only attribute"""
-        for addon in self._plan_properties.get('summary', {}).get('addons', []):
-            self._addons.append(
-                addon
-            )
+        for addon in self._plan_properties.get("summary", {}).get("addons", []):
+            self._addons.append(addon)
         return self._addons
-
 
     def __set_subclient_policy_ids(self) -> None:
         """Sets the subclient policy ids for the plan
@@ -4578,14 +4912,15 @@ class Plan(object):
         Usage:
             This method is called internally and not intended for direct use.
         """
-        backup_content = self._plan_properties.get('laptop', {}).get('content', {}).get('backupContent', [])
+        backup_content = (
+            self._plan_properties.get("laptop", {}).get("content", {}).get("backupContent", [])
+        )
 
-        self._child_policies['subclientPolicyIds'] = [
-            ida['subClientPolicy']['backupSetEntity']['backupsetId']
+        self._child_policies["subclientPolicyIds"] = [
+            ida["subClientPolicy"]["backupSetEntity"]["backupsetId"]
             for ida in backup_content
-            if ida.get('subClientPolicy', {}).get('backupSetEntity', {}).get('backupsetId')
+            if ida.get("subClientPolicy", {}).get("backupSetEntity", {}).get("backupsetId")
         ]
-
 
     @property
     def subclient_policy(self) -> list:
@@ -4594,36 +4929,38 @@ class Plan(object):
         Returns:
             list: A list of subclient policy IDs.
         """
-        if not self._child_policies.get('subclientPolicyIds'):
+        if not self._child_policies.get("subclientPolicyIds"):
             self.__set_subclient_policy_ids()
 
-        return self._child_policies.get('subclientPolicyIds')
-
+        return self._child_policies.get("subclientPolicyIds")
 
     @property
     def associated_entities(self) -> list:
         """getter for the backup entities associated with the plan"""
         return self._associated_entities
 
-
     @property
-    def parent_plan(self) -> 'Plan':
+    def parent_plan(self) -> "Plan":
         """getter for the parent plan of a derived plan"""
         return self._commcell_object.plans.get(self._parent_plan_name)
-
 
     @property
     def security_associations(self) -> dict:
         """getter for the plan's security associations
-            Eg:
-                {
-                    'sample_user_group_name': 'role_name'
-                }
+        Eg:
+            {
+                'sample_user_group_name': 'role_name'
+            }
         """
         return self._security_associations
 
-
-    def update_security_associations(self, associations_list: list, is_user: bool = True, request_type: str = None, external_group: bool = False) -> None:
+    def update_security_associations(
+        self,
+        associations_list: list,
+        is_user: bool = True,
+        request_type: str = None,
+        external_group: bool = False,
+    ) -> None:
         """
         Adds the security association on the plan object
 
@@ -4640,7 +4977,7 @@ class Plan(object):
                             'role_name': role2
                         }
                     ]
- 
+
             is_user (bool): True or False. set is_user = False, If associations_list made up of user groups
             request_type (str): eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
             external_group (bool): True or False, set external_group = True. If Security associations is being done on External User Groups
@@ -4664,34 +5001,34 @@ class Plan(object):
             plan.update_security_associations(associations_list, is_user=False, request_type='UPDATE', external_group=True)
         """
         if not isinstance(associations_list, list):
-            raise SDKException('Plan', '102')
+            raise SDKException("Plan", "102")
 
-        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list,
-                                        is_user, request_type, external_group)
-
+        SecurityAssociation(self._commcell_object, self)._add_security_association(
+            associations_list, is_user, request_type, external_group
+        )
 
     @property
     def content_indexing_props(self) -> dict:
         """returns the DC plan related CI properties from Plan"""
         return self._dc_plan_props
 
-
     @property
     def content_indexing(self) -> bool:
         """Returns the Content Indexing status of O365 plan"""
         try:
-            ci_status = (self.properties.get("office365Info",{})
-                         .get("o365Exchange",{})
-                         .get("mbArchiving", {})
-                         .get("detail", {})
-                         .get("emailPolicy", {})
-                         .get("archivePolicy", {})
-                         .get("contentIndexProps", {})
-                         .get("enableContentIndex", {}))
+            ci_status = (
+                self.properties.get("office365Info", {})
+                .get("o365Exchange", {})
+                .get("mbArchiving", {})
+                .get("detail", {})
+                .get("emailPolicy", {})
+                .get("archivePolicy", {})
+                .get("contentIndexProps", {})
+                .get("enableContentIndex", {})
+            )
         except:
-            ci_status= None
+            ci_status = None
         return ci_status
-
 
     @content_indexing.setter
     def content_indexing(self, value: bool) -> None:
@@ -4706,18 +5043,15 @@ class Plan(object):
         """
         self._enable_content_indexing_o365_plan(value)
 
-
     @property
     def properties(self) -> dict:
         """Returns the configured properties for the Plan"""
         return self._plan_properties
 
-
     @property
     def region_id(self) -> str:
         """Returns the Backup destination region id"""
         return self._region_id
-
 
     @property
     def company(self) -> str:
@@ -4729,7 +5063,6 @@ class Plan(object):
         """
         return self._provider_domain_name
 
-
     @property
     def resources(self) -> list:
         """
@@ -4739,7 +5072,6 @@ class Plan(object):
             list: plan's resources
         """
         return self._resources
-
 
     def refresh(self) -> None:
         """Refresh the properties of the Plan."""
@@ -4754,10 +5086,10 @@ class Plan(object):
         self._log_schedule_policy = None
         self._snap_schedule_policy = None
         self._child_policies = {
-            'storagePolicy': None,
-            'schedulePolicy': {},
-            'subclientPolicyIds': []
-        } # reset to constructor state
+            "storagePolicy": None,
+            "schedulePolicy": {},
+            "subclientPolicyIds": [],
+        }  # reset to constructor state
 
     def associate_user(self, userlist: List[str], send_invite: bool = True) -> None:
         """Associates the users to the plan.
@@ -4782,26 +5114,20 @@ class Plan(object):
                 temp = self._commcell_object.users.get(user)
 
                 temp_dict = {
-                    'sendInvite': send_invite,
-                    'user': {
-                        'userName': temp.user_name,
-                        'userId': int(temp.user_id)
-                    }
+                    "sendInvite": send_invite,
+                    "user": {"userName": temp.user_name, "userId": int(temp.user_id)},
                 }
 
                 users_list.append(temp_dict)
 
-        request_json = {
-            "userOperationType": 1,
-            "users": users_list
-        }
+        request_json = {"userOperationType": 1, "users": users_list}
 
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._ADD_USERS_TO_PLAN, request_json
+            "PUT", self._ADD_USERS_TO_PLAN, request_json
         )
 
         if flag:
-            if response.json() and 'errors' in response.json():
+            if response.json() and "errors" in response.json():
                 for error in response.json()["errors"]:
                     error_code = error["status"]["errorCode"]
 
@@ -4809,15 +5135,16 @@ class Plan(object):
                         pass
                     else:
                         o_str = 'Failed to add users with error code: "{0}"'
-                        raise SDKException('Plan', '102', o_str.format(error_code))
+                        raise SDKException("Plan", "102", o_str.format(error_code))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def share(self, user_or_group_name: str, role_name: str, is_user: bool = True, ops_type: int = 1) -> None:
+    def share(
+        self, user_or_group_name: str, role_name: str, is_user: bool = True, ops_type: int = 1
+    ) -> None:
         """Shares plan with given user or group by associating with given role
 
         Args:
@@ -4838,85 +5165,108 @@ class Plan(object):
             plan.share('group1', 'Role2', is_user=False, ops_type=3)
         """
         if not isinstance(user_or_group_name, str) or not isinstance(role_name, str):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
         if ops_type not in [1, 3]:
-            raise SDKException('Plan', '102', "Sharing operation type provided is not supported")
+            raise SDKException("Plan", "102", "Sharing operation type provided is not supported")
         if is_user:
             if not self._commcell_object.users.has_user(user_or_group_name):
-                raise SDKException('Plan', '102', "User doesn't exists in the commcell")
+                raise SDKException("Plan", "102", "User doesn't exists in the commcell")
         if not self._commcell_object.roles.has_role(role_name=role_name):
-            raise SDKException('Plan', '102', "Role doesn't exists in the commcell")
+            raise SDKException("Plan", "102", "Role doesn't exists in the commcell")
         request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
         association_response = None
         if ops_type == 1 and len(self.security_associations) > 1:
             association_request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
-            del association_request_json['securityAssociations']
-            association_request_json['entityAssociated']['entity'][0]['entityId'] = int(self._plan_id)
+            del association_request_json["securityAssociations"]
+            association_request_json["entityAssociated"]["entity"][0]["entityId"] = int(
+                self._plan_id
+            )
             flag, response = self._cvpysdk_object.make_request(
-                'GET', self._API_SECURITY_ENTITY %
-                (self._plan_entity_type, int(
-                    self._plan_id)), association_request_json)
+                "GET",
+                self._API_SECURITY_ENTITY % (self._plan_entity_type, int(self._plan_id)),
+                association_request_json,
+            )
             if flag:
-                if response.json() and 'securityAssociations' in response.json():
-                    association_response = response.json(
-                    )['securityAssociations'][0]['securityAssociations']['associations']
+                if response.json() and "securityAssociations" in response.json():
+                    association_response = response.json()["securityAssociations"][0][
+                        "securityAssociations"
+                    ]["associations"]
                 else:
-                    raise SDKException('Plan', '102', 'Failed to get existing security associations')
+                    raise SDKException(
+                        "Plan", "102", "Failed to get existing security associations"
+                    )
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
 
         external_user = False
-        if '\\' in user_or_group_name:
+        if "\\" in user_or_group_name:
             external_user = True
         if is_user:
             user_obj = self._commcell_object.users.get(user_or_group_name)
             user_id = user_obj.user_id
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 13
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["userId"] = (
+                int(user_id)
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["_type_"] = (
+                13
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "userName"
+            ] = user_or_group_name
         elif external_user:
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['groupId'] = 0
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 62
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
-                'externalGroupName'] = user_or_group_name
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "groupId"
+            ] = 0
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["_type_"] = (
+                62
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "externalGroupName"
+            ] = user_or_group_name
         else:
             grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
             grp_id = grp_obj.user_group_id
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupId'] = int(grp_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 15
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
-                'userGroupName'] = user_or_group_name
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "userGroupId"
+            ] = int(grp_id)
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["_type_"] = (
+                15
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "userGroupName"
+            ] = user_or_group_name
 
-        request_json['entityAssociated']['entity'][0]['entityId'] = int(self._plan_id)
-        request_json['securityAssociations']['associationsOperationType'] = ops_type
+        request_json["entityAssociated"]["entity"][0]["entityId"] = int(self._plan_id)
+        request_json["securityAssociations"]["associationsOperationType"] = ops_type
         role_obj = self._commcell_object.roles.get(role_name)
-        request_json['securityAssociations']['associations'][0]['properties']['role']['roleId'] = role_obj.role_id
-        request_json['securityAssociations']['associations'][0]['properties']['role']['roleName'] = role_obj.role_name
+        request_json["securityAssociations"]["associations"][0]["properties"]["role"]["roleId"] = (
+            role_obj.role_id
+        )
+        request_json["securityAssociations"]["associations"][0]["properties"]["role"][
+            "roleName"
+        ] = role_obj.role_name
 
         # Associate existing associations to the request
         if ops_type == 1 and len(self.security_associations) > 1:
-            request_json['securityAssociations']['associations'].extend(association_response)
+            request_json["securityAssociations"]["associations"].extend(association_response)
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._API_SECURITY, request_json
+            "POST", self._API_SECURITY, request_json
         )
         if flag:
-            if response.json() and 'response' in response.json():
-                response_json = response.json()['response'][0]
-                error_code = response_json['errorCode']
+            if response.json() and "response" in response.json():
+                response_json = response.json()["response"][0]
+                error_code = response_json["errorCode"]
                 if error_code != 0:
-                    error_message = response_json['errorString']
-                    raise SDKException(
-                        'Plan',
-                        '102', error_message)
+                    error_message = response_json["errorString"]
+                    raise SDKException("Plan", "102", error_message)
                 self.refresh()
             else:
-                raise SDKException('Plan', '105')
+                raise SDKException("Plan", "105")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def schedule(self, schedule_name: str, pattern_json: Dict, ops_type: int = 2) -> None:
         """Creates or modifies the schedule associated with plan
@@ -4936,23 +5286,27 @@ class Plan(object):
             plan.schedule('MySchedule', {'frequency': 'daily', 'startTime': '08:00'})
         """
         if not isinstance(schedule_name, str) or not isinstance(pattern_json, dict):
-            raise SDKException('Plan', '101')
+            raise SDKException("Plan", "101")
         if self.plan_type not in [PlanTypes.DC.value]:
-            raise SDKException('Plan', '102', "Add/Modify Schedule is supported only for DC Plan via CvpySDK")
+            raise SDKException(
+                "Plan", "102", "Add/Modify Schedule is supported only for DC Plan via CvpySDK"
+            )
         if ops_type not in [2]:
-            raise SDKException('Plan', '102', "Schedule operation type provided is not supported")
+            raise SDKException("Plan", "102", "Schedule operation type provided is not supported")
         request_json = copy.deepcopy(PlanConstants.PLAN_SCHEDULE_REQUEST_JSON[self.plan_type])
-        request_json['summary']['plan']['planId'] = int(self.plan_id)
-        request_json['schedule']['associations'][0]['entityId'] = int(self.plan_id)
-        request_json['schedule']['task']['taskName'] = f"Cvpysdk created Schedule policy for plan - {self.plan_name}"
-        request_json['schedule']['subTasks'][0]['subTask'][
-            'subTaskName'] = schedule_name
-        request_json['schedule']['subTasks'][0]['pattern'] = pattern_json
-        request_json['schedule']['subTasks'][0]['options']['adminOpts']['contentIndexingOption']['operationType'] = ops_type
-        if self._dc_plan_props['targetApps'][0] == TargetApps.FS.value:
-            request_json['schedule']['subTasks'][0]['subTask']['operationType'] = 5022
+        request_json["summary"]["plan"]["planId"] = int(self.plan_id)
+        request_json["schedule"]["associations"][0]["entityId"] = int(self.plan_id)
+        request_json["schedule"]["task"]["taskName"] = (
+            f"Cvpysdk created Schedule policy for plan - {self.plan_name}"
+        )
+        request_json["schedule"]["subTasks"][0]["subTask"]["subTaskName"] = schedule_name
+        request_json["schedule"]["subTasks"][0]["pattern"] = pattern_json
+        request_json["schedule"]["subTasks"][0]["options"]["adminOpts"]["contentIndexingOption"][
+            "operationType"
+        ] = ops_type
+        if self._dc_plan_props["targetApps"][0] == TargetApps.FS.value:
+            request_json["schedule"]["subTasks"][0]["subTask"]["operationType"] = 5022
         self._update_plan_props(request_json)
-
 
     def edit_plan(self, **kwargs: Dict) -> None:
         """Edit plan options
@@ -4982,62 +5336,82 @@ class Plan(object):
             plan.edit_plan(enable_ocr=True, ocr_language=3, include_docs='pdf,docx')
         """
         if self.plan_type != PlanTypes.DC.value:
-            raise SDKException('Plan', '102', "Function Not supported for this plan type")
+            raise SDKException("Plan", "102", "Function Not supported for this plan type")
         extraction_policy_list = []
         request_json = None
         if self.plan_type == PlanTypes.DC.value:
             request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
-            request_json['summary']['plan']['planId'] = int(self.plan_id)
-            if TargetApps.SDG.value in self.content_indexing_props['targetApps']:
-                request_json['eePolicyInfo']['eePolicy']['detail']['eePolicy'] = self.content_indexing_props['eePolicy']
-                request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy'] = self.content_indexing_props['ciPolicy']
+            request_json["summary"]["plan"]["planId"] = int(self.plan_id)
+            if TargetApps.SDG.value in self.content_indexing_props["targetApps"]:
+                request_json["eePolicyInfo"]["eePolicy"]["detail"]["eePolicy"] = (
+                    self.content_indexing_props["eePolicy"]
+                )
+                request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"] = (
+                    self.content_indexing_props["ciPolicy"]
+                )
                 activate_obj = self._commcell_object.activate
-                if 'content_analyzer' in kwargs:
+                if "content_analyzer" in kwargs:
                     ca_list = []
-                    for ca in kwargs.get('content_analyzer', []):
+                    for ca in kwargs.get("content_analyzer", []):
                         ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
-                        ca_list.append({
-                            'clientId': ca_client_id
-                        })
-                    request_json['eDiscoveryInfo'] = {
-                        'contentAnalyzerClient': ca_list}
-                if 'entity_list' in kwargs or 'classifier_list' in kwargs:
+                        ca_list.append({"clientId": ca_client_id})
+                    request_json["eDiscoveryInfo"] = {"contentAnalyzerClient": ca_list}
+                if "entity_list" in kwargs or "classifier_list" in kwargs:
                     entity_mgr_obj = activate_obj.entity_manager()
                     # classifier is also an activate entity with type alone different so
                     # append this to entity list itself
                     entity_list = []
-                    for entity in kwargs.get('entity_list', []):
+                    for entity in kwargs.get("entity_list", []):
                         entity_list.append(entity)
-                    for entity in kwargs.get('classifier_list', []):
+                    for entity in kwargs.get("classifier_list", []):
                         entity_list.append(entity)
                     for entity in entity_list:
                         entity_obj = entity_mgr_obj.get(entity)
                         extraction_policy_list.append(entity_obj.container_details)
-                    request_json['eePolicyInfo']['eePolicy']['detail']['eePolicy']['extractionPolicy']['extractionPolicyList'] = extraction_policy_list
+                    request_json["eePolicyInfo"]["eePolicy"]["detail"]["eePolicy"][
+                        "extractionPolicy"
+                    ]["extractionPolicyList"] = extraction_policy_list
 
-                if 'enable_ocr' in kwargs:
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['enableImageExtraction'] = kwargs.get(
-                        'enable_ocr', False)
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['ocrLanguages'] = [
-                        kwargs.get('ocr_language', 1)]
-                if 'include_docs' in kwargs:
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters']['includeDocTypes'] = kwargs.get(
-                        'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
-                if 'min_doc_size' in kwargs:
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters']['minDocSize'] = kwargs.get(
-                        'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
-                if 'max_doc_size' in kwargs:
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-                        'maxDocSize'] = kwargs.get('max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
-                if 'exclude_path' in kwargs:
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-                        'excludePaths'] = kwargs.get('exclude_path', PlanConstants.DEFAULT_EXCLUDE_LIST)
-                if 'index_content' in kwargs:
-                    request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
-                        'index_content', PlanConstants.INDEXING_ONLY_METADATA)
-            elif TargetApps.FSO.value in self.content_indexing_props['targetApps']:
+                if "enable_ocr" in kwargs:
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"][
+                        "enableImageExtraction"
+                    ] = kwargs.get("enable_ocr", False)
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"][
+                        "ocrLanguages"
+                    ] = [kwargs.get("ocr_language", 1)]
+                if "include_docs" in kwargs:
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"][
+                        "fileFilters"
+                    ]["includeDocTypes"] = kwargs.get(
+                        "include_docs", PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+                    )
+                if "min_doc_size" in kwargs:
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"][
+                        "fileFilters"
+                    ]["minDocSize"] = kwargs.get(
+                        "min_doc_size", PlanConstants.DEFAULT_MIN_DOC_SIZE
+                    )
+                if "max_doc_size" in kwargs:
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"][
+                        "fileFilters"
+                    ]["maxDocSize"] = kwargs.get(
+                        "max_doc_size", PlanConstants.DEFAULT_MAX_DOC_SIZE
+                    )
+                if "exclude_path" in kwargs:
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"][
+                        "fileFilters"
+                    ]["excludePaths"] = kwargs.get(
+                        "exclude_path", PlanConstants.DEFAULT_EXCLUDE_LIST
+                    )
+                if "index_content" in kwargs:
+                    request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["opType"] = (
+                        kwargs.get("index_content", PlanConstants.INDEXING_ONLY_METADATA)
+                    )
+            elif TargetApps.FSO.value in self.content_indexing_props["targetApps"]:
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
-                raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')
+                raise SDKException(
+                    "Plan", "102", "No attributes to Edit for DC Plan with TargetApps as : FSO"
+                )
         self._update_plan_props(request_json)
 
     def edit_risk_analysis_dc_plan(self, **kwargs: Union[bool, list, int, str]) -> None:
@@ -5065,60 +5439,68 @@ class Plan(object):
             plan.edit_risk_analysis_dc_plan(index_content=True, content_analyzer=['CA_Client'], entity_list=['entity1'], classifier_list=['classifier1'], enable_ocr=True, ocr_language=1, include_docs='txt,pdf', exclude_path=['/tmp'], min_doc_size=1, max_doc_size=10)
         """
         if self.plan_type != PlanTypes.DC.value:
-            raise SDKException('Plan', '102', "Function Not supported for this plan type")
+            raise SDKException("Plan", "102", "Function Not supported for this plan type")
         request_json = {}
         if self.plan_type == PlanTypes.DC.value:
-            if 'content_analyzer' in kwargs:
+            if "content_analyzer" in kwargs:
                 # change to support SaaS and unification project
                 ca_list = []
-                for ca in kwargs.get('content_analyzer', []):
+                for ca in kwargs.get("content_analyzer", []):
                     ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
-                    ca_list.append({
-                        'id': ca_client_id
-                    })
-                request_json['contentAnalyzer'] = ca_list
+                    ca_list.append({"id": ca_client_id})
+                request_json["contentAnalyzer"] = ca_list
 
-            request_json['entityDetection'] = {}
+            request_json["entityDetection"] = {}
             activate_obj = self._commcell_object.activate
             entity_mgr_obj = activate_obj.entity_manager()
-            if 'entity_list' in kwargs:
+            if "entity_list" in kwargs:
                 entity_list = []
-                entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get('entity_list', []))
+                entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get("entity_list", []))
                 for entity_id in entity_ids:
                     entity_list.append({"id": entity_id})
-                request_json['entityDetection']["entities"] = entity_list
-            if 'classifier_list' in kwargs:
+                request_json["entityDetection"]["entities"] = entity_list
+            if "classifier_list" in kwargs:
                 classifier_list = []
-                classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get('classifier_list', []))
+                classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get("classifier_list", []))
                 for classifier_id in classifier_ids:
                     classifier_list.append({"id": classifier_id})
-                request_json['entityDetection']["classifiers"] = classifier_list
+                request_json["entityDetection"]["classifiers"] = classifier_list
 
-            request_json['contentIndexing'] = {}
-            if 'index_content' in kwargs:
-                request_json['contentIndexing']["searchType"] = kwargs.get(
-                    'index_content', PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA).value
-            if 'enable_ocr' in kwargs:
-                request_json['contentIndexing']["extractTextFromImage"] = kwargs.get('enable_ocr', False)
-                request_json['contentIndexing']["contentLanguage"] = kwargs.get('ocr_language', 1)
+            request_json["contentIndexing"] = {}
+            if "index_content" in kwargs:
+                request_json["contentIndexing"]["searchType"] = kwargs.get(
+                    "index_content", PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA
+                ).value
+            if "enable_ocr" in kwargs:
+                request_json["contentIndexing"]["extractTextFromImage"] = kwargs.get(
+                    "enable_ocr", False
+                )
+                request_json["contentIndexing"]["contentLanguage"] = kwargs.get("ocr_language", 1)
 
-            request_json['contentIndexing']['fileFilters'] = {}
-            if 'include_docs' in kwargs:
-                request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
-                    'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
-            if 'min_doc_size' in kwargs:
-                request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
-                    'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
-            if 'max_doc_size' in kwargs:
-                request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
-                    'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
-            if 'exclude_path' in kwargs:
-                request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+            request_json["contentIndexing"]["fileFilters"] = {}
+            if "include_docs" in kwargs:
+                request_json["contentIndexing"]["fileFilters"]["includeDocTypes"] = kwargs.get(
+                    "include_docs", PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+                )
+            if "min_doc_size" in kwargs:
+                request_json["contentIndexing"]["fileFilters"]["minDocSize"] = kwargs.get(
+                    "min_doc_size", PlanConstants.DEFAULT_MIN_DOC_SIZE
+                )
+            if "max_doc_size" in kwargs:
+                request_json["contentIndexing"]["fileFilters"]["maxDocSize"] = kwargs.get(
+                    "max_doc_size", PlanConstants.DEFAULT_MAX_DOC_SIZE
+                )
+            if "exclude_path" in kwargs:
+                request_json["contentIndexing"]["fileFilters"]["excludePaths"] = kwargs.get(
+                    "exclude_path", []
+                )
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_DC_PLAN, request_json)
-        self.__handle_response(flag, response, custom_error_message='Failed to edit risk analysis DC plan : '
-                                                                    f'[{self.plan_name}]')
-
+        flag, response = self._cvpysdk_object.make_request("PUT", self._V4_DC_PLAN, request_json)
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to edit risk analysis DC plan : [{self.plan_name}]",
+        )
 
     def _enable_content_indexing_o365_plan(self, value: bool) -> None:
         """Enable CI for O365 plan
@@ -5135,30 +5517,36 @@ class Plan(object):
         """
         request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
 
-        request_json['summary']['plan']['planName'] = self.plan_name
-        request_json['summary']['plan']['planId'] = int(self.plan_id)
-        o365_arch = request_json['office365Info']['o365Exchange']['mbArchiving']['detail']['emailPolicy']
-        o365_arch['archivePolicy']['contentIndexProps']['enableContentIndex'] = value
+        request_json["summary"]["plan"]["planName"] = self.plan_name
+        request_json["summary"]["plan"]["planId"] = int(self.plan_id)
+        o365_arch = request_json["office365Info"]["o365Exchange"]["mbArchiving"]["detail"][
+            "emailPolicy"
+        ]
+        o365_arch["archivePolicy"]["contentIndexProps"]["enableContentIndex"] = value
 
-        o365_cloud = request_json['office365Info']['o365CloudOffice']['caBackup']['detail']['cloudAppPolicy'][
-            'backupPolicy']
-        o365_cloud['onedrivebackupPolicy']['enableContentIndex'] = value
-        o365_cloud['spbackupPolicy']['enableContentIndex'] = value
-        o365_cloud['teamsbackupPolicy']['enableContentIndex'] = value
+        o365_cloud = request_json["office365Info"]["o365CloudOffice"]["caBackup"]["detail"][
+            "cloudAppPolicy"
+        ]["backupPolicy"]
+        o365_cloud["onedrivebackupPolicy"]["enableContentIndex"] = value
+        o365_cloud["spbackupPolicy"]["enableContentIndex"] = value
+        o365_cloud["teamsbackupPolicy"]["enableContentIndex"] = value
 
-        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-            'includeDocTypes'] = PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
-        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-            'minDocSize'] = PlanConstants.DEFAULT_MIN_DOC_SIZE
+        request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+            "includeDocTypes"
+        ] = PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+        request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+            "minDocSize"
+        ] = PlanConstants.DEFAULT_MIN_DOC_SIZE
 
-        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-            'maxDocSize'] = PlanConstants.DEFAULT_MAX_DOC_SIZE
-        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy'][
-            'opType'] = PlanConstants.INDEXING_METADATA_AND_CONTENT
-        request_json['ciPolicy'] = request_json['ciPolicyInfo']['ciPolicy']
+        request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["filters"]["fileFilters"][
+            "maxDocSize"
+        ] = PlanConstants.DEFAULT_MAX_DOC_SIZE
+        request_json["ciPolicyInfo"]["ciPolicy"]["detail"]["ciPolicy"]["opType"] = (
+            PlanConstants.INDEXING_METADATA_AND_CONTENT
+        )
+        request_json["ciPolicy"] = request_json["ciPolicyInfo"]["ciPolicy"]
 
         self._update_plan_props(request_json)
-
 
     def policy_subclient_ids(self) -> Dict:
         """Returns Policy subclient IDs of the plan
@@ -5183,22 +5571,29 @@ class Plan(object):
         """
         result = dict()
         for backupset_id in self.subclient_policy:
-            url = self._commcell_object._services['ADD_SUBCLIENT'] + '?clientId=2&applicationId=1030&backupsetid=' + str(backupset_id)
+            url = (
+                self._commcell_object._services["ADD_SUBCLIENT"]
+                + "?clientId=2&applicationId=1030&backupsetid="
+                + str(backupset_id)
+            )
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request('GET', url)
+            flag, response = self._commcell_object._cvpysdk_object.make_request("GET", url)
             if flag:
-                if response.json() and 'subClientProperties' in response.json():
-                    subclient_id = response.json()['subClientProperties'][0]['subClientEntity']['subclientId']
-                    backupset_name = response.json()['subClientProperties'][0]['subClientEntity']['backupsetName']
+                if response.json() and "subClientProperties" in response.json():
+                    subclient_id = response.json()["subClientProperties"][0]["subClientEntity"][
+                        "subclientId"
+                    ]
+                    backupset_name = response.json()["subClientProperties"][0]["subClientEntity"][
+                        "backupsetName"
+                    ]
                     os = backupset_name.split()[-3]
                     result[os] = subclient_id
                 else:
-                    raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
+                    raise SDKException("Plan", 102, "Failed to get subclient Ids.")
             else:
-                raise SDKException('Plan', 102, response.text)
+                raise SDKException("Plan", 102, response.text)
 
         return result
-
 
     def __update_content_policy(self, content: Dict) -> None:
         """Updates the content policy of the plan.
@@ -5231,16 +5626,17 @@ class Plan(object):
             For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
 
-        request_json = {
-            'backupContent' : content
-        }
+        request_json = {"backupContent": content}
 
-        request_url = self._commcell_object._services['V4_SERVER_PLAN'] % self.plan_id
+        request_url = self._commcell_object._services["V4_SERVER_PLAN"] % self.plan_id
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "PUT", request_url, request_json
+        )
 
-        self.__handle_response(flag, response, f'Failed to update backup content for Plan: {self.plan_name}')
-
+        self.__handle_response(
+            flag, response, f"Failed to update backup content for Plan: {self.plan_name}"
+        )
 
     def __map_content_to_new_format(self, content: Dict) -> Dict:
         """Method to map old content format to new format (if we need to update the content policy of plan)
@@ -5275,35 +5671,38 @@ class Plan(object):
             "macFilterToExcludePaths": [],
             "backupSystemState": True,
             "useVSSForSystemState": True,
-            "backupSystemStateOnlyWithFullBackup": False
+            "backupSystemStateOnlyWithFullBackup": False,
         }
 
-        if 'Linux' in content:
-            content['Unix'] = content.pop('Linux')
+        if "Linux" in content:
+            content["Unix"] = content.pop("Linux")
 
         for os, data in content.items():
             included_paths_key = f"{os.lower()}IncludedPaths"
             excluded_paths_key = f"{os.lower()}ExcludedPaths"
             filter_to_exclude_paths_key = f"{os.lower()}FilterToExcludePaths"
 
-            if 'Content' in data:
-                result[included_paths_key] = [path.split('%')[-2] for path in data['Content']]
+            if "Content" in data:
+                result[included_paths_key] = [path.split("%")[-2] for path in data["Content"]]
 
-            if 'Exclude' in data:
-                result[excluded_paths_key] = [path.split('%')[-2] for path in data['Exclude']]
+            if "Exclude" in data:
+                result[excluded_paths_key] = [path.split("%")[-2] for path in data["Exclude"]]
 
-            if 'Except' in data:
-                result[filter_to_exclude_paths_key] = [path.split('%')[-2] for path in data['Except']]
+            if "Except" in data:
+                result[filter_to_exclude_paths_key] = [
+                    path.split("%")[-2] for path in data["Except"]
+                ]
 
-            if os == 'Windows':
-                result['backupSystemState'] = data.get('Backup System State', True)
-                result['useVSSForSystemState'] = data.get('useVSSForSystemState', True)
-                result['backupSystemStateOnlyWithFullBackup'] = data.get('backupSystemStateOnlyWithFullBackup', False)
+            if os == "Windows":
+                result["backupSystemState"] = data.get("Backup System State", True)
+                result["useVSSForSystemState"] = data.get("useVSSForSystemState", True)
+                result["backupSystemStateOnlyWithFullBackup"] = data.get(
+                    "backupSystemStateOnlyWithFullBackup", False
+                )
 
         return result
 
-
-    def update_backup_content(self, content: Dict, request_type: str = 'OVERWRITE') -> None:
+    def update_backup_content(self, content: Dict, request_type: str = "OVERWRITE") -> None:
         """Updates the backup content for the plan.
 
         Args:
@@ -5348,16 +5747,12 @@ class Plan(object):
             For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
 
-        update_request_type = {
-            "OVERWRITE": 1,
-            "UPDATE": 2,
-            "DELETE": 3
-        }
+        update_request_type = {"OVERWRITE": 1, "UPDATE": 2, "DELETE": 3}
 
         subclients = self.policy_subclient_ids()
 
         if not subclients:
-            if 'Windows' in content or 'Linux' in content or 'Mac' in content:
+            if "Windows" in content or "Linux" in content or "Mac" in content:
                 content = self.__map_content_to_new_format(content)
             self.__update_content_policy(content)
             return
@@ -5366,36 +5761,41 @@ class Plan(object):
             request_json = {
                 "subClientProperties": {
                     "fsExcludeFilterOperationType": update_request_type.get(request_type, 1),
-                    "fsContentOperationType" : update_request_type.get(request_type, 1)
+                    "fsContentOperationType": update_request_type.get(request_type, 1),
                 }
             }
 
-            request_url = self._commcell_object._services['SUBCLIENT'] % subclients[os]
+            request_url = self._commcell_object._services["SUBCLIENT"] % subclients[os]
 
             contents = list()
             for key, val in value.items():
-                if key.lower() == 'content':
-                    for path in val: contents.append({"path" : path})
-                if key.lower() == 'exclude':
-                    for path in val: contents.append({"excludePath" : path})
-                if os == 'Windows' and key == 'Backup System State':
-                    request_json['subClientProperties']['fsSubClientProp'] = {'backupSystemState' : val}
+                if key.lower() == "content":
+                    for path in val:
+                        contents.append({"path": path})
+                if key.lower() == "exclude":
+                    for path in val:
+                        contents.append({"excludePath": path})
+                if os == "Windows" and key == "Backup System State":
+                    request_json["subClientProperties"]["fsSubClientProp"] = {
+                        "backupSystemState": val
+                    }
 
             if contents:
-                request_json['subClientProperties']['content'] = contents
+                request_json["subClientProperties"]["content"] = contents
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request('POST', request_url, request_json)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                "POST", request_url, request_json
+            )
 
             if flag:
-                if response.json() and 'response' in response.json():
-                    errorCode = response.json()['response'][0].get('errorCode')
+                if response.json() and "response" in response.json():
+                    errorCode = response.json()["response"][0].get("errorCode")
                     if errorCode:
-                        raise SDKException('Plan', 102, 'Failed to Change Content of Plan.')
+                        raise SDKException("Plan", 102, "Failed to Change Content of Plan.")
                 else:
-                    raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
+                    raise SDKException("Plan", 102, "Failed to get subclient Ids.")
             else:
-                raise SDKException('Plan', 102, response.text)
-
+                raise SDKException("Plan", 102, response.text)
 
     def enable_data_aging(self, plan_copy_id: int, is_enable: bool = True) -> None:
         """Method is used to enable/disable the data aging for the plan copy
@@ -5413,28 +5813,25 @@ class Plan(object):
             plan.enable_data_aging(plan_copy_id=23, is_enable=True)
             plan.enable_data_aging(plan_copy_id=23, is_enable=False)
         """
-        payload = {
-            "retentionRules": {
-                "enableDataAging": is_enable
-            }
-        }
+        payload = {"retentionRules": {"enableDataAging": is_enable}}
 
-        api_url = self._services['ENABLE_DATA_AGING'] % (self._plan_id, plan_copy_id)
-        flag, response = self._cvpysdk_object.make_request(method='PUT',
-                                                           url=api_url, payload=payload)
+        api_url = self._services["ENABLE_DATA_AGING"] % (self._plan_id, plan_copy_id)
+        flag, response = self._cvpysdk_object.make_request(
+            method="PUT", url=api_url, payload=payload
+        )
         if not flag:
-            raise SDKException('Response', '101',
-                               self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
         if not response:
-            raise SDKException('Response', '102',
-                               self._commcell_object._update_response_(response.text))
-
+            raise SDKException(
+                "Response", "102", self._commcell_object._update_response_(response.text)
+            )
 
     @property
     def applicable_solutions(self) -> list:
         """Method to read applicable solutions"""
         return self._applicable_solutions
-
 
     @applicable_solutions.setter
     def applicable_solutions(self, solutions: list = list()) -> None:
@@ -5455,30 +5852,44 @@ class Plan(object):
             ["File Servers", "Databases"] : FS and DB will be set as a applicable solutions
             [] : Passing empty list will reset applicable solutions to ALL
         """
-        request_url  = self._commcell_object._services['APPLICABLE_SOLNS_ENABLE' if solutions else 'APPLICABLE_SOLNS_DISABLE'] % self.plan_id
+        request_url = (
+            self._commcell_object._services[
+                "APPLICABLE_SOLNS_ENABLE" if solutions else "APPLICABLE_SOLNS_DISABLE"
+            ]
+            % self.plan_id
+        )
 
         if solutions:
-            supported_solutions =  self._commcell_object.plans.get_supported_solutions()
-            request_json = {"solutions": [{"id": supported_solutions[soln_name], "name": soln_name} for soln_name in solutions]}
+            supported_solutions = self._commcell_object.plans.get_supported_solutions()
+            request_json = {
+                "solutions": [
+                    {"id": supported_solutions[soln_name], "name": soln_name}
+                    for soln_name in solutions
+                ]
+            }
         else:
             request_json = None
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "PUT", request_url, request_json
+        )
 
         if not flag:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-        if not response.json() or response.json()['errorCode']:
-            raise SDKException('Plan', 102, 'Failed to update Applicable Solutions for Plan')
+        if not response.json() or response.json()["errorCode"]:
+            raise SDKException("Plan", 102, "Failed to update Applicable Solutions for Plan")
 
         self.refresh()
-
 
     @property
     def is_log_backup_to_disk_enabled(self):
         """Returns true if log backup to disk is enabled for the plan"""
-        return self.get_schedule_properties(
-            {"backupType": "TRANSACTIONLOG"}).get('scheduleOption', {}).get('useDiskCacheForLogBackups', False)
+        return (
+            self.get_schedule_properties({"backupType": "TRANSACTIONLOG"})
+            .get("scheduleOption", {})
+            .get("useDiskCacheForLogBackups", False)
+        )
 
     def enable_log_backup_to_disk(self, commit_frequency=4):
         """Enables log backup to disk
@@ -5495,15 +5906,15 @@ class Plan(object):
             schedule_options = {
                 "scheduleOption": {
                     "commitFrequencyInHours": commit_frequency,
-                    "useDiskCacheForLogBackups": True
+                    "useDiskCacheForLogBackups": True,
                 }
             }
 
             self.edit_schedule(schedule_options, {"backupType": "TRANSACTIONLOG"})
-        except Exception as e:
+        except Exception:
             raise SDKException(
-                'Plan', 102, f"Failed to enable log backup to disk for plan '{self.plan_name}'")
-
+                "Plan", 102, f"Failed to enable log backup to disk for plan '{self.plan_name}'"
+            )
 
     def disable_log_backup_to_disk(self):
         """Disables log backup to disk
@@ -5515,18 +5926,18 @@ class Plan(object):
         """
         try:
             schedule_options = {
-                "scheduleOption": {
-                    "commitFrequencyInHours": 4,
-                    "useDiskCacheForLogBackups": False
-                }
+                "scheduleOption": {"commitFrequencyInHours": 4, "useDiskCacheForLogBackups": False}
             }
 
             self.edit_schedule(schedule_options, {"backupType": "TRANSACTIONLOG"})
-        except Exception as e:
+        except Exception:
             raise SDKException(
-                'Plan', 102, f"Failed to disable log backup to disk for plan '{self.plan_name}'")
+                "Plan", 102, f"Failed to disable log backup to disk for plan '{self.plan_name}'"
+            )
 
-    def update_threat_detection_plan(self, malware_detection = True, encryption_detection = True, anomaly_detection = True):
+    def update_threat_detection_plan(
+        self, malware_detection=True, encryption_detection=True, anomaly_detection=True
+    ):
         """Update the threat detection plan
         Args:
             malware_detection (bool) : Enable or disable malware detection
@@ -5536,25 +5947,27 @@ class Plan(object):
             Set True to enable and False to disable the respective detection
         """
         if not malware_detection and not encryption_detection and not anomaly_detection:
-            raise SDKException('Plan', '102', 'At least one detection type must be enabled')
+            raise SDKException("Plan", "102", "At least one detection type must be enabled")
         request_json = {
             "threatIndicator": {
                 "threatScan": {
                     "threatAnalysis": malware_detection,
-                    "fileDataAnalysis": encryption_detection
+                    "fileDataAnalysis": encryption_detection,
                 },
                 "threatDetection": {
                     "fileActivity": anomaly_detection,
                     "backupSize": anomaly_detection,
                     "fileType": anomaly_detection,
                     "canaryFile": anomaly_detection,
-                    "fileExtension": anomaly_detection
-                }
+                    "fileExtension": anomaly_detection,
+                },
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_DC_PLAN, request_json)
+        flag, response = self._cvpysdk_object.make_request("PUT", self._V4_DC_PLAN, request_json)
 
-        self.__handle_response(flag, response,
-                               custom_error_message='Failed to update threat detection plan : '
-                                                    f'[{self.plan_name}]')
+        self.__handle_response(
+            flag,
+            response,
+            custom_error_message=f"Failed to update threat detection plan : [{self.plan_name}]",
+        )

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -37,11 +35,11 @@ KubernetesBackupset:
     application_groups()        --   Apllication groups property
 
 """
-from enum import Enum
-from json import JSONDecodeError
+
 from typing import *
+
 from cvpysdk.backupsets.vsbackupset import VSBackupset
-from cvpysdk.exception import SDKException
+
 from ...subclients.virtualserver.kubernetes import ApplicationGroups
 
 
@@ -68,7 +66,9 @@ class KubernetesBackupset(VSBackupset):
     #ai-gen-doc
     """
 
-    def __init__(self, instance_object: object, backupset_name: str, backupset_id: Optional[str] = None) -> None:
+    def __init__(
+        self, instance_object: object, backupset_name: str, backupset_id: Optional[str] = None
+    ) -> None:
         """Initialize a KubernetesBackupset object for managing backup operations.
 
         Args:
@@ -90,7 +90,7 @@ class KubernetesBackupset(VSBackupset):
     def refresh(self) -> None:
         """Reload the properties of the KubernetesBackupset object.
 
-        This method refreshes the backupset's internal state, ensuring that 
+        This method refreshes the backupset's internal state, ensuring that
         the latest properties and application group information are retrieved.
         Cached data is cleared and will be reloaded on subsequent access.
 
@@ -105,7 +105,7 @@ class KubernetesBackupset(VSBackupset):
         self._application_groups = None
 
     @property
-    def application_groups(self) -> 'ApplicationGroups':
+    def application_groups(self) -> "ApplicationGroups":
         """Get the ApplicationGroups object associated with this Kubernetes backupset.
 
         Returns:

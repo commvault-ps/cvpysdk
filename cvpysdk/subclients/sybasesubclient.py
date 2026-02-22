@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -61,9 +59,9 @@ SybaseSubclient:
 
 
 """
-from __future__ import unicode_literals
-from ..subclient import Subclient
+
 from ..exception import SDKException
+from ..subclient import Subclient
 
 
 class SybaseSubclient(Subclient):
@@ -90,19 +88,18 @@ class SybaseSubclient(Subclient):
         """
         self._sybase_properties = {}
         self._snap_copy_info = None
-        super(SybaseSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
     def _get_subclient_properties(self):
         """
         Gets the subclient related properties of Sybase subclient
         """
 
-        super(SybaseSubclient, self)._get_subclient_properties()
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
+        super()._get_subclient_properties()
+        if "content" in self._subclient_properties:
+            self._content = self._subclient_properties["content"]
 
-        self._snap_copy_info = self._commonProperties.get('snapCopyInfo')
+        self._snap_copy_info = self._commonProperties.get("snapCopyInfo")
 
     def _get_subclient_properties_json(self):
         """
@@ -113,24 +110,25 @@ class SybaseSubclient(Subclient):
 
         """
         return {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1,
-                    "snapCopyInfo": self._snap_copy_info
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "content": self._content,
+                "commonProperties": self._commonProperties,
+                "contentOperationType": 1,
+                "snapCopyInfo": self._snap_copy_info,
+            }
         }
 
-    def _sybase_backup_request_json(self,
-                                    backup_level,
-                                    do_not_truncate_log=False,
-                                    sybase_skip_full_after_logbkp=False,
-                                    create_backup_copy_immediately=False,
-                                    backup_copy_type=2,
-                                    directive_file=None):
+    def _sybase_backup_request_json(
+        self,
+        backup_level,
+        do_not_truncate_log=False,
+        sybase_skip_full_after_logbkp=False,
+        create_backup_copy_immediately=False,
+        backup_copy_type=2,
+        directive_file=None,
+    ):
         """
         Returns the JSON request to pass to the API as per the options selected by the user.
 
@@ -167,26 +165,23 @@ class SybaseSubclient(Subclient):
         request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
         sybase_options = {
             "doNotTruncateLog": do_not_truncate_log,
-            "sybaseSkipFullafterLogBkp": sybase_skip_full_after_logbkp
+            "sybaseSkipFullafterLogBkp": sybase_skip_full_after_logbkp,
         }
 
         if create_backup_copy_immediately:
-            sub_opt = {"dataOpt":
-                       {
-                           "createBackupCopyImmediately": create_backup_copy_immediately,
-                           "backupCopyType": backup_copy_type
-                       }
-                      }
+            sub_opt = {
+                "dataOpt": {
+                    "createBackupCopyImmediately": create_backup_copy_immediately,
+                    "backupCopyType": backup_copy_type,
+                }
+            }
             sybase_options.update(sub_opt)
         if self._commonProperties.get("onDemandSubClient", False):
-            on_demand_input = {"onDemandInputFile":directive_file}
+            on_demand_input = {"onDemandInputFile": directive_file}
             sybase_options.update(on_demand_input)
 
-        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-            sybase_options
-        )
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(sybase_options)
         return request_json
-
 
     @property
     def is_snapenabled(self):
@@ -213,8 +208,7 @@ class SybaseSubclient(Subclient):
             value           (bool) --   to enable snap at subclient level or not
 
         """
-        self._set_subclient_properties(
-            "_snap_copy_info['isSnapBackupEnabled']", value)
+        self._set_subclient_properties("_snap_copy_info['isSnapBackupEnabled']", value)
 
     @property
     def snap_engine(self):
@@ -225,7 +219,7 @@ class SybaseSubclient(Subclient):
             (str)     -  name of snap engine at subclient level
 
         """
-        return self._snap_copy_info.get('snapToTapeSelectedEngine', {}).get('snapShotEngineName')
+        return self._snap_copy_info.get("snapToTapeSelectedEngine", {}).get("snapShotEngineName")
 
     @snap_engine.setter
     def snap_engine(self, engine_name):
@@ -238,7 +232,8 @@ class SybaseSubclient(Subclient):
 
         """
         self._set_subclient_properties(
-            "_snap_copy_info['snapToTapeSelectedEngine']['snapShotEngineName']", engine_name)
+            "_snap_copy_info['snapToTapeSelectedEngine']['snapShotEngineName']", engine_name
+        )
 
     @property
     def snap_proxy(self):
@@ -250,7 +245,7 @@ class SybaseSubclient(Subclient):
                             for intellisnap operation
 
         """
-        return self._snap_copy_info.get('snapToTapeProxyToUse', {}).get('clientName')
+        return self._snap_copy_info.get("snapToTapeProxyToUse", {}).get("clientName")
 
     @snap_proxy.setter
     def snap_proxy(self, proxy_name):
@@ -262,7 +257,8 @@ class SybaseSubclient(Subclient):
 
         """
         self._set_subclient_properties(
-            "_snap_copy_info['snapToTapeProxyToUse']['clientName']", proxy_name)
+            "_snap_copy_info['snapToTapeProxyToUse']['clientName']", proxy_name
+        )
 
     @property
     def use_dump_based_backup_copy(self):
@@ -274,7 +270,7 @@ class SybaseSubclient(Subclient):
                             copy is enabled or not
 
         """
-        return self._snap_copy_info.get('useDumpBasedBackupCopy')
+        return self._snap_copy_info.get("useDumpBasedBackupCopy")
 
     @use_dump_based_backup_copy.setter
     def use_dump_based_backup_copy(self, dump_based):
@@ -286,8 +282,7 @@ class SybaseSubclient(Subclient):
                                                based backup copy option
 
         """
-        self._set_subclient_properties(
-            "_snap_copy_info['useDumpBasedBackupCopy']", dump_based)
+        self._set_subclient_properties("_snap_copy_info['useDumpBasedBackupCopy']", dump_based)
 
     @property
     def dump_based_backup_copy_option(self):
@@ -311,7 +306,8 @@ class SybaseSubclient(Subclient):
                                                              2(custom new instance)
         """
         self._set_subclient_properties(
-            "_snap_copy_info['dumpBasedBackupCopyOption']", dump_based_backup_copy_option)
+            "_snap_copy_info['dumpBasedBackupCopyOption']", dump_based_backup_copy_option
+        )
 
     @property
     def configured_instance(self):
@@ -329,15 +325,13 @@ class SybaseSubclient(Subclient):
                 if dump based copy option is not 1
 
         """
-        if self._snap_copy_info.get('useDumpBasedBackupCopy'):
-            if self._snap_copy_info.get('dumpBasedBackupCopyOption') == 1:
-                return self._snap_copy_info['configuredSybaseInstance']['instanceName']
+        if self._snap_copy_info.get("useDumpBasedBackupCopy"):
+            if self._snap_copy_info.get("dumpBasedBackupCopyOption") == 1:
+                return self._snap_copy_info["configuredSybaseInstance"]["instanceName"]
             else:
-                raise SDKException(
-                    'Subclient', '102', "Invalid dump based copy option")
+                raise SDKException("Subclient", "102", "Invalid dump based copy option")
         else:
-            raise SDKException('Subclient', '102',
-                               "Dump based parameter is not available")
+            raise SDKException("Subclient", "102", "Dump based parameter is not available")
 
     @configured_instance.setter
     def configured_instance(self, instance_name):
@@ -352,7 +346,8 @@ class SybaseSubclient(Subclient):
         """
 
         self._set_subclient_properties(
-            "_snap_copy_info['configuredSybaseInstance']['instanceName']", instance_name)
+            "_snap_copy_info['configuredSybaseInstance']['instanceName']", instance_name
+        )
 
     @property
     def auxiliary_sybase_server(self):
@@ -373,18 +368,16 @@ class SybaseSubclient(Subclient):
         if self.use_dump_based_backup_copy:
             if self.dump_based_backup_copy_option == 2:
                 auxiliary_sybase_server = {
-                    'sybaseHome': self._snap_copy_info.get('sybaseHome'),
-                    'sybaseASE': self._snap_copy_info.get('sybaseASE'),
-                    'sybaseOCS': self._snap_copy_info.get('sybaseOCS'),
-                    'sybaseUser': self._snap_copy_info.get('sybaseUser', {}).get('userName')
+                    "sybaseHome": self._snap_copy_info.get("sybaseHome"),
+                    "sybaseASE": self._snap_copy_info.get("sybaseASE"),
+                    "sybaseOCS": self._snap_copy_info.get("sybaseOCS"),
+                    "sybaseUser": self._snap_copy_info.get("sybaseUser", {}).get("userName"),
                 }
                 return auxiliary_sybase_server
             else:
-                raise SDKException(
-                    'Subclient', '102', "Invalid dump based copy option set")
+                raise SDKException("Subclient", "102", "Invalid dump based copy option set")
         else:
-            raise SDKException('Subclient', '102',
-                               "dump based parameter is not available")
+            raise SDKException("Subclient", "102", "dump based parameter is not available")
 
     @auxiliary_sybase_server.setter
     def auxiliary_sybase_server(self, instance_properties):
@@ -410,15 +403,20 @@ class SybaseSubclient(Subclient):
         """
         if None in instance_properties.values():
             raise SDKException(
-                'Instance', '102', "One of the sybase custom instance parameter is None. Exiting")
+                "Instance", "102", "One of the sybase custom instance parameter is None. Exiting"
+            )
         self._set_subclient_properties(
-            "_snap_copy_info['sybaseHome']", instance_properties['sybaseHome'])
+            "_snap_copy_info['sybaseHome']", instance_properties["sybaseHome"]
+        )
         self._set_subclient_properties(
-            "_snap_copy_info['sybaseASE']", instance_properties['sybaseASE'])
+            "_snap_copy_info['sybaseASE']", instance_properties["sybaseASE"]
+        )
         self._set_subclient_properties(
-            "_snap_copy_info['sybaseOCS']", instance_properties['sybaseOCS'])
-        self._set_subclient_properties("_snap_copy_info['sybaseUser']['userName']",
-                                       instance_properties['sybaseUser'])
+            "_snap_copy_info['sybaseOCS']", instance_properties["sybaseOCS"]
+        )
+        self._set_subclient_properties(
+            "_snap_copy_info['sybaseUser']['userName']", instance_properties["sybaseUser"]
+        )
 
     @property
     def content(self):
@@ -427,7 +425,7 @@ class SybaseSubclient(Subclient):
         sybase_dblist = []
         for item in subclient_content:
             sybase_server_dict = item
-            dbname = sybase_server_dict['sybaseContent']['databaseName']
+            dbname = sybase_server_dict["sybaseContent"]["databaseName"]
             sybase_dblist.append(dbname)
 
         return sybase_dblist
@@ -452,13 +450,15 @@ class SybaseSubclient(Subclient):
             content_new.append(sybase_server_dict)
         self._set_subclient_properties("_content", content_new)
 
-    def backup(self,
-               backup_level=r'full',
-               do_not_truncate_log=False,
-               sybase_skip_full_after_logbkp=False,
-               create_backup_copy_immediately=False,
-               backup_copy_type=2,
-               directive_file=None):
+    def backup(
+        self,
+        backup_level=r"full",
+        do_not_truncate_log=False,
+        sybase_skip_full_after_logbkp=False,
+        create_backup_copy_immediately=False,
+        backup_copy_type=2,
+        directive_file=None,
+    ):
         """
         Performs backup on sybase subclient
 
@@ -500,10 +500,10 @@ class SybaseSubclient(Subclient):
                 if response does not succeed
 
         """
-        if backup_level.lower() not in ['full', 'incremental', 'differential']:
-            raise SDKException(r'Subclient', r'103')
+        if backup_level.lower() not in ["full", "incremental", "differential"]:
+            raise SDKException(r"Subclient", r"103")
 
-        if backup_level.lower() == 'incremental':
+        if backup_level.lower() == "incremental":
             do_not_truncate_log = do_not_truncate_log
             sybase_skip_full_after_logbkp = sybase_skip_full_after_logbkp
         else:
@@ -511,20 +511,23 @@ class SybaseSubclient(Subclient):
             sybase_skip_full_after_logbkp = False
 
         if create_backup_copy_immediately:
-            if backup_level.lower() == 'incremental':
+            if backup_level.lower() == "incremental":
                 raise SDKException(
-                    'Subclient', '102', 'Backup Copy job is not valid for Transaction Log Backup ')
+                    "Subclient", "102", "Backup Copy job is not valid for Transaction Log Backup "
+                )
 
-        request_json = self._sybase_backup_request_json(backup_level.lower(),
-                                                        do_not_truncate_log,
-                                                        sybase_skip_full_after_logbkp,
-                                                        create_backup_copy_immediately,
-                                                        backup_copy_type,
-                                                        directive_file)
+        request_json = self._sybase_backup_request_json(
+            backup_level.lower(),
+            do_not_truncate_log,
+            sybase_skip_full_after_logbkp,
+            create_backup_copy_immediately,
+            backup_copy_type,
+            directive_file,
+        )
 
-        backup_service = self._commcell_object._services['CREATE_TASK']
+        backup_service = self._commcell_object._services["CREATE_TASK"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', backup_service, request_json
+            "POST", backup_service, request_json
         )
         return self._process_backup_response(flag, response)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -55,10 +53,10 @@ SalesforceBackupset:
 
 """
 
-from __future__ import unicode_literals
+from typing import Any, Dict, Optional
 
 from ..cabackupset import CloudAppsBackupset
-from typing import Dict, Any, Optional
+
 
 class SalesforceBackupset(CloudAppsBackupset):
     """
@@ -83,7 +81,9 @@ class SalesforceBackupset(CloudAppsBackupset):
     #ai-gen-doc
     """
 
-    def __init__(self, instance_object: object, backupset_name: str, backupset_id: Optional[int] = None) -> None:
+    def __init__(
+        self, instance_object: object, backupset_name: str, backupset_id: Optional[int] = None
+    ) -> None:
         """Initialize a SalesforceBackupset instance for the specified Salesforce environment.
 
         Args:
@@ -111,11 +111,9 @@ class SalesforceBackupset(CloudAppsBackupset):
         self._sync_db_user_name = None
         self._sync_db_user_password = None
 
-        super(SalesforceBackupset, self).__init__(instance_object, backupset_name, backupset_id)
+        super().__init__(instance_object, backupset_name, backupset_id)
 
-        salesforce_browse_options = {
-            '_browse_view_name_list': ['TBLVIEW', 'FILEVIEW']
-        }
+        salesforce_browse_options = {"_browse_view_name_list": ["TBLVIEW", "FILEVIEW"]}
 
         self._default_browse_options.update(salesforce_browse_options)
 
@@ -139,36 +137,38 @@ class SalesforceBackupset(CloudAppsBackupset):
 
         #ai-gen-doc
         """
-        super(SalesforceBackupset, self)._get_backupset_properties()
+        super()._get_backupset_properties()
 
-        if 'cloudAppsBackupset' in self._properties:
-            cloud_apps_backupset = self._properties['cloudAppsBackupset']
-            if 'salesforceBackupSet' in cloud_apps_backupset:
-                sfbackupset = cloud_apps_backupset['salesforceBackupSet']
-                if 'downloadCachePath' in sfbackupset:
-                    self._download_cache_path = sfbackupset['downloadCachePath']
-                self._mutual_auth_path = sfbackupset.get('mutualAuthPath', '')
-                if 'userName' in sfbackupset['userPassword']:
-                    self._user_name = sfbackupset['userPassword']['userName']
-                if 'syncDatabase' in sfbackupset:
-                    self._sync_db_enabled = sfbackupset['syncDatabase'].get('dbEnabled', False)
+        if "cloudAppsBackupset" in self._properties:
+            cloud_apps_backupset = self._properties["cloudAppsBackupset"]
+            if "salesforceBackupSet" in cloud_apps_backupset:
+                sfbackupset = cloud_apps_backupset["salesforceBackupSet"]
+                if "downloadCachePath" in sfbackupset:
+                    self._download_cache_path = sfbackupset["downloadCachePath"]
+                self._mutual_auth_path = sfbackupset.get("mutualAuthPath", "")
+                if "userName" in sfbackupset["userPassword"]:
+                    self._user_name = sfbackupset["userPassword"]["userName"]
+                if "syncDatabase" in sfbackupset:
+                    self._sync_db_enabled = sfbackupset["syncDatabase"].get("dbEnabled", False)
                 if self._sync_db_enabled:
-                    if 'dbType' in sfbackupset['syncDatabase']:
-                        self._sync_db_type = sfbackupset['syncDatabase']['dbType']
-                    if 'dbHost' in sfbackupset['syncDatabase']:
-                        self._sync_db_host = sfbackupset['syncDatabase']['dbHost']
-                    if 'dbInstance' in sfbackupset['syncDatabase']:
-                        self._sync_db_instance = sfbackupset['syncDatabase']['dbInstance']
-                    if 'dbName' in sfbackupset['syncDatabase']:
-                        self._sync_db_name = sfbackupset['syncDatabase']['dbName']
-                    if 'dbPort' in sfbackupset['syncDatabase']:
-                        self._sync_db_port = sfbackupset['syncDatabase']['dbPort']
-                    if 'userName' in sfbackupset['syncDatabase']['dbUserPassword']:
-                        self._sync_db_user_name = sfbackupset[
-                            'syncDatabase']['dbUserPassword']['userName']
-                    if 'password' in sfbackupset['syncDatabase']['dbUserPassword']:
-                        self._sync_db_user_password = sfbackupset[
-                            'syncDatabase']['dbUserPassword']['password']
+                    if "dbType" in sfbackupset["syncDatabase"]:
+                        self._sync_db_type = sfbackupset["syncDatabase"]["dbType"]
+                    if "dbHost" in sfbackupset["syncDatabase"]:
+                        self._sync_db_host = sfbackupset["syncDatabase"]["dbHost"]
+                    if "dbInstance" in sfbackupset["syncDatabase"]:
+                        self._sync_db_instance = sfbackupset["syncDatabase"]["dbInstance"]
+                    if "dbName" in sfbackupset["syncDatabase"]:
+                        self._sync_db_name = sfbackupset["syncDatabase"]["dbName"]
+                    if "dbPort" in sfbackupset["syncDatabase"]:
+                        self._sync_db_port = sfbackupset["syncDatabase"]["dbPort"]
+                    if "userName" in sfbackupset["syncDatabase"]["dbUserPassword"]:
+                        self._sync_db_user_name = sfbackupset["syncDatabase"]["dbUserPassword"][
+                            "userName"
+                        ]
+                    if "password" in sfbackupset["syncDatabase"]["dbUserPassword"]:
+                        self._sync_db_user_password = sfbackupset["syncDatabase"][
+                            "dbUserPassword"
+                        ]["password"]
 
     def _prepare_browse_json(self, options: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare the JSON object for a Salesforce browse request.
@@ -196,11 +196,9 @@ class SalesforceBackupset(CloudAppsBackupset):
 
         #ai-gen-doc
         """
-        request_json = super(SalesforceBackupset, self)._prepare_browse_json(options)
-        salesforce_browse_view = {
-            'browseViewNameList': options['_browse_view_name_list']
-        }
-        request_json['advOptions'].update(salesforce_browse_view)
+        request_json = super()._prepare_browse_json(options)
+        salesforce_browse_view = {"browseViewNameList": options["_browse_view_name_list"]}
+        request_json["advOptions"].update(salesforce_browse_view)
         return request_json
 
     @property
@@ -365,7 +363,7 @@ class SalesforceBackupset(CloudAppsBackupset):
     def mutual_auth_path(self, value: str) -> None:
         """Set the mutual authentication certificate path for the Salesforce backupset.
 
-        This property setter updates the path to the mutual authentication certificate 
+        This property setter updates the path to the mutual authentication certificate
         used by the access node for secure communication.
 
         Args:
@@ -380,7 +378,8 @@ class SalesforceBackupset(CloudAppsBackupset):
         """
         if self.mutual_auth_path != value:
             if self.is_sync_db_enabled:
-                del self._properties['cloudAppsBackupset']['salesforceBackupSet']['syncDatabase']['dbUserPassword'][
-                    'password']
-            self._properties['cloudAppsBackupset']['salesforceBackupSet']['mutualAuthPath'] = value
+                del self._properties["cloudAppsBackupset"]["salesforceBackupSet"]["syncDatabase"][
+                    "dbUserPassword"
+                ]["password"]
+            self._properties["cloudAppsBackupset"]["salesforceBackupSet"]["mutualAuthPath"] = value
             self.update_properties(self._properties)

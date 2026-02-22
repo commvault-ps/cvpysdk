@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -54,13 +52,14 @@ PostgresSubclient instance Attributes
     **collect_object_list**              --  Returns the collect object list flag of the subclient
 
 """
-from __future__ import unicode_literals
-from .dbsubclient import DatabaseSubclient
+
 from ..exception import SDKException
+from .dbsubclient import DatabaseSubclient
+
 
 class PostgresSubclient(DatabaseSubclient):
     """Derived class from Subclient Base class, representing a file system subclient,
-        and to perform operations on that subclient."""
+    and to perform operations on that subclient."""
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """
@@ -79,78 +78,69 @@ class PostgresSubclient(DatabaseSubclient):
         self._postgres_destination = None
         self._postgres_file_options = None
         self._postgres_restore_options = None
-        super(PostgresSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
     @property
     def content(self):
         """returns list of databases which are part of subclient content"""
         self._content = None
         if not self.is_default_subclient:
-            if 'content' in self._subclient_properties:
-                self._content = self._subclient_properties['content']
-        if not self._content is None:
+            if "content" in self._subclient_properties:
+                self._content = self._subclient_properties["content"]
+        if self._content is not None:
             database_list = list()
             for database in self._content:
-                if database.get('postgreSQLContent'):
-                    if database['postgreSQLContent'].get('databaseName'):
-                        database_list.append(database[
-                            'postgreSQLContent']['databaseName'].lstrip("/"))
+                if database.get("postgreSQLContent"):
+                    if database["postgreSQLContent"].get("databaseName"):
+                        database_list.append(
+                            database["postgreSQLContent"]["databaseName"].lstrip("/")
+                        )
             return database_list
 
     def set_content(self, database_list, operation_type="OVERWRITE"):
-        """ Adds/Updates/Deletes the postgresql subclient contents
+        """Adds/Updates/Deletes the postgresql subclient contents
 
-            Args:
+        Args:
 
-                database_list (list)  -- list of databases to be added to the subclient content
+            database_list (list)  -- list of databases to be added to the subclient content
 
-                operation_type (str)  -- Content operation to be performed
+            operation_type (str)  -- Content operation to be performed
 
-                    Accepted Values:
+                Accepted Values:
 
-                        ADD         -- Adds the database list to existing content
+                    ADD         -- Adds the database list to existing content
 
-                        OVERWRITE   -- Replaces the content with given databases
+                    OVERWRITE   -- Replaces the content with given databases
 
-                        DELETE      -- Deletes the database from the content
+                    DELETE      -- Deletes the database from the content
 
-            Raises:
-                SDKException:
-                    if database list is not a list
+        Raises:
+            SDKException:
+                if database list is not a list
 
-                    if operation type is not accepted value
+                if operation type is not accepted value
 
-                    if the database list is empty
+                if the database list is empty
 
-                    if the operation is performed on default subclient
+                if the operation is performed on default subclient
 
         """
         if not isinstance(database_list, list):
-            raise SDKException('Subclient', '101')
-        if operation_type.lower() not in ['add', 'overwrite', 'delete']:
-            raise SDKException('Subclient', '102', 'Operation type not supported')
+            raise SDKException("Subclient", "101")
+        if operation_type.lower() not in ["add", "overwrite", "delete"]:
+            raise SDKException("Subclient", "102", "Operation type not supported")
         if not database_list:
-            raise SDKException('Subclient', '102', 'Cannot set empty content to a subclient')
+            raise SDKException("Subclient", "102", "Cannot set empty content to a subclient")
         if self.is_default_subclient:
-            raise SDKException('Subclient', '102', 'Cannot set content to the default subclient')
-        operation_map = {
-            'add'   :   2,
-            'overwrite': 1,
-            'delete':   3
-            }
+            raise SDKException("Subclient", "102", "Cannot set content to the default subclient")
+        operation_map = {"add": 2, "overwrite": 1, "delete": 3}
         properties = self._subclient_properties
         content_list = []
         for database in database_list:
-            content_dict = {
-                'postgreSQLContent':
-                    {
-                        'databaseName': f'{database}'
-                    }
-                }
+            content_dict = {"postgreSQLContent": {"databaseName": f"{database}"}}
             content_list.append(content_dict)
-        properties['contentOperationType'] = operation_map[operation_type.lower()]
-        properties['content'] = content_list
+        properties["contentOperationType"] = operation_map[operation_type.lower()]
+        properties["content"] = content_list
         self.update_properties(properties)
 
     @property
@@ -163,9 +153,9 @@ class PostgresSubclient(DatabaseSubclient):
                         False if the flag is not set
 
         """
-        return self._subclient_properties.get(
-            'postgreSQLSubclientProp', {}).get(
-                'collectObjectListDuringBackup', False)
+        return self._subclient_properties.get("postgreSQLSubclientProp", {}).get(
+            "collectObjectListDuringBackup", False
+        )
 
     @collect_object_list.setter
     def collect_object_list(self, value):
@@ -184,16 +174,12 @@ class PostgresSubclient(DatabaseSubclient):
         if isinstance(value, bool):
             self._set_subclient_properties(
                 "_subclient_properties['postgreSQLSubclientProp']['collectObjectListDuringBackup']",
-                value)
-        else:
-            raise SDKException(
-                'Subclient', '102', 'Expecting a boolean value here'
+                value,
             )
+        else:
+            raise SDKException("Subclient", "102", "Expecting a boolean value here")
 
-    def _backup_request_json(
-            self,
-            backup_level,
-            inc_with_data=False):
+    def _backup_request_json(self, backup_level, inc_with_data=False):
         """
         prepares the json for the backup request
 
@@ -211,99 +197,94 @@ class PostgresSubclient(DatabaseSubclient):
         request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
 
         if "incremental" in backup_level.lower() and inc_with_data:
-            request_json["taskInfo"]["subTasks"][0]["options"][
-                "backupOpts"]['incrementalDataWithLogs'] = True
+            request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"][
+                "incrementalDataWithLogs"
+            ] = True
 
         return request_json
 
     def _get_subclient_properties(self):
-        """gets the subclient related properties of PostgreSQL subclient.
-
-        """
-        super(PostgresSubclient, self)._get_subclient_properties()
-        if 'postgreSQLSubclientProp' not in self._subclient_properties:
-            self._subclient_properties['postgreSQLSubclientProp'] = {}
-        self._postgres_properties = self._subclient_properties['postgreSQLSubclientProp']
+        """gets the subclient related properties of PostgreSQL subclient."""
+        super()._get_subclient_properties()
+        if "postgreSQLSubclientProp" not in self._subclient_properties:
+            self._subclient_properties["postgreSQLSubclientProp"] = {}
+        self._postgres_properties = self._subclient_properties["postgreSQLSubclientProp"]
 
     def _get_subclient_properties_json(self):
         """gets all the subclient related properties of PostgreSQL subclient.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
 
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "postgreSQLSubclientProp": self._postgres_properties,
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
+            "subClientProperties": {
+                "postgreSQLSubclientProp": self._postgres_properties,
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "content": self._content,
+                "commonProperties": self._commonProperties,
+                "contentOperationType": 1,
+            }
         }
         return subclient_json
 
-    def backup(
-            self,
-            backup_level="Differential",
-            inc_with_data=False):
+    def backup(self, backup_level="Differential", inc_with_data=False):
         """Runs a backup job for the subclient of the level specified.
 
-            Args:
-                backup_level        (str)   --  level of backup the user wish to run
-                        Full / Incremental / Differential / Synthetic_full
+        Args:
+            backup_level        (str)   --  level of backup the user wish to run
+                    Full / Incremental / Differential / Synthetic_full
 
-                    default: Differential
+                default: Differential
 
-                inc_with_data       (bool)  --  flag to determine if the incremental backup
-                includes data or not
+            inc_with_data       (bool)  --  flag to determine if the incremental backup
+            includes data or not
 
-            Returns:
-                object - instance of the Job class for this backup job
+        Returns:
+            object - instance of the Job class for this backup job
 
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
+        Raises:
+            SDKException:
+                if backup level specified is not correct
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
         backup_level = backup_level.lower()
 
-        if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
-            raise SDKException('Subclient', '103')
+        if backup_level not in ["full", "incremental", "differential", "synthetic_full"]:
+            raise SDKException("Subclient", "103")
 
         if not inc_with_data:
-            return super(PostgresSubclient, self).backup(backup_level)
-        request_json = self._backup_request_json(
-            backup_level, inc_with_data)
+            return super().backup(backup_level)
+        request_json = self._backup_request_json(backup_level, inc_with_data)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_TASK'], request_json
+            "POST", self._commcell_object._services["CREATE_TASK"], request_json
         )
         return self._process_backup_response(flag, response)
 
     def restore_postgres_server(
-            self,
-            database_list=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            clone_env=False,
-            clone_options=None,
-            media_agent=None,
-            table_level_restore=False,
-            staging_path=None,
-            no_of_streams=None,
-            volume_level_restore=False,
-            redirect_enabled=False,
-            redirect_path=None,
-            **kwargs):
+        self,
+        database_list=None,
+        dest_client_name=None,
+        dest_instance_name=None,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        clone_env=False,
+        clone_options=None,
+        media_agent=None,
+        table_level_restore=False,
+        staging_path=None,
+        no_of_streams=None,
+        volume_level_restore=False,
+        redirect_enabled=False,
+        redirect_path=None,
+        **kwargs,
+    ):
         """
         Method to restore the Postgres server
 
@@ -423,4 +404,5 @@ class PostgresSubclient(DatabaseSubclient):
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
             redirect_path=redirect_path,
-            revert=kwargs.get("revert", False))
+            revert=kwargs.get("revert", False),
+        )

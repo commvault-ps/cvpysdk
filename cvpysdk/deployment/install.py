@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""" Main file for performing the download operation
+""" " Main file for performing the download operation
 
 Download
 ========
@@ -33,29 +31,34 @@ Download
 
 """
 
-from ..job import Job
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+from ..deployment.deploymentconstants import (
+    InstallUpdateOptions,
+    UnixDownloadFeatures,
+    WindowsDownloadFeatures,
+)
 from ..exception import SDKException
-from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures, InstallUpdateOptions
+from ..job import Job
 from ..schedules import SchedulePattern, Schedules
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
-class Install(object):
+
+class Install:
     """class for installing software packages
 
     Attributes:
         commcell_object (object): Instance of the Commcell class.
         _services (dict): Dictionary of Commcell services.
         _cvpysdk_object (object): Instance of the CVPySDK class.
-    
+
     Usage:
         install_obj = Install(commcell_object)
     """
 
-
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the Install class.
 
         Args:
@@ -70,13 +73,14 @@ class Install(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-
-    def repair_software(self,
-                        client: Optional[str] = None,
-                        client_group: Optional[str] = None,
-                        username: Optional[str] = None,
-                        password: Optional[str] = None,
-                        reboot_client: bool = False) -> Job:
+    def repair_software(
+        self,
+        client: Optional[str] = None,
+        client_group: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        reboot_client: bool = False,
+    ) -> Job:
         """triggers Repair of the software for a specified client machine
 
         Args:
@@ -106,17 +110,17 @@ class Install(object):
 
         """
         if (client is None) and (client_group is None):
-            raise SDKException('Install', '100')
+            raise SDKException("Install", "100")
 
         if client:
             client_group = ""
-            if not client in self.commcell_object.clients.all_clients:
-                raise SDKException('Install', '101')
+            if client not in self.commcell_object.clients.all_clients:
+                raise SDKException("Install", "101")
 
         elif client_group:
             client = ""
-            if not client_group in self.commcell_object.client_groups.all_clientgroups:
-                raise SDKException('Install', '102')
+            if client_group not in self.commcell_object.client_groups.all_clientgroups:
+                raise SDKException("Install", "102")
 
         request_json = {
             "taskInfo": {
@@ -124,26 +128,17 @@ class Install(object):
                     "taskType": 1,
                     "initiatedFrom": 2,
                     "policyType": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4020
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4020},
                         "options": {
                             "adminOpts": {
                                 "clientInstallOption": {
                                     "installerOption": {
-                                        "clientComposition": [
-                                            {
-                                                "packageDeliveryOption": 0
-                                            }
-                                        ]
+                                        "clientComposition": [{"packageDeliveryOption": 0}]
                                     }
                                 },
                                 "updateOption": {
@@ -151,60 +146,55 @@ class Install(object):
                                     "restartExplorerPlugin": True,
                                     "rebootClient": reboot_client,
                                     "clientAndClientGroups": [
-                                        {
-                                            "clientGroupName": client_group,
-                                            "clientName": client
-                                        }
+                                        {"clientGroupName": client_group, "clientName": client}
                                     ],
                                     "installUpdatesJobType": {
                                         "installType": 4,
                                         "upgradeClients": False,
                                         "undoUpdates": False,
-                                        "installUpdates": False
-                                    }
-                                }
+                                        "installUpdates": False,
+                                    },
+                                },
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
         if username:
-            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["clientAuthForJob"] \
-                = {
-                "password": password,
-                "userName": username
-            }
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "clientAuthForJob"
+            ] = {"password": password, "userName": username}
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CREATE_TASK'], request_json
+            "POST", self._services["CREATE_TASK"], request_json
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self.commcell_object, response.json()['jobIds'][0])
+                    return Job(self.commcell_object, response.json()["jobIds"][0])
 
                 else:
-                    raise SDKException('Install', '107')
+                    raise SDKException("Install", "107")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
-
+            raise SDKException("Response", "101")
 
     def push_servicepack_and_hotfix(
-            self,
-            client_computers: Optional[List[str]] = None,
-            client_computer_groups: Optional[List[str]] = None,
-            all_client_computers: bool = False,
-            all_client_computer_groups: bool = False,
-            reboot_client: bool = False,
-            run_db_maintenance: bool = True,
-            maintenance_release_only: bool = False,
-            **kwargs: Dict[str, Any]) -> Union[Job, Schedules]:
+        self,
+        client_computers: Optional[List[str]] = None,
+        client_computer_groups: Optional[List[str]] = None,
+        all_client_computers: bool = False,
+        all_client_computer_groups: bool = False,
+        reboot_client: bool = False,
+        run_db_maintenance: bool = True,
+        maintenance_release_only: bool = False,
+        **kwargs: Dict[str, Any],
+    ) -> Union[Job, Schedules]:
         """Installs the software packages on the clients
 
         Args:
@@ -240,20 +230,28 @@ class Install(object):
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         """
-        version = kwargs["cs_version"] if kwargs.get("cs_version") else self.commcell_object.commserv_version
+        version = (
+            kwargs["cs_version"]
+            if kwargs.get("cs_version")
+            else self.commcell_object.commserv_version
+        )
         selected_clients = []
         selected_client_groups = []
-        schedule_pattern = kwargs.get('schedule_pattern', None)
+        schedule_pattern = kwargs.get("schedule_pattern", None)
         if schedule_pattern:
             if not isinstance(schedule_pattern, dict):
                 raise SDKException("Install", "101")
-        if not any([all_client_computers,
-                    all_client_computer_groups,
-                    client_computers,
-                    client_computer_groups]):
-            raise SDKException('Install', '101')
-        
-        install_update_options = kwargs.get('install_update_options', None)
+        if not any(
+            [
+                all_client_computers,
+                all_client_computer_groups,
+                client_computers,
+                client_computer_groups,
+            ]
+        ):
+            raise SDKException("Install", "101")
+
+        install_update_options = kwargs.get("install_update_options", None)
         if install_update_options and not isinstance(install_update_options, int):
             raise SDKException("Install", "101")
 
@@ -263,28 +261,37 @@ class Install(object):
         if client_computers is not None:
             client_computers = [x.lower() for x in client_computers]
             if not set(client_computers).issubset(commcell_client_computers):
-                raise SDKException('Install', '102')
+                raise SDKException("Install", "102")
             if version >= 36:
                 for client in client_computers:
-                    selected_clients.append({"id": int(commcell_client_computers[client]['id']),
-                                            "type": "CLIENT_ENTITY"})
+                    selected_clients.append(
+                        {
+                            "id": int(commcell_client_computers[client]["id"]),
+                            "type": "CLIENT_ENTITY",
+                        }
+                    )
             else:
-                selected_clients = [{'clientName': client} for client in client_computers]
+                selected_clients = [{"clientName": client} for client in client_computers]
 
         if client_computer_groups is not None:
             client_computer_groups = [x.lower() for x in client_computer_groups]
             if not set(client_computer_groups).issubset(commcell_client_computer_groups):
-                raise SDKException('Install', '103')
+                raise SDKException("Install", "103")
 
             if version >= 36:
                 for client_group in client_computer_groups:
-                    selected_client_groups.append({"id": int(commcell_client_computer_groups[client_group]),
-                                                    "type": "CLIENT_GROUP_ENTITY"})
+                    selected_client_groups.append(
+                        {
+                            "id": int(commcell_client_computer_groups[client_group]),
+                            "type": "CLIENT_GROUP_ENTITY",
+                        }
+                    )
             else:
-                selected_client_groups = [{'clientGroupName': client}
-                                          for client in client_computer_groups]
+                selected_client_groups = [
+                    {"clientGroupName": client} for client in client_computer_groups
+                ]
 
-        install_diagnostic_updates = kwargs.get('install_diagnostic_updates', False)
+        install_diagnostic_updates = kwargs.get("install_diagnostic_updates", False)
 
         if all_client_computers and version < 36:
             selected_clients = [{"_type_": 2}]
@@ -299,7 +306,7 @@ class Install(object):
                 "runDBMaintenance": run_db_maintenance,
                 "installDiagnosticUpdates": install_diagnostic_updates,
                 "notifyWhenJobCompletes": False,
-                "entities": all_clients
+                "entities": all_clients,
             }
         else:
             request_json = {
@@ -308,21 +315,13 @@ class Install(object):
                         "taskType": 1,
                         "initiatedFrom": 2,
                         "policyType": 0,
-                        "alert": {
-                            "alertName": ""
-                        },
-                        "taskFlags": {
-                            "isEdgeDrive": False,
-                            "disabled": False
-                        }
+                        "alert": {"alertName": ""},
+                        "taskFlags": {"isEdgeDrive": False, "disabled": False},
                     },
                     "subTasks": [
                         {
                             "subTaskOperation": 1,
-                            "subTask": {
-                                "subTaskType": 1,
-                                "operationType": 4020
-                            },
+                            "subTask": {"subTaskType": 1, "operationType": 4020},
                             "options": {
                                 "adminOpts": {
                                     "updateOption": {
@@ -335,13 +334,13 @@ class Install(object):
                                         "installUpdatesJobType": {
                                             "upgradeClients": False,
                                             "undoUpdates": False,
-                                            "installUpdates": True
-                                        }
+                                            "installUpdates": True,
+                                        },
                                     }
                                 },
-                            }
+                            },
                         }
-                    ]
+                    ],
                 }
             }
 
@@ -350,56 +349,69 @@ class Install(object):
 
         if install_update_options:
             if version >= 36:
-                update_os = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HYPERSCALE_OS_UPDATES.value)
-                update_cvfs = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES.value)
+                update_os = bool(
+                    install_update_options
+                    & InstallUpdateOptions.UPDATE_INSTALL_HYPERSCALE_OS_UPDATES.value
+                )
+                update_cvfs = bool(
+                    install_update_options
+                    & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES.value
+                )
                 mode = "NON_DISRUPTIVE"
-                if install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES_DISRUPTIVE_MODE.value:
+                if (
+                    install_update_options
+                    & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES_DISRUPTIVE_MODE.value
+                ):
                     mode = "DISRUPTIVE"
-                
-                request_json['installOSUpdates'] = update_os
-                request_json['installStorageUpdates'] = update_cvfs
-                request_json['hyperscalePlatformUpgradeMode'] = mode
+
+                request_json["installOSUpdates"] = update_os
+                request_json["installStorageUpdates"] = update_cvfs
+                request_json["hyperscalePlatformUpgradeMode"] = mode
             else:
-                adminOpts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
-                adminOpts['updateOption']['installUpdateOptions'] = install_update_options
+                adminOpts = request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]
+                adminOpts["updateOption"]["installUpdateOptions"] = install_update_options
 
-        method = 'PUT' if version >= 36 else 'POST'
-        url = self._services['UPGRADE_SOFTWARE'] if version >= 36 else self._services['CREATE_TASK']
-
-        flag, response = self._cvpysdk_object.make_request(
-            method, url, request_json
+        method = "PUT" if version >= 36 else "POST"
+        url = (
+            self._services["UPGRADE_SOFTWARE"] if version >= 36 else self._services["CREATE_TASK"]
         )
+
+        flag, response = self._cvpysdk_object.make_request(method, url, request_json)
 
         if flag:
             if response.json():
                 if "jobIds" in response.json() or "jobId" in response.json():
-                    return Job(self.commcell_object, response.json()['jobId']) if version >= 36 \
-                        else Job(self.commcell_object, response.json()['jobIds'][0])
+                    return (
+                        Job(self.commcell_object, response.json()["jobId"])
+                        if version >= 36
+                        else Job(self.commcell_object, response.json()["jobIds"][0])
+                    )
 
                 elif schedule_pattern and "taskId" in response.json():
-                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self.commcell_object).get(task_id=response.json()["taskId"])
 
                 else:
-                    raise SDKException('Install', '107')
+                    raise SDKException("Install", "107")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def install_software(
-            self,
-            client_computers: list = None,
-            windows_features: list = None,
-            unix_features: list = None,
-            username: str = None,
-            password: str = None,
-            install_path: str = None,
-            log_file_loc: str = None,
-            client_group_name: list = None,
-            storage_policy_name: str = None,
-            sw_cache_client: str = None,
-            **kwargs) -> Job:
+        self,
+        client_computers: list = None,
+        windows_features: list = None,
+        unix_features: list = None,
+        username: str = None,
+        password: str = None,
+        install_path: str = None,
+        log_file_loc: str = None,
+        client_group_name: list = None,
+        storage_policy_name: str = None,
+        sw_cache_client: str = None,
+        **kwargs,
+    ) -> Job:
         """
         Installs the features selected on the given machines
         Args:
@@ -525,22 +537,25 @@ class Install(object):
                     not both
 
         """
-        commcell_name = kwargs.get('commserv_name')
+        commcell_name = kwargs.get("commserv_name")
         if not commcell_name:
             try:
                 commcell_name = self.commcell_object.commserv_name
             except SDKException as err:
                 raise SDKException(
-                    'Install',
-                    '101',
+                    "Install",
+                    "101",
                     (
-                        'Please ensure user has VIEW permission on the CommServe or provide the commserv_name parameter explicitly. '
-                        f'Original error: {err}'
-                    )
+                        "Please ensure user has VIEW permission on the CommServe or provide the commserv_name parameter explicitly. "
+                        f"Original error: {err}"
+                    ),
                 ) from err
         elif not isinstance(commcell_name, str) or not commcell_name.strip():
             raise SDKException(
-                'Install', '101', 'Invalid CommServe name provided. CommServe name cannot be empty.')
+                "Install",
+                "101",
+                "Invalid CommServe name provided. CommServe name cannot be empty.",
+            )
 
         db2_install = False
         ma_install = False
@@ -550,8 +565,9 @@ class Install(object):
                 db2_install = True
             if WindowsDownloadFeatures.MEDIA_AGENT.value in windows_features:
                 ma_install = True
-            install_options = [{'osType': 'Windows', 'ComponentId': feature_id}
-                               for feature_id in windows_features]
+            install_options = [
+                {"osType": "Windows", "ComponentId": feature_id} for feature_id in windows_features
+            ]
 
         elif unix_features:
             os_type = 1
@@ -559,11 +575,12 @@ class Install(object):
                 db2_install = True
             if UnixDownloadFeatures.MEDIA_AGENT.value in unix_features:
                 ma_install = True
-            install_options = [{'osType': 'Unix', 'ComponentId': feature_id}
-                               for feature_id in unix_features]
+            install_options = [
+                {"osType": "Unix", "ComponentId": feature_id} for feature_id in unix_features
+            ]
 
         else:
-            raise SDKException('Install', '105')
+            raise SDKException("Install", "105")
 
         if client_computers:
             client_details = []
@@ -573,47 +590,38 @@ class Install(object):
                         "clientEntity": {
                             "clientId": 0,
                             "clientName": client_name,
-                            "commCellName": commcell_name
+                            "commCellName": commcell_name,
                         }
-                    })
+                    }
+                )
 
         else:
-            raise SDKException('Install', '106')
+            raise SDKException("Install", "106")
 
         if client_group_name:
             client_group_name = [x.lower() for x in client_group_name]
-            if not set(client_group_name).issubset(self.commcell_object.client_groups.all_clientgroups):
-                raise SDKException('Install', '103')
-            selected_client_groups = [{'clientGroupName': client_group}
-                                      for client_group in client_group_name]
+            if not set(client_group_name).issubset(
+                self.commcell_object.client_groups.all_clientgroups
+            ):
+                raise SDKException("Install", "103")
+            selected_client_groups = [
+                {"clientGroupName": client_group} for client_group in client_group_name
+            ]
 
-        install_flags = kwargs.get('install_flags')
-        db2_logs = kwargs.get('db2_logs_location', {})
-        index_cache_location = kwargs.get('index_cache_location', None)
-        firewall_inputs = kwargs.get('firewall_inputs', {})
-        web_console_input = kwargs.get('webconsole_inputs', {})
+        install_flags = kwargs.get("install_flags")
+        db2_logs = kwargs.get("db2_logs_location", {})
+        index_cache_location = kwargs.get("index_cache_location", None)
+        firewall_inputs = kwargs.get("firewall_inputs", {})
+        web_console_input = kwargs.get("webconsole_inputs", {})
         dataDirectory = kwargs.get("dataDirectory", None)
 
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "commCellId": 2
-                    }
-                ],
-                "task": {
-                    "taskType": 1,
-                    "initiatedFrom": 1,
-                    "taskFlags": {
-                        "disabled": False
-                    }
-                },
+                "associations": [{"commCellId": 2}],
+                "task": {"taskType": 1, "initiatedFrom": 1, "taskFlags": {"disabled": False}},
                 "subTasks": [
                     {
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4026
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4026},
                         "options": {
                             "adminOpts": {
                                 "clientInstallOption": {
@@ -626,11 +634,16 @@ class Install(object):
                                         "CommServeHostName": commcell_name,
                                         "RemoteClient": False,
                                         "installFlags": {
-                                            "allowMultipleInstances": kwargs.get('allowMultipleInstances', False),
+                                            "allowMultipleInstances": kwargs.get(
+                                                "allowMultipleInstances", False
+                                            ),
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
-                                            "install32Base": install_flags.get('install32Base',
-                                                                               False) if install_flags else False,
+                                            "install32Base": install_flags.get(
+                                                "install32Base", False
+                                            )
+                                            if install_flags
+                                            else False,
                                             "disableOSFirewall": False,
                                             "stopOracleServices": False,
                                             "skipClientsOfCS": False,
@@ -639,100 +652,108 @@ class Install(object):
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
                                             "dataDirectory": dataDirectory,
-                                            "preferredIPFamily": install_flags.get('preferredIPFamily',
-                                                                                   1) if install_flags else 1,
+                                            "preferredIPFamily": install_flags.get(
+                                                "preferredIPFamily", 1
+                                            )
+                                            if install_flags
+                                            else 1,
                                             "firewallInstall": {
                                                 "enableFirewallConfig": False,
                                                 "firewallConnectionType": 0,
-                                                "portNumber": 0
-                                            }
+                                                "portNumber": 0,
+                                            },
                                         },
-                                        "User": {
-                                            "userName": "admin",
-                                            "userId": 1
-                                        },
+                                        "User": {"userName": "admin", "userId": 1},
                                         "clientComposition": [
                                             {
                                                 "activateClient": True,
-                                                "overrideSoftwareCache": True if sw_cache_client else False,
+                                                "overrideSoftwareCache": True
+                                                if sw_cache_client
+                                                else False,
                                                 "softwareCacheOrSrmProxyClient": {
-                                                    "clientName": sw_cache_client if sw_cache_client else ""
+                                                    "clientName": sw_cache_client
+                                                    if sw_cache_client
+                                                    else ""
                                                 },
                                                 "packageDeliveryOption": 0,
                                                 "components": {
                                                     "commonInfo": {
                                                         "globalFilters": 2,
                                                         "storagePolicyToUse": {
-                                                            "storagePolicyName": storage_policy_name if storage_policy_name else ""
-                                                        }
+                                                            "storagePolicyName": storage_policy_name
+                                                            if storage_policy_name
+                                                            else ""
+                                                        },
                                                     },
                                                     "fileSystem": {
                                                         "configureForLaptopBackups": False
                                                     },
                                                     "componentInfo": install_options,
-                                                    "webConsole": web_console_input
+                                                    "webConsole": web_console_input,
                                                 },
                                                 "clientInfo": {
-                                                    "clientGroups": selected_client_groups if client_group_name else [],
+                                                    "clientGroups": selected_client_groups
+                                                    if client_group_name
+                                                    else [],
                                                     "client": {
                                                         "evmgrcPort": 0,
                                                         "cvdPort": 0,
-                                                        "installDirectory": install_path if install_path else ""
+                                                        "installDirectory": install_path
+                                                        if install_path
+                                                        else "",
                                                     },
                                                     "clientProps": {
-                                                        "logFilesLocation": log_file_loc if log_file_loc else ""
-                                                    }
-                                                }
+                                                        "logFilesLocation": log_file_loc
+                                                        if log_file_loc
+                                                        else ""
+                                                    },
+                                                },
                                             }
-                                        ]
+                                        ],
                                     },
                                     "clientDetails": client_details,
                                     "clientAuthForJob": {
                                         "password": password,
-                                        "userName": username
-                                    }
+                                        "userName": username,
+                                    },
                                 },
-                                "updateOption": {
-                                    "rebootClient": True
-                                }
+                                "updateOption": {"rebootClient": True},
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
         if db2_install and db2_logs:
-            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
-                "clientComposition"][0]["components"]["db2"] = db2_logs
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "installerOption"
+            ]["clientComposition"][0]["components"]["db2"] = db2_logs
 
         if ma_install and index_cache_location:
-            index_cache_dict = {
-                "indexCacheDirectory": {
-                    "path": index_cache_location
-                }
-            }
-            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
-                "clientComposition"][0]["components"]["mediaAgent"] = index_cache_dict
+            index_cache_dict = {"indexCacheDirectory": {"path": index_cache_location}}
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "installerOption"
+            ]["clientComposition"][0]["components"]["mediaAgent"] = index_cache_dict
 
         if firewall_inputs:
-            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
-                "installFlags"]["firewallInstall"] = firewall_inputs
-
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "installerOption"
+            ]["installFlags"]["firewallInstall"] = firewall_inputs
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CREATE_TASK'], request_json
+            "POST", self._services["CREATE_TASK"], request_json
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self.commcell_object, response.json()['jobIds'][0])
+                    return Job(self.commcell_object, response.json()["jobIds"][0])
 
                 else:
-                    raise SDKException('Install', '107')
+                    raise SDKException("Install", "107")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")

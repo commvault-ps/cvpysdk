@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -42,23 +40,17 @@ Datacube:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from typing import Any
-
+from ..exception import SDKException
 from .datasource import Datasources
 
-from ..exception import SDKException
-
-USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
+USER_LOGGED_OUT_MESSAGE = "User Logged Out. Please initialize the Commcell object again."
 """str:     Message to be returned to the user, when trying the get the value of an attribute
 of the Commcell class, after the user was logged out.
 
 """
 
 
-class Datacube(object):
+class Datacube:
     """
     Represents a datacube instance running on the Commcell platform.
 
@@ -98,8 +90,8 @@ class Datacube(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
-        self._ANALYTICS_ENGINES = self._services['GET_ALL_INDEX_SERVERS']
-        self._ALL_DATASOURCES = self._services['GET_ALL_DATASOURCES']
+        self._ANALYTICS_ENGINES = self._services["GET_ALL_INDEX_SERVERS"]
+        self._ALL_DATASOURCES = self._services["GET_ALL_DATASOURCES"]
         self._GET_JDBC_DRIVERS = None
 
         self._analytics_engines = self._get_analytics_engines()
@@ -121,9 +113,7 @@ class Datacube(object):
 
         #ai-gen-doc
         """
-        o_str = "Datacube class instance for CommServ '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        o_str = f"Datacube class instance for CommServ '{self._commcell_object.commserv_name}'"
 
         return o_str
 
@@ -145,7 +135,7 @@ class Datacube(object):
 
         #ai-gen-doc
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_analytics_engines(self) -> list:
         """Retrieve the list of all analytics engines associated with the datacube.
@@ -163,11 +153,11 @@ class Datacube(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._ANALYTICS_ENGINES)
+        flag, response = self._cvpysdk_object.make_request("GET", self._ANALYTICS_ENGINES)
 
         if flag:
-            if 'listOfCIServer' in response.json():
-                return response.json()['listOfCIServer']
+            if "listOfCIServer" in response.json():
+                return response.json()["listOfCIServer"]
             return []
         self._response_not_success(response)
 
@@ -188,7 +178,7 @@ class Datacube(object):
         return self._analytics_engines
 
     @property
-    def datasources(self) -> 'Datasources':
+    def datasources(self) -> "Datasources":
         """Get the Datasources instance associated with this Datacube object.
 
         Returns:
@@ -230,7 +220,7 @@ class Datacube(object):
         #ai-gen-doc
         """
         if not isinstance(analytics_engine, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         engine_index = (
             self.analytics_engines.index(engine)
@@ -238,17 +228,17 @@ class Datacube(object):
             if engine["clientName"] == analytics_engine
         ).next()
 
-        self._GET_JDBC_DRIVERS = self._services['GET_JDBC_DRIVERS'] % (
-            self.analytics_engines[engine_index]["cloudID"]
+        self._GET_JDBC_DRIVERS = (
+            self._services["GET_JDBC_DRIVERS"] % (self.analytics_engines[engine_index]["cloudID"])
         )
 
-        flag, response = self._cvpysdk_object.make_request('GET', self._GET_JDBC_DRIVERS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._GET_JDBC_DRIVERS)
 
         if flag:
-            if response.json() and 'drivers' in response.json():
-                return response.json()['drivers']
+            if response.json() and "drivers" in response.json():
+                return response.json()["drivers"]
             else:
-                raise SDKException('Datacube', '103')
+                raise SDKException("Datacube", "103")
         else:
             self._response_not_success(response)
 

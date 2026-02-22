@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
 
 # --------------------------------------------------------------------------
@@ -44,7 +43,7 @@ Class:
         _process_browse_repsonse : process the browse result
 
         azuread_get_metadata : create azure ad object meta data information
-        
+
         __prepare_search_json : Prepare search json for search api request
 
         get_search_response : Get search response from search api
@@ -55,11 +54,12 @@ Class:
 
 """
 
-from __future__ import unicode_literals
 import base64
+from typing import Any, Dict, List, Tuple
+
 from ..backupset import Backupset
 from ..exception import SDKException
-from typing import Dict, Any, Tuple, List
+
 
 class AzureAdBackupset(Backupset):
     """
@@ -86,8 +86,8 @@ class AzureAdBackupset(Backupset):
     def _azuread_browse_basic(self, options: Dict[str, Any]) -> Tuple[int, List[Any]]:
         """Perform a basic browse operation on Azure AD objects using the provided options.
 
-        This method executes a browse activity with the specified options, returning the count of 
-        objects found and a list of the resulting objects. Advanced attributes can be included in 
+        This method executes a browse activity with the specified options, returning the count of
+        objects found and a list of the resulting objects. Advanced attributes can be included in
         the options to retrieve additional object details.
 
         Args:
@@ -116,20 +116,18 @@ class AzureAdBackupset(Backupset):
 
         request_json = self._prepare_browse_json(options)
         request_json = self.azuread_browse_double_query(options, request_json)
-        flag, response = self._cvpysdk_object.make_request("POST",
-                                                           self._BROWSE,
-                                                           request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._BROWSE, request_json)
         if flag:
             count, result = self._process_browse_response(flag, response, options)
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
         return count, result
 
     def _azuread_browse_meta(self, options: Dict[str, Any]) -> Dict[str, Any]:
         """Retrieve Azure AD browse metadata based on the provided options.
 
-        This method processes the browse options to extract and organize metadata 
-        from Azure Active Directory browse results. It updates the options dictionary 
+        This method processes the browse options to extract and organize metadata
+        from Azure Active Directory browse results. It updates the options dictionary
         with relevant filters and metadata as needed.
 
         Args:
@@ -151,22 +149,21 @@ class AzureAdBackupset(Backupset):
         #ai-gen-doc
         """
         if "meta" in options:
-            azure_meta = options['meta']
+            azure_meta = options["meta"]
         else:
             azure_meta = {}
         count, result = self._azuread_browse_basic(options)
-        if len(result) == 1 and result[0]['objType'] == 1:
-            newid = result[0]['commonData']['id']
-            options['filters'] = [(_[0], newid, _[2]) for _ in options['filters']]
+        if len(result) == 1 and result[0]["objType"] == 1:
+            newid = result[0]["commonData"]["id"]
+            options["filters"] = [(_[0], newid, _[2]) for _ in options["filters"]]
             name, metainfo = self.azuread_browse_obj_meta(result[0])
-            azure_meta['root'] = metainfo
-            options['meta'] = azure_meta
+            azure_meta["root"] = metainfo
+            options["meta"] = azure_meta
             self._azuread_browse_meta(options)
         else:
             for r_ in result:
-                if r_['objType'] == 100:
-                    options['filters'] = [("76", r_['commonData']['id'], "9"),
-                                        ("125", "FOLDER")]
+                if r_["objType"] == 100:
+                    options["filters"] = [("76", r_["commonData"]["id"], "9"), ("125", "FOLDER")]
                     count_, metainfo_ = self._azuread_browse_basic(options)
                     for i_ in metainfo_:
                         name, metainfo = self.azuread_browse_obj_meta(i_)
@@ -179,12 +176,12 @@ class AzureAdBackupset(Backupset):
     def _azuread_browse_folder(self, options: Dict[str, Any]) -> Tuple[int, List[Any]]:
         """Browse the contents of a specified Azure AD folder.
 
-        This method prepares browse filters based on the provided options and retrieves 
-        the folder content from Azure AD. The results are processed and returned as a count 
+        This method prepares browse filters based on the provided options and retrieves
+        the folder content from Azure AD. The results are processed and returned as a count
         and a list of objects.
 
         Args:
-            options: Dictionary containing browse options, including 'folder', 'meta', 'path', 
+            options: Dictionary containing browse options, including 'folder', 'meta', 'path',
                 and optional 'search' criteria.
 
         Returns:
@@ -207,37 +204,76 @@ class AzureAdBackupset(Backupset):
         #ai-gen-doc
         """
         azure_meta_mapper = {
-            "user" : { "displayname" : "Users", "browsetype" : 2, "browsestring" : "USER"},
-            "group" : { "displayname" : "Groups", "browsetype" : 3, "browsestring": "GROUP"},
-            "reg_app" : {"displayname" : "App registrations", "browsetype" : 5, "browsestring" : "APPLICATION"},
-            "ent_app" : { "displayname" : "Enterprise applications","browsetype": 6, "browsestring" : "SERVICE_PRINCIPAL"},
-            "ca_policy" : { "displayname" : "Policies","browsetype": 11, "browsestring" : "CONDITIONAL_ACCESS_POLICY"},
-            "ca_name_location" : { "displayname" : "Named locations","browsetype": 12, "browsestring" : "NAMED_LOCATION"} ,
-            "ca_auth_context" : { "displayname" : "Authentication context","browsetype": 13, "browsestring" : "AUTHENTICATION_CONTEXT"},
-            "ca_auth_strength" : { "displayname" : "Authentication strengths","browsetype": 14, "browsestring" : "AUTHENTICATION_STRENGTH"},
-            "role" : { "displayname" : "Roles","browsetype": 15, "browsestring" : "DIRECTORY_ROLE_DEFINITIONS"},
-            "admin_unit" : { "displayname" : "Admin units","browsetype": 16, "browsestring" : "ADMINISTRATIVE_UNIT"},
-            "Device compliance policies" : { "displayname" : "Device compliance policies","browsetype": 17, "browsestring" : "DEVICE_COMPLIANCE_POLICY"}}
-        azure_meta = options['meta']
-        newid = azure_meta[azure_meta_mapper[options['folder']]['displayname']]['id']
-        options['filters'] = [("76", newid, "9"),
-                              ("125", azure_meta_mapper[options['folder']]['browsestring'])]
+            "user": {"displayname": "Users", "browsetype": 2, "browsestring": "USER"},
+            "group": {"displayname": "Groups", "browsetype": 3, "browsestring": "GROUP"},
+            "reg_app": {
+                "displayname": "App registrations",
+                "browsetype": 5,
+                "browsestring": "APPLICATION",
+            },
+            "ent_app": {
+                "displayname": "Enterprise applications",
+                "browsetype": 6,
+                "browsestring": "SERVICE_PRINCIPAL",
+            },
+            "ca_policy": {
+                "displayname": "Policies",
+                "browsetype": 11,
+                "browsestring": "CONDITIONAL_ACCESS_POLICY",
+            },
+            "ca_name_location": {
+                "displayname": "Named locations",
+                "browsetype": 12,
+                "browsestring": "NAMED_LOCATION",
+            },
+            "ca_auth_context": {
+                "displayname": "Authentication context",
+                "browsetype": 13,
+                "browsestring": "AUTHENTICATION_CONTEXT",
+            },
+            "ca_auth_strength": {
+                "displayname": "Authentication strengths",
+                "browsetype": 14,
+                "browsestring": "AUTHENTICATION_STRENGTH",
+            },
+            "role": {
+                "displayname": "Roles",
+                "browsetype": 15,
+                "browsestring": "DIRECTORY_ROLE_DEFINITIONS",
+            },
+            "admin_unit": {
+                "displayname": "Admin units",
+                "browsetype": 16,
+                "browsestring": "ADMINISTRATIVE_UNIT",
+            },
+            "Device compliance policies": {
+                "displayname": "Device compliance policies",
+                "browsetype": 17,
+                "browsestring": "DEVICE_COMPLIANCE_POLICY",
+            },
+        }
+        azure_meta = options["meta"]
+        newid = azure_meta[azure_meta_mapper[options["folder"]]["displayname"]]["id"]
+        options["filters"] = [
+            ("76", newid, "9"),
+            ("125", azure_meta_mapper[options["folder"]]["browsestring"]),
+        ]
         if "search" in options:
-            if isinstance(options['search'], dict):
-                search_dict = options['search']
+            if isinstance(options["search"], dict):
+                search_dict = options["search"]
                 if "obj_id" in search_dict:
-                    options['filters'].append(("130", search_dict['obj_id']))
+                    options["filters"].append(("130", search_dict["obj_id"]))
                 if "source" in search_dict:
-                    if search_dict['source'] == "AzureAD":
-                        options['filters'].append(("128", "0"))
-                    elif search_dict['source'] == "WinAD":
-                        options['filters'].append(("128", "1"))
+                    if search_dict["source"] == "AzureAD":
+                        options["filters"].append(("128", "0"))
+                    elif search_dict["source"] == "WinAD":
+                        options["filters"].append(("128", "1"))
             else:
-                options['filters'].append(("30", options['search']))
+                options["filters"].append(("30", options["search"]))
 
-        del(options['folder'])
-        del(options['meta'])
-        del(options['path'])
+        del options["folder"]
+        del options["meta"]
+        del options["path"]
         count, results = self._azuread_browse_basic(options)
         results = self._process_result_format(results)
         return count, results
@@ -262,7 +298,7 @@ class AzureAdBackupset(Backupset):
             >>> # Browse using a dictionary of options
             >>> count, objects = backupset.browse({'folder': 'Users', 'recursive': True})
             >>> print(f"Found {count} objects in 'Users' folder")
-            >>> 
+            >>>
             >>> # Browse using keyword arguments
             >>> count, objects = backupset.browse(folder='Groups', recursive=False)
             >>> print(f"Found {count} objects in 'Groups' folder")
@@ -275,7 +311,7 @@ class AzureAdBackupset(Backupset):
             options = kwargs
         options = self.azuread_browse_options_builder(options)
         azure_meta = self._azuread_browse_meta(options)
-        options['meta'] = azure_meta
+        options["meta"] = azure_meta
         count, browse_result = self._azuread_browse_folder(options)
 
         return count, browse_result
@@ -283,8 +319,8 @@ class AzureAdBackupset(Backupset):
     def _process_browse_response(self, flag: bool, response: Any, options: dict) -> tuple:
         """Process the browse response and retrieve item metadata.
 
-        This method parses the server's browse response to extract the total number of items found 
-        and a list of metadata dictionaries for each item. It raises an SDKException if the response 
+        This method parses the server's browse response to extract the total number of items found
+        and a list of metadata dictionaries for each item. It raises an SDKException if the response
         is invalid or if browsing fails.
 
         Args:
@@ -314,31 +350,32 @@ class AzureAdBackupset(Backupset):
         if flag:
             if response.json():
                 response_json = response.json()
-                if response_json and 'browseResponses' in response_json:
-                    _browse_responses = response_json['browseResponses']
+                if response_json and "browseResponses" in response_json:
+                    _browse_responses = response_json["browseResponses"]
                     for browse_response in _browse_responses:
                         if "browseResult" in browse_response:
-                            browse_result = browse_response['browseResult']
-                            browseresulttcount = browse_result['totalItemsFound']
-                            if 'dataResultSet' in browse_result:
-                                result_set = browse_result['dataResultSet']
+                            browse_result = browse_response["browseResult"]
+                            browseresulttcount = browse_result["totalItemsFound"]
+                            if "dataResultSet" in browse_result:
+                                result_set = browse_result["dataResultSet"]
                     if not result_set and result_set != []:
-                        raise SDKException('Backupset', '102',
-                                           "Failed to browse for subclient backup content")
+                        raise SDKException(
+                            "Backupset", "102", "Failed to browse for subclient backup content"
+                        )
                     else:
                         for result in result_set:
                             metadata = self.azuread_get_metadata(result)
-                            metadatas.append(metadata['azureADDataV2'])
+                            metadatas.append(metadata["azureADDataV2"])
             else:
                 raise SDKException("Backupset", "102", "response is not valid")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
         return browseresulttcount, metadatas
 
     def _process_result_format(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Convert browse results to the original data format for Azure AD.
 
-        This method updates each result dictionary by replacing all occurrences of "x" with "-" 
+        This method updates each result dictionary by replacing all occurrences of "x" with "-"
         in the 'id' field found under 'commonData', and stores the result in a new 'azureid' key.
 
         Args:
@@ -362,8 +399,9 @@ class AzureAdBackupset(Backupset):
         #ai-gen-doc
         """
         for _ in results:
-            _['azureid'] =  _['commonData']['id'].replace("x","-")
+            _["azureid"] = _["commonData"]["id"].replace("x", "-")
         return results
+
     def azuread_get_metadata(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Retrieve Azure AD metadata from the provided browse result.
 
@@ -397,13 +435,12 @@ class AzureAdBackupset(Backupset):
         """
         metadata = {}
         if "advancedData" in result:
-            if "browseMetaData" in result['advancedData']:
-                metadata = result['advancedData']['browseMetaData']
+            if "browseMetaData" in result["advancedData"]:
+                metadata = result["advancedData"]["browseMetaData"]
                 if "azureADDataV2" in metadata:
-                    metadata['azureADDataV2']['guid'] = result['advancedData']['objectGuid']
+                    metadata["azureADDataV2"]["guid"] = result["advancedData"]["objectGuid"]
                 else:
-                    raise SDKException('Backupset', '110',
-                                       "Azure AD meta data is not found")
+                    raise SDKException("Backupset", "110", "Azure AD meta data is not found")
         return metadata
 
     def azuread_browse_obj_meta(self, obj_: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
@@ -430,16 +467,18 @@ class AzureAdBackupset(Backupset):
 
         #ai-gen-doc
         """
-        name = obj_['commonData']['displayName']
+        name = obj_["commonData"]["displayName"]
         metainfo = {}
-        metainfo['id'] = obj_['commonData']['id']
-        metainfo['azureid'] = metainfo['id'].replace("x", "-")
-        metainfo['name'] = name
-        metainfo['guid'] = obj_['guid']
-        metainfo['type'] = obj_['objType']
+        metainfo["id"] = obj_["commonData"]["id"]
+        metainfo["azureid"] = metainfo["id"].replace("x", "-")
+        metainfo["name"] = name
+        metainfo["guid"] = obj_["guid"]
+        metainfo["type"] = obj_["objType"]
         return name, metainfo
 
-    def azuread_browse_double_query(self, options: Dict[str, Any], request_json: Dict[str, Any]) -> Dict[str, Any]:
+    def azuread_browse_double_query(
+        self, options: Dict[str, Any], request_json: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Create a request JSON for Azure AD double query browsing.
 
         This method constructs and modifies the request JSON to include double query parameters
@@ -473,43 +512,42 @@ class AzureAdBackupset(Backupset):
 
         #ai-gen-doc
         """
-        request_json['queries'] = [{
-                        "type": "0",
-                        "queryId": "0",
-                        "whereClause" :[],
-                        "dataParam": {
-                            "sortParam": {
-                                "ascending": True,
-                                "sortBy": [126]
-                            },
-                            "paging": {
-                                "pageSize": int(options['page_size']),
-                                "skipNode": int(options['skip_node']),
-                                "firstNode": 0
-                            }
-                        }
+        request_json["queries"] = [
+            {
+                "type": "0",
+                "queryId": "0",
+                "whereClause": [],
+                "dataParam": {
+                    "sortParam": {"ascending": True, "sortBy": [126]},
+                    "paging": {
+                        "pageSize": int(options["page_size"]),
+                        "skipNode": int(options["skip_node"]),
+                        "firstNode": 0,
                     },
-                    {   "type": "1",
-                        "queryId": "1",
-                        "whereClause": [],
-                        "aggrParam"  : {'aggrType': 4,
-                                        'field': 0}}]
+                },
+            },
+            {
+                "type": "1",
+                "queryId": "1",
+                "whereClause": [],
+                "aggrParam": {"aggrType": 4, "field": 0},
+            },
+        ]
 
-        if options['filters']:
-            for filter_ in options['filters']:
+        if options["filters"]:
+            for filter_ in options["filters"]:
                 filter_dict = {
-                    'connector': 0,
-                    'criteria': {
-                        'field': filter_[0],
-                        'values': [filter_[1]]}}
+                    "connector": 0,
+                    "criteria": {"field": filter_[0], "values": [filter_[1]]},
+                }
                 if len(filter_) == 3:
-                    filter_dict['criteria']['dataOperator'] = int(filter_[2])
+                    filter_dict["criteria"]["dataOperator"] = int(filter_[2])
                 if filter_[0] == "125":
-                    del (filter_dict['connector'])
-                request_json['queries'][0]['whereClause'].append(filter_dict)
-                request_json['queries'][1]['whereClause'].append(filter_dict)
+                    del filter_dict["connector"]
+                request_json["queries"][0]["whereClause"].append(filter_dict)
+                request_json["queries"][1]["whereClause"].append(filter_dict)
 
-        del(request_json['paths'])
+        del request_json["paths"]
         return request_json
 
     def azuread_browse_options_builder(self, options: Dict[str, Any]) -> Dict[str, Any]:
@@ -534,24 +572,26 @@ class AzureAdBackupset(Backupset):
         #ai-gen-doc
         """
         if "filters" not in options:
-            options['filters'] = [("76", "00000000000000000000000000000001", "9"),
-                                  ("76", "00000000000000000000000000000001", "9")]
+            options["filters"] = [
+                ("76", "00000000000000000000000000000001", "9"),
+                ("76", "00000000000000000000000000000001", "9"),
+            ]
         if "operation" not in options:
-            options['operation'] = "browse"
-            options['page_size'] = 20
-            options['skip_node'] = 0
+            options["operation"] = "browse"
+            options["page_size"] = 20
+            options["skip_node"] = 0
         return options
 
     def __prepare_search_json(self, options: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare the search JSON payload for the view_properties API call.
 
-        This method constructs a search request JSON using the provided options, 
-        which include search attributes, time filters, and subclient information. 
-        The resulting JSON can be used to perform advanced search operations 
+        This method constructs a search request JSON using the provided options,
+        which include search attributes, time filters, and subclient information.
+        The resulting JSON can be used to perform advanced search operations
         against Azure AD backup data.
 
         Args:
-            options: Dictionary containing search parameters. 
+            options: Dictionary containing search parameters.
                 Example:
                     {
                         "to_time": <epoch_time>,
@@ -574,7 +614,7 @@ class AzureAdBackupset(Backupset):
 
         #ai-gen-doc
         """
-        options["subclient_id"] = self.subclients.all_subclients['default']['id']
+        options["subclient_id"] = self.subclients.all_subclients["default"]["id"]
 
         request_json = {
             "mode": 4,
@@ -587,22 +627,14 @@ class AzureAdBackupset(Backupset):
                                 {
                                     "field": "CISTATE",
                                     "intraFieldOp": 0,
-                                    "fieldValues": {
-                                        "values": [
-                                            "1"
-                                        ]
-                                    }
+                                    "fieldValues": {"values": ["1"]},
                                 },
                                 {
                                     "field": "IS_VISIBLE",
                                     "intraFieldOp": 0,
-                                    "fieldValues": {
-                                        "values": [
-                                            "true"
-                                        ]
-                                    }
-                                }
-                            ]
+                                    "fieldValues": {"values": ["true"]},
+                                },
+                            ],
                         }
                     }
                 ],
@@ -615,98 +647,54 @@ class AzureAdBackupset(Backupset):
                                 {
                                     "field": "BACKUPTIME",
                                     "intraFieldOp": 0,
-                                    "fieldValues": {
-                                        "values": [
-                                            "0",
-                                            str(options["to_time"])
-                                        ]
-                                    }
+                                    "fieldValues": {"values": ["0", str(options["to_time"])]},
                                 },
                                 {
                                     "field": "DATA_TYPE",
                                     "intraFieldOp": 0,
-                                    "fieldValues": {
-                                        "values": [
-                                            "1"
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
+                                    "fieldValues": {"values": ["1"]},
+                                },
+                            ],
+                        },
                     }
                 ],
                 "emailFilter": [],
-                "galaxyFilter": [
-                    {
-                        "appIdList": [
-                            int(options["subclient_id"])
-                        ]
-                    }
-                ],
+                "galaxyFilter": [{"appIdList": [int(options["subclient_id"])]}],
                 "cvSearchKeyword": {
                     "isExactWordsOptionSelected": False,
-                    "keyword": str(options["attribute"]) + "*"
-                }
+                    "keyword": str(options["attribute"]) + "*",
+                },
             },
             "searchProcessingInfo": {
                 "resultOffset": 0,
                 "pageSize": 15,
                 "queryParams": [
-                    {
-                        "param": "ENABLE_MIXEDVIEW",
-                        "value": "true"
-                    },
-                    {
-                        "param": "ENABLE_NAVIGATION",
-                        "value": "on"
-                    },
-                    {
-                        "param": "ENABLE_DEFAULTFACETS",
-                        "value": "false"
-                    },
+                    {"param": "ENABLE_MIXEDVIEW", "value": "true"},
+                    {"param": "ENABLE_NAVIGATION", "value": "on"},
+                    {"param": "ENABLE_DEFAULTFACETS", "value": "false"},
                     {
                         "param": "RESPONSE_FIELD_LIST",
                         "value": "CONTENTID,CV_TURBO_GUID,PARENT_GUID,AFILEID,AFILEOFFSET,"
-                                 "COMMCELLNO,MODIFIEDTIME,SIZEINKB,DATA_TYPE,AD_DISPLAYNAME,"
-                                 "AD_ID,AD_OBJECT_TYPE,BACKUPTIME,AD_FLAGS,CISTATE,DATE_DELETED,"
-                                 "AD_MAIL,AD_MAILNICKNAME,AD_PROXY_ADDRESSES,AD_BUSINESS_PHONES,"
-                                 "AD_CITY,AD_COUNTRY,AD_DELETED_TIME,AD_POSTALCODE,AD_STATE,"
-                                 "AD_STREET_ADDRESS,AD_LAST_DIR_SYNC_TIME,"
-                                 "AD_COUNTRY_LETTER_CODE,AD_DIR_SYNC_ENABLED,AD_MKT_NOTIFY_MAILS,"
-                                 "AD_TENANT_OBJECT_TYPE,AD_PREFER_LANG,AD_SEC_NOTIFY_MAILS,"
-                                 "AD_SEC_NOTIFY_PHONES,AD_TECH_NOTIFY_MAILS,AD_TELEPHONE_NR,"
-                                 "AD_CREATED_TIME,AD_DESCRIPTION,AD_GROUP_TYPES,AD_MAIL_ENABLED,"
-                                 "AD_VISIBILITY,AD_SOURCE_TYPE,AD_AZURE_APP_ID,AD_HOME_PAGE_URL,"
-                                 "AD_TAGS,AD_AZURE_APP_DISPLAY_NAME,AD_APP_OWNER_ORGID,"
-                                 "AD_REPLY_URLS,AD_PUBLISHER_NAME,AD_SERVICE_PRINCIPAL_NAMES"
+                        "COMMCELLNO,MODIFIEDTIME,SIZEINKB,DATA_TYPE,AD_DISPLAYNAME,"
+                        "AD_ID,AD_OBJECT_TYPE,BACKUPTIME,AD_FLAGS,CISTATE,DATE_DELETED,"
+                        "AD_MAIL,AD_MAILNICKNAME,AD_PROXY_ADDRESSES,AD_BUSINESS_PHONES,"
+                        "AD_CITY,AD_COUNTRY,AD_DELETED_TIME,AD_POSTALCODE,AD_STATE,"
+                        "AD_STREET_ADDRESS,AD_LAST_DIR_SYNC_TIME,"
+                        "AD_COUNTRY_LETTER_CODE,AD_DIR_SYNC_ENABLED,AD_MKT_NOTIFY_MAILS,"
+                        "AD_TENANT_OBJECT_TYPE,AD_PREFER_LANG,AD_SEC_NOTIFY_MAILS,"
+                        "AD_SEC_NOTIFY_PHONES,AD_TECH_NOTIFY_MAILS,AD_TELEPHONE_NR,"
+                        "AD_CREATED_TIME,AD_DESCRIPTION,AD_GROUP_TYPES,AD_MAIL_ENABLED,"
+                        "AD_VISIBILITY,AD_SOURCE_TYPE,AD_AZURE_APP_ID,AD_HOME_PAGE_URL,"
+                        "AD_TAGS,AD_AZURE_APP_DISPLAY_NAME,AD_APP_OWNER_ORGID,"
+                        "AD_REPLY_URLS,AD_PUBLISHER_NAME,AD_SERVICE_PRINCIPAL_NAMES",
                     },
-                    {
-                        "param": "DO_NOT_AUDIT",
-                        "value": "true"
-                    },
-                    {
-                        "param": "COLLAPSE_FIELD",
-                        "value": "AD_ID"
-                    },
-                    {
-                        "param": "COLLAPSE_SORT",
-                        "value": "BACKUPTIME DESC"
-                    }
+                    {"param": "DO_NOT_AUDIT", "value": "true"},
+                    {"param": "COLLAPSE_FIELD", "value": "AD_ID"},
+                    {"param": "COLLAPSE_SORT", "value": "BACKUPTIME DESC"},
                 ],
-                "sortParams": [
-                    {
-                        "sortDirection": 0,
-                        "sortField": "AD_DISPLAYNAME"
-                    }
-                ]
+                "sortParams": [{"sortDirection": 0, "sortField": "AD_DISPLAYNAME"}],
             },
-            "facetRequests": {
-                "facetRequest": [
-                    {
-                        "name": "AD_OBJECT_TYPE"
-                    }
-                ]
-            }
+            "facetRequests": {"facetRequest": [{"name": "AD_OBJECT_TYPE"}]},
         }
 
         return request_json
@@ -739,12 +727,12 @@ class AzureAdBackupset(Backupset):
         uri = self._services["DO_WEB_SEARCH"]
         options = {"to_time": job_time, "attribute": attribute}
         request_json = self.__prepare_search_json(options)
-        flag, response = self._cvpysdk_object.make_request('POST', uri, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", uri, request_json)
         if not flag:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
         response = response.json()
         if response["proccessingInfo"]["totalHits"] == 0:
-            raise SDKException('Backupset', '107', "no result found with specified attribute")
+            raise SDKException("Backupset", "107", "no result found with specified attribute")
         return response
 
     def view_attributes_url_builder(self, job_time: str, display_name: str) -> str:
@@ -770,7 +758,7 @@ class AzureAdBackupset(Backupset):
         #ai-gen-doc
         """
 
-        subclient_id = self.subclients.all_subclients['default']['id']
+        subclient_id = self.subclients.all_subclients["default"]["id"]
 
         try:
             search_response = self.get_search_response(job_time=job_time, attribute=display_name)
@@ -780,21 +768,27 @@ class AzureAdBackupset(Backupset):
 
             op = "dGVtcC5qc29u"  # any filename.json for view properties call
             # encoding string to base64
-            stub_info = str('2:' + str(commcell_no) + ':0:' +
-                            str(afile_id) + ':' + str(afile_offset))
+            stub_info = str(
+                "2:" + str(commcell_no) + ":0:" + str(afile_id) + ":" + str(afile_offset)
+            )
             stub_info = stub_info.encode("ascii")
             stub_info = base64.b64encode(stub_info)
             stub_info = stub_info.decode("ascii")
 
-            url = self._services['VIEW_PROPERTIES'] % (str(self._agent_object.agent_id),
-                                                       stub_info,
-                                                       op,
-                                                       str(subclient_id),
-                                                       '1')
+            url = self._services["VIEW_PROPERTIES"] % (
+                str(self._agent_object.agent_id),
+                stub_info,
+                op,
+                str(subclient_id),
+                "1",
+            )
             return url
         except SDKException as e:
-            raise SDKException('Backupset', '107',
-                               f"No result found with specified attribute {e.exception_message}")
+            raise SDKException(
+                "Backupset",
+                "107",
+                f"No result found with specified attribute {e.exception_message}",
+            )
 
     def get_view_attribute_response(self, job_time: int, display_name: str) -> Dict[str, Any]:
         """Retrieve view attributes for an object using job time and display name.
@@ -821,14 +815,13 @@ class AzureAdBackupset(Backupset):
         #ai-gen-doc
         """
         try:
-            url = self.view_attributes_url_builder(display_name=display_name,
-                                                   job_time=job_time)
+            url = self.view_attributes_url_builder(display_name=display_name, job_time=job_time)
 
-            flag, response = self._cvpysdk_object.make_request('GET', url)
+            flag, response = self._cvpysdk_object.make_request("GET", url)
             if not flag:
-                raise SDKException('Response', '101', "Response was not success")
+                raise SDKException("Response", "101", "Response was not success")
             if not response:
-                raise SDKException('Response', '102', "Response received is empty")
+                raise SDKException("Response", "102", "Response received is empty")
             return response.json()
         except Exception as e:
-            raise SDKException('Backupset', '107', f"No result found {e.exception_message}")
+            raise SDKException("Backupset", "107", f"No result found {e.exception_message}")

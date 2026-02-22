@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -153,24 +151,25 @@ Asset Attributes:
 
 
 """
+
 import copy
 
 from ..activateapps.constants import InventoryConstants
-from ..schedules import Schedules
 from ..exception import SDKException
+from ..schedules import Schedules
 
 
-class Inventories():
+class Inventories:
     """Class for representing all inventories in the commcell."""
 
     def __init__(self, commcell_object):
         """Initializes an instance of the Inventories class.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+        Args:
+            commcell_object     (object)    --  instance of the commcell class
 
-            Returns:
-                object  -   instance of the Inventories class
+        Returns:
+            object  -   instance of the Inventories class
 
         """
         self._commcell_object = commcell_object
@@ -178,148 +177,152 @@ class Inventories():
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._inventories = None
-        self._API_INVENTORIES = self._services['EDISCOVERY_INVENTORIES']
-        self._API_DELETE_INVENTORY = self._services['EDISCOVERY_INVENTORY']
+        self._API_INVENTORIES = self._services["EDISCOVERY_INVENTORIES"]
+        self._API_DELETE_INVENTORY = self._services["EDISCOVERY_INVENTORY"]
         self.refresh()
 
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        Args:
+            response    (object)    --  response class object,
 
-                received upon running an API request, using the `requests` python package
+            received upon running an API request, using the `requests` python package
 
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_inventories(self):
         """Gets all inventories from the commcell
 
-            Args:
+        Args:
 
-                None
+            None
 
-            Return:
+        Return:
 
-                list(dict)        --  list Containing inventory details dict
+            list(dict)        --  list Containing inventory details dict
 
-            Raises:
+        Raises:
 
-                SDKException:
+            SDKException:
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
         output = {}
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._API_INVENTORIES
-        )
+        flag, response = self._cvpysdk_object.make_request("GET", self._API_INVENTORIES)
         if flag:
-            if response.json() and 'inventories' in response.json():
-                inventories = response.json()['inventories']
+            if response.json() and "inventories" in response.json():
+                inventories = response.json()["inventories"]
                 for inventory in inventories:
-                    output[inventory['displayName'].lower()] = inventory
+                    output[inventory["displayName"].lower()] = inventory
                 return output
-            raise SDKException('Inventory', '103')
+            raise SDKException("Inventory", "103")
         self._response_not_success(response)
 
     def add(self, inventory_name, index_server, name_server=None):
         """Adds inventory to the commcell with given inputs
 
-                Args:
+        Args:
 
-                    inventory_name              (str)       --  Name of the inventory
+            inventory_name              (str)       --  Name of the inventory
 
-                    index_server                (str)       --  Index server name
+            index_server                (str)       --  Index server name
 
-                    name_server                 (list)      --  Name server assets which needs to be added to inventory
+            name_server                 (list)      --  Name server assets which needs to be added to inventory
 
-                Returns:
+        Returns:
 
-                    object  --  Instance of Inventory Class
+            object  --  Instance of Inventory Class
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if input data type is not valid
+                    if input data type is not valid
 
-                            if failed to add inventory
+                    if failed to add inventory
 
-                            if Index Server doesn't exists in commcell
+                    if Index Server doesn't exists in commcell
 
         """
         if not isinstance(inventory_name, str) or not isinstance(index_server, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
         req_json = copy.deepcopy(InventoryConstants.INVENTORY_ADD_REQUEST_JSON)
         if name_server:
-            req_json['identityServers'] = name_server
-        req_json['name'] = inventory_name
+            req_json["identityServers"] = name_server
+        req_json["name"] = inventory_name
         if not self._commcell_object.index_servers.has(index_server):
-            raise SDKException('Inventory', '102', "Given index server name not exists on this commcell")
+            raise SDKException(
+                "Inventory", "102", "Given index server name not exists on this commcell"
+            )
         index_server_obj = self._commcell_object.index_servers.get(index_server)
-        req_json['indexServer']['cloudId'] = index_server_obj.cloud_id
-        req_json['indexServer']['displayName'] = index_server_obj.cloud_name
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self._API_INVENTORIES, req_json
-        )
+        req_json["indexServer"]["cloudId"] = index_server_obj.cloud_id
+        req_json["indexServer"]["displayName"] = index_server_obj.cloud_name
+        flag, response = self._cvpysdk_object.make_request("POST", self._API_INVENTORIES, req_json)
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
                     raise SDKException(
-                        'Inventory',
-                        '102',
-                        f"Failed to create inventory with error [{response.json()['errorMessage']}]")
-                elif 'name' in response.json():
-                    inventory = response.json()['name']
-                    inventory_id = response.json()['id']
+                        "Inventory",
+                        "102",
+                        f"Failed to create inventory with error [{response.json()['errorMessage']}]",
+                    )
+                elif "name" in response.json():
+                    inventory = response.json()["name"]
+                    inventory_id = response.json()["id"]
                     self.refresh()
                     return Inventory(self._commcell_object, inventory_name, inventory_id)
-                raise SDKException('Inventory', '102', f"Failed to create inventory with response - {response.json()}")
-            raise SDKException('Inventory', '105')
+                raise SDKException(
+                    "Inventory",
+                    "102",
+                    f"Failed to create inventory with response - {response.json()}",
+                )
+            raise SDKException("Inventory", "105")
         self._response_not_success(response)
 
     def delete(self, inventory_name):
         """Deletes the inventory from the commcell
 
-                Args:
+        Args:
 
-                    inventory_name      (str)       --  Inventory name to be deleted
+            inventory_name      (str)       --  Inventory name to be deleted
 
-                Returns:
-                    None
+        Returns:
+            None
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if unable to find inventory
+                    if unable to find inventory
 
-                            if failed to delete inventory
+                    if failed to delete inventory
 
-                            if input type is not valid
+                    if input type is not valid
 
         """
         if not isinstance(inventory_name, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
         if not self.has_inventory(inventory_name):
-            raise SDKException('Inventory', '106')
+            raise SDKException("Inventory", "106")
         flag, response = self._cvpysdk_object.make_request(
-            'DELETE', self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()]['id']
+            "DELETE", self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()]["id"]
         )
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
                     raise SDKException(
-                        'Inventory',
-                        '102',
-                        f"Failed to Delete inventory with error [{response.json()['errorMessage']}]")
+                        "Inventory",
+                        "102",
+                        f"Failed to Delete inventory with error [{response.json()['errorMessage']}]",
+                    )
                 self.refresh()
             else:
-                raise SDKException('Inventory', '107')
+                raise SDKException("Inventory", "107")
         else:
             self._response_not_success(response)
 
@@ -330,11 +333,11 @@ class Inventories():
     def get_properties(self, inventory_name):
         """Returns a properties of the specified Inventory
 
-            Args:
-                inventory_name (str)  --  name of the inventory
+        Args:
+            inventory_name (str)  --  name of the inventory
 
-            Returns:
-                dict -  properties for the given inventory name
+        Returns:
+            dict -  properties for the given inventory name
 
 
         """
@@ -343,67 +346,67 @@ class Inventories():
     def has_inventory(self, inventory_name):
         """Checks if a inventory exists in the commcell with the input name.
 
-            Args:
-                inventory_name (str)  --  name of the inventory
+        Args:
+            inventory_name (str)  --  name of the inventory
 
-            Returns:
-                bool - boolean output to specify whether the inventory exists in the commcell or not
+        Returns:
+            bool - boolean output to specify whether the inventory exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the inventory name argument is not string
+        Raises:
+            SDKException:
+                if type of the inventory name argument is not string
 
         """
         if not isinstance(inventory_name, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
 
         return self._inventories and inventory_name.lower() in map(str.lower, self._inventories)
 
     def get(self, inventory_name):
         """Returns a Inventory object for the given inventory name.
 
-            Args:
-                inventory_name (str)  --  name of the inventory
+        Args:
+            inventory_name (str)  --  name of the inventory
 
-            Returns:
+        Returns:
 
-                obj                 -- Object of Inventory class
+            obj                 -- Object of Inventory class
 
-            Raises:
+        Raises:
 
-                SDKException:
+            SDKException:
 
-                    if inventory doesn't exists in commcell
+                if inventory doesn't exists in commcell
 
-                    if inventory_name is not of type string
+                if inventory_name is not of type string
 
 
         """
         if not isinstance(inventory_name, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
 
         if self.has_inventory(inventory_name):
-            inventory_id = self._inventories[inventory_name.lower()]['id']
+            inventory_id = self._inventories[inventory_name.lower()]["id"]
             return Inventory(self._commcell_object, inventory_name, inventory_id)
-        raise SDKException('Inventory', '106')
+        raise SDKException("Inventory", "106")
 
 
-class Inventory():
+class Inventory:
     """Class for performing operations on a single inventory"""
 
     def __init__(self, commcell_object, inventory_name, inventory_id=None):
         """Initialize an object of the Inventory class.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+        Args:
+            commcell_object     (object)    --  instance of the commcell class
 
-                inventory_name     (str)        --  name of the Inventory
+            inventory_name     (str)        --  name of the Inventory
 
-                inventory_id       (str)        --  id of Inventory
-                    default: None
+            inventory_id       (str)        --  id of Inventory
+                default: None
 
-            Returns:
-                object  -   instance of the Inventory class
+        Returns:
+            object  -   instance of the Inventory class
         """
         self._commcell_object = commcell_object
         self._update_response_ = commcell_object._update_response_
@@ -418,14 +421,16 @@ class Inventory():
         self._schedule = None
         self._data_source = None
         self._handler = None
-        self._API_GET_INVENTORY_DETAILS = self._services['EDISCOVERY_INVENTORY']
-        self._API_SECURITY_ENTITY = self._services['ENTITY_SECURITY_ASSOCIATION']
-        self._API_GET_DEFAULT_HANDLER = self._services['EDISCOVERY_GET_DEFAULT_HANDLER']
-        self._API_PERMISSION = self._services['V4_ACTIVATE_DS_PERMISSION']
-        self._API_CRAWL = self._services['V4_INVENTORY_CRAWL']
+        self._API_GET_INVENTORY_DETAILS = self._services["EDISCOVERY_INVENTORY"]
+        self._API_SECURITY_ENTITY = self._services["ENTITY_SECURITY_ASSOCIATION"]
+        self._API_GET_DEFAULT_HANDLER = self._services["EDISCOVERY_GET_DEFAULT_HANDLER"]
+        self._API_PERMISSION = self._services["V4_ACTIVATE_DS_PERMISSION"]
+        self._API_CRAWL = self._services["V4_INVENTORY_CRAWL"]
 
         if not inventory_id:
-            self._inventory_id = self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
+            self._inventory_id = (
+                self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
+            )
         else:
             self._inventory_id = inventory_id
         self.refresh()
@@ -433,57 +438,57 @@ class Inventory():
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        Args:
+            response    (object)    --  response class object,
 
-                received upon running an API request, using the `requests` python package
+            received upon running an API request, using the `requests` python package
 
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_permission(self):
         """returns security association blob for this inventory
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    dict    --  Security association blob
+            dict    --  Security association blob
 
         """
         flag, response = self._cvpysdk_obj.make_request(
-            'GET', self._API_PERMISSION % self._inventory_id
+            "GET", self._API_PERMISSION % self._inventory_id
         )
         if flag:
-            if response.json() and 'securityAssociations' in response.json():
-                return response.json()['securityAssociations']
-            raise SDKException('Inventory', '102', "Inventory permission fetch failed")
+            if response.json() and "securityAssociations" in response.json():
+                return response.json()["securityAssociations"]
+            raise SDKException("Inventory", "102", "Inventory permission fetch failed")
         self._response_not_success(response)
 
     def _get_inventory_properties(self):
-        """ Get inventory properties from the commcell
-                Args:
+        """Get inventory properties from the commcell
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    dict        --  Properties of inventory
+            dict        --  Properties of inventory
 
         """
         flag, response = self._cvpysdk_obj.make_request(
-            'GET', self._API_GET_INVENTORY_DETAILS % self._inventory_id
+            "GET", self._API_GET_INVENTORY_DETAILS % self._inventory_id
         )
         if flag:
             if response.json():
                 inventory_props = response.json()
-                self._index_server_name = inventory_props['indexServer']['displayName']
-                self._index_server_cloud_id = inventory_props['indexServer']['cloudId']
-                self._inventory_name = inventory_props['displayName']
+                self._index_server_name = inventory_props["indexServer"]["displayName"]
+                self._index_server_cloud_id = inventory_props["indexServer"]["cloudId"]
+                self._inventory_name = inventory_props["displayName"]
                 return inventory_props
-            raise SDKException('Inventory', '104')
+            raise SDKException("Inventory", "104")
         self._response_not_success(response)
 
     def refresh(self):
@@ -496,13 +501,13 @@ class Inventory():
     def get_assets(self):
         """Returns the Assets class instance for this inventory
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    object      --  Instance of Assets class
+            object      --  Instance of Assets class
 
         """
         return Assets(self._commcell_object, self.inventory_name, self.inventory_id)
@@ -510,215 +515,249 @@ class Inventory():
     def start_collection(self):
         """Starts collection job on this inventory
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Return:
+        Return:
 
-                    None
+            None
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if failed to start collection job
+                    if failed to start collection job
 
         """
         flag, response = self._cvpysdk_obj.make_request(
-            'PUT', self._API_CRAWL % self._inventory_id
+            "PUT", self._API_CRAWL % self._inventory_id
         )
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
                     raise SDKException(
-                        'Inventory',
-                        '102',
-                        f"Failed to start crawl on inventory with error [{response.json()['errorMessage']}]")
+                        "Inventory",
+                        "102",
+                        f"Failed to start crawl on inventory with error [{response.json()['errorMessage']}]",
+                    )
                 return
             else:
-                raise SDKException('Inventory', '102', "Unknown response while starting collection job on inventory")
+                raise SDKException(
+                    "Inventory",
+                    "102",
+                    "Unknown response while starting collection job on inventory",
+                )
         else:
             self._response_not_success(response)
 
     def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
         """Shares inventory with given user or user group in commcell
 
-                Args:
+        Args:
 
-                    user_or_group_name      (str)       --  Name of user or group
+            user_or_group_name      (str)       --  Name of user or group
 
-                    is_user                 (bool)      --  Denotes whether this is user or group name
-                                                                default : True(User)
+            is_user                 (bool)      --  Denotes whether this is user or group name
+                                                        default : True(User)
 
-                    allow_edit_permission   (bool)      --  whether to give edit permission or not to user or group
+            allow_edit_permission   (bool)      --  whether to give edit permission or not to user or group
 
-                    ops_type                (int)       --  Operation type
+            ops_type                (int)       --  Operation type
 
-                                                            Default : 1 (Add)
+                                                    Default : 1 (Add)
 
-                                                            Supported : 1 (Add)
-                                                                        3 (Delete)
+                                                    Supported : 1 (Add)
+                                                                3 (Delete)
 
-                Returns:
+        Returns:
 
-                    None
+            None
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if unable to update security associations
+                    if unable to update security associations
 
-                            if response is empty or not success
+                    if response is empty or not success
         """
         if not isinstance(user_or_group_name, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
         request_json = copy.deepcopy(InventoryConstants.INVENTORY_SHARE_REQUEST_JSON)
         external_user = False
         association_response = None
         if ops_type == 1 and len(self.security_associations) > 1:
-            association_request_json = copy.deepcopy(InventoryConstants.INVENTORY_SHARE_REQUEST_JSON)
-            del association_request_json['securityAssociations']
-            association_request_json['entityAssociated']['entity'][0]['seaDataSourceId'] = int(self.inventory_id)
+            association_request_json = copy.deepcopy(
+                InventoryConstants.INVENTORY_SHARE_REQUEST_JSON
+            )
+            del association_request_json["securityAssociations"]
+            association_request_json["entityAssociated"]["entity"][0]["seaDataSourceId"] = int(
+                self.inventory_id
+            )
             # get security blob for this data source type entity - 132
             flag, response = self._cvpysdk_obj.make_request(
-                'GET', self._API_SECURITY_ENTITY % (132, int(self.inventory_id)), association_request_json
+                "GET",
+                self._API_SECURITY_ENTITY % (132, int(self.inventory_id)),
+                association_request_json,
             )
             if flag:
-                if response.json() and 'securityAssociations' in response.json():
-                    association_response = response.json(
-                    )['securityAssociations'][0]['securityAssociations']['associations']
+                if response.json() and "securityAssociations" in response.json():
+                    association_response = response.json()["securityAssociations"][0][
+                        "securityAssociations"
+                    ]["associations"]
                 else:
-                    raise SDKException('Inventory', '102', 'Failed to get existing security associations')
+                    raise SDKException(
+                        "Inventory", "102", "Failed to get existing security associations"
+                    )
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
 
-        if '\\' in user_or_group_name:
+        if "\\" in user_or_group_name:
             external_user = True
         if is_user:
             user_obj = self._commcell_object.users.get(user_or_group_name)
             user_id = user_obj.user_id
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 13
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["userId"] = (
+                int(user_id)
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["_type_"] = (
+                13
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "userName"
+            ] = user_or_group_name
         elif external_user:
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['groupId'] = 0
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 62
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
-                'externalGroupName'] = user_or_group_name
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "groupId"
+            ] = 0
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["_type_"] = (
+                62
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "externalGroupName"
+            ] = user_or_group_name
         else:
             grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
             grp_id = grp_obj.user_group_id
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupId'] = int(grp_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 15
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
-                'userGroupName'] = user_or_group_name
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "userGroupId"
+            ] = int(grp_id)
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0]["_type_"] = (
+                15
+            )
+            request_json["securityAssociations"]["associations"][0]["userOrGroup"][0][
+                "userGroupName"
+            ] = user_or_group_name
 
-        request_json['entityAssociated']['entity'][0]['seaDataSourceId'] = self.inventory_id
-        request_json['securityAssociations']['associationsOperationType'] = ops_type
+        request_json["entityAssociated"]["entity"][0]["seaDataSourceId"] = self.inventory_id
+        request_json["securityAssociations"]["associationsOperationType"] = ops_type
 
         if allow_edit_permission:
-            request_json['securityAssociations']['associations'][0]['properties']['categoryPermission']['categoriesPermissionList'].append(
-                InventoryConstants.EDIT_CATEGORY_PERMISSION)
+            request_json["securityAssociations"]["associations"][0]["properties"][
+                "categoryPermission"
+            ]["categoriesPermissionList"].append(InventoryConstants.EDIT_CATEGORY_PERMISSION)
 
             # Associate existing associations to the request
         if ops_type == 1 and len(self.security_associations) > 1:
-            request_json['securityAssociations']['associations'].extend(association_response)
+            request_json["securityAssociations"]["associations"].extend(association_response)
 
         flag, response = self._cvpysdk_obj.make_request(
-            'PUT', self._API_PERMISSION % self._inventory_id, request_json
+            "PUT", self._API_PERMISSION % self._inventory_id, request_json
         )
         if flag:
             if response.json():
-                error_code = response.json()['errorCode']
+                error_code = response.json()["errorCode"]
                 if error_code != 0:
-                    error_message = response.json()['errorString']
-                    raise SDKException(
-                        'Inventory',
-                        '102', error_message)
+                    error_message = response.json()["errorString"]
+                    raise SDKException("Inventory", "102", error_message)
                 # update association list by refreshing inventory
                 self.refresh()
             else:
-                raise SDKException('Inventory', '111')
+                raise SDKException("Inventory", "111")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_data_source_handler_object(self):
         """returns the data source and handler object associated with this inventory
 
-                Args:
-                    None
+        Args:
+            None
 
-                Returns:
-                    obj,obj     --  Instance of DataSource object,Instance of Handler object
+        Returns:
+            obj,obj     --  Instance of DataSource object,Instance of Handler object
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if failed to get datasource or handler details
+                    if failed to get datasource or handler details
         """
         flag, response = self._cvpysdk_obj.make_request(
-            'GET', self._API_GET_DEFAULT_HANDLER % self.inventory_id)
+            "GET", self._API_GET_DEFAULT_HANDLER % self.inventory_id
+        )
         if flag:
-            if response.json() and 'handlerInfos' in response.json():
-                handler_list = response.json()['handlerInfos']
+            if response.json() and "handlerInfos" in response.json():
+                handler_list = response.json()["handlerInfos"]
                 if not isinstance(handler_list, list):
-                    raise SDKException('Inventory', '102', "Failed to get Datasource/Handler details")
+                    raise SDKException(
+                        "Inventory", "102", "Failed to get Datasource/Handler details"
+                    )
                 handler_details = handler_list[0]
-                ds_name = handler_details['dataSourceName']
-                handler_name = handler_details['handlerName']
+                ds_name = handler_details["dataSourceName"]
+                handler_name = handler_details["handlerName"]
                 ds_obj = self._commcell_object.datacube.datasources.get(ds_name)
                 handler_obj = ds_obj.ds_handlers.get(handler_name)
                 return ds_obj, handler_obj
-            raise SDKException('Inventory', '102', 'Unknown response while fetching datasource details')
+            raise SDKException(
+                "Inventory", "102", "Unknown response while fetching datasource details"
+            )
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def _get_schedule_object(self):
         """Returns the schedule class object of schedule associated to this inventory
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    object      --  Instance of Schedule class
+            object      --  Instance of Schedule class
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if failed to find schedule
+                    if failed to find schedule
         """
         return Schedules(self).get()
 
     def get_inventory_data(self, handler_filter=""):
-        """ Executes handler for fetching data from inventory
-                Args:
+        """Executes handler for fetching data from inventory
+        Args:
 
-                     handler_filter    (str)  -- Filter which needs to applied for handler execution
+             handler_filter    (str)  -- Filter which needs to applied for handler execution
 
-                Returns:
+        Returns:
 
-                    dict        --  Dictionary of values fetched from handler execution
+            dict        --  Dictionary of values fetched from handler execution
 
-                Raises:
+        Raises:
 
-                    SDKExpception:
+            SDKExpception:
 
-                        if error in fetching handler data
+                if error in fetching handler data
 
-                        if input is not valid
+                if input is not valid
         """
         if not isinstance(handler_filter, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
         if not self._handler:
-            raise SDKException('Inventory', '102', 'No handler object initialised')
+            raise SDKException("Inventory", "102", "No handler object initialised")
         return self._handler.get_handler_data(handler_filter=handler_filter)
 
     @property
@@ -767,22 +806,22 @@ class Inventory():
         return self._handler
 
 
-class Assets():
+class Assets:
     """Class to represent all assets in an inventory"""
 
     def __init__(self, commcell_object, inventory_name, inventory_id=None):
         """Initialize an object of the Assets class.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+        Args:
+            commcell_object     (object)    --  instance of the commcell class
 
-                inventory_name     (str)        --  name of the Inventory
+            inventory_name     (str)        --  name of the Inventory
 
-                inventory_id       (str)        --  id of Inventory
-                    default: None
+            inventory_id       (str)        --  id of Inventory
+                default: None
 
-            Returns:
-                object  -   instance of the Assets class
+        Returns:
+            object  -   instance of the Assets class
         """
         self._commcell_object = commcell_object
         self._update_response_ = commcell_object._update_response_
@@ -791,36 +830,41 @@ class Assets():
         self._inventory_id = None
         self._inventory_name = inventory_name
         if not inventory_id:
-            self._inventory_id = self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
+            self._inventory_id = (
+                self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
+            )
         else:
             self._inventory_id = inventory_id
         self._assets = None
-        self._API_ASSETS = self._services['EDISCOVERY_ASSETS']
-        self._API_ASSET = self._services['EDISCOVERY_ASSET']
+        self._API_ASSETS = self._services["EDISCOVERY_ASSETS"]
+        self._API_ASSET = self._services["EDISCOVERY_ASSET"]
         self.refresh()
 
     def _get_assets_properties(self):
         """gets the assets properties from inventory
 
-                    Args:
-                        None
+        Args:
+            None
 
-                    Returns:
+        Returns:
 
-                        dict    --  containing asset properties
+            dict    --  containing asset properties
 
         """
         flag, response = self._cvpysdk_obj.make_request(
-            'GET', self._API_ASSETS % self._inventory_id)
+            "GET", self._API_ASSETS % self._inventory_id
+        )
         if flag:
-            if response.json() and 'assets' in response.json():
+            if response.json() and "assets" in response.json():
                 assets = {}
-                for asset in response.json()['assets']:
-                    name = asset['name'].lower()
+                for asset in response.json()["assets"]:
+                    name = asset["name"].lower()
                     assets[name] = asset
                 return assets
             else:
-                raise SDKException('Inventory', '102', "Unknown response while fetching assets on inventory")
+                raise SDKException(
+                    "Inventory", "102", "Unknown response while fetching assets on inventory"
+                )
         else:
             self._response_not_success(response)
 
@@ -831,87 +875,89 @@ class Assets():
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        Args:
+            response    (object)    --  response class object,
 
-                received upon running an API request, using the `requests` python package
+            received upon running an API request, using the `requests` python package
 
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def has_asset(self, asset_name):
         """Checks whether given asset exists in inventory or not
 
-                        Args:
+        Args:
 
-                            asset_name      (str)       --  Name of the asset
+            asset_name      (str)       --  Name of the asset
 
-                        Returns:
+        Returns:
 
-                            bool      --  true if asset exists else false
+            bool      --  true if asset exists else false
         """
         return self._assets and asset_name.lower() in self._assets
 
     def get(self, asset_name):
         """Returns the asset object
 
-                Args:
+        Args:
 
-                    asset_name      (str)       --  Name of the asset
+            asset_name      (str)       --  Name of the asset
 
-                Returns:
+        Returns:
 
-                    object      -- Instance of Asset class
+            object      -- Instance of Asset class
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if input is not valid
+                    if input is not valid
 
-                            if asset doesn't exists in inventory
+                    if asset doesn't exists in inventory
         """
         if not isinstance(asset_name, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
         if not self.has_asset(asset_name):
-            raise SDKException('Inventory', '109')
+            raise SDKException("Inventory", "109")
         return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
 
     def add(self, asset_name, asset_type=InventoryConstants.AssetType.IDENTITY_SERVER, **kwargs):
         """Adds asset to the inventory
 
-                Args:
+        Args:
 
-                    asset_name          (str)       --  Name of the asset
+            asset_name          (str)       --  Name of the asset
 
-                    asset_type          (Enum)      --  type of asset (Refer to InventoryConstants.AssetType class)
+            asset_type          (Enum)      --  type of asset (Refer to InventoryConstants.AssetType class)
 
-                    kwargs for FILE SERVER type Asset:
+            kwargs for FILE SERVER type Asset:
 
-                            fqdn                --  File server FQDN
+                    fqdn                --  File server FQDN
 
-                            os                  --  File Server OS type
-                                                        (Default:Windows)
+                    os                  --  File Server OS type
+                                                (Default:Windows)
 
-                            ip                  --  File server IP
+                    ip                  --  File server IP
 
-                            country_code        --  Country code (ISO 3166 2-letter code)
+                    country_code        --  Country code (ISO 3166 2-letter code)
 
-                Returns:
+        Returns:
 
-                    object  --  Instance of Asset class
+            object  --  Instance of Asset class
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if input is not valid
+                    if input is not valid
 
-                            if failed to add asset to inventory
+                    if failed to add asset to inventory
 
         """
-        if not isinstance(asset_name, str) or not isinstance(asset_type, InventoryConstants.AssetType):
-            raise SDKException('Inventory', '101')
+        if not isinstance(asset_name, str) or not isinstance(
+            asset_type, InventoryConstants.AssetType
+        ):
+            raise SDKException("Inventory", "101")
         request_json = {}
         if asset_type.value == InventoryConstants.AssetType.FILE_SERVER.value:
             for prop in InventoryConstants.ASSET_FILE_SERVER_PROPERTY:
@@ -925,61 +971,70 @@ class Assets():
                         default_value = "Windows"
                 request_json[prop] = kwargs.get(prop_name, default_value)
         else:
-            request_json = copy.deepcopy(InventoryConstants.IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON)
-            request_json['identityServers'] = [asset_name]
+            request_json = copy.deepcopy(
+                InventoryConstants.IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON
+            )
+            request_json["identityServers"] = [asset_name]
 
         flag, response = self._cvpysdk_obj.make_request(
-            'PUT', self._API_ASSETS % self._inventory_id, request_json)
+            "PUT", self._API_ASSETS % self._inventory_id, request_json
+        )
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
                     raise SDKException(
-                        'Inventory',
-                        '102',
-                        f"Failed to add asset to inventory with error [{response.json()['errorMessage']}]")
+                        "Inventory",
+                        "102",
+                        f"Failed to add asset to inventory with error [{response.json()['errorMessage']}]",
+                    )
                 self.refresh()
-                return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
-            raise SDKException('Inventory', '108')
+                return Asset(
+                    self._commcell_object, self._inventory_name, asset_name, self._inventory_id
+                )
+            raise SDKException("Inventory", "108")
         self._response_not_success(response)
 
     def delete(self, asset_name):
         """Delete the asset from the inventory
 
-                Args:
+        Args:
 
-                    asset_name      (str)       --  Name of the asset
+            asset_name      (str)       --  Name of the asset
 
-                Returns:
+        Returns:
 
-                    None
+            None
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if input is not valid
+                    if input is not valid
 
-                            if failed to delete the asset
+                    if failed to delete the asset
 
-                            if unable to find this asset in inventory
+                    if unable to find this asset in inventory
         """
 
         if not isinstance(asset_name, str):
-            raise SDKException('Inventory', '101')
+            raise SDKException("Inventory", "101")
         if not self.has_asset(asset_name):
-            raise SDKException('Inventory', '109')
+            raise SDKException("Inventory", "109")
         flag, response = self._cvpysdk_obj.make_request(
-            'DELETE', self._API_ASSET % (self._inventory_id, self._assets[asset_name.lower()]['id']))
+            "DELETE",
+            self._API_ASSET % (self._inventory_id, self._assets[asset_name.lower()]["id"]),
+        )
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
                     raise SDKException(
-                        'Inventory',
-                        '102',
-                        f"Failed to delete asset from inventory with error [{response.json()['errorMessage']}]")
+                        "Inventory",
+                        "102",
+                        f"Failed to delete asset from inventory with error [{response.json()['errorMessage']}]",
+                    )
                 self.refresh()
                 return
-            raise SDKException('Inventory', '110')
+            raise SDKException("Inventory", "110")
         self._response_not_success(response)
 
     @property
@@ -988,24 +1043,24 @@ class Assets():
         return self._assets
 
 
-class Asset():
+class Asset:
     """Class to represent single asset in an inventory"""
 
     def __init__(self, commcell_object, inventory_name, asset_name, inventory_id=None):
         """Initialize an object of the Asset class.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+        Args:
+            commcell_object     (object)    --  instance of the commcell class
 
-                inventory_name     (str)        --  name of the Inventory
+            inventory_name     (str)        --  name of the Inventory
 
-                asset_name          (str)       --  Name of the asset
+            asset_name          (str)       --  Name of the asset
 
-                inventory_id       (str)        --  id of Inventory
-                    default: None
+            inventory_id       (str)        --  id of Inventory
+                default: None
 
-            Returns:
-                object  -   instance of the Asset class
+        Returns:
+            object  -   instance of the Asset class
         """
         self._commcell_object = commcell_object
         self._update_response_ = commcell_object._update_response_
@@ -1014,7 +1069,9 @@ class Asset():
         self._inventory_id = None
         self._inventory_name = inventory_name
         if not inventory_id:
-            self._inventory_id = self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
+            self._inventory_id = (
+                self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
+            )
         else:
             self._inventory_id = inventory_id
         self._asset_name = asset_name
@@ -1024,56 +1081,60 @@ class Asset():
         self._asset_type = None
         self._asset_status = None
         self._asset_name_values_props = None
-        self._API_ASSETS = self._services['EDISCOVERY_ASSETS']
-        self._API_ASSET = self._services['EDISCOVERY_ASSET']
-        self._API_ASSET_JOBS = self._services['EDISCOVERY_ASSET_JOBS']
+        self._API_ASSETS = self._services["EDISCOVERY_ASSETS"]
+        self._API_ASSET = self._services["EDISCOVERY_ASSET"]
+        self._API_ASSET_JOBS = self._services["EDISCOVERY_ASSET_JOBS"]
         self.refresh()
 
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        Args:
+            response    (object)    --  response class object,
 
-                received upon running an API request, using the `requests` python package
+            received upon running an API request, using the `requests` python package
 
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_properties(self):
         """Returns the properties of this asset
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    dict        -- Containing properties of asset
+            dict        -- Containing properties of asset
 
         """
 
         flag, response = self._cvpysdk_obj.make_request(
-            'GET', self._API_ASSETS % self._inventory_id)
+            "GET", self._API_ASSETS % self._inventory_id
+        )
         if flag:
-            if response.json() and 'assets' in response.json():
-                for asset in response.json()['assets']:
-                    if asset['name'].lower() == self._asset_name.lower():
-                        self._asset_id = asset.get('id', "")
-                        self._crawl_start_time = asset.get('lastCollectionTime', 0)
-                        self._asset_type = asset.get('type', "")
-                        self._asset_status = asset.get('status', "NA")
-                        self._asset_name = asset['name']
+            if response.json() and "assets" in response.json():
+                for asset in response.json()["assets"]:
+                    if asset["name"].lower() == self._asset_name.lower():
+                        self._asset_id = asset.get("id", "")
+                        self._crawl_start_time = asset.get("lastCollectionTime", 0)
+                        self._asset_type = asset.get("type", "")
+                        self._asset_status = asset.get("status", "NA")
+                        self._asset_name = asset["name"]
                         if self._asset_type == InventoryConstants.AssetType.FILE_SERVER.name:
                             flag, response = self._cvpysdk_obj.make_request(
-                                'GET', self._API_ASSET % (self._inventory_id, self._asset_id))
+                                "GET", self._API_ASSET % (self._inventory_id, self._asset_id)
+                            )
                             if flag:
-                                if response.json() and 'properties' in response.json():
-                                    self._asset_name_values_props = response.json()['properties']
+                                if response.json() and "properties" in response.json():
+                                    self._asset_name_values_props = response.json()["properties"]
                         return asset
                 return {}
             else:
-                raise SDKException('Inventory', '102', "Unknown response while fetching assets on inventory")
+                raise SDKException(
+                    "Inventory", "102", "Unknown response while fetching assets on inventory"
+                )
         else:
             self._response_not_success(response)
 
@@ -1084,74 +1145,81 @@ class Asset():
     def get_job_history(self):
         """Returns the job history details of this asset
 
-                Args:
-                    None
+        Args:
+            None
 
-                Returns:
+        Returns:
 
-                    list(dict)    --  containing job history details
+            list(dict)    --  containing job history details
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if failed to get job history
+                    if failed to get job history
 
-                            if asset is not supported for this operation
+                    if asset is not supported for this operation
 
         """
         if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
-            raise SDKException('Inventory', '102', "Not supported other than Name Server asset type")
+            raise SDKException(
+                "Inventory", "102", "Not supported other than Name Server asset type"
+            )
         flag, response = self._cvpysdk_obj.make_request(
-            'GET', self._API_ASSET_JOBS % (self._inventory_id, self._asset_id))
+            "GET", self._API_ASSET_JOBS % (self._inventory_id, self._asset_id)
+        )
         if flag:
-            if response.json() and 'jobs' in response.json():
-                return response.json()['jobs']
-            raise SDKException('Inventory', '102', "Unknown response while fetching job history on inventory")
+            if response.json() and "jobs" in response.json():
+                return response.json()["jobs"]
+            raise SDKException(
+                "Inventory", "102", "Unknown response while fetching job history on inventory"
+            )
         else:
             self._response_not_success(response)
 
     def get_job_status(self):
         """Returns the latest job status details of this asset
 
-                Args:
-                    None
+        Args:
+            None
 
-                Returns:
+        Returns:
 
-                    str    --  last job status (Eg:- RUNNING / IDLE)
+            str    --  last job status (Eg:- RUNNING / IDLE)
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if failed to get job status
+                    if failed to get job status
 
-                             if asset is not supported for this operation
+                     if asset is not supported for this operation
 
         """
         if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
-            raise SDKException('Inventory', '102', "Not supported other than Name Server asset type")
+            raise SDKException(
+                "Inventory", "102", "Not supported other than Name Server asset type"
+            )
         self.refresh()  # do refresh before getting current status
         return self.asset_status
 
     def get_asset_prop(self, prop_name):
         """returns the property value for given property name for this asset
 
-            Args:
+        Args:
 
-                prop_name       (str)       --  Name of the property
+            prop_name       (str)       --  Name of the property
 
-            Returns:
+        Returns:
 
-                str     --  Value of the property
+            str     --  Value of the property
 
 
         """
         for prop in self._asset_name_values_props:
-            name = prop['name']
+            name = prop["name"]
             if name == prop_name:
-                return prop['value']
+                return prop["value"]
         return ""
 
     @property

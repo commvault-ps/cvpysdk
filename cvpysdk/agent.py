@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -89,23 +87,22 @@ Agent:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import copy
 import string
 import time
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
-from .constants import AppIDAName
-from .instance import Instances
 from .backupset import Backupsets
-from .schedules import Schedules
+from .constants import AppIDAName
 from .exception import SDKException
+from .instance import Instances
+from .schedules import Schedules
+
 if TYPE_CHECKING:
     from .client import Client
 
-class Agents(object):
+
+class Agents:
     """
     Manages and interacts with agents associated with a client.
 
@@ -128,7 +125,7 @@ class Agents(object):
     #ai-gen-doc
     """
 
-    def __init__(self, client_object: 'Client') -> None:
+    def __init__(self, client_object: "Client") -> None:
         """Initialize an Agents object for managing agents on a specific client.
 
         Args:
@@ -148,7 +145,7 @@ class Agents(object):
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-        self._AGENTS = self._services['GET_ALL_AGENTS'] % (self._client_object.client_id)
+        self._AGENTS = self._services["GET_ALL_AGENTS"] % (self._client_object.client_id)
 
         self._agents = None
         self.refresh()
@@ -172,14 +169,10 @@ class Agents(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\t{:^20}\n\n'.format('S. No.', 'Agent', 'Client')
+        representation_string = "{:^5}\t{:^20}\t{:^20}\n\n".format("S. No.", "Agent", "Client")
 
         for index, agent in enumerate(self._agents):
-            sub_str = '{:^5}\t{:20}\t{:20}\n'.format(
-                index + 1,
-                agent,
-                self._client_object.client_name
-            )
+            sub_str = f"{index + 1:^5}\t{agent:20}\t{self._client_object.client_name:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -200,7 +193,7 @@ class Agents(object):
 
         #ai-gen-doc
         """
-        return "Agents class instance for Client: '{0}'".format(self._client_object.client_name)
+        return f"Agents class instance for Client: '{self._client_object.client_name}'"
 
     def __len__(self) -> int:
         """Get the number of agents licensed for the selected client.
@@ -252,7 +245,7 @@ class Agents(object):
             try:
                 return list(filter(lambda x: x[1] == value, self.all_agents.items()))[0][0]
             except IndexError:
-                raise IndexError('No agent exists with the given Name / Id')
+                raise IndexError("No agent exists with the given Name / Id")
 
     def _get_agents(self) -> Dict[str, str]:
         """Retrieve all agents associated with the current client object.
@@ -276,26 +269,29 @@ class Agents(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._AGENTS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._AGENTS)
 
         if flag:
-            if response.json() and 'agentProperties' in response.json():
-
+            if response.json() and "agentProperties" in response.json():
                 agent_dict = {}
 
-                for dictionary in response.json()['agentProperties']:
-                    temp_name = dictionary['idaEntity']['appName'].lower()
-                    temp_id = str(dictionary['idaEntity']['applicationId']).lower()
+                for dictionary in response.json()["agentProperties"]:
+                    temp_name = dictionary["idaEntity"]["appName"].lower()
+                    temp_id = str(dictionary["idaEntity"]["applicationId"]).lower()
                     agent_dict[temp_name] = temp_id
 
                 return agent_dict
-            elif self._client_object.vm_guid is not None and not self._client_object.properties.get('clientProps', {}).\
-                    get('isIndexingV2VSA', False):
+            elif (
+                self._client_object.vm_guid is not None
+                and not self._client_object.properties.get("clientProps", {}).get(
+                    "isIndexingV2VSA", False
+                )
+            ):
                 return {}
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def all_agents(self) -> Dict[str, int]:
@@ -338,11 +334,11 @@ class Agents(object):
         #ai-gen-doc
         """
         if not isinstance(agent_name, str):
-            raise SDKException('Agent', '101')
+            raise SDKException("Agent", "101")
 
         return self._agents and agent_name.lower() in self._agents
 
-    def get(self, agent_name: str) -> 'Agent':
+    def get(self, agent_name: str) -> "Agent":
         """Retrieve an Agent object for the specified agent name.
 
         Args:
@@ -363,14 +359,14 @@ class Agents(object):
         #ai-gen-doc
         """
         if not isinstance(agent_name, str):
-            raise SDKException('Agent', '101')
+            raise SDKException("Agent", "101")
         else:
             agent_name = agent_name.lower()
 
             if self.has_agent(agent_name):
                 return Agent(self._client_object, agent_name, self._agents[agent_name])
 
-            raise SDKException('Agent', '102', 'No agent exists with name: {0}'.format(agent_name))
+            raise SDKException("Agent", "102", f"No agent exists with name: {agent_name}")
 
     def refresh(self) -> None:
         """Reload the list of agents installed on the client.
@@ -416,32 +412,34 @@ class Agents(object):
             >>> print(f"Agent created: {new_agent}")
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._services['AGENT'], request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._services["AGENT"], request_json
+        )
         if flag:
             if response.json():
-                if 'response' in response.json():
-                    error_code = response.json()['response'][0]['errorCode']
+                if "response" in response.json():
+                    error_code = response.json()["response"][0]["errorCode"]
 
                     if error_code != 0:
-                        error_string = response.json()['response'][0]['errorString']
-                        o_str = 'Failed to create agent\nError: "{0}"'.format(error_string)
-                        raise SDKException('Agent', '102', o_str)
+                        error_string = response.json()["response"][0]["errorString"]
+                        o_str = f'Failed to create agent\nError: "{error_string}"'
+                        raise SDKException("Agent", "102", o_str)
                     else:
                         # initialize the agetns again
                         # so the agent object has all the agents
-                        agent_name = request_json['association']['entity'][0]['appName']
+                        agent_name = request_json["association"]["entity"][0]["appName"]
                         self.refresh()
                         return self.get(agent_name)
-                elif 'errorMessage' in response.json():
-                    error_string = response.json()['errorMessage']
-                    o_str = 'Failed to create agent\nError: "{0}"'.format(error_string)
-                    raise SDKException('Agent', '102', o_str)
+                elif "errorMessage" in response.json():
+                    error_string = response.json()["errorMessage"]
+                    o_str = f'Failed to create agent\nError: "{error_string}"'
+                    raise SDKException("Agent", "102", o_str)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def add_database_agent(self, agent_name: str, access_node: str, **kwargs: Any):
         """Add a database agent to the cloud client.
@@ -479,20 +477,12 @@ class Agents(object):
         """
 
         if self.has_agent(agent_name):
-            raise SDKException(
-                'Agent', '102', 'Agent "{0}" already exists.'.format(
-                    agent_name)
-            )
+            raise SDKException("Agent", "102", f'Agent "{agent_name}" already exists.')
 
         request_json = {
             "createAgent": True,
             "association": {
-                "entity": [
-                    {
-                        "clientName": self._client_object.client_name,
-                        "appName": agent_name
-                    }
-                ]
+                "entity": [{"clientName": self._client_object.client_name, "appName": agent_name}]
             },
             "agentProperties": {
                 "AgentProperties": {
@@ -503,7 +493,7 @@ class Agents(object):
                     "runTrueUpJobAfterDaysForOnePass": 0,
                     "maxSimultaneousStubRecoveries": 0,
                     "agentVersion": "",
-                    "isTrueUpOptionEnabledForOnePass": False
+                    "isTrueUpOptionEnabledForOnePass": False,
                 },
                 "cloudDbConfig": {
                     "enabled": True,
@@ -512,25 +502,23 @@ class Agents(object):
                             "dbSoftwareConfigList": [
                                 {
                                     "installDir": kwargs.get("install_dir", ""),
-                                    "version": kwargs.get("version", "10.0")
+                                    "version": kwargs.get("version", "10.0"),
                                 }
                             ],
-                            "client": {
-                                "clientName": access_node
-                            }
+                            "client": {"clientName": access_node},
                         }
-                    ]
+                    ],
                 },
                 "idaEntity": {
                     "clientName": self._client_object.client_name,
-                    "appName": agent_name
-                }
-            }
+                    "appName": agent_name,
+                },
+            },
         }
         self._process_add_response(request_json)
 
 
-class Agent(object):
+class Agent:
     """
     Agent class for managing operations related to a specific client agent.
 
@@ -553,6 +541,7 @@ class Agent(object):
 
     #ai-gen-doc
     """
+
     def __new__(cls, client_object: Any, agent_name: str, agent_id: Optional[int] = None):
         """Create a new instance of the Agent class or its specialized subclass.
 
@@ -578,11 +567,10 @@ class Agent(object):
         #ai-gen-doc
         """
         from cvpysdk.agents.exchange_database_agent import ExchangeDatabaseAgent
+
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
-        _agents_dict = {
-            'exchange database': ExchangeDatabaseAgent
-        }
+        _agents_dict = {"exchange database": ExchangeDatabaseAgent}
 
         if agent_name in _agents_dict:
             _class = _agents_dict.get(agent_name, cls)
@@ -592,7 +580,9 @@ class Agent(object):
         else:
             return object.__new__(cls)
 
-    def __init__(self, client_object: 'Client', agent_name: str, agent_id: Optional[str] = None) -> None:
+    def __init__(
+        self, client_object: "Client", agent_name: str, agent_id: Optional[str] = None
+    ) -> None:
         """Initialize an Agent instance for the specified client and agent name.
 
         Args:
@@ -610,14 +600,17 @@ class Agent(object):
         """
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
-        self._agent_name = (AppIDAName.FILE_SYSTEM.value.lower()
-                            if AppIDAName.FILE_SYSTEM.value.lower() in agent_name.lower() else agent_name.lower())
+        self._agent_name = (
+            AppIDAName.FILE_SYSTEM.value.lower()
+            if AppIDAName.FILE_SYSTEM.value.lower() in agent_name.lower()
+            else agent_name.lower()
+        )
 
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-        self._AGENT = self._services['AGENT']
+        self._AGENT = self._services["AGENT"]
 
         if agent_id:
             # Use the agent id mentioned in the arguments
@@ -626,7 +619,10 @@ class Agent(object):
             # Get the agent id if agent id is not provided
             self._agent_id = self._get_agent_id()
 
-        self.GET_AGENT = self._services['GET_AGENT'] % (self._client_object.client_id, self._agent_id)
+        self.GET_AGENT = self._services["GET_AGENT"] % (
+            self._client_object.client_id,
+            self._agent_id,
+        )
 
         self._agent_properties = None
 
@@ -689,17 +685,19 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self.GET_AGENT)
+        flag, response = self._cvpysdk_object.make_request("GET", self.GET_AGENT)
 
         if flag:
-            if response.json() and 'agentProperties' in response.json():
-                self._agent_properties = response.json()['agentProperties'][0]
+            if response.json() and "agentProperties" in response.json():
+                self._agent_properties = response.json()["agentProperties"][0]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def _request_json_(self, option: str, enable: bool = True, enable_time: Optional[int] = None) -> Dict[str, Any]:
+    def _request_json_(
+        self, option: str, enable: bool = True, enable_time: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Generate the JSON request payload for the API based on the selected option.
 
         Args:
@@ -721,49 +719,48 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        options_dict = {
-            "Backup": 1,
-            "Restore": 2
-        }
+        options_dict = {"Backup": 1, "Restore": 2}
 
         request_json1 = {
             "association": {
-                "entity": [{
-                    "clientName": self._client_object.client_name,
-                    "appName": self.agent_name
-                }]
+                "entity": [
+                    {"clientName": self._client_object.client_name, "appName": self.agent_name}
+                ]
             },
             "agentProperties": {
                 "idaActivityControl": {
-                    "activityControlOptions": [{
-                        "activityType": options_dict[option],
-                        "enableAfterADelay": False,
-                        "enableActivityType": enable
-                    }]
+                    "activityControlOptions": [
+                        {
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": False,
+                            "enableActivityType": enable,
+                        }
+                    ]
                 }
-            }
+            },
         }
 
         request_json2 = {
             "association": {
-                "entity": [{
-                    "clientName": self._client_object.client_name,
-                    "appName": self.agent_name
-                }]
+                "entity": [
+                    {"clientName": self._client_object.client_name, "appName": self.agent_name}
+                ]
             },
             "agentProperties": {
                 "idaActivityControl": {
-                    "activityControlOptions": [{
-                        "activityType": options_dict[option],
-                        "enableAfterADelay": True,
-                        "enableActivityType": False,
-                        "dateTime": {
-                            "TimeZoneName": self._commcell_object.default_timezone,
-                            "timeValue": enable_time
+                    "activityControlOptions": [
+                        {
+                            "activityType": options_dict[option],
+                            "enableAfterADelay": True,
+                            "enableActivityType": False,
+                            "dateTime": {
+                                "TimeZoneName": self._commcell_object.default_timezone,
+                                "timeValue": enable_time,
+                            },
                         }
-                    }]
+                    ]
                 }
-            }
+            },
         }
 
         if enable_time:
@@ -791,22 +788,23 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', self.GET_AGENT, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request("POST", self.GET_AGENT, request_json)
 
         if flag:
             if response.json():
-                if 'response' in response.json():
-                    if response.json()['response'][0].get('errorCode', 0):
-                        error_message = response.json()['errorMessage']
+                if "response" in response.json():
+                    if response.json()["response"][0].get("errorCode", 0):
+                        error_message = response.json()["errorMessage"]
                         raise SDKException(
-                            'Agent', '102', 'Failed to update Agent properties\nError: "{0}"'.format(error_message))
+                            "Agent",
+                            "102",
+                            f'Failed to update Agent properties\nError: "{error_message}"',
+                        )
                     self.refresh()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def update_properties(self, properties_dict: Dict[str, Any]) -> None:
         """Update the agent properties with the specified values.
@@ -830,18 +828,17 @@ class Agent(object):
         #ai-gen-doc
         """
         request_json = {
-            "agentProperties":
-                {
-                    "AgentProperties": {},
-                    "idaEntity": {
-                        "appName": self.agent_name,
-                        "clientName": self._client_object.client_name,
-                        "commCellName": self._commcell_object.commserv_name
-                    },
-                }
+            "agentProperties": {
+                "AgentProperties": {},
+                "idaEntity": {
+                    "appName": self.agent_name,
+                    "clientName": self._client_object.client_name,
+                    "commCellName": self._commcell_object.commserv_name,
+                },
+            }
         }
 
-        request_json['agentProperties'].update(properties_dict)
+        request_json["agentProperties"].update(properties_dict)
 
         self._process_update_request(request_json)
 
@@ -876,7 +873,7 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        return self._agent_properties['idaEntity']['appName']
+        return self._agent_properties["idaEntity"]["appName"]
 
     @property
     def description(self) -> Optional[str]:
@@ -892,7 +889,7 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        return self._agent_properties.get('AgentProperties', {}).get('userDescription')
+        return self._agent_properties.get("AgentProperties", {}).get("userDescription")
 
     @description.setter
     def description(self, description: str) -> None:
@@ -909,7 +906,7 @@ class Agent(object):
         #ai-gen-doc
         """
         update_properties = self.properties
-        update_properties['AgentProperties']['userDescription'] = description
+        update_properties["AgentProperties"]["userDescription"] = description
         self.update_properties(update_properties)
 
     @property
@@ -959,9 +956,9 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        for activitytype in self._agent_properties['idaActivityControl']['activityControlOptions']:
-            if activitytype['activityType'] == 1:
-                return activitytype['enableActivityType']
+        for activitytype in self._agent_properties["idaActivityControl"]["activityControlOptions"]:
+            if activitytype["activityType"] == 1:
+                return activitytype["enableActivityType"]
 
         return False
 
@@ -981,14 +978,14 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        for activitytype in self._agent_properties['idaActivityControl']['activityControlOptions']:
-            if activitytype['activityType'] == 2:
-                return activitytype['enableActivityType']
+        for activitytype in self._agent_properties["idaActivityControl"]["activityControlOptions"]:
+            if activitytype["activityType"] == 2:
+                return activitytype["enableActivityType"]
 
         return False
 
     @property
-    def instances(self) -> 'Instances':
+    def instances(self) -> "Instances":
         """Get the Instances object representing all instances configured for this Agent.
 
         Returns:
@@ -1009,7 +1006,7 @@ class Agent(object):
         return self._instances
 
     @property
-    def backupsets(self) -> 'Backupsets':
+    def backupsets(self) -> "Backupsets":
         """Get the Backupsets instance for the current Agent.
 
         This property provides access to the Backupsets object, which represents
@@ -1032,7 +1029,7 @@ class Agent(object):
         return self._backupsets
 
     @property
-    def schedules(self) -> 'Schedules':
+    def schedules(self) -> "Schedules":
         """Get the Schedules instance for the current Agent.
 
         This property provides access to the Schedules object, which represents all schedules
@@ -1071,25 +1068,25 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Backup')
+        request_json = self._request_json_("Backup")
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._AGENT, request_json)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     return
-                elif 'errorString' in response.json()['response'][0]:
-                    error_message = response.json()['response'][0]['errorString']
+                elif "errorString" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorString"]
 
-                    o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
-                    raise SDKException('Agent', '102', o_str)
+                    o_str = f'Failed to enable Backup\nError: "{error_message}"'
+                    raise SDKException("Agent", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def enable_backup_at_time(self, enable_time: str) -> None:
         """Schedule backup enablement at a specified UTC time.
@@ -1117,29 +1114,29 @@ class Agent(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Agent', '103')
+                raise SDKException("Agent", "103")
         except ValueError:
-            raise SDKException('Agent', '104')
+            raise SDKException("Agent", "104")
 
-        request_json = self._request_json_('Backup', False, enable_time)
+        request_json = self._request_json_("Backup", False, enable_time)
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._AGENT, request_json)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     return
-                elif 'errorString' in response.json()['response'][0]:
-                    error_message = response.json()['response'][0]['errorString']
+                elif "errorString" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorString"]
 
-                    o_str = 'Failed to enable Backup\nError: "{0}"'.format(error_message)
-                    raise SDKException('Agent', '102', o_str)
+                    o_str = f'Failed to enable Backup\nError: "{error_message}"'
+                    raise SDKException("Agent", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def disable_backup(self) -> None:
         """Disable backup operations for this Agent.
@@ -1158,25 +1155,25 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Backup', False)
+        request_json = self._request_json_("Backup", False)
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._AGENT, request_json)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     return
-                elif 'errorString' in response.json()['response'][0]:
-                    error_message = response.json()['response'][0]['errorString']
+                elif "errorString" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorString"]
 
-                    o_str = 'Failed to disable Backup\nError: "{0}"'.format(error_message)
-                    raise SDKException('Agent', '102', o_str)
+                    o_str = f'Failed to disable Backup\nError: "{error_message}"'
+                    raise SDKException("Agent", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def enable_restore(self) -> None:
         """Enable restore functionality for this Agent.
@@ -1195,25 +1192,25 @@ class Agent(object):
 
         #ai-gen-doc
         """
-        request_json = self._request_json_('Restore')
+        request_json = self._request_json_("Restore")
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._AGENT, request_json)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     return
-                elif 'errorString' in response.json()['response'][0]:
-                    error_message = response.json()['response'][0]['errorString']
+                elif "errorString" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorString"]
 
-                    o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
-                    raise SDKException('Agent', '102', o_str)
+                    o_str = f'Failed to enable Restore\nError: "{error_message}"'
+                    raise SDKException("Agent", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def enable_restore_at_time(self, enable_time: str) -> None:
         """Enable restore functionality at a specified UTC time.
@@ -1240,29 +1237,29 @@ class Agent(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Agent', '103')
+                raise SDKException("Agent", "103")
         except ValueError:
-            raise SDKException('Agent', '104')
+            raise SDKException("Agent", "104")
 
-        request_json = self._request_json_('Restore', False, enable_time)
+        request_json = self._request_json_("Restore", False, enable_time)
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._AGENT, request_json)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     return
-                elif 'errorString' in response.json()['response'][0]:
-                    error_message = response.json()['response'][0]['errorString']
+                elif "errorString" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorString"]
 
-                    o_str = 'Failed to enable Restore\nError: "{0}"'.format(error_message)
-                    raise SDKException('Agent', '102', o_str)
+                    o_str = f'Failed to enable Restore\nError: "{error_message}"'
+                    raise SDKException("Agent", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def disable_restore(self) -> None:
         """Disable restore operations for this Agent.
@@ -1279,24 +1276,24 @@ class Agent(object):
             >>> print("Restore operations have been disabled for the agent.")
         #ai-gen-doc
         """
-        request_json = self._request_json_('Restore', False)
+        request_json = self._request_json_("Restore", False)
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._AGENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._AGENT, request_json)
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     return
-                elif 'errorString' in response.json()['response'][0]:
-                    error_message = response.json()['response'][0]['errorString']
-                    o_str = 'Failed to disable Backup\nError: "{0}"'.format(error_message)
-                    raise SDKException('Agent', '102', o_str)
+                elif "errorString" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorString"]
+                    o_str = f'Failed to disable Backup\nError: "{error_message}"'
+                    raise SDKException("Agent", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def enable_ews_support_for_exchange_on_prem(self, ews_service_url: str) -> None:
         """Enable EWS backup support for an Exchange on-premises client.
@@ -1315,11 +1312,13 @@ class Agent(object):
         #ai-gen-doc
         """
         if int(self.agent_id) != 137:
-            raise SDKException('Agent', '102', f'Invalid operation for {self.agent_name}')
+            raise SDKException("Agent", "102", f"Invalid operation for {self.agent_name}")
 
         _agent_properties = self.properties
         _agent_properties["onePassProperties"]["onePassProp"]["ewsDetails"]["bUseEWS"] = True
-        _agent_properties["onePassProperties"]["onePassProp"]["ewsDetails"]["ewsConnectionUrl"] = ews_service_url
+        _agent_properties["onePassProperties"]["onePassProp"]["ewsDetails"]["ewsConnectionUrl"] = (
+            ews_service_url
+        )
         self.update_properties(_agent_properties)
 
     def refresh(self) -> None:

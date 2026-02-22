@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -40,14 +38,14 @@ GoogleInstance:
 
 """
 
-from __future__ import unicode_literals
 from base64 import b64encode
 from typing import Any, Dict, List
 
 from ...constants import AppIDAType
 from ...exception import SDKException
-from ..cainstance import CloudAppsInstance
 from ...job import Job
+from ..cainstance import CloudAppsInstance
+
 
 class GoogleInstance(CloudAppsInstance):
     """
@@ -90,7 +88,7 @@ class GoogleInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        super(GoogleInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         # Common properties for Google and OneDrive
         self._ca_instance_type = None
         self._manage_content_automatically = None
@@ -108,54 +106,74 @@ class GoogleInstance(CloudAppsInstance):
         self._client_id = None
         self._tenant = None
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties["cloudAppsInstance"]
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
-            if 'gInstance' in cloud_apps_instance:
-                ginstance = cloud_apps_instance['gInstance']
+            if "gInstance" in cloud_apps_instance:
+                ginstance = cloud_apps_instance["gInstance"]
 
-                self._manage_content_automatically = ginstance['manageContentAutomatically']
-                self._auto_discovery_enabled = ginstance['isAutoDiscoveryEnabled']
-                self._auto_discovery_mode = ginstance['autoDiscoveryMode']
-                self._app_email_id = ginstance['appEmailId']
-                self._google_admin_id = ginstance['emailId']
-                self._service_account_key_file = ginstance['appKey']
-                self._app_client_id = ginstance['appClientId']
+                self._manage_content_automatically = ginstance["manageContentAutomatically"]
+                self._auto_discovery_enabled = ginstance["isAutoDiscoveryEnabled"]
+                self._auto_discovery_mode = ginstance["autoDiscoveryMode"]
+                self._app_email_id = ginstance["appEmailId"]
+                self._google_admin_id = ginstance["emailId"]
+                self._service_account_key_file = ginstance["appKey"]
+                self._app_client_id = ginstance["appClientId"]
 
-            if 'oneDriveInstance' in cloud_apps_instance:
-                onedrive_instance = cloud_apps_instance['oneDriveInstance']
+            if "oneDriveInstance" in cloud_apps_instance:
+                onedrive_instance = cloud_apps_instance["oneDriveInstance"]
 
-                self._manage_content_automatically = onedrive_instance['manageContentAutomatically']
-                self._auto_discovery_enabled = onedrive_instance['isAutoDiscoveryEnabled']
-                self._auto_discovery_mode = onedrive_instance['autoDiscoveryMode']
-                if 'clientId' in onedrive_instance:
-                    self._client_id = onedrive_instance.get('clientId')
-                    self._tenant = onedrive_instance.get('tenant')
+                self._manage_content_automatically = onedrive_instance[
+                    "manageContentAutomatically"
+                ]
+                self._auto_discovery_enabled = onedrive_instance["isAutoDiscoveryEnabled"]
+                self._auto_discovery_mode = onedrive_instance["autoDiscoveryMode"]
+                if "clientId" in onedrive_instance:
+                    self._client_id = onedrive_instance.get("clientId")
+                    self._tenant = onedrive_instance.get("tenant")
                 else:
-                    self._client_id = onedrive_instance.get(
-                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureAppId')
-                    self._tenant = onedrive_instance.get(
-                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureDirectoryId')
+                    self._client_id = (
+                        onedrive_instance.get("azureAppList", {})
+                        .get("azureApps", [{}])[0]
+                        .get("azureAppId")
+                    )
+                    self._tenant = (
+                        onedrive_instance.get("azureAppList", {})
+                        .get("azureApps", [{}])[0]
+                        .get("azureDirectoryId")
+                    )
 
                 if self._client_id is None:
-                    raise SDKException('Instance', '102', 'Azure App has not been configured')
+                    raise SDKException("Instance", "102", "Azure App has not been configured")
 
-            if 'generalCloudProperties' in cloud_apps_instance:
-                if 'proxyServers' in cloud_apps_instance['generalCloudProperties']:
-                    self._proxy_client = cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('proxyServers', [{}])[0].get('clientName')
+            if "generalCloudProperties" in cloud_apps_instance:
+                if "proxyServers" in cloud_apps_instance["generalCloudProperties"]:
+                    self._proxy_client = (
+                        cloud_apps_instance.get("generalCloudProperties", {})
+                        .get("proxyServers", [{}])[0]
+                        .get("clientName")
+                    )
                 else:
-                    if 'clientName' in cloud_apps_instance.get(
-                            'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientName')
+                    if "clientName" in cloud_apps_instance.get("generalCloudProperties", {}).get(
+                        "memberServers", [{}]
+                    )[0].get("client"):
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientName")
+                        )
                     else:
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientGroupName')
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientGroupName")
+                        )
 
                 if self._proxy_client is None:
-                    raise SDKException('Instance', '102', 'Access Node has not been configured')
+                    raise SDKException("Instance", "102", "Access Node has not been configured")
 
     @property
     def ca_instance_type(self) -> str:
@@ -172,11 +190,11 @@ class GoogleInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         if self._ca_instance_type == 1:
-            return 'GMAIL'
+            return "GMAIL"
         elif self._ca_instance_type == 2:
-            return 'GDRIVE'
+            return "GDRIVE"
         elif self._ca_instance_type == 7:
-            return 'ONEDRIVE'
+            return "ONEDRIVE"
         return self._ca_instance_type
 
     @property
@@ -339,7 +357,9 @@ class GoogleInstance(CloudAppsInstance):
         """
         return self._proxy_client
 
-    def _prepare_advsearchgrp(self, source_item_list: List[str], subclient_id: int) -> Dict[str, Any]:
+    def _prepare_advsearchgrp(
+        self, source_item_list: List[str], subclient_id: int
+    ) -> Dict[str, Any]:
         """Prepare the advsearchgrp JSON structure for a restore job for OneDrive for Business clients.
 
         This utility function generates the required advsearchgrp dictionary for initiating a restore job,
@@ -369,23 +389,17 @@ class GoogleInstance(CloudAppsInstance):
                         "filters": [
                             {
                                 "field": "HIDDEN",
-                                "fieldValues": {
-                                    "values": [
-                                        "true"
-                                    ]
-                                },
-                                "intraFieldOp": "FTNot"
+                                "fieldValues": {"values": ["true"]},
+                                "intraFieldOp": "FTNot",
                             },
                             {
                                 "field": "CV_OBJECT_GUID",
-                                "fieldValues": {
-                                    "values": source_item_list
-                                },
-                                "intraFieldOp": "FTOr"
-                            }
+                                "fieldValues": {"values": source_item_list},
+                                "intraFieldOp": "FTOr",
+                            },
                         ],
-                        "interFilterOP": "FTAnd"
-                    }
+                        "interFilterOP": "FTAnd",
+                    },
                 }
             ],
             "commonFilter": [
@@ -394,38 +408,26 @@ class GoogleInstance(CloudAppsInstance):
                         "filters": [
                             {
                                 "field": "CISTATE",
-                                "fieldValues": {
-                                    "values": [
-                                        "1"
-                                    ]
-                                },
+                                "fieldValues": {"values": ["1"]},
                                 "intraFieldOp": "FTOr",
-                                "groupType": 0
+                                "groupType": 0,
                             },
                             {
                                 "field": "IS_VISIBLE",
                                 "fieldValues": {
-                                    "values": [
-                                        "true"
-                                    ],
+                                    "values": ["true"],
                                     "isRange": False,
-                                    "isMoniker": False
+                                    "isMoniker": False,
                                 },
                                 "intraFieldOp": "FTOr",
-                                "intraFieldOpStr": "None"
-                            }
+                                "intraFieldOpStr": "None",
+                            },
                         ],
-                        "interFilterOP": "FTAnd"
+                        "interFilterOP": "FTAnd",
                     }
                 }
             ],
-            "galaxyFilter": [
-                {
-                    "appIdList": [
-                        subclient_id
-                    ]
-                }
-            ],
+            "galaxyFilter": [{"appIdList": [subclient_id]}],
             "graphFilter": [
                 {
                     "fromField": "PARENT_GUID",
@@ -436,28 +438,20 @@ class GoogleInstance(CloudAppsInstance):
                             "filters": [
                                 {
                                     "field": "IS_VISIBLE",
-                                    "fieldValues": {
-                                        "values": [
-                                            "true"
-                                        ]
-                                    },
+                                    "fieldValues": {"values": ["true"]},
                                     "intraFieldOp": "FTAnd",
-                                    "groupType": 0
+                                    "groupType": 0,
                                 },
                                 {
                                     "field": "HIDDEN",
-                                    "fieldValues": {
-                                        "values": [
-                                            "true"
-                                        ]
-                                    },
-                                    "intraFieldOp": "FTNot"
-                                }
+                                    "fieldValues": {"values": ["true"]},
+                                    "intraFieldOp": "FTNot",
+                                },
                             ]
                         }
-                    ]
+                    ],
                 }
-            ]
+            ],
         }
 
         return advsearchgrp
@@ -489,40 +483,22 @@ class GoogleInstance(CloudAppsInstance):
                 "pageSize": 15,
                 "resultOffset": 0,
                 "sortParams": [
-                    {
-                        "sortField": "DATA_TYPE",
-                        "sortDirection": "DESCENDING"
-                    },
-                    {
-                        "sortField": "FileName",
-                        "sortDirection": "ASCENDING"
-                    }
+                    {"sortField": "DATA_TYPE", "sortDirection": "DESCENDING"},
+                    {"sortField": "FileName", "sortDirection": "ASCENDING"},
                 ],
                 "queryParams": [
-                    {
-                        "param": "ENABLE_MIXEDVIEW",
-                        "value": "true"
-                    },
+                    {"param": "ENABLE_MIXEDVIEW", "value": "true"},
                     {
                         "param": "RESPONSE_FIELD_LIST",
-                        "value": "FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType"
+                        "value": "FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType",
                     },
-                    {
-                        "param": "DO_NOT_AUDIT",
-                        "value": "false"
-                    },
-                    {
-                        "param": "COLLAPSE_FIELD",
-                        "value": "CV_OBJECT_GUID"
-                    },
-                    {
-                        "param": "COLLAPSE_SORT",
-                        "value": "BACKUPTIME DESC"
-                    }
-                ]
+                    {"param": "DO_NOT_AUDIT", "value": "false"},
+                    {"param": "COLLAPSE_FIELD", "value": "CV_OBJECT_GUID"},
+                    {"param": "COLLAPSE_SORT", "value": "BACKUPTIME DESC"},
+                ],
             },
             "advSearchGrp": self._prepare_advsearchgrp(source_item_list, subclient_id),
-            "mode": "WebConsole"
+            "mode": "WebConsole",
         }
 
         return findquery
@@ -580,104 +556,118 @@ class GoogleInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        out_of_place = kwargs.get('out_of_place', False)
-        disk_restore = kwargs.get('disk_restore', False)
-        destination_client = kwargs.get('destination_client')
-        overwrite = kwargs.get('overwrite', False)
-        restore_as_copy = kwargs.get('restore_as_copy', False)
-        skip_file_permissions = kwargs.get('skip_file_permissions', False)
-        include_deleted_items = kwargs.get('include_deleted_items', False)
-        destination_label = kwargs.get('destination_label', "")
+        out_of_place = kwargs.get("out_of_place", False)
+        disk_restore = kwargs.get("disk_restore", False)
+        destination_client = kwargs.get("destination_client")
+        overwrite = kwargs.get("overwrite", False)
+        restore_as_copy = kwargs.get("restore_as_copy", False)
+        skip_file_permissions = kwargs.get("skip_file_permissions", False)
+        include_deleted_items = kwargs.get("include_deleted_items", False)
+        destination_label = kwargs.get("destination_label", "")
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
-                destination_client_object = self._commcell_object.clients.all_clients.get(destination_client)
-                destination_client_id = int(destination_client_object.get('id'))
+                destination_client_object = self._commcell_object.clients.all_clients.get(
+                    destination_client
+                )
+                destination_client_id = int(destination_client_object.get("id"))
             else:
-                raise SDKException('Client', '102', 'Client "{0}" does not exist.'.format(destination_client))
+                raise SDKException(
+                    "Client", "102", f'Client "{destination_client}" does not exist.'
+                )
 
-        if ((destination_client and not isinstance(destination_client, str) or
-             kwargs.get('destination_path') and not isinstance(kwargs.get('destination_path'), str)) or not
-        (isinstance(source_item_list, list) and
-         isinstance(skip_file_permissions, bool) and
-         isinstance(disk_restore, bool) and
-         isinstance(out_of_place, bool) and
-         isinstance(overwrite, bool) and
-         isinstance(restore_as_copy, bool) and
-         isinstance(include_deleted_items, bool))):
-            raise SDKException('Instance', '101')
+        if (
+            destination_client
+            and not isinstance(destination_client, str)
+            or kwargs.get("destination_path")
+            and not isinstance(kwargs.get("destination_path"), str)
+        ) or not (
+            isinstance(source_item_list, list)
+            and isinstance(skip_file_permissions, bool)
+            and isinstance(disk_restore, bool)
+            and isinstance(out_of_place, bool)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_as_copy, bool)
+            and isinstance(include_deleted_items, bool)
+        ):
+            raise SDKException("Instance", "101")
 
         request_json = self._restore_json(client=self._agent_object._client_object)
 
-        subtasks = request_json['taskInfo']['subTasks'][0]
-        options = subtasks['options']
-        restore_options = options['restoreOptions']
+        subtasks = request_json["taskInfo"]["subTasks"][0]
+        options = subtasks["options"]
+        restore_options = options["restoreOptions"]
 
         restore_options["browseOption"] = {
             "commCellId": self._commcell_object.commcell_id,
-            "showDeletedItems": include_deleted_items
+            "showDeletedItems": include_deleted_items,
         }
 
-        restore_options['commonOptions'] = {
+        restore_options["commonOptions"] = {
             "overwriteFiles": False,
             "skip": True,
-            "unconditionalOverwrite": False
+            "unconditionalOverwrite": False,
         }
 
-        destination = restore_options['destination']
-        destination['destAppId'] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
-        destination['inPlace'] = False if out_of_place or disk_restore else True
+        destination = restore_options["destination"]
+        destination["destAppId"] = (
+            AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
+        )
+        destination["inPlace"] = False if out_of_place or disk_restore else True
 
-        destination['destClient'] = {
-            "clientId": destination_client_id,
-            "clientName": destination_client
-        } if disk_restore else {
-            "clientId": int(self._agent_object._client_object.client_id),
-            "clientName": self._agent_object._client_object.client_name
-        }
+        destination["destClient"] = (
+            {"clientId": destination_client_id, "clientName": destination_client}
+            if disk_restore
+            else {
+                "clientId": int(self._agent_object._client_object.client_id),
+                "clientName": self._agent_object._client_object.client_name,
+            }
+        )
 
         if kwargs.get("destination_path"):
-            destination['destPath'] = [kwargs.get('destination_path')]
+            destination["destPath"] = [kwargs.get("destination_path")]
 
-        restore_options['fileOption']['sourceItem'] = source_item_list
+        restore_options["fileOption"]["sourceItem"] = source_item_list
 
-        restore_options['cloudAppsRestoreOptions'] = {
+        restore_options["cloudAppsRestoreOptions"] = {
             "instanceType": self._ca_instance_type,
             "googleRestoreOptions": {
                 "skipPermissionsRestore": False if disk_restore else skip_file_permissions,
                 "restoreToDifferentAccount": True if out_of_place else False,
                 "restoreAsCopy": False if disk_restore else restore_as_copy,
                 "filelevelRestore": False,
-                "strDestUserAccount": kwargs.get("destination_path") if out_of_place else '',
+                "strDestUserAccount": kwargs.get("destination_path") if out_of_place else "",
                 "overWriteItems": False if disk_restore else overwrite,
                 "restoreToGoogle": False if disk_restore else True,
                 "gmailRestoreItemType": 0,
                 "destInfo": {
-                    "destinationType": 0 if kwargs.get("destination_type") == 'USER' else 1,
-                    "userDisplayName": kwargs.get('accountInfo', {}).get('userDisplayName', ''),
-                    "userGUID": kwargs.get('accountInfo', {}).get('userGUID', ''),
+                    "destinationType": 0 if kwargs.get("destination_type") == "USER" else 1,
+                    "userDisplayName": kwargs.get("accountInfo", {}).get("userDisplayName", ""),
+                    "userGUID": kwargs.get("accountInfo", {}).get("userGUID", ""),
                     "folderPath": destination_label,
-                    "folderId": destination_label
-                }
-            }
+                    "folderId": destination_label,
+                },
+            },
         }
 
-        del subtasks['subTaskOperation']
-        del restore_options['fileOption']
-        del restore_options['impersonation']
-        del restore_options['volumeRstOption']
-        del restore_options['sharePointRstOption']
-        del restore_options['virtualServerRstOption']
+        del subtasks["subTaskOperation"]
+        del restore_options["fileOption"]
+        del restore_options["impersonation"]
+        del restore_options["volumeRstOption"]
+        del restore_options["sharePointRstOption"]
+        del restore_options["virtualServerRstOption"]
 
-        associations = request_json['taskInfo']['associations'][0]
-        subclient_id = associations['subclientId']
+        associations = request_json["taskInfo"]["associations"][0]
+        subclient_id = associations["subclientId"]
 
-        cloudAppsRestoreOptions = restore_options['cloudAppsRestoreOptions']
-        cloudAppsRestoreOptions['googleRestoreOptions']['findQuery'] = self._prepare_findquery(source_item_list,
-                                                                                               subclient_id)
-        cloudAppsRestoreOptions['googleRestoreOptions']['destInfo']['userSMTP'] = kwargs.get('accountInfo', {}).get(
-            'userSMTP', '')
-        cloudAppsRestoreOptions['googleRestoreOptions']['destInfo']['subclientId'] = subclient_id
+        cloudAppsRestoreOptions = restore_options["cloudAppsRestoreOptions"]
+        cloudAppsRestoreOptions["googleRestoreOptions"]["findQuery"] = self._prepare_findquery(
+            source_item_list, subclient_id
+        )
+        cloudAppsRestoreOptions["googleRestoreOptions"]["destInfo"]["userSMTP"] = kwargs.get(
+            "accountInfo", {}
+        ).get("userSMTP", "")
+        cloudAppsRestoreOptions["googleRestoreOptions"]["destInfo"]["subclientId"] = subclient_id
 
         destination_option = "Destination"
         destination_value = "Original location"
@@ -695,69 +685,73 @@ class GoogleInstance(CloudAppsInstance):
                     "selectedItems": [
                         {
                             "itemName": source_item_list[0],
-                            "itemType": "Mailbox" if self.ca_instance_type == "GMAIL" else "User"
+                            "itemType": "Mailbox" if self.ca_instance_type == "GMAIL" else "User",
                         }
                     ],
                     "jobOptionItems": [
                         {
                             "option": "Restore destination",
-                            "value": "Gmail" if self.ca_instance_type == "GMAIL" else "Google Drive"
+                            "value": "Gmail"
+                            if self.ca_instance_type == "GMAIL"
+                            else "Google Drive",
                         },
-                        {
-                            "option": "Source",
-                            "value": source_item_list[0]
-                        },
-                        {
-                            "option": destination_option,
-                            "value": destination_value
-                        },
-                        {
-                            "option": "If the file exists",
-                            "value": "Skip"
-                        },
-                        {
-                            "option": "Skip file permissions",
-                            "value": "Enabled"
-                        },
+                        {"option": "Source", "value": source_item_list[0]},
+                        {"option": destination_option, "value": destination_value},
+                        {"option": "If the file exists", "value": "Skip"},
+                        {"option": "Skip file permissions", "value": "Enabled"},
                         {
                             "option": "Include deleted items",
-                            "value": "Enabled" if include_deleted_items else "Disabled"
-                        }
-                    ]
+                            "value": "Enabled" if include_deleted_items else "Disabled",
+                        },
+                    ],
                 }
-            ]
+            ],
         }
 
-        joboptionitems = options['commonOpts']['jobMetadata'][0]['jobOptionItems']
+        joboptionitems = options["commonOpts"]["jobMetadata"][0]["jobOptionItems"]
 
         if self.ca_instance_type == "GMAIL":
-            joboptionitems.extend([{"option": "Restore mail","value": "Enabled"},{"option": "Restore contacts","value": "Enabled"},{"option": "Restore calendars","value": "Enabled"}])
-            cloudAppsRestoreOptions['googleRestoreOptions']['gmailOperations']={"isMailSelected": True,"isContactsSelected": True,"isCalendarSelected": True}
+            joboptionitems.extend(
+                [
+                    {"option": "Restore mail", "value": "Enabled"},
+                    {"option": "Restore contacts", "value": "Enabled"},
+                    {"option": "Restore calendars", "value": "Enabled"},
+                ]
+            )
+            cloudAppsRestoreOptions["googleRestoreOptions"]["gmailOperations"] = {
+                "isMailSelected": True,
+                "isContactsSelected": True,
+                "isCalendarSelected": True,
+            }
 
         if include_deleted_items:
-            for filter in cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter']['filters']:
-                if filter['field']=='CISTATE':
-                    filter['fieldValues']['values'].extend(['3333', '3334', '3335'])
+            for filter in cloudAppsRestoreOptions["googleRestoreOptions"]["findQuery"][
+                "advSearchGrp"
+            ]["commonFilter"][0]["filter"]["filters"]:
+                if filter["field"] == "CISTATE":
+                    filter["fieldValues"]["values"].extend(["3333", "3334", "3335"])
 
         if out_of_place:
             joboptionitems.append({"option": "Destination client", "value": destination_client})
         if disk_restore:
-            joboptionitems.append({"option": "Destination path", "value": kwargs.get("destination_path")})
+            joboptionitems.append(
+                {"option": "Destination path", "value": kwargs.get("destination_path")}
+            )
 
         return request_json
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            to_disk: bool = False
-        ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        to_disk: bool = False,
+    ) -> "Job":
         """Restore specified files or folders to a different client and destination path.
 
         This method restores the files and folders listed in `paths` to the specified `destination_path`
@@ -796,26 +790,28 @@ class GoogleInstance(CloudAppsInstance):
         """
         from cvpysdk.client import Client
 
-        if not ((isinstance(client, str) or isinstance(client, Client)) and
-                isinstance(destination_path, str) and
-                isinstance(paths, list) and
-                isinstance(overwrite, bool) and
-                isinstance(restore_data_and_acl, bool)):
-            raise SDKException('Subclient', '101')
+        if not (
+            (isinstance(client, str) or isinstance(client, Client))
+            and isinstance(destination_path, str)
+            and isinstance(paths, list)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Subclient", "101")
 
         if isinstance(client, Client):
             client = client
         elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
-            raise SDKException('Subclient', '105')
+            raise SDKException("Subclient", "105")
 
         paths = self._filter_paths(paths)
 
         destination_path = self._filter_paths([destination_path], True)
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         request_json = self._restore_json(
             paths=paths,
@@ -833,23 +829,24 @@ class GoogleInstance(CloudAppsInstance):
         restore_to_google = True
 
         if to_disk:
-            dest_user_account = ''
+            dest_user_account = ""
             rest_different_account = False
             restore_to_google = False
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]['cloudAppsRestoreOptions'] = {
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = {
             "instanceType": self._ca_instance_type,
             "googleRestoreOptions": {
                 "strDestUserAccount": dest_user_account,
                 "folderGuid": "",
                 "restoreToDifferentAccount": rest_different_account,
                 "restoreToGoogle": restore_to_google,
-                "gmailRestoreItemType": 0
-            }
+                "gmailRestoreItemType": 0,
+            },
         }
         return self._process_restore_response(request_json)
 
-    def enable_auto_discovery(self, mode: str = 'REGEX') -> None:
+    def enable_auto_discovery(self, mode: str = "REGEX") -> None:
         """Enable auto discovery on the GoogleInstance.
 
         This method enables automatic discovery of resources for the instance using the specified mode.
@@ -867,23 +864,20 @@ class GoogleInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        auto_discovery_dict = {
-            'REGEX': 0,
-            'GROUP': 1
-        }
-        instance_dict = {
-            1: 'gInstance',
-            2: 'gInstance',
-            7: 'oneDriveInstance'
-        }
+        auto_discovery_dict = {"REGEX": 0, "GROUP": 1}
+        instance_dict = {1: "gInstance", 2: "gInstance", 7: "oneDriveInstance"}
         auto_discovery_mode = auto_discovery_dict.get(mode.upper(), None)
 
         if auto_discovery_mode is None:
-            raise SDKException('Instance', '107')
-        instance_prop = self._properties['cloudAppsInstance'].copy()
+            raise SDKException("Instance", "107")
+        instance_prop = self._properties["cloudAppsInstance"].copy()
 
-        instance_prop[instance_dict[instance_prop['instanceType']]]['isAutoDiscoveryEnabled'] = True
-        instance_prop[instance_dict[instance_prop['instanceType']]]['autoDiscoveryMode'] = auto_discovery_mode
+        instance_prop[instance_dict[instance_prop["instanceType"]]]["isAutoDiscoveryEnabled"] = (
+            True
+        )
+        instance_prop[instance_dict[instance_prop["instanceType"]]]["autoDiscoveryMode"] = (
+            auto_discovery_mode
+        )
 
         self._set_instance_properties("_properties['cloudAppsInstance']", instance_prop)
         self.refresh()
@@ -903,7 +897,7 @@ class GoogleInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        return {'instanceProperties': self._properties}
+        return {"instanceProperties": self._properties}
 
     def modify_index_server(self, modified_index_server: str) -> None:
         """Modify the index server associated with this GoogleInstance.
@@ -922,23 +916,20 @@ class GoogleInstance(CloudAppsInstance):
             "instance": {
                 "instanceId": int(self.instance_id),
                 "clientId": int(self._agent_object._client_object.client_id),
-                "applicationId": int(self._agent_object.agent_id)
+                "applicationId": int(self._agent_object.agent_id),
             },
             "cloudAppsInstance": {
                 "instanceType": self.ca_instance_type,
-                "oneDriveInstance": {
-                },
-                "generalCloudProperties": {
-                    "indexServer": {
-                        "clientName": modified_index_server
-                    }
-                }
-            }
+                "oneDriveInstance": {},
+                "generalCloudProperties": {"indexServer": {"clientName": modified_index_server}},
+            },
         }
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_accessnodes(self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) -> None:
+    def modify_accessnodes(
+        self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str
+    ) -> None:
         """Modify the access nodes for the GoogleInstance.
 
         This method updates the list of access nodes and the associated user credentials
@@ -960,18 +951,14 @@ class GoogleInstance(CloudAppsInstance):
         """
         member_servers = []
         for client in modified_accessnodes_list:
-            client_dict = {
-                "client": {
-                    "clientName": client
-                }
-            }
+            client_dict = {"client": {"clientName": client}}
             member_servers.append(client_dict)
 
         update_dict = {
             "instance": {
                 "instanceId": int(self.instance_id),
                 "clientId": int(self._agent_object._client_object.client_id),
-                "applicationId": int(self._agent_object.agent_id)
+                "applicationId": int(self._agent_object.agent_id),
             },
             "cloudAppsInstance": {
                 "instanceType": self.ca_instance_type,
@@ -982,16 +969,16 @@ class GoogleInstance(CloudAppsInstance):
                                 "serviceType": "SYSTEM_ACCOUNT",
                                 "userAccount": {
                                     "userName": modified_user_name,
-                                    "password": b64encode(modified_user_password.encode()).decode(),
-                                }
+                                    "password": b64encode(
+                                        modified_user_password.encode()
+                                    ).decode(),
+                                },
                             }
                         ]
                     }
                 },
-                "generalCloudProperties": {
-                    "memberServers": member_servers
-                }
-            }
+                "generalCloudProperties": {"memberServers": member_servers},
+            },
         }
 
         self.update_properties(properties_dict=update_dict)

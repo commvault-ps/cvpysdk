@@ -77,13 +77,14 @@ Server Attributes:
 
 
 """
+
 import copy
 import datetime
 import enum
 import time
 
 from ..exception import SDKException
-from ..monitoringapps.constants import ThreatConstants, FileTypeConstants, RequestConstants
+from ..monitoringapps.constants import FileTypeConstants, RequestConstants, ThreatConstants
 
 
 class AnomalyType(enum.Enum):
@@ -101,6 +102,7 @@ class AnomalyType(enum.Enum):
 
     #ai-gen-doc
     """
+
     FILE_ACTIVITY = 16
     FILE_TYPE = 32
     THREAT_ANALYSIS = 64
@@ -109,7 +111,7 @@ class AnomalyType(enum.Enum):
     DATA_WRITTEN = 4096
 
 
-class TAServers():
+class TAServers:
     """
     Represents and manages all servers involved in threat indicator monitoring.
 
@@ -153,10 +155,10 @@ class TAServers():
         self._servers = []
         self._total_clients = None
         self._monitored_vms = None
-        self._API_GET_ALL_INDICATORS = self._services['GET_THREAT_INDICATORS']
-        self._API_RUN_SCAN = self._services['RUN_ANOMALY_SCAN']
-        self._API_CLIENTS_COUNT = self._services['ANOMALY_CLIENTS_COUNT']
-        self._API_MONITORED_VMS = self._services['MONITORED_VM_COUNT']
+        self._API_GET_ALL_INDICATORS = self._services["GET_THREAT_INDICATORS"]
+        self._API_RUN_SCAN = self._services["RUN_ANOMALY_SCAN"]
+        self._API_CLIENTS_COUNT = self._services["ANOMALY_CLIENTS_COUNT"]
+        self._API_MONITORED_VMS = self._services["MONITORED_VM_COUNT"]
         self.refresh()
 
     def _response_not_success(self, response: object) -> None:
@@ -177,13 +179,15 @@ class TAServers():
 
         #ai-gen-doc
         """
-        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+        raise SDKException(
+            "Response", "101", self._commcell_object._update_response_(response.text)
+        )
 
     def _get_clients_count(self) -> dict:
         """Retrieve the client count statistics for Threat Indicators on this CommServe.
 
         Returns:
-            dict: A dictionary containing total client statistics, including counts for each client type 
+            dict: A dictionary containing total client statistics, including counts for each client type
             such as 'fileserver', 'vm', and 'laptop'.
 
         Raises:
@@ -197,12 +201,12 @@ class TAServers():
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._API_CLIENTS_COUNT)
+        flag, response = self._cvpysdk_object.make_request("GET", self._API_CLIENTS_COUNT)
         if flag:
             if response.json():
                 return response.json()
             elif bool(response.json()):
-                raise SDKException('ThreatIndicators', '110')
+                raise SDKException("ThreatIndicators", "110")
         self._response_not_success(response)
 
     def _get_monitored_vm_count(self) -> dict:
@@ -221,14 +225,13 @@ class TAServers():
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._API_MONITORED_VMS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._API_MONITORED_VMS)
         if flag:
             if response.json():
                 return response.json()
             elif bool(response.json()):
-                raise SDKException('ThreatIndicators', '111')
+                raise SDKException("ThreatIndicators", "111")
         self._response_not_success(response)
-
 
     def _get_threat_indicators(self) -> list[dict]:
         """Retrieve the list of threat indicators for this CommServe (CS) server.
@@ -277,17 +280,17 @@ class TAServers():
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._API_GET_ALL_INDICATORS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._API_GET_ALL_INDICATORS)
         _threat_indicators = []
         if flag:
-            if response.json() and 'anomalyClients' in response.json():
-                _threat_indicators = response.json()['anomalyClients']
+            if response.json() and "anomalyClients" in response.json():
+                _threat_indicators = response.json()["anomalyClients"]
                 for _client in _threat_indicators:
-                    if 'client' in _client:
-                        _display_name = _client['client'].get('displayName', '')
+                    if "client" in _client:
+                        _display_name = _client["client"].get("displayName", "")
                         self._servers.append(_display_name.lower())
             elif bool(response.json()):
-                raise SDKException('ThreatIndicators', '103')
+                raise SDKException("ThreatIndicators", "103")
             return _threat_indicators
         self._response_not_success(response)
 
@@ -313,14 +316,14 @@ class TAServers():
         return False
 
     def run_scan(
-            self,
-            server_name: str,
-            anomaly_types: list,
-            index_server_name: str = None,
-            storage_pool: str = None,
-            from_time: int = None,
-            to_time: int = None
-        ) -> int:
+        self,
+        server_name: str,
+        anomaly_types: list,
+        index_server_name: str = None,
+        storage_pool: str = None,
+        from_time: int = None,
+        to_time: int = None,
+    ) -> int:
         """Run an anomaly scan on the specified server.
 
         This method initiates an anomaly scan for the given server, analyzing the specified anomaly types.
@@ -354,53 +357,60 @@ class TAServers():
         #ai-gen-doc
         """
         if not isinstance(server_name, str):
-            raise SDKException('ThreatIndicators', '101')
+            raise SDKException("ThreatIndicators", "101")
         if not isinstance(anomaly_types, list):
-            raise SDKException('ThreatIndicators', '101')
+            raise SDKException("ThreatIndicators", "101")
         if not self._commcell_object.clients.has_client(server_name):
-            raise SDKException('ThreatIndicators', '102', 'Given server is not found in CS')
+            raise SDKException("ThreatIndicators", "102", "Given server is not found in CS")
         if storage_pool and index_server_name:
-            raise SDKException('ThreatIndicators', '102', 'Cannot specify both storage_pool and index_server_name input')
+            raise SDKException(
+                "ThreatIndicators",
+                "102",
+                "Cannot specify both storage_pool and index_server_name input",
+            )
         req_json = copy.deepcopy(RequestConstants.RUN_SCAN_JSON)
-        req_json['client']['clientId'] = int(self._commcell_object.clients.get(server_name).client_id)
+        req_json["client"]["clientId"] = int(
+            self._commcell_object.clients.get(server_name).client_id
+        )
         ta_flag = 0
         for each_anomaly in anomaly_types:
             if each_anomaly.name == AnomalyType.FILE_DATA.name:
                 ta_flag = ta_flag + 2
             elif each_anomaly.name == AnomalyType.THREAT_ANALYSIS.name:
                 ta_flag = ta_flag + 1
-        req_json['threatAnalysisFlags'] = int(ta_flag)
+        req_json["threatAnalysisFlags"] = int(ta_flag)
         if not from_time and not to_time:
             to_time = int(time.time())
-            req_json['timeRange']['toTime'] = int(to_time)
+            req_json["timeRange"]["toTime"] = int(to_time)
             to_time = datetime.datetime.fromtimestamp(to_time)
             from_time = to_time - datetime.timedelta(days=7)
-            req_json['timeRange']['fromTime'] = int(from_time.timestamp())
+            req_json["timeRange"]["fromTime"] = int(from_time.timestamp())
         else:
-            req_json['timeRange']['toTime'] = to_time
-            req_json['timeRange']['fromTime'] = from_time
+            req_json["timeRange"]["toTime"] = to_time
+            req_json["timeRange"]["fromTime"] = from_time
         if storage_pool:
-            req_json.pop('indexServer')
+            req_json.pop("indexServer")
             spool_obj = self._commcell_object.storage_pools.get(storage_pool)
-            req_json['backupDetails'][0]['copyId'] = int(spool_obj.copy_id)
-            req_json['backupDetails'][0]['storagePoolId'] = int(spool_obj.storage_pool_id)
+            req_json["backupDetails"][0]["copyId"] = int(spool_obj.copy_id)
+            req_json["backupDetails"][0]["storagePoolId"] = int(spool_obj.storage_pool_id)
         else:
-            req_json.pop('backupDetails')
+            req_json.pop("backupDetails")
             if not index_server_name:
-                raise SDKException('ThreatIndicators', '108')
-            req_json['indexServer']['clientId'] = int(
-                self._commcell_object.index_servers.get(index_server_name).index_server_client_id)
+                raise SDKException("ThreatIndicators", "108")
+            req_json["indexServer"]["clientId"] = int(
+                self._commcell_object.index_servers.get(index_server_name).index_server_client_id
+            )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._API_RUN_SCAN, req_json
+            "POST", self._API_RUN_SCAN, req_json
         )
         if flag:
-            if response.json() and 'jobId' in response.json():
-                return response.json()['jobId']
-            raise SDKException('ThreatIndicators', '109')
+            if response.json() and "jobId" in response.json():
+                return response.json()["jobId"]
+            raise SDKException("ThreatIndicators", "109")
         self._response_not_success(response)
 
-    def get(self, server_name: str) -> 'TAServer':
+    def get(self, server_name: str) -> "TAServer":
         """Retrieve a Server object for the specified server name.
 
         Args:
@@ -420,15 +430,15 @@ class TAServers():
         #ai-gen-doc
         """
         if not isinstance(server_name, str):
-            raise SDKException('ThreatIndicators', '101')
+            raise SDKException("ThreatIndicators", "101")
         if not self.has(server_name):
-            raise SDKException('ThreatIndicators', '105')
+            raise SDKException("ThreatIndicators", "105")
         return TAServer(commcell_object=self._commcell_object, server_name=server_name)
 
     def refresh(self) -> None:
         """Reload the list of threat indicator servers associated with the CommServe (CS).
 
-        This method refreshes the internal cache of threat indicator servers, ensuring that 
+        This method refreshes the internal cache of threat indicator servers, ensuring that
         any changes made on the CommServe are reflected in the TAServers instance.
 
         Example:
@@ -482,7 +492,6 @@ class TAServers():
         return self._total_clients
 
 
-
 class TAServer:
     """
     Threat Anomaly Server management class.
@@ -528,9 +537,9 @@ class TAServer:
         self._threat_anomaly_stats = None
         self._anomaly_stats = None
         self._threat_dsid = None
-        self._API_GET_ALL_INDICATORS = self._services['GET_THREAT_INDICATORS']
-        self._API_GET_ALL_ANOMALIES = self._services['GET_ALL_CLIENT_ANOMALIES']
-        self._API_CLEAR_ANOMALIES = self._services['CLEAR_ANOMALIES']
+        self._API_GET_ALL_INDICATORS = self._services["GET_THREAT_INDICATORS"]
+        self._API_GET_ALL_ANOMALIES = self._services["GET_ALL_CLIENT_ANOMALIES"]
+        self._API_CLEAR_ANOMALIES = self._services["CLEAR_ANOMALIES"]
         self.refresh()
 
     def _response_not_success(self, response: object) -> None:
@@ -550,7 +559,9 @@ class TAServer:
 
         #ai-gen-doc
         """
-        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+        raise SDKException(
+            "Response", "101", self._commcell_object._update_response_(response.text)
+        )
 
     def _get_anomalies_stats(self) -> dict:
         """Retrieve the anomaly statistics for this client.
@@ -565,30 +576,39 @@ class TAServer:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._API_GET_ALL_INDICATORS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._API_GET_ALL_INDICATORS)
         threat_stats = {}
         stats = {}
         if flag:
-            if response.json() and 'anomalyClients' in response.json():
-                _resp = response.json()['anomalyClients']
+            if response.json() and "anomalyClients" in response.json():
+                _resp = response.json()["anomalyClients"]
                 for _client in _resp:
-                    if 'client' in _client:
-                        if _client['client'].get('displayName', '').lower() == self._server_name.lower():
+                    if "client" in _client:
+                        if (
+                            _client["client"].get("displayName", "").lower()
+                            == self._server_name.lower()
+                        ):
                             threat_stats[ThreatConstants.FIELD_INFECTED_COUNT] = _client.get(
-                                ThreatConstants.FIELD_INFECTED_COUNT, 0)
+                                ThreatConstants.FIELD_INFECTED_COUNT, 0
+                            )
                             threat_stats[ThreatConstants.FIELD_FINGERPRINT_COUNT] = _client.get(
-                                ThreatConstants.FIELD_FINGERPRINT_COUNT, 0)
+                                ThreatConstants.FIELD_FINGERPRINT_COUNT, 0
+                            )
                             stats[FileTypeConstants.FIELD_CREATE_COUNT] = _client.get(
-                                FileTypeConstants.FIELD_CREATE_COUNT, 0)
+                                FileTypeConstants.FIELD_CREATE_COUNT, 0
+                            )
                             stats[FileTypeConstants.FIELD_DELETE_COUNT] = _client.get(
-                                FileTypeConstants.FIELD_DELETE_COUNT, 0)
+                                FileTypeConstants.FIELD_DELETE_COUNT, 0
+                            )
                             stats[FileTypeConstants.FIELD_MODIFIED_COUNT] = _client.get(
-                                FileTypeConstants.FIELD_MODIFIED_COUNT, 0)
+                                FileTypeConstants.FIELD_MODIFIED_COUNT, 0
+                            )
                             stats[FileTypeConstants.FIELD_RENAME_COUNT] = _client.get(
-                                FileTypeConstants.FIELD_RENAME_COUNT, 0)
-                            self._threat_dsid = _client.get('dataSourceId', 0)
+                                FileTypeConstants.FIELD_RENAME_COUNT, 0
+                            )
+                            self._threat_dsid = _client.get("dataSourceId", 0)
             elif bool(response.json()):
-                raise SDKException('ThreatIndicators', '103')
+                raise SDKException("ThreatIndicators", "103")
             return stats, threat_stats
         self._response_not_success(response)
 
@@ -606,17 +626,20 @@ class TAServer:
 
         #ai-gen-doc
         """
-        api = self._API_GET_ALL_ANOMALIES % (0, self._server_id)  # filter=0 to fetch all anomalies types
-        flag, response = self._cvpysdk_object.make_request('GET', api)
+        api = self._API_GET_ALL_ANOMALIES % (
+            0,
+            self._server_id,
+        )  # filter=0 to fetch all anomalies types
+        flag, response = self._cvpysdk_object.make_request("GET", api)
         if flag:
-            if response.json() and 'clientInfo' in response.json():
-                _resp = response.json()['clientInfo'][0]
-                if 'anomalyRecordList' in _resp:
-                    return _resp['anomalyRecordList']
+            if response.json() and "clientInfo" in response.json():
+                _resp = response.json()["clientInfo"][0]
+                if "anomalyRecordList" in _resp:
+                    return _resp["anomalyRecordList"]
                 else:
                     # for fingerprint analysis, record list will be empty
                     return []
-            raise SDKException('ThreatIndicators', '104')
+            raise SDKException("ThreatIndicators", "104")
         self._response_not_success(response)
 
     def refresh(self) -> None:
@@ -640,7 +663,7 @@ class TAServer:
         """Clear specified anomalies for this server.
 
         Args:
-            anomaly_types: List of anomalies to clear. Each item should correspond to an anomaly type 
+            anomaly_types: List of anomalies to clear. Each item should correspond to an anomaly type
                 as defined in the AnomalyType class.
 
         Raises:
@@ -654,31 +677,33 @@ class TAServer:
         #ai-gen-doc
         """
         if not isinstance(anomaly_types, list):
-            raise SDKException('ThreatIndicators', '101')
+            raise SDKException("ThreatIndicators", "101")
         anomalies_to_clear = []
         for each_anomaly in anomaly_types:
             anomalies_to_clear.append(each_anomaly.name)
         _req_json = copy.deepcopy(RequestConstants.CLEAR_ANOMALY_JSON)
-        _req_json['clients'][0]['clientId'] = int(self._server_id)
-        _req_json['clients'][0]['displayName'] = self._server_name
-        _req_json['anomalyTypes'] = anomalies_to_clear
-        if AnomalyType.FILE_DATA.name in anomalies_to_clear or AnomalyType.THREAT_ANALYSIS.name in anomalies_to_clear:
-            _req_json['clients'][0]['dataSourceId'] = self.datasource_id
+        _req_json["clients"][0]["clientId"] = int(self._server_id)
+        _req_json["clients"][0]["displayName"] = self._server_name
+        _req_json["anomalyTypes"] = anomalies_to_clear
+        if (
+            AnomalyType.FILE_DATA.name in anomalies_to_clear
+            or AnomalyType.THREAT_ANALYSIS.name in anomalies_to_clear
+        ):
+            _req_json["clients"][0]["dataSourceId"] = self.datasource_id
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._API_CLEAR_ANOMALIES, _req_json
+            "POST", self._API_CLEAR_ANOMALIES, _req_json
         )
         if flag:
-            if response.json() and 'error' in response.json():
-                response = response.json()['error']
-                if 'errorCode' in response and response['errorCode'] != 0:
+            if response.json() and "error" in response.json():
+                response = response.json()["error"]
+                if "errorCode" in response and response["errorCode"] != 0:
+                    raise SDKException("ThreatIndicators", "106")
+                elif "errorCode" not in response:
                     raise SDKException(
-                        'ThreatIndicators',
-                        '106')
-                elif 'errorCode' not in response:
-                    raise SDKException(
-                        'ThreatIndicators',
-                        '102',
-                        f'Something went wrong during clear anomaly - {response.json()}')
+                        "ThreatIndicators",
+                        "102",
+                        f"Something went wrong during clear anomaly - {response.json()}",
+                    )
                 self.refresh()
                 return
         self._response_not_success(response)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -45,9 +43,10 @@ KubernetesInstance:
 
 """
 
+from typing import TYPE_CHECKING, Optional
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -67,7 +66,9 @@ class KubernetesInstance(VirtualServerInstance):
 
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: Optional[int] = None) -> None:
+    def __init__(
+        self, agent_object: "Agent", instance_name: str, instance_id: Optional[int] = None
+    ) -> None:
         """Initialize the Instance object for the given Virtual Server instance.
 
         Args:
@@ -83,7 +84,7 @@ class KubernetesInstance(VirtualServerInstance):
         self._vmwarvendor = None
         self._server_name = []
         self._server_host_name = []
-        super(KubernetesInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self) -> None:
         """Gets the properties of this instance.
@@ -96,14 +97,14 @@ class KubernetesInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(KubernetesInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
         if "vmwareVendor" in self._virtualserverinstance:
-            self._vmwarvendor = self._virtualserverinstance['vmwareVendor']['virtualCenter']
+            self._vmwarvendor = self._virtualserverinstance["vmwareVendor"]["virtualCenter"]
 
-            self._server_name.append(self._instance['clientName'])
+            self._server_name.append(self._instance["clientName"])
 
-            self._server_host_name.append(self._vmwarvendor.get("domainName", ''))
+            self._server_host_name.append(self._vmwarvendor.get("domainName", ""))
 
     def _get_instance_properties_json(self) -> dict:
         """Gets all instance related properties of this subclient.
@@ -119,10 +120,10 @@ class KubernetesInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": self._virtualserverinstance['vmwareVendor']
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": self._virtualserverinstance["vmwareVendor"],
+                },
             }
         }
 

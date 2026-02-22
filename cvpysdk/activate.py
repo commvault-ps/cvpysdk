@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -41,24 +39,20 @@ Activate instance Attributes
 """
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .commcell import Commcell
 
+from .activateapps.compliance_utils import ComplianceSearchUtils
+from .activateapps.entity_manager import ActivateEntities, Classifiers, EntityManagerTypes, Tags
+from .activateapps.file_storage_optimization import FsoServerGroups, FsoServers, FsoTypes
+from .activateapps.inventory_manager import Inventories
+from .activateapps.request_manager import Requests
+from .activateapps.sensitive_data_governance import Projects
 from .exception import SDKException
 
-from .activateapps.file_storage_optimization import FsoTypes, FsoServers, FsoServerGroups
 
-from .activateapps.sensitive_data_governance import Projects
-
-from .activateapps.inventory_manager import Inventories
-
-from .activateapps.request_manager import Requests
-
-from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
-
-from .activateapps.compliance_utils import ComplianceSearchUtils
-
-class Activate(object):
+class Activate:
     """
     Class for managing and interacting with Activate apps within the Commcell environment.
 
@@ -79,7 +73,7 @@ class Activate(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize an instance of the Activate class with a Commcell connection.
 
         Args:
@@ -126,7 +120,7 @@ class Activate(object):
         del self._sdg_projects
         del self._req_mgr
 
-    def compliance_search(self) -> 'ComplianceSearchUtils':
+    def compliance_search(self) -> "ComplianceSearchUtils":
         """Get the ComplianceSearchUtils instance for compliance search operations in Activate apps.
 
         Returns:
@@ -144,7 +138,7 @@ class Activate(object):
             self._compliance_search = ComplianceSearchUtils(self._commcell_object)
         return self._compliance_search
 
-    def inventory_manager(self) -> 'Inventories':
+    def inventory_manager(self) -> "Inventories":
         """Get the Inventories instance from the inventory manager app in Activate.
 
         Returns:
@@ -162,7 +156,7 @@ class Activate(object):
             self._inventories = Inventories(self._commcell_object)
         return self._inventories
 
-    def request_manager(self) -> 'Requests':
+    def request_manager(self) -> "Requests":
         """Get the Requests object from the request manager app in Activate.
 
         Returns:
@@ -180,7 +174,7 @@ class Activate(object):
             self._req_mgr = Requests(self._commcell_object)
         return self._req_mgr
 
-    def file_storage_optimization(self, fso_type: 'FsoTypes' = FsoTypes.SERVERS):
+    def file_storage_optimization(self, fso_type: "FsoTypes" = FsoTypes.SERVERS):
         """Retrieve the file storage optimization object based on the specified FSO type.
 
         Depending on the provided FsoTypes enum value, this method returns an instance of
@@ -209,7 +203,7 @@ class Activate(object):
         #ai-gen-doc
         """
         if not isinstance(fso_type, FsoTypes):
-            raise SDKException('FileStorageOptimization', '101')
+            raise SDKException("FileStorageOptimization", "101")
         if fso_type.value == FsoTypes.SERVERS.value:
             if self._fso_servers is None:
                 self._fso_servers = FsoServers(self._commcell_object)
@@ -218,9 +212,9 @@ class Activate(object):
             if self._fso_server_groups is None:
                 self._fso_server_groups = FsoServerGroups(self._commcell_object)
             return self._fso_server_groups
-        raise SDKException('FileStorageOptimization', '102', 'Unsupported FSO type specified')
+        raise SDKException("FileStorageOptimization", "102", "Unsupported FSO type specified")
 
-    def sensitive_data_governance(self) -> 'Projects':
+    def sensitive_data_governance(self) -> "Projects":
         """Get the Projects instance for Sensitive Data Governance.
 
         Returns:
@@ -238,7 +232,9 @@ class Activate(object):
             self._sdg_projects = Projects(self._commcell_object)
         return self._sdg_projects
 
-    def entity_manager(self, entity_type: 'EntityManagerTypes' = EntityManagerTypes.ENTITIES) -> object:
+    def entity_manager(
+        self, entity_type: "EntityManagerTypes" = EntityManagerTypes.ENTITIES
+    ) -> object:
         """Retrieve the appropriate entity manager object based on the specified entity type.
 
         Depending on the provided entity_type, this method returns an instance of ActivateEntities,
@@ -269,7 +265,7 @@ class Activate(object):
         #ai-gen-doc
         """
         if not isinstance(entity_type, EntityManagerTypes):
-            raise SDKException('EntityManager', '101')
+            raise SDKException("EntityManager", "101")
         if entity_type.value == EntityManagerTypes.ENTITIES.value:
             if self._entity is None:
                 self._entity = ActivateEntities(self._commcell_object)
@@ -282,4 +278,4 @@ class Activate(object):
             if self._classifiers is None:
                 self._classifiers = Classifiers(self._commcell_object)
             return self._classifiers
-        raise SDKException('EntityManager', '102', 'Unsupported entity type specified')
+        raise SDKException("EntityManager", "102", "Unsupported entity type specified")

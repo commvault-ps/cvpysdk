@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright 2020 Commvault Systems, Inc.
 #
@@ -42,7 +40,6 @@ VsInstanceType         --  Class to store VsInstance dict
 """
 
 from enum import Enum, auto
-
 
 TIMEZONES = {
     "Olson TZID": "Windows Timezone ID",
@@ -453,7 +450,7 @@ TIMEZONES = {
     "Pacific/Chatham": "Tonga Standard Time",
     "Pacific/Enderbury": "Tonga Standard Time",
     "Pacific/Tongatapu": "Tonga Standard Time",
-    "Pacific/Kiritimati": "Tonga Standard Time"
+    "Pacific/Kiritimati": "Tonga Standard Time",
 }
 
 ENTITY_TYPE_MAP = {
@@ -508,6 +505,7 @@ ENTITY_TYPE_MAP = {
     52: "o365 sharepoint sites app",
 }
 
+
 class UserRole(Enum):
     MSP_ADMIN = 0
     TENANT_ADMIN = 1
@@ -519,6 +517,7 @@ class UserRole(Enum):
 
 class HypervisorType(Enum):
     """Class to maintain all the hypervisor related constants."""
+
     VIRTUAL_CENTER = "VMware"
     MS_VIRTUAL_SERVER = "Hyper-V"
     AZURE = "Azure"
@@ -543,6 +542,7 @@ class HypervisorType(Enum):
 
 class AppIDAType(Enum):
     """Class to maintain all the app ida constants"""
+
     WINDOWS_FILE_SYSTEM = 33
     LINUX_FILE_SYSTEM = 29
     VIRTUAL_SERVER = 106
@@ -551,13 +551,15 @@ class AppIDAType(Enum):
 
 class AppIDAName(Enum):
     """Class to maintain the app IDA names"""
-    FILE_SYSTEM = 'File System'
-    VIRTUAL_SERVER = 'Virtual Server'
-    BIG_DATA_APPS = 'big data apps'
+
+    FILE_SYSTEM = "File System"
+    VIRTUAL_SERVER = "Virtual Server"
+    BIG_DATA_APPS = "big data apps"
 
 
 class VSAObjects(Enum):
     """Mapping for VSA Objects."""
+
     SERVER = 1
     RESOURCE_POOL = 2
     VAPP = 3
@@ -604,36 +606,36 @@ class VSAObjects(Enum):
 
 class InstanceBackupType(Enum):
     """Class to maintain type of instance backup"""
-    FULL = 'full'
-    INCREMENTAL = 'incremental'
-    CUMULATIVE = 'incremental'      # cumulative backups pull incremental backup JSON
+
+    FULL = "full"
+    INCREMENTAL = "incremental"
+    CUMULATIVE = "incremental"  # cumulative backups pull incremental backup JSON
 
 
 class SQLDefines:
     """Class to maintain SQL Defines"""
 
     # sql restore types
-    DATABASE_RESTORE = 'DATABASE_RESTORE'
-    STEP_RESTORE = 'STEP_RESTORE'
-    RECOVER_ONLY = 'RECOVER_ONLY'
+    DATABASE_RESTORE = "DATABASE_RESTORE"
+    STEP_RESTORE = "STEP_RESTORE"
+    RECOVER_ONLY = "RECOVER_ONLY"
 
     # sql recovery types
-    STATE_RECOVER = 'STATE_RECOVER'
-    STATE_NORECOVER = 'STATE_NORECOVER'
-    STATE_STANDBY = 'STATE_STANDBY'
+    STATE_RECOVER = "STATE_RECOVER"
+    STATE_NORECOVER = "STATE_NORECOVER"
+    STATE_STANDBY = "STATE_STANDBY"
 
 
 class SharepointDefines:
     """Class to maintiain Sharepoint Defines"""
 
     # sharepoint strings
-    CONTENT_WEBAPP = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}'
-    CONTENT_DB = '\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}\\{1}'
+    CONTENT_WEBAPP = "\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}"
+    CONTENT_DB = "\\MB\\Farm\\Microsoft SharePoint Foundation Web Application\\{0}\\{1}"
 
 
 class AdvancedJobDetailType(Enum):
-    """Class to maintain advanced job details info type
-    """
+    """Class to maintain advanced job details info type"""
 
     RETENTION_INFO = 1
     REFERNCE_COPY_INFO = 2
@@ -644,6 +646,7 @@ class AdvancedJobDetailType(Enum):
 
 class VSALiveSyncStatus(Enum):
     """Class to maintain status of the VSA Live sync"""
+
     NEVER_HAS_BEEN_SYNCED = 0
     IN_SYNC = 1
     NEEDS_SYNC = 2
@@ -660,6 +663,7 @@ class VSALiveSyncStatus(Enum):
 
 class VSAFailOverStatus(Enum):
     """Class to maintain Failover status of the VSA Live sync"""
+
     NONE = 0
     FAILOVER_COMPLETE = 1
     FAILOVER_RUNNING = 2
@@ -701,7 +705,7 @@ class StoragePoolConstants:
             "ARCHIVE": {
                 "vendorId": 3,
                 "displayVendorId": 414,
-            }
+            },
         },
         "ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE": {
             "FREQUENT ACCESS": {
@@ -715,7 +719,7 @@ class StoragePoolConstants:
             "ARCHIVE": {
                 "vendorId": 26,
                 "displayVendorId": 444,
-            }
+            },
         },
         "GOOGLE CLOUD STORAGE": {
             "FREQUENT ACCESS": {
@@ -729,7 +733,7 @@ class StoragePoolConstants:
             "ARCHIVE": {
                 "vendorId": 19,
                 "displayVendorId": 484,
-            }
+            },
         },
         "AMAZON S3": {
             "FREQUENT ACCESS": {
@@ -743,8 +747,8 @@ class StoragePoolConstants:
             "ARCHIVE": {
                 "vendorId": 2,
                 "displayVendorId": 456,
-            }
-        }
+            },
+        },
     }
 
 
@@ -828,6 +832,7 @@ class Credential_Type(Enum):
 
 class ResourcePoolAppType(Enum):
     """Class to maintain ResourcePool AppType"""
+
     O365 = 1
     EXCHANGE = 3
     SHAREPOINT = 4
@@ -837,8 +842,10 @@ class ResourcePoolAppType(Enum):
 
 class OSType(Enum):
     """Class to maintain OS Types"""
+
     WINDOWS = 1
     UNIX = 2
+
 
 class VsInstanceType:
     """Class to store vsinstance dict"""
@@ -865,84 +872,66 @@ class VsInstanceType:
         1503: "vcloud_director",
         1501: "kubernetes",
         1600: "proxmox_ve",
-        1700: "morpheus_data"
+        1700: "morpheus_data",
     }
 
 
 def convert_bytes_to_tb(size_in_bytes):
     """
-            Convert bytes to TB
-            Args:
-                size_in_bytes(int)  -- Size in Bytes
-            Returns:
-                (int)               -- Size in TB
-            """
-    return float(size_in_bytes) / (1024 ** 4) if size_in_bytes else 0
+    Convert bytes to TB
+    Args:
+        size_in_bytes(int)  -- Size in Bytes
+    Returns:
+        (int)               -- Size in TB
+    """
+    return float(size_in_bytes) / (1024**4) if size_in_bytes else 0
 
 
 cost_assessment_config = {
-            "standardRetention":  30,
-            "annualGrowthRate": 10,
-            "dailyChangeRateVM": 1.6,
-            "utilizationFactorVM": 50,
-            "dailyChangeRateDB": 2.8,
-            "dailyChangeRateFO": 1.6,
-            "storageReplicationTarget": 50
-        }
+    "standardRetention": 30,
+    "annualGrowthRate": 10,
+    "dailyChangeRateVM": 1.6,
+    "utilizationFactorVM": 50,
+    "dailyChangeRateDB": 2.8,
+    "dailyChangeRateFO": 1.6,
+    "storageReplicationTarget": 50,
+}
 
-workload_mapping = {
-            "VM": "Virtual machine",
-            "FILE_STORAGE": "File & Object",
-            "DB": "Database"
-        }
+workload_mapping = {"VM": "Virtual machine", "FILE_STORAGE": "File & Object", "DB": "Database"}
 
 threat_detection_plan_json = {
-            "application": "",
-            "contentIndexing": {
-                "fileFilters": {
-                    "excludePaths": [],
-                    "includeDocTypes": "*",
-                    "maxDocSize": 50,
-                    "minDocSize": 0
-                }
-            },
-            "name": "",
-            "schedule": {
-                "name": "Run scan every 1 day at 9:00 PM",
-                "pattern": {
-                    "frequency": 1,
-                    "scheduleFrequencyType": "DAILY",
-                    "startTime": 75600
-                }
-            },
-            "threatIndicator": {
-                "accessNodesInfo": {},
-                "threatDetection": {
-                    "backupSize": False,
-                    "canaryFile": False,
-                    "fileActivity": False,
-                    "fileExtension": False,
-                    "fileType": False
-                },
-                "threatNexus": {
-                    "cspm_dspm": {
-                        "acante": False,
-                        "dasera": False
-                    },
-                    "networkAndDataSecurity": {
-                        "crowdstrike": False,
-                        "darktrace": False,
-                        "netskope": False
-                    },
-                    "soar": {
-                        "msSentinel": False,
-                        "paloAlto_XSOAR": False,
-                        "splunk": False
-                    }
-                },
-                "threatScan": {
-                    "fileDataAnalysis": False,
-                    "threatAnalysis": False
-                }
-            }
+    "application": "",
+    "contentIndexing": {
+        "fileFilters": {
+            "excludePaths": [],
+            "includeDocTypes": "*",
+            "maxDocSize": 50,
+            "minDocSize": 0,
         }
+    },
+    "name": "",
+    "schedule": {
+        "name": "Run scan every 1 day at 9:00 PM",
+        "pattern": {"frequency": 1, "scheduleFrequencyType": "DAILY", "startTime": 75600},
+    },
+    "threatIndicator": {
+        "accessNodesInfo": {},
+        "threatDetection": {
+            "backupSize": False,
+            "canaryFile": False,
+            "fileActivity": False,
+            "fileExtension": False,
+            "fileType": False,
+        },
+        "threatNexus": {
+            "cspm_dspm": {"acante": False, "dasera": False},
+            "networkAndDataSecurity": {
+                "crowdstrike": False,
+                "darktrace": False,
+                "netskope": False,
+            },
+            "soar": {"msSentinel": False, "paloAlto_XSOAR": False, "splunk": False},
+        },
+        "threatScan": {"fileDataAnalysis": False, "threatAnalysis": False},
+    },
+}

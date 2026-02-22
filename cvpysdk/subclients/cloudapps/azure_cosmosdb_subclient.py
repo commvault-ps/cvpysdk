@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -28,8 +26,8 @@ AzureCosmosDBSubclient:
     _get_subclient_properties()         --  gets the properties of Cloud Database Subclient
 
 """
+
 from ..casubclient import CloudAppsSubclient
-from ...exception import SDKException
 
 
 class AzureCosmosDBSubclient(CloudAppsSubclient):
@@ -63,4 +61,4 @@ class AzureCosmosDBSubclient(CloudAppsSubclient):
         #ai-gen-doc
         """
 
-        super(AzureCosmosDBSubclient, self)._get_subclient_properties()
+        super()._get_subclient_properties()

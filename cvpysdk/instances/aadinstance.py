@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -26,10 +25,11 @@ AzureAdInstance:
     _restore_in_place     overwrite common in place restore function
 """
 
+from typing import TYPE_CHECKING, Union
+
 from ..exception import SDKException
 from ..instance import Instance
 
-from typing import Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..job import Job
     from ..schedules import Schedules
@@ -50,7 +50,7 @@ class AzureAdInstance(Instance):
     #ai-gen-doc
     """
 
-    def _restore_in_place(self, **kwargs) -> Union['Job', 'Schedules']:
+    def _restore_in_place(self, **kwargs) -> Union["Job", "Schedules"]:
         """Restore Azure AD objects in place using the provided restore options.
 
         This method initiates an in-place restore operation for Azure Active Directory objects.
@@ -70,23 +70,24 @@ class AzureAdInstance(Instance):
 
         request_json = self._restore_json(**kwargs)
         if "to_time" in kwargs:
-            request_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["browseOption"]["timeRange"]["toTime"] = \
-                kwargs['to_time']
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+                "timeRange"
+            ]["toTime"] = kwargs["to_time"]
 
-            del request_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["browseOption"]["timeRange"]["toTimeValue"]
+            del request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "browseOption"
+            ]["timeRange"]["toTimeValue"]
 
-        if "overwrite" in kwargs['fs_options']:
-            request_json["taskInfo"]["subTasks"][0]\
-            ["options"]["restoreOptions"]['commonOptions']['unconditionalOverwrite'] = \
-            kwargs['fs_options']['overwrite']
+        if "overwrite" in kwargs["fs_options"]:
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["commonOptions"][
+                "unconditionalOverwrite"
+            ] = kwargs["fs_options"]["overwrite"]
 
-        if "azureADOption" in kwargs['restore_option']:
-            request_json["taskInfo"]["subTasks"][0]\
-            ["options"]["restoreOptions"]['azureADOption'] = \
-            kwargs['restore_option']['azureADOption']
+        if "azureADOption" in kwargs["restore_option"]:
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "azureADOption"
+            ] = kwargs["restore_option"]["azureADOption"]
         else:
-            raise SDKException('Instance', "102", "AzureAD option is not valid")
+            raise SDKException("Instance", "102", "AzureAD option is not valid")
 
         return self._process_restore_response(request_json)

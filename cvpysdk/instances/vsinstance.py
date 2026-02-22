@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -50,18 +48,15 @@ For eg:
     The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 """
 
-from __future__ import unicode_literals
-
 import re
-
 from importlib import import_module
 from inspect import getmembers, isabstract, isclass
+from typing import TYPE_CHECKING, List, Union
 
-from ..instance import Instance
 from ..constants import VsInstanceType
 from ..exception import SDKException
+from ..instance import Instance
 
-from typing import TYPE_CHECKING, List, Union
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -87,7 +82,9 @@ class VirtualServerInstance(Instance):
     #ai-gen-doc
     """
 
-    def __new__(cls, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> 'VirtualServerInstance':
+    def __new__(
+        cls, agent_object: "Agent", instance_name: str, instance_id: int = None
+    ) -> "VirtualServerInstance":
         """Create and return an appropriate VirtualServerInstance object.
 
         This method determines and instantiates the correct subclass of VirtualServerInstance
@@ -105,19 +102,24 @@ class VirtualServerInstance(Instance):
         """
 
         try:
-            instance_name = VsInstanceType.VSINSTANCE_TYPE[agent_object.instances._vs_instance_type_dict[instance_id]]
+            instance_name = VsInstanceType.VSINSTANCE_TYPE[
+                agent_object.instances._vs_instance_type_dict[instance_id]
+            ]
         except KeyError:
-            instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
+            instance_name = re.sub("[^A-Za-z0-9_]+", "", instance_name.replace(" ", "_"))
 
         try:
-            instance_module = import_module("cvpysdk.instances.virtualserver.{}".format(instance_name))
+            instance_module = import_module(f"cvpysdk.instances.virtualserver.{instance_name}")
         except ImportError:
             instance_module = import_module("cvpysdk.instances.virtualserver.null")
 
         classes = getmembers(instance_module, lambda m: isclass(m) and not isabstract(m))
 
         for name, _class in classes:
-            if issubclass(_class, VirtualServerInstance) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
+            if (
+                issubclass(_class, VirtualServerInstance)
+                and _class.__module__.rsplit(".", 1)[-1] == instance_name
+            ):
                 return object.__new__(_class)
 
     def _get_instance_properties(self) -> None:
@@ -131,23 +133,25 @@ class VirtualServerInstance(Instance):
 
         #ai-gen-doc
         """
-        super(VirtualServerInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
         self._vsinstancetype = None
         self._asscociatedclients = None
 
-        if 'virtualServerInstance' in self._properties:
+        if "virtualServerInstance" in self._properties:
             self._virtualserverinstance = self._properties["virtualServerInstance"]
-            self._vsinstancetype = self._virtualserverinstance['vsInstanceType']
-            self._asscociatedclients = self._virtualserverinstance['associatedClients']
-        if 'credentialEntity' in self._properties:
-            self._credential = self._properties['credentialEntity']
-            if self._credential.get('credentialName', None):
+            self._vsinstancetype = self._virtualserverinstance["vsInstanceType"]
+            self._asscociatedclients = self._virtualserverinstance["associatedClients"]
+        if "credentialEntity" in self._properties:
+            self._credential = self._properties["credentialEntity"]
+            if self._credential.get("credentialName", None):
                 try:
-                    credential_obj = self._commcell_object.credentials.get(self._credential['credentialName'])
-                    self._credential['userName'] = credential_obj.credential_user_name
+                    credential_obj = self._commcell_object.credentials.get(
+                        self._credential["credentialName"]
+                    )
+                    self._credential["userName"] = credential_obj.credential_user_name
                 except SDKException:
-                    self._credential['userName'] = ''
+                    self._credential["userName"] = ""
 
     def _get_instance_proxies(self) -> list:
         """Retrieve the list of all proxies associated with the selected virtual server instance.
@@ -163,8 +167,13 @@ class VirtualServerInstance(Instance):
             if self._commcell_object.client_groups.has_clientgroup(member):
                 client_group = self._commcell_object.client_groups.get(member)
                 clients_obj = self._commcell_object.clients
-                instance_proxies.extend(list(set(clients_obj.virtualization_access_nodes).intersection(
-                    set(clients.lower() for clients in client_group.associated_clients))))
+                instance_proxies.extend(
+                    list(
+                        set(clients_obj.virtualization_access_nodes).intersection(
+                            set(clients.lower() for clients in client_group.associated_clients)
+                        )
+                    )
+                )
             else:
                 instance_proxies.append(member)
 
@@ -184,20 +193,20 @@ class VirtualServerInstance(Instance):
 
         #ai-gen-doc
         """
-        self._APPLICATION = self._services['APPLICATION_INSTANCE'] % (self._instance_id)
+        self._APPLICATION = self._services["APPLICATION_INSTANCE"] % (self._instance_id)
         self._application_properties = None
 
         # skip GET instance properties api call if instance id is 1
         if not int(self.instance_id) == 1:
-            flag, response = self._cvpysdk_object.make_request('GET', self._APPLICATION)
+            flag, response = self._cvpysdk_object.make_request("GET", self._APPLICATION)
 
             if flag:
                 if response.json() and "virtualServerInfo" in response.json():
                     self._application_properties = response.json()["virtualServerInfo"]
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _update_hypervisor_credentials(self, credential_json: dict) -> None:
         """Update the hypervisor credentials for this virtual server instance.
@@ -213,31 +222,36 @@ class VirtualServerInstance(Instance):
 
         #ai-gen-doc
         """
-        self._credential_service = self._services['INSTANCE_CREDENTIALS'] % int(
-                                                                self._agent_object._client_object.client_id)
+        self._credential_service = self._services["INSTANCE_CREDENTIALS"] % int(
+            self._agent_object._client_object.client_id
+        )
 
         # skip GET instance properties api call if instance id is 1
         if not int(self.instance_id) == 1:
-            flag, response = self._cvpysdk_object.make_request('PUT', self._credential_service, credential_json)
+            flag, response = self._cvpysdk_object.make_request(
+                "PUT", self._credential_service, credential_json
+            )
 
             if flag:
                 if response.json():
-                    if 'response' in response.json():
-                        if 'errorCode' in response.json()['response']:
-                            error_code = response.json()['response']['errorCode']
+                    if "response" in response.json():
+                        if "errorCode" in response.json()["response"]:
+                            error_code = response.json()["response"]["errorCode"]
                             if error_code != 0:
-                                error_string = response.json()['response']['errorString']
-                                o_str = 'Failed to update credentials\nError: "{0}"'.format(error_string)
-                                raise SDKException('Instance', '102', o_str)
-                            if 'errorMessage' in response.json():
-                                error_string = response.json()['errorMessage']
+                                error_string = response.json()["response"]["errorString"]
+                                o_str = f'Failed to update credentials\nError: "{error_string}"'
+                                raise SDKException("Instance", "102", o_str)
+                            if "errorMessage" in response.json():
+                                error_string = response.json()["errorMessage"]
                                 if error_string != "":
-                                    o_str = 'Failed to update credentials\nError: "{0}"'.format(error_string)
-                                    raise SDKException('Instance', '102', o_str)
+                                    o_str = (
+                                        f'Failed to update credentials\nError: "{error_string}"'
+                                    )
+                                    raise SDKException("Instance", "102", o_str)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def server_name(self) -> str:
@@ -262,12 +276,14 @@ class VirtualServerInstance(Instance):
         self._associated_clients = []
         if "memberServers" in self._asscociatedclients:
             for client in self._asscociatedclients["memberServers"]:
-                if 'clientName' in client['client']:
+                if "clientName" in client["client"]:
                     self._associated_clients.append(client["client"]["clientName"])
-                elif 'clientGroupName' in client['client']:
+                elif "clientGroupName" in client["client"]:
                     self._associated_clients.append(client["client"]["clientGroupName"])
                 else:
-                    raise SDKException('Subclient', '102', "No Client Name or Client Group Name in JSON ")
+                    raise SDKException(
+                        "Subclient", "102", "No Client Name or Client Group Name in JSON "
+                    )
             return self._associated_clients
 
     @associated_clients.setter
@@ -288,10 +304,10 @@ class VirtualServerInstance(Instance):
         if not isinstance(clients_list, list):
             clients_list = [clients_list]
         if not isinstance(clients_list, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         for client_name in clients_list:
             if not isinstance(client_name, str):
-                raise SDKException('Instance', '105')
+                raise SDKException("Instance", "105")
 
         client_json_list = []
 
@@ -299,31 +315,26 @@ class VirtualServerInstance(Instance):
             common_json = {}
             final_json = {}
             if self._commcell_object.clients.has_client(client_name):
-                common_json['clientName'] = client_name
-                common_json['_type_'] = 3
-                final_json['client'] = common_json
+                common_json["clientName"] = client_name
+                common_json["_type_"] = 3
+                final_json["client"] = common_json
             elif self._commcell_object.client_groups.has_clientgroup(client_name):
-                common_json['clientGroupName'] = client_name
-                common_json['_type_'] = 28
-                final_json['client'] = common_json
+                common_json["clientGroupName"] = client_name
+                common_json["_type_"] = 28
+                final_json["client"] = common_json
             else:
-                raise SDKException('Instance', '105')
+                raise SDKException("Instance", "105")
 
             client_json_list.append(final_json)
 
         request_json = {
-            'App_UpdateInstancePropertiesRequest': {
-                'instanceProperties': {
-                    'virtualServerInstance': {
-                        'associatedClients': {"memberServers": client_json_list}
+            "App_UpdateInstancePropertiesRequest": {
+                "instanceProperties": {
+                    "virtualServerInstance": {
+                        "associatedClients": {"memberServers": client_json_list}
                     }
                 },
-                'association': {
-                    'entity': [{
-                        'instanceId': self.instance_id,
-                        '_type': 5
-                    }]
-                }
+                "association": {"entity": [{"instanceId": self.instance_id, "_type": 5}]},
             }
         }
         self._commcell_object.qoperation_execute(request_json)
@@ -347,7 +358,9 @@ class VirtualServerInstance(Instance):
             if self._commcell_object.clients.has_client(associated_client):
                 return associated_client
             elif self._commcell_object.client_groups.has_clientgroup(associated_client):
-                associated_client_group = self._commcell_object.client_groups.get(associated_client)
+                associated_client_group = self._commcell_object.client_groups.get(
+                    associated_client
+                )
                 return associated_client_group._associated_clients[0]
 
     @property
@@ -362,16 +375,20 @@ class VirtualServerInstance(Instance):
 
         #ai-gen-doc
         """
-        _application_instance = self._services['APPLICATION_INSTANCE'] % self._instance_id
-        flag, response = self._cvpysdk_object.make_request('GET', _application_instance)
+        _application_instance = self._services["APPLICATION_INSTANCE"] % self._instance_id
+        flag, response = self._cvpysdk_object.make_request("GET", _application_instance)
         if flag:
             if response.json():
-                return response.json().get('virtualServerInfo', {}).get(
-                    'defaultFBRUnixMediaAgent', {}).get('mediaAgentName')
+                return (
+                    response.json()
+                    .get("virtualServerInfo", {})
+                    .get("defaultFBRUnixMediaAgent", {})
+                    .get("mediaAgentName")
+                )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @frel.setter
     def frel(self, frel_client: str) -> None:
@@ -386,38 +403,61 @@ class VirtualServerInstance(Instance):
 
         #ai-gen-doc
         """
-        recovery_enablers = self._services['RECOVERY_ENABLERS']
-        flag, response = self._cvpysdk_object.make_request('GET', recovery_enablers)
+        recovery_enablers = self._services["RECOVERY_ENABLERS"]
+        flag, response = self._cvpysdk_object.make_request("GET", recovery_enablers)
         if flag:
             if response.json():
-                frel_ready_ma = response.json().get('mediaAgentList')
-                if list(filter(lambda ma: ma['mediaAgentName'].lower() == frel_client.lower(), frel_ready_ma)):
-                    _application_instance = self._services['APPLICATION_INSTANCE'] % self._instance_id
-                    flag, response = self._cvpysdk_object.make_request('GET', _application_instance)
+                frel_ready_ma = response.json().get("mediaAgentList")
+                if list(
+                    filter(
+                        lambda ma: ma["mediaAgentName"].lower() == frel_client.lower(),
+                        frel_ready_ma,
+                    )
+                ):
+                    _application_instance = (
+                        self._services["APPLICATION_INSTANCE"] % self._instance_id
+                    )
+                    flag, response = self._cvpysdk_object.make_request(
+                        "GET", _application_instance
+                    )
                     if flag:
                         if response.json():
                             _json = response.json()
-                            if _json.get('virtualServerInfo', {}).get('defaultFBRUnixMediaAgent', {}):
-                                _json['virtualServerInfo']['defaultFBRUnixMediaAgent']['mediaAgentName'] = frel_client
+                            if _json.get("virtualServerInfo", {}).get(
+                                "defaultFBRUnixMediaAgent", {}
+                            ):
+                                _json["virtualServerInfo"]["defaultFBRUnixMediaAgent"][
+                                    "mediaAgentName"
+                                ] = frel_client
                             else:
-                                raise SDKException('Instance', '102',
-                                                   'Not possible to assign/add FREL MA. Please check if the '
-                                                   'instance supports FREL')
-                            if _json.get('virtualServerInfo', {}).get('defaultFBRUnixMediaAgent', {}).get(
-                                    'mediaAgentId'):
-                                del _json['virtualServerInfo']['defaultFBRUnixMediaAgent']['mediaAgentId']
-                            _json = {'prop': _json}
-                            _application_upate = self._services['APPLICATION']
-                            flag, response = self._cvpysdk_object.make_request('POST', _application_upate, _json)
+                                raise SDKException(
+                                    "Instance",
+                                    "102",
+                                    "Not possible to assign/add FREL MA. Please check if the "
+                                    "instance supports FREL",
+                                )
+                            if (
+                                _json.get("virtualServerInfo", {})
+                                .get("defaultFBRUnixMediaAgent", {})
+                                .get("mediaAgentId")
+                            ):
+                                del _json["virtualServerInfo"]["defaultFBRUnixMediaAgent"][
+                                    "mediaAgentId"
+                                ]
+                            _json = {"prop": _json}
+                            _application_upate = self._services["APPLICATION"]
+                            flag, response = self._cvpysdk_object.make_request(
+                                "POST", _application_upate, _json
+                            )
                             if not flag:
-                                raise SDKException('Response', '102')
+                                raise SDKException("Response", "102")
                         else:
-                            raise SDKException('Response', '102')
+                            raise SDKException("Response", "102")
                     else:
-                        raise SDKException('Instance', '105')
+                        raise SDKException("Instance", "105")
                 else:
-                    raise SDKException('Instance', '108')
+                    raise SDKException("Instance", "108")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))

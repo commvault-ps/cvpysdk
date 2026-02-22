@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # ---------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -22,46 +20,46 @@ import os
 import re
 import ssl
 
-from setuptools import setup, find_packages
-
+from setuptools import find_packages, setup
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-VERSION = re.compile(r'''__version__ = ['"]([0-9.]+)['"]''')
+VERSION = re.compile(r"""__version__ = ['"]([0-9.]+)['"]""")
 
 
 def get_version():
     """Gets the version of the CVPySDK python package from __init__.py file."""
-    init = open(os.path.join(ROOT, 'cvpysdk', '__init__.py')).read()
+    init = open(os.path.join(ROOT, "cvpysdk", "__init__.py")).read()
     return VERSION.search(init).group(1)
 
 
 def readme():
     """Reads the README.rst file and returns its contents."""
-    with open(os.path.join(ROOT, 'README.rst')) as file_object:
+    with open(os.path.join(ROOT, "README.rst")) as file_object:
         return file_object.read()
+
 
 os.chdir(ROOT)
 
 setup(
-    name='cvpysdk',
+    name="cvpysdk",
     version=get_version(),
-    author='Commvault Systems Inc.',
-    author_email='Dev-PythonSDK@commvault.com',
-    description='Commvault SDK for Python',
-    license='Apache 2.0',
+    author="Commvault Systems Inc.",
+    author_email="Dev-PythonSDK@commvault.com",
+    description="Commvault SDK for Python",
+    license="Apache 2.0",
     long_description=readme(),
-    url='https://github.com/Commvault/cvpysdk',
+    url="https://github.com/Commvault/cvpysdk",
     scripts=[],
     packages=find_packages(),
-    keywords='commvault, python, sdk, cv, simpana, commcell, cvlt, webconsole',
+    keywords="commvault, python, sdk, cv, simpana, commcell, cvlt, webconsole",
     include_package_data=True,
-    install_requires=['requests==2.25.1', 'xmltodict==0.12.0', 'pycryptodomex==3.10.1'],
+    install_requires=["requests==2.25.1", "xmltodict==0.12.0", "pycryptodomex==3.10.1"],
     zip_safe=False,
     project_urls={
-        'Bug Tracker': 'https://github.com/Commvault/cvpysdk/issues',
-        'Documentation': 'https://commvault.github.io/cvpysdk/',
-        'Source Code': 'https://github.com/Commvault/cvpysdk/tree/master'
-    }
+        "Bug Tracker": "https://github.com/Commvault/cvpysdk/issues",
+        "Documentation": "https://commvault.github.io/cvpysdk/",
+        "Source Code": "https://github.com/Commvault/cvpysdk/tree/master",
+    },
 )

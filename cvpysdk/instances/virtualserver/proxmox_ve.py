@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -40,9 +38,10 @@ ProxmoxVEInstance:
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -66,7 +65,7 @@ class ProxmoxVEInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize a ProxmoxVEInstance object for the specified Virtual Server instance.
 
         Args:
@@ -81,10 +80,16 @@ class ProxmoxVEInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(ProxmoxVEInstance, self).__init__(agent, instance_name, instance_id)
-        self._vendor_id = 23 
-        self._server_name = [self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('clientName')]
-        self._server_host_name = [self._virtualserverinstance['vmwareVendor']['virtualCenter']['domainName']]
+        super().__init__(agent, instance_name, instance_id)
+        self._vendor_id = 23
+        self._server_name = [
+            self._virtualserverinstance["associatedClients"]["memberServers"][0]["client"].get(
+                "clientName"
+            )
+        ]
+        self._server_host_name = [
+            self._virtualserverinstance["vmwareVendor"]["virtualCenter"]["domainName"]
+        ]
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this Proxmox VE instance.
@@ -99,7 +104,7 @@ class ProxmoxVEInstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(ProxmoxVEInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient.
@@ -115,9 +120,9 @@ class ProxmoxVEInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients']
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                },
             }
         }
         return instance_json

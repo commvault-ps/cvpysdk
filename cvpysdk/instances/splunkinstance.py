@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -92,47 +90,51 @@ class SplunkInstance(BigDataAppsInstance):
         client_id = instance_properties["instance"]["clientId"]
         application_id = instance_properties["instance"]["applicationId"]
 
-        rest_json = super(SplunkInstance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["browseOption"]["backupset"]["clientId"] = int(client_id)
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+            "backupset"
+        ]["clientId"] = int(client_id)
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["commonOptions"]["unconditionalOverwrite"] = True
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["commonOptions"][
+            "unconditionalOverwrite"
+        ] = True
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["commonOptions"]["skip"] = False
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["commonOptions"][
+            "skip"
+        ] = False
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["destination"] \
-            ["destClient"]["clientId"] = int(kwargs.get('destination_entity', {}). \
-                                             get('clientId', self._instance['clientId']))
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"][
+            "destClient"
+        ]["clientId"] = int(
+            kwargs.get("destination_entity", {}).get("clientId", self._instance["clientId"])
+        )
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["destination"]["destinationInstance"] = kwargs. \
-            get('destination_entity', self._instance)
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"][
+            "destinationInstance"
+        ] = kwargs.get("destination_entity", self._instance)
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["distributedAppsRestoreOptions"] = {"distributedRestore": True}
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "distributedAppsRestoreOptions"
+        ] = {"distributedRestore": True}
 
-        if kwargs.get('destination_entity') is not None:
-            rest_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["distributedAppsRestoreOptions"] \
-                ["splunkRestoreOptions"] = {"outofPlaceRestore": True}
+        if kwargs.get("destination_entity") is not None:
+            rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "distributedAppsRestoreOptions"
+            ]["splunkRestoreOptions"] = {"outofPlaceRestore": True}
 
         else:
-            rest_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["distributedAppsRestoreOptions"] \
-                ["splunkRestoreOptions"] = {"outofPlaceRestore": False}
+            rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "distributedAppsRestoreOptions"
+            ]["splunkRestoreOptions"] = {"outofPlaceRestore": False}
 
-        rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["qrOption"] = {
-                "destAppTypeId": int(application_id)
-            }
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["qrOption"] = {
+            "destAppTypeId": int(application_id)
+        }
 
         rest_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = {
             "notifyUserOnJobCompletion": False,
-            "subscriptionInfo": "<Api_Subscription subscriptionId =\"521\"/>"
+            "subscriptionInfo": '<Api_Subscription subscriptionId ="521"/>',
         }
 
         return rest_json

@@ -36,7 +36,9 @@ Resource:
 
 
 """
-from ..monitoringapps.threat_indicators import TAServers, TAServer
+
+from ..monitoringapps.threat_indicators import TAServer, TAServers
+
 
 class Resources(TAServers):
     """
@@ -68,12 +70,14 @@ class Resource(TAServer):
         """
         super().__init__(commcell_object, server_name)
 
-    def run_scan(self,anomaly_types: list,
+    def run_scan(
+        self,
+        anomaly_types: list,
         index_server_name: str = None,
         storage_pool: str = None,
         from_time: int = None,
-        to_time: int = None):
-
+        to_time: int = None,
+    ):
         """Run anomaly scan on the Threat Anomaly Server
         Args:
             anomaly_types (list): List of anomaly types to scan for.
@@ -89,12 +93,7 @@ class Resource(TAServer):
             SDKException: If the job fails to start or if input data types are invalid.
         ."""
         return self._commcell_object.threat_indicators.run_scan(
-            self._server_name,
-            anomaly_types,
-            index_server_name,
-            storage_pool,
-            from_time,
-            to_time
+            self._server_name, anomaly_types, index_server_name, storage_pool, from_time, to_time
         )
 
     def disable_data_aging(self):

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -41,47 +39,44 @@ InformixSubclient instance Attributes
 
 """
 
-from __future__ import unicode_literals
-
 from ..subclient import Subclient
 
 
 class InformixSubclient(Subclient):
     """Derived class from Subclient Base class, representing a Informix subclient,
-        and to perform operations on that subclient.
+    and to perform operations on that subclient.
     """
 
     def _get_subclient_properties(self):
-        """Gets the subclient related properties of Informix subclient.
-        """
-        super(InformixSubclient, self)._get_subclient_properties()
-        if 'informixSubclientProp' not in self._subclient_properties:
-            self._subclient_properties['informixSubclientProp'] = {}
-        self._informix_subclient_prop = self._subclient_properties['informixSubclientProp']
+        """Gets the subclient related properties of Informix subclient."""
+        super()._get_subclient_properties()
+        if "informixSubclientProp" not in self._subclient_properties:
+            self._subclient_properties["informixSubclientProp"] = {}
+        self._informix_subclient_prop = self._subclient_properties["informixSubclientProp"]
 
     def _get_subclient_properties_json(self):
-        """ Gets all the subclient related properties of Informix subclient.
+        """Gets all the subclient related properties of Informix subclient.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
 
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "informixSubclientProp": self._informix_subclient_prop,
-                    "subClientEntity": self._subClientEntity
-                }
+            "subClientProperties": {
+                "informixSubclientProp": self._informix_subclient_prop,
+                "subClientEntity": self._subClientEntity,
+            }
         }
         return subclient_json
 
     def restore_in_place(
-            self,
-            path,
-            restore_type="ENTIRE INSTANCE",
-            copy_precedence=None,
-            physical_restore=True,
-            logical_restore=True):
+        self,
+        path,
+        restore_type="ENTIRE INSTANCE",
+        copy_precedence=None,
+        physical_restore=True,
+        logical_restore=True,
+    ):
         """Restores the Informix data/log files specified in the input db_space\
             list to the same location.
 
@@ -105,29 +100,25 @@ class InformixSubclient(Subclient):
         """
         self._backupset_object._instance_object._restore_association = self._subClientEntity
         return self._backupset_object._instance_object.restore_in_place(
-            path,
-            restore_type,
-            copy_precedence,
-            physical_restore,
-            logical_restore
+            path, restore_type, copy_precedence, physical_restore, logical_restore
         )
 
     @property
     def backup_mode(self):
-        """ Returns the `backup_mode` of Informix subclient """
-        return self._informix_subclient_prop.get('backupMode', "")
+        """Returns the `backup_mode` of Informix subclient"""
+        return self._informix_subclient_prop.get("backupMode", "")
 
     @backup_mode.setter
     def backup_mode(self, backup_mode):
-        """ Setter for informix subclient backup_mode
+        """Setter for informix subclient backup_mode
 
-            Args:
+        Args:
 
-                backup_mode (str)  -- backup mode of the subclient
+            backup_mode (str)  -- backup mode of the subclient
 
-                    Acceptable Values:
+                Acceptable Values:
 
-                            Entire_instance/Whole_System
+                        Entire_instance/Whole_System
         """
-        content = {'backupMode': backup_mode}
+        content = {"backupMode": backup_mode}
         self._set_subclient_properties("_informix_subclient_prop", content)

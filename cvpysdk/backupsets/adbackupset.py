@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -36,11 +34,10 @@ Limitation:
 
 """
 
-from __future__ import unicode_literals
+from typing import Any, List, Optional
 
 from ..backupset import Backupset
 from ..exception import SDKException
-from typing import Any, Optional, List
 
 
 class ADBackupset(Backupset):
@@ -62,12 +59,14 @@ class ADBackupset(Backupset):
     #ai-gen-doc
     """
 
-    def check_subclient(self,
-                        backupset_ins: Any,
-                        subclientname: str,
-                        storagepolicy: Optional[str] = None,
-                        subclientcontent: Optional[List[str]] = None,
-                        deleteexist: bool = False) -> Any:
+    def check_subclient(
+        self,
+        backupset_ins: Any,
+        subclientname: str,
+        storagepolicy: Optional[str] = None,
+        subclientcontent: Optional[List[str]] = None,
+        deleteexist: bool = False,
+    ) -> Any:
         """Check if the specified subclient exists, and create a new one if not found.
 
         This method verifies the existence of a subclient within the provided backupset instance.
@@ -111,7 +110,7 @@ class ADBackupset(Backupset):
                 sc_ins = backupset_ins.subclients.get(subclientname)
                 content = []
                 for entry in subclientcontent:
-                    entrydict = {"path" : ",{0}".format(entry)}
+                    entrydict = {"path": f",{entry}"}
                     content.append(entrydict)
                 sc_ins._set_subclient_properties("content", content)
                 subclient_ins = sc_ins

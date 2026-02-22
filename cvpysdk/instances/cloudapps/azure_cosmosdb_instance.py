@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-""" File for operating on a cloud database instance.
+"""File for operating on a cloud database instance.
 
 AzureCosmosDBInstance:   Derived class from CloudAppsInstance Base class, representing a
                         Azure Cosmos DB instance( Azure CosmosDB Cassandra API, ..), and to
@@ -34,15 +32,14 @@ AzureCosmosDBInstance:
 
 """
 
-from __future__ import unicode_literals
-import time
 from typing import TYPE_CHECKING
 
-from ..cainstance import CloudAppsInstance
 from ...exception import SDKException
+from ..cainstance import CloudAppsInstance
 
 if TYPE_CHECKING:
     from ...job import Job
+
 
 class AzureCosmosDBInstance(CloudAppsInstance):
     """
@@ -82,14 +79,9 @@ class AzureCosmosDBInstance(CloudAppsInstance):
         self._browse_request = {}
         self._browse_url = None
 
-        super(
-            AzureCosmosDBInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
-    def restore(self, restore_options: dict) -> 'Job':
+    def restore(self, restore_options: dict) -> "Job":
         """Restore the content of this Azure Cosmos DB instance.
 
         This method initiates a restore operation for the instance using the specified options.
@@ -133,41 +125,51 @@ class AzureCosmosDBInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         if not (isinstance(restore_options, dict)):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         request_json = self._restore_json(restore_option=restore_options)
 
         request_json["taskInfo"]["associations"][0]["_type_"] = "INSTANCE_ENTITY"
-        request_json["taskInfo"]["associations"][0]["cloudInstanceType"] = restore_options["cloudinstancetype"]
-        request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options["backupsetname"]
+        request_json["taskInfo"]["associations"][0]["cloudInstanceType"] = restore_options[
+            "cloudinstancetype"
+        ]
+        request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options[
+            "backupsetname"
+        ]
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]
 
         cloud_app_restore_options = {
             "azureDbRestoreOptions": {
                 "overwrite": restore_options["unconditional_overwrite"],
-                "restoreEntity": [
-                ]
+                "restoreEntity": [],
             },
-            "instanceType": restore_options["cloudinstancetype"]
+            "instanceType": restore_options["cloudinstancetype"],
         }
 
         if "CASSANDRA" in restore_options["cloudinstancetype"]:
             if restore_options.get("tempWriteThroughput", 0):
-                cloud_app_restore_options["azureDbRestoreOptions"]["tempWriteThroughput"] = restore_options["tempWriteThroughput"]
+                cloud_app_restore_options["azureDbRestoreOptions"]["tempWriteThroughput"] = (
+                    restore_options["tempWriteThroughput"]
+                )
             cloud_app_restore_options["azureDbRestoreOptions"]["restoreEntity"] = [
                 {
                     "srcEntity": {
                         "databaseName": restore_options["sourcedatabase"],
-                        "storageAccountName": restore_options["srcstorageaccount"]},
+                        "storageAccountName": restore_options["srcstorageaccount"],
+                    },
                     "destEntity": {
                         "databaseName": restore_options["destinatinodatabase"],
-                        "storageAccountName": restore_options["deststorageaccount"]}}]
+                        "storageAccountName": restore_options["deststorageaccount"],
+                    },
+                }
+            ]
 
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = cloud_app_restore_options
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = cloud_app_restore_options
 
         return self._process_restore_response(request_json)
 
-    def restore_mongodbapi(self, restore_options: dict) -> 'Job':
-
+    def restore_mongodbapi(self, restore_options: dict) -> "Job":
         """
         Restores a MongoDB instance.
 
@@ -210,44 +212,62 @@ class AzureCosmosDBInstance(CloudAppsInstance):
         cloud_app_restore_options = {
             "azureDbRestoreOptions": {
                 "overwrite": restore_options["unconditional_overwrite"],
-                "restoreEntity": [
-                ]
+                "restoreEntity": [],
             },
-            "instanceType": restore_options["cloudinstancetype"]
+            "instanceType": restore_options["cloudinstancetype"],
         }
         if restore_options.get("tempWriteThroughput", 0):
-            cloud_app_restore_options["azureDbRestoreOptions"]["tempWriteThroughput"] = restore_options["tempWriteThroughput"]
+            cloud_app_restore_options["azureDbRestoreOptions"]["tempWriteThroughput"] = (
+                restore_options["tempWriteThroughput"]
+            )
         cloud_app_restore_options["azureDbRestoreOptions"]["restoreEntity"] = [
             {
                 "srcEntity": {
                     "databaseName": restore_options["sourcedatabase"],
-                    "storageAccountName": restore_options["srcstorageaccount"]},
+                    "storageAccountName": restore_options["srcstorageaccount"],
+                },
                 "destEntity": {
                     "databaseName": restore_options["destination_database"],
-                    "storageAccountName": restore_options["deststorageaccount"]}}]
+                    "storageAccountName": restore_options["deststorageaccount"],
+                },
+            }
+        ]
 
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = cloud_app_restore_options
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = cloud_app_restore_options
         request_json["taskInfo"]["associations"][0]["_type_"] = "INSTANCE_ENTITY"
-        request_json["taskInfo"]["associations"][0]["cloudInstanceType"] = restore_options["cloudinstancetype"]
-        request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options["backupsetname"]
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {"sourceItem": [
-            "/" + restore_options["srcstorageaccount"] + "/" +restore_options["sourcedatabase"]]}
+        request_json["taskInfo"]["associations"][0]["cloudInstanceType"] = restore_options[
+            "cloudinstancetype"
+        ]
+        request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options[
+            "backupsetname"
+        ]
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
+            "sourceItem": [
+                "/"
+                + restore_options["srcstorageaccount"]
+                + "/"
+                + restore_options["sourcedatabase"]
+            ]
+        }
         mongodb_destination_options = {
             "destClient": {
                 "clientId": restore_options["client_id"],
-                "clientName": restore_options["client_name"]
-                },
-            "destinationInstance":{
+                "clientName": restore_options["client_name"],
+            },
+            "destinationInstance": {
                 "clientId": restore_options["client_id"],
                 "clientName": restore_options["client_name"],
                 "applicationId": 134,
                 "appName": "Cloud Apps",
                 "instanceId": int(restore_options["destination_instance_id"]),
-                "instanceName": restore_options["destination_instance"]
+                "instanceName": restore_options["destination_instance"],
             },
-            "noOfStreams": restore_options["no_of_streams"]
+            "noOfStreams": restore_options["no_of_streams"],
         }
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = mongodb_destination_options
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = (
+            mongodb_destination_options
+        )
 
         return self._process_restore_response(request_json)
-

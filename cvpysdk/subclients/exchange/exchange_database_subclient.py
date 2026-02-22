@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -51,15 +49,13 @@ Attributes
 
 """
 
-from __future__ import unicode_literals
-
 from typing import Any
 
-from ...subclient import Subclient
+from requests import Response
+
 from ...exception import SDKException
 from ...job import Job
-
-from requests import Response
+from ...subclient import Subclient
 
 
 class ExchangeDatabaseSubclient(Subclient):
@@ -98,11 +94,11 @@ class ExchangeDatabaseSubclient(Subclient):
 
         #ai-gen-doc
         """
-        super(ExchangeDatabaseSubclient, self)._get_subclient_properties()
+        super()._get_subclient_properties()
 
-        self._content = self._subclient_properties.get('content', [])
+        self._content = self._subclient_properties.get("content", [])
         self._exchange_db_subclient_prop = self._subclient_properties.get(
-            'exchangeDBSubClientProp', {}
+            "exchangeDBSubClientProp", {}
         )
 
     def _get_subclient_properties_json(self) -> dict:
@@ -127,7 +123,7 @@ class ExchangeDatabaseSubclient(Subclient):
                 "exchangeDBSubClientProp": self._exchange_db_subclient_prop,
                 "content": self._content,
                 "commonProperties": self._commonProperties,
-                "contentOperationType": 1
+                "contentOperationType": 1,
             }
         }
 
@@ -173,7 +169,7 @@ class ExchangeDatabaseSubclient(Subclient):
             self._set_content(content=subclient_content)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient content should be a list value and not empty'
+                "Subclient", "102", "Subclient content should be a list value and not empty"
             )
 
     def _set_content(self, content: list) -> None:
@@ -191,14 +187,7 @@ class ExchangeDatabaseSubclient(Subclient):
         """
         temp = []
         for item in content:
-            temp.append(
-                {
-                    "exchangeDBContent": {
-                        "databaseName": item,
-                        "forceFull": True
-                    }
-                }
-            )
+            temp.append({"exchangeDBContent": {"databaseName": item, "forceFull": True}})
 
         self._set_subclient_properties("_content", temp)
 
@@ -219,10 +208,7 @@ class ExchangeDatabaseSubclient(Subclient):
 
         #ai-gen-doc
         """
-        self._set_subclient_properties(
-            "_exchange_db_subclient_prop['{0}']".format(str(key)),
-            value
-        )
+        self._set_subclient_properties(f"_exchange_db_subclient_prop['{str(key)}']", value)
 
     def _restore_json(self, **kwargs: Any) -> dict:
         """Generate the JSON request payload for the restore API based on user-selected options.
@@ -255,13 +241,12 @@ class ExchangeDatabaseSubclient(Subclient):
 
         exchange_options = {
             "exchangeRestoreLogOption": 0,
-            "exchangeVersion": {
-                "name": "",
-                "version": 15
-            }
+            "exchangeVersion": {"name": "", "version": 15},
         }
 
-        restore_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['exchangeOption'] = exchange_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["exchangeOption"] = (
+            exchange_options
+        )
 
         return restore_json
 
@@ -292,7 +277,7 @@ class ExchangeDatabaseSubclient(Subclient):
 
         return self._process_restore_response(restore_json)
 
-    def restore_out_of_place(self, client: str, paths: list) -> 'Job':
+    def restore_out_of_place(self, client: str, paths: list) -> "Job":
         """Run an out-of-place restore for an Exchange database subclient.
 
         This method initiates a restore operation where the selected Exchange database(s)
@@ -339,44 +324,48 @@ class ExchangeDatabaseSubclient(Subclient):
         #ai-gen-doc
         """
         options = {
-            'path': db_name,
-            'media_agent': media_agent.split('.')[0],
-            'subclientId': int(self.subclient_id)
+            "path": db_name,
+            "media_agent": media_agent.split(".")[0],
+            "subclientId": int(self.subclient_id),
         }
 
         options = self._backupset_object._prepare_browse_options(options)
         request_json = self._backupset_object._prepare_browse_json(options)
 
-        request_json['advOptions'] = {
+        request_json["advOptions"] = {
             "advConfig": {
                 "applicationMining": {
                     "browseInitReq": {
                         "appMinType": 2,
                         "bCreateRecoveryPoint": True,
-                        "expireDays": expiry_days
+                        "expireDays": expiry_days,
                     },
                     "isApplicationMiningReq": True,
-                    "appType": int(self._agent_object._agent_id)
+                    "appType": int(self._agent_object._agent_id),
                 }
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._BROWSE, request_json)
 
         if flag:
             if response and response.json():
                 response = response.json()
-                response = response['browseResponses'][0]
-                job_id = response['browseResult']['advConfig']['applicationMining']['browseInitResp']['recoveryPointJobID']
+                response = response["browseResponses"][0]
+                job_id = response["browseResult"]["advConfig"]["applicationMining"][
+                    "browseInitResp"
+                ]["recoveryPointJobID"]
                 job = Job(self._commcell_object, job_id)
                 job.wait_for_completion()
                 return job
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
-    def get_session(self, path: str, media_agent: str, edb_paths: dict, recovery_point_ids: dict) -> dict:
+    def get_session(
+        self, path: str, media_agent: str, edb_paths: dict, recovery_point_ids: dict
+    ) -> dict:
         """Retrieve session IDs for a recovery point in an Exchange database.
 
         Args:
@@ -401,15 +390,14 @@ class ExchangeDatabaseSubclient(Subclient):
         session_ids = {}
         for jobid, edb_path in edb_paths.items():
             options = {
-                'path': path,
-                'media_agent': media_agent.split('.')[0],
-                'subclientId': int(self.subclient_id)
+                "path": path,
+                "media_agent": media_agent.split(".")[0],
+                "subclientId": int(self.subclient_id),
             }
             options = self._backupset_object._prepare_browse_options(options)
             request_json = self._backupset_object._prepare_browse_json(options)
-            request_json['session'] = {
-            }
-            request_json['advOptions'] = {
+            request_json["session"] = {}
+            request_json["advOptions"] = {
                 "advConfig": {
                     "applicationMining": {
                         "isApplicationMiningReq": True,
@@ -418,28 +406,32 @@ class ExchangeDatabaseSubclient(Subclient):
                             "bCreateRecoveryPoint": False,
                             "recoveryPointID": recovery_point_ids[jobid],
                             "appMinType": 0,
-                            "edbPath": edb_path
-                        }
+                            "edbPath": edb_path,
+                        },
                     }
                 }
             }
 
-            flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
+            flag, response = self._cvpysdk_object.make_request("POST", self._BROWSE, request_json)
 
             if flag:
                 if response and response.json():
                     response = response.json()
-                    response = response['browseResponses'][0]
-                    edb = response['browseResult']['advConfig']['applicationMining']['browseInitResp']['edbPath']
-                    session_ids[edb] = response['session']['sessionId']
+                    response = response["browseResponses"][0]
+                    edb = response["browseResult"]["advConfig"]["applicationMining"][
+                        "browseInitResp"
+                    ]["edbPath"]
+                    session_ids[edb] = response["session"]["sessionId"]
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101')
+                raise SDKException("Response", "101")
 
         return session_ids
 
-    def get_mailbox_tags(self, path: str, media_agent: str, edb_paths: dict, session_ids: dict) -> dict:
+    def get_mailbox_tags(
+        self, path: str, media_agent: str, edb_paths: dict, session_ids: dict
+    ) -> dict:
         """Retrieve mailbox tags for a recovery point in an Exchange database.
 
         Args:
@@ -463,56 +455,50 @@ class ExchangeDatabaseSubclient(Subclient):
         mailbox_tags = {}
         for jobid, edb_path in edb_paths.items():
             options = {
-                'path': path,
-                'media_agent': media_agent.split('.')[0],
-                'subclientId': int(self.subclient_id)
+                "path": path,
+                "media_agent": media_agent.split(".")[0],
+                "subclientId": int(self.subclient_id),
             }
             options = self._backupset_object._prepare_browse_options(options)
             request_json = self._backupset_object._prepare_browse_json(options)
-            request_json['session'] = {
-                'sessionId': session_ids[edb_path]
-            }
-            request_json['advOptions'] = {
+            request_json["session"] = {"sessionId": session_ids[edb_path]}
+            request_json["advOptions"] = {
                 "advConfig": {
                     "applicationMining": {
                         "isApplicationMiningReq": True,
                         "appType": int(self._agent_object._agent_id),
-                        "browseReq": {
-                            "exMiningReq": {
-                                "miningLevel": 0,
-                                "edbPath": edb_path
-                            }
-                        }
+                        "browseReq": {"exMiningReq": {"miningLevel": 0, "edbPath": edb_path}},
                     }
                 }
             }
-            flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
+            flag, response = self._cvpysdk_object.make_request("POST", self._BROWSE, request_json)
             if flag:
                 if response and response.json():
                     response = response.json()
-                    response = response['browseResponses'][0]
-                    response = response['browseResult']['dataResultSet'][0]
-                    db_name = response['advancedData']['advConfig']['applicationMining']['browseResp']['exMiningRsp'][
-                        'edbPath']
-                    mailbox_tags[db_name] = \
-                    response['advancedData']['advConfig']['applicationMining']['browseResp']['exMiningRsp'][
-                        'mailboxTag']
+                    response = response["browseResponses"][0]
+                    response = response["browseResult"]["dataResultSet"][0]
+                    db_name = response["advancedData"]["advConfig"]["applicationMining"][
+                        "browseResp"
+                    ]["exMiningRsp"]["edbPath"]
+                    mailbox_tags[db_name] = response["advancedData"]["advConfig"][
+                        "applicationMining"
+                    ]["browseResp"]["exMiningRsp"]["mailboxTag"]
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101')
+                raise SDKException("Response", "101")
 
         return mailbox_tags
 
     def run_restore_messages(
-            self,
-            path: str,
-            media_agent: str,
-            oop_path: str,
-            session_id: dict,
-            edb_path: dict,
-            mailbox_tags: dict
-    ) -> 'Response':
+        self,
+        path: str,
+        media_agent: str,
+        oop_path: str,
+        session_id: dict,
+        edb_path: dict,
+        mailbox_tags: dict,
+    ) -> "Response":
         """Run a restore operation to recover messages from a backup.
 
         This method initiates a recovery point job for a specified Exchange database backup,
@@ -543,18 +529,12 @@ class ExchangeDatabaseSubclient(Subclient):
 
         #ai-gen-doc
         """
-        options = {
-            'path': path,
-            'media_agent': media_agent,
-            'subclientId': int(self.subclient_id)
-        }
+        options = {"path": path, "media_agent": media_agent, "subclientId": int(self.subclient_id)}
         options = self._backupset_object._prepare_browse_options(options)
         request_json = self._backupset_object._prepare_browse_json(options)
 
-        request_json['session'] = {
-            'sessionId': session_id
-        }
-        request_json['advOptions'] = {
+        request_json["session"] = {"sessionId": session_id}
+        request_json["advOptions"] = {
             "advConfig": {
                 "applicationMining": {
                     "appType": int(self._agent_object._agent_id),
@@ -565,19 +545,19 @@ class ExchangeDatabaseSubclient(Subclient):
                             "edbPath": edb_path,
                             "mailboxTag": mailbox_tags,
                             "destLocation": oop_path,
-                            "restoreDestType": 0
+                            "restoreDestType": 0,
                         }
                     },
                 }
             }
         }
-        flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._BROWSE, request_json)
 
         if flag:
             if response and response.json():
                 response = response.json()
                 return response
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")

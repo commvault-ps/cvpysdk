@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -50,10 +48,10 @@ To add a new Backupset for Cloud Apps agent, please follow these steps:
 
 """
 
-from __future__ import unicode_literals
+from typing import Any, Optional
 
 from ..backupset import Backupset
-from typing import Any, Optional
+
 
 class CloudAppsBackupset(Backupset):
     """
@@ -72,7 +70,9 @@ class CloudAppsBackupset(Backupset):
     #ai-gen-doc
     """
 
-    def __new__(cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -> Any:
+    def __new__(
+        cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None
+    ) -> Any:
         """Create a new CloudAppsBackupset or its specialized subclass based on the instance type.
 
         This method dynamically selects the appropriate backupset class (such as SalesforceBackupset)
@@ -99,11 +99,9 @@ class CloudAppsBackupset(Backupset):
 
         from .cloudapps.salesforce_backupset import SalesforceBackupset
 
-        instance_types = {
-            3: SalesforceBackupset
-        }
+        instance_types = {3: SalesforceBackupset}
 
-        cloud_apps_instance_type = instance_object._properties['cloudAppsInstance']['instanceType']
+        cloud_apps_instance_type = instance_object._properties["cloudAppsInstance"]["instanceType"]
 
         if cloud_apps_instance_type in instance_types:
             instance_type = instance_types[cloud_apps_instance_type]

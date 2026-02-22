@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -25,14 +23,15 @@ Dev_Test_Group:
     __init__(commcell_object)               --  initialize the VirtualMachinePolicies instance for
                                                     the Commcell
 """
-import json
+
 from typing import Optional
 
+from .exception import SDKException
 from .job import Job
 from .schedules import Schedules
-from .exception import SDKException
 
-class Dev_Test_Group(object):
+
+class Dev_Test_Group:
     """
     Class for managing Virtual Lab restore operations with the Commcell.
 
@@ -70,7 +69,7 @@ class Dev_Test_Group(object):
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-    def dev_test_lab_json(self, vapp_prop: Optional[dict] = None) -> 'Job':
+    def dev_test_lab_json(self, vapp_prop: Optional[dict] = None) -> "Job":
         """Run a Virtual Lab job for the Dev-Test-Group at the Commcell level.
 
         Args:
@@ -101,16 +100,14 @@ class Dev_Test_Group(object):
                                 "vmProvisioningOption": {
                                     "invokeWorkflowperJob": True,
                                     "operationType": 23,
-                                    "workflow": {
-                                        "workflowName": "CreateLab"
-                                    },
+                                    "workflow": {"workflowName": "CreateLab"},
                                     "virtualMachineOption": [self._json_provision_Option],
-                                    "vAppEntity": vapp_prop
+                                    "vAppEntity": vapp_prop,
                                 }
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
@@ -136,9 +133,7 @@ class Dev_Test_Group(object):
             "initiatedFrom": 1,
             "taskType": 1,
             "policyType": 0,
-            "taskFlags": {
-                "disabled": False
-            }
+            "taskFlags": {"disabled": False},
         }
 
         return _taks_option_json
@@ -164,10 +159,7 @@ class Dev_Test_Group(object):
         #ai-gen-doc
         """
 
-        _virtual_subtask = {
-            "subTaskType": 1,
-            "operationType": 4038
-        }
+        _virtual_subtask = {"subTaskType": 1, "operationType": 4038}
 
         return _virtual_subtask
 
@@ -195,12 +187,12 @@ class Dev_Test_Group(object):
             "powerOnVM": True,
             "useLinkedClone": False,
             "restoreAsManagedVM": False,
-            "doLinkedCloneFromLocalTemplateCopy": False
+            "doLinkedCloneFromLocalTemplateCopy": False,
         }
 
         return _provision_Option
 
-    def _process_restore_response(self, request_json: dict) -> 'Job':
+    def _process_restore_response(self, request_json: dict) -> "Job":
         """Execute the CreateTask API for Virtual Lab restore and process the response.
 
         This method sends the provided JSON request to the CreateTask API to initiate a Virtual Lab restore job.
@@ -222,28 +214,27 @@ class Dev_Test_Group(object):
 
         #ai-gen-doc
         """
-        self._RESTORE = self._services['RESTORE']
-        flag, response = self._cvpysdk_object.make_request('POST', self._RESTORE, request_json)
+        self._RESTORE = self._services["RESTORE"]
+        flag, response = self._cvpysdk_object.make_request("POST", self._RESTORE, request_json)
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
 
                 elif "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()["taskId"])
 
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'Virtual Machine Management job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Subclient', '102', o_str)
+                    o_str = f'Virtual Machine Management job failed\nError: "{error_message}"'
+                    raise SDKException("Subclient", "102", o_str)
                 else:
-                    raise SDKException('Subclient', '102', 'Failed to run Virtual Machine Management job')
+                    raise SDKException(
+                        "Subclient", "102", "Failed to run Virtual Machine Management job"
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
-
-
-
+            raise SDKException("Response", "101", self._update_response_(response.text))

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -39,14 +37,14 @@ LNDbSubclient:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from typing import TYPE_CHECKING
-from .lnsubclient import LNSubclient
+
 from ...exception import SDKException
+from .lnsubclient import LNSubclient
 
 if TYPE_CHECKING:
     from ...job import Job
+
 
 class LNDbSubclient(LNSubclient):
     """
@@ -78,15 +76,15 @@ class LNDbSubclient(LNSubclient):
 
         #ai-gen-doc
         """
-        super(LNDbSubclient, self)._get_subclient_properties()
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
-        if 'proxyClient' in self._subclient_properties:
-            self._proxyClient = self._subclient_properties['proxyClient']
-        if 'subClientEntity' in self._subclient_properties:
-            self._subClientEntity = self._subclient_properties['subClientEntity']
-        if 'commonProperties' in self._subclient_properties:
-            self._commonProperties = self._subclient_properties['commonProperties']
+        super()._get_subclient_properties()
+        if "content" in self._subclient_properties:
+            self._content = self._subclient_properties["content"]
+        if "proxyClient" in self._subclient_properties:
+            self._proxyClient = self._subclient_properties["proxyClient"]
+        if "subClientEntity" in self._subclient_properties:
+            self._subClientEntity = self._subclient_properties["subClientEntity"]
+        if "commonProperties" in self._subclient_properties:
+            self._commonProperties = self._subclient_properties["commonProperties"]
 
     def _get_subclient_properties_json(self) -> dict:
         """Retrieve all properties related to this subclient as a dictionary.
@@ -104,14 +102,13 @@ class LNDbSubclient(LNSubclient):
         """
 
         subclient_json = {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "content": self._content,
+                "commonProperties": self._commonProperties,
+                "contentOperationType": 1,
+            }
         }
         return subclient_json
 
@@ -155,39 +152,39 @@ class LNDbSubclient(LNSubclient):
         content = []
         try:
             for database in subclient_content:
-                if not database or 'useClientGroupGlobalFilter' in database:
+                if not database or "useClientGroupGlobalFilter" in database:
                     continue
-                elif 'lotusNotesDBContent' in database:
+                elif "lotusNotesDBContent" in database:
                     content.append(database)
                 else:
                     temp_content_dict = {}
                     temp_content_dict = {
                         "lotusNotesDBContent": {
-                            "dbiid1": database['dbiid1'],
-                            "dbiid2": database['dbiid2'],
-                            "dbiid3": database['dbiid3'],
-                            "dbiid4": database['dbiid4'],
-                            "relativePath": database['relativePath'],
-                            "databaseTitle": database['databaseTitle']
+                            "dbiid1": database["dbiid1"],
+                            "dbiid2": database["dbiid2"],
+                            "dbiid3": database["dbiid3"],
+                            "dbiid4": database["dbiid4"],
+                            "relativePath": database["relativePath"],
+                            "databaseTitle": database["databaseTitle"],
                         }
                     }
                     if temp_content_dict != {}:
                         content.append(temp_content_dict)
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
 
         self._set_subclient_properties("_content", content)
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore files or folders to their original location in-place.
 
         This method restores the specified files or folders (provided as full paths in the `paths` list)
@@ -228,27 +225,22 @@ class LNDbSubclient(LNSubclient):
 
         #ai-gen-doc
         """
-        return super(LNDbSubclient, self).restore_in_place(
-            paths,
-            overwrite,
-            restore_data_and_acl,
-            copy_precedence,
-            from_time,
-            to_time,
-            **kwargs)
+        return super().restore_in_place(
+            paths, overwrite, restore_data_and_acl, copy_precedence, from_time, to_time, **kwargs
+        )
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore files or folders to a different client and destination path.
 
         This method restores the specified files or folders from the backup to a given client
@@ -299,7 +291,7 @@ class LNDbSubclient(LNSubclient):
 
         #ai-gen-doc
         """
-        return super(LNDbSubclient, self).restore_out_of_place(
+        return super().restore_out_of_place(
             client,
             destination_path,
             paths,
@@ -308,4 +300,5 @@ class LNDbSubclient(LNSubclient):
             copy_precedence,
             from_time,
             to_time,
-            **kwargs)
+            **kwargs,
+        )

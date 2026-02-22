@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -75,24 +73,31 @@ ResourceGroup Attributes
     **resource_group_name**        -- returns the name of the resource group
 
 """
+
 import copy
 from enum import Enum
 
-from cvpysdk.clientgroup import ClientGroup, ClientGroups
+from cvpysdk.clientgroup import ClientGroup
 from cvpysdk.exception import SDKException
-from cvpysdk.securitycenter.constants import FQ_PARAMETERS, UPDATE_TI_PLAN_JSON, RESOURCE_GROUP_PAYLOAD_MANUAL, \
-    RESOURCE_GROUP_PAYLOAD_AUTOMATIC, FL_PARAMETERS
+from cvpysdk.securitycenter.constants import (
+    FL_PARAMETERS,
+    FQ_PARAMETERS,
+    RESOURCE_GROUP_PAYLOAD_AUTOMATIC,
+    RESOURCE_GROUP_PAYLOAD_MANUAL,
+    UPDATE_TI_PLAN_JSON,
+)
 
 
 class ResourceTypes(Enum):
     """Class to represent different FSO types(Server/ServerGroup/Project)"""
+
     THREAT_DETECTION = 0
 
 
-class ResourceGroups():
+class ResourceGroups:
     """Class for representing all resource groups associated with a Commcell."""
 
-    def __init__(self, commcell_object, configtype = ResourceTypes.THREAT_DETECTION):
+    def __init__(self, commcell_object, configtype=ResourceTypes.THREAT_DETECTION):
         """Initializes an instance of the ResourceGroups class.
 
         Args:
@@ -103,7 +108,7 @@ class ResourceGroups():
             object: Instance of the ResourceGroups class.
         """
         self._commcell_object = commcell_object
-        self._SERVICEGROUPS = self._commcell_object._services['SERVERGROUPS_V4']
+        self._SERVICEGROUPS = self._commcell_object._services["SERVERGROUPS_V4"]
         self._update_response_ = commcell_object._update_response_
         self._resource_groups = None
         self._configtype = configtype
@@ -115,10 +120,10 @@ class ResourceGroups():
         Returns:
             str: String listing all resource groups for the Commcell.
         """
-        representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'ResourceGroup')
+        representation_string = "{:^5}\t{:^50}\n\n".format("S. No.", "ResourceGroup")
 
         for index, resource_group_name in enumerate(self._resource_groups):
-            sub_str = '{:^5}\t{:50}\n'.format(index + 1, resource_group_name)
+            sub_str = f"{index + 1:^5}\t{resource_group_name:50}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -164,32 +169,35 @@ class ResourceGroups():
         Raises:
             SDKException: If response is empty or unsuccessful.
         """
-        request_url = f"{self._SERVICEGROUPS}?" + FQ_PARAMETERS[self._configtype.name] + FL_PARAMETERS[self._configtype.name]
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', request_url)
+        request_url = (
+            f"{self._SERVICEGROUPS}?"
+            + FQ_PARAMETERS[self._configtype.name]
+            + FL_PARAMETERS[self._configtype.name]
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if flag:
             server_groups = {}
 
-            if response.json() and 'serverGroups' in response.json():
+            if response.json() and "serverGroups" in response.json():
                 if full_response:
                     return response.json()
 
                 name_count = {}
 
-                for temp in response.json()['serverGroups']:
-                    temp_name = temp.get('name', '').lower()
-                    temp_company = temp.get('company', {}).get('name', '').lower()
+                for temp in response.json()["serverGroups"]:
+                    temp_name = temp.get("name", "").lower()
+                    temp_company = temp.get("company", {}).get("name", "").lower()
 
                     if temp_name in name_count:
                         name_count[temp_name].add(temp_company)
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for temp in response.json()['serverGroups']:
-                    temp_name = temp.get('name', '').lower()
-                    temp_id = temp.get('id', '')
-                    temp_company = temp.get('company', {}).get('name', '').lower()
+                for temp in response.json()["serverGroups"]:
+                    temp_name = temp.get("name", "").lower()
+                    temp_id = temp.get("id", "")
+                    temp_company = temp.get("company", {}).get("name", "").lower()
 
                     if len(name_count[temp_name]) > 1:
                         unique_key = f"{temp_name}_({temp_company})"
@@ -201,7 +209,7 @@ class ResourceGroups():
             return server_groups
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self):
         """Refreshes the list of resource groups associated with the Commcell."""
@@ -220,7 +228,7 @@ class ResourceGroups():
             SDKException: If resource_group_name is not a string.
         """
         if not isinstance(resource_group_name, str):
-            raise SDKException('ResourceGroups', '101')
+            raise SDKException("ResourceGroups", "101")
 
         return self._resource_groups and resource_group_name.lower() in self._resource_groups
 
@@ -237,19 +245,18 @@ class ResourceGroups():
             SDKException: If resource_group_name is not a string, or if the resource group does not exist.
         """
         if not isinstance(resource_group_name, str):
-            raise SDKException('ResourceGroup', '101')
+            raise SDKException("ResourceGroup", "101")
         else:
             resource_group_name = resource_group_name.lower()
 
             if self.has(resource_group_name):
-                return ResourceGroup(
-                    self._commcell_object,
-                    resource_group_name
-                )
+                return ResourceGroup(self._commcell_object, resource_group_name)
 
             raise SDKException(
-                'ResourceGroups', '102', 'No resource group exists with name: {0}'.format(
-                    resource_group_name))
+                "ResourceGroups",
+                "102",
+                f"No resource group exists with name: {resource_group_name}",
+            )
 
     def create(self, resource_group_name, plan_name, clients=None, rule_group_json=None):
         """Creates a new resource group in the Commcell.
@@ -292,55 +299,58 @@ class ResourceGroups():
                     if resource group already exists with the given name
         """
         if clients is None and rule_group_json is None:
-            raise SDKException('ResourceGroup', '102', 'Clients list or rule group json must be provided to create a resource group')
+            raise SDKException(
+                "ResourceGroup",
+                "102",
+                "Clients list or rule group json must be provided to create a resource group",
+            )
         if not isinstance(resource_group_name, str):
-            raise SDKException('ResourceGroup', '101')
+            raise SDKException("ResourceGroup", "101")
         if not isinstance(plan_name, str):
-            raise SDKException('ResourceGroup', '101')
+            raise SDKException("ResourceGroup", "101")
 
         if self.has(resource_group_name):
             raise SDKException(
-                'ResourceGroup', '102',
-                'Resource group with name "{0}" already exists'.format(resource_group_name)
+                "ResourceGroup",
+                "102",
+                f'Resource group with name "{resource_group_name}" already exists',
             )
 
         if clients is not None:
             request_json = copy.deepcopy(RESOURCE_GROUP_PAYLOAD_MANUAL)
             for client in clients:
                 client = str(client)
-                request_json['manualAssociation']['associatedservers'].append(
+                request_json["manualAssociation"]["associatedservers"].append(
                     {"id": int(self._commcell_object.clients.get(client).client_id)}
                 )
         else:
             request_json = copy.deepcopy(RESOURCE_GROUP_PAYLOAD_AUTOMATIC)
             request_json["automaticAssociation"]["serverGroupRule"] = rule_group_json
 
-        request_json['name'] = resource_group_name
+        request_json["name"] = resource_group_name
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._SERVICEGROUPS, request_json
+            "POST", self._SERVICEGROUPS, request_json
         )
 
         if flag:
             response_json = response.json()
-            if 'error' in response_json:
-                error_code = response_json['error']['errorCode']
+            if "error" in response_json:
+                error_code = response_json["error"]["errorCode"]
                 if error_code != 0:
-                    error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    error_message = response_json["error"]["errorMessage"]
+                    raise SDKException("ClientGroup", "102", error_message)
         else:
             response_json = response.json()
-            if 'error' in response_json:
-                error_code = response_json['error']['errorCode']
+            if "error" in response_json:
+                error_code = response_json["error"]["errorCode"]
                 if error_code != 0:
-                    error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    error_message = response_json["error"]["errorMessage"]
+                    raise SDKException("ClientGroup", "102", error_message)
 
             else:
-                raise SDKException('Response', '102', 'Invalid response received from server')
+                raise SDKException("Response", "102", "Invalid response received from server")
 
-        resource_group = ResourceGroup(
-            self._commcell_object, resource_group_name
-        )
+        resource_group = ResourceGroup(self._commcell_object, resource_group_name)
         resource_group.update_ti_plan(plan_name)
         return resource_group
 
@@ -362,6 +372,7 @@ class ResourceGroups():
                     if response is not success
         """
         self._commcell_object.client_groups.delete(resource_group_name)
+
 
 class ResourceGroup(ClientGroup):
     """Class for representing a single resource group."""
@@ -408,34 +419,31 @@ class ResourceGroup(ClientGroup):
                     if response is not success
         """
         if not isinstance(plan_name, str):
-            raise SDKException('ResourceGroup', '101')
+            raise SDKException("ResourceGroup", "101")
 
         plan_id = int(self._commcell_object.plans.get(plan_name).plan_id)
         request_json = copy.deepcopy(UPDATE_TI_PLAN_JSON)
-        request_json['clientGroupDetail']['tiPlan']['planName'] = plan_name
-        request_json['clientGroupDetail']['tiPlan']['planId'] = plan_id
-
+        request_json["clientGroupDetail"]["tiPlan"]["planName"] = plan_name
+        request_json["clientGroupDetail"]["tiPlan"]["planId"] = plan_id
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CLIENTGROUP, request_json
+            "POST", self._CLIENTGROUP, request_json
         )
 
         if flag:
             response_json = response.json()
-            if 'error' in response_json:
-                error_code = response_json['error']['errorCode']
+            if "error" in response_json:
+                error_code = response_json["error"]["errorCode"]
                 if error_code != 0:
-                    error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    error_message = response_json["error"]["errorMessage"]
+                    raise SDKException("ClientGroup", "102", error_message)
         else:
             response_json = response.json()
-            if 'error' in response_json:
-                error_code = response_json['error']['errorCode']
+            if "error" in response_json:
+                error_code = response_json["error"]["errorCode"]
                 if error_code != 0:
-                    error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    error_message = response_json["error"]["errorMessage"]
+                    raise SDKException("ClientGroup", "102", error_message)
 
             else:
-                raise SDKException('Response', '102', 'Invalid response received from server')
-
-
+                raise SDKException("Response", "102", "Invalid response received from server")

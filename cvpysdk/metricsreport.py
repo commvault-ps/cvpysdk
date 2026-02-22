@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -109,16 +107,16 @@ PublicMetrics:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from time import sleep
 from typing import List, Optional
 from urllib.parse import urlparse
 
 from cvpysdk.license import LicenseDetails
+
 from .exception import SDKException
 
-class _Metrics(object):
+
+class _Metrics:
     """
     Base class for common operations in Metrics reporting.
 
@@ -162,8 +160,8 @@ class _Metrics(object):
         """
         self._commcell_object = commcell_object
         self._isprivate = isprivate
-        self._METRICS = self._commcell_object._services['METRICS']
-        self._GET_METRICS = self._commcell_object._services['GET_METRICS'] % self._isprivate
+        self._METRICS = self._commcell_object._services["METRICS"]
+        self._GET_METRICS = self._commcell_object._services["GET_METRICS"] % self._isprivate
         self._enable_service = True
         self._disable_service = False
         self._get_metrics_config()
@@ -184,13 +182,10 @@ class _Metrics(object):
         #ai-gen-doc
         """
         if self._isprivate == 1:
-            metrics_type = 'Private'
+            metrics_type = "Private"
         else:
-            metrics_type = 'Public'
-        return "{0} Metrics class instance with config '{1}'".format(
-            metrics_type,
-            self._metrics_config
-        )
+            metrics_type = "Public"
+        return f"{metrics_type} Metrics class instance with config '{self._metrics_config}'"
 
     def _get_metrics_config(self) -> dict:
         """Retrieve the configuration settings for metrics.
@@ -207,24 +202,24 @@ class _Metrics(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._GET_METRICS
+            "GET", self._GET_METRICS
         )
         if flag:
             self._metrics_config = response.json()
-            self._metrics_config.update({'isPrivateCloud': bool(self._isprivate == 1)})
-            if self._metrics_config and 'config' in self._metrics_config:
+            self._metrics_config.update({"isPrivateCloud": bool(self._isprivate == 1)})
+            if self._metrics_config and "config" in self._metrics_config:
                 # get services
                 self.services = {}
-                self._cloud = self._metrics_config['config']['cloud']
-                self._service_list = self._cloud['serviceList']
+                self._cloud = self._metrics_config["config"]["cloud"]
+                self._service_list = self._cloud["serviceList"]
                 for service in self._service_list:
-                    service_name = service['service']['name']
-                    status = service['enabled']
+                    service_name = service["service"]["name"]
+                    status = service["enabled"]
                     self.services[service_name] = status
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def refresh(self) -> None:
         """Update the metrics object with the latest configuration.
@@ -256,8 +251,8 @@ class _Metrics(object):
         #ai-gen-doc
         """
         for idx, service in enumerate(self._service_list):
-            if service['service']['name'] == service_name:
-                self._service_list[idx]['enabled'] = state
+            if service["service"]["name"] == service_name:
+                self._service_list[idx]["enabled"] = state
                 self.services[service_name] = state
 
     @property
@@ -274,7 +269,7 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['scriptDownloadTime']
+        return self._metrics_config["config"]["scriptDownloadTime"]
 
     @property
     def lastcollectiontime(self) -> int:
@@ -290,7 +285,7 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['lastCollectionTime']
+        return self._metrics_config["config"]["lastCollectionTime"]
 
     @property
     def lastuploadtime(self) -> int:
@@ -306,7 +301,7 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['lastUploadTime']
+        return self._metrics_config["config"]["lastUploadTime"]
 
     @property
     def nextuploadtime(self) -> int:
@@ -322,7 +317,7 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['nextUploadTime']
+        return self._metrics_config["config"]["nextUploadTime"]
 
     @property
     def uploadfrequency(self) -> int:
@@ -338,7 +333,7 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['uploadFrequency']
+        return self._metrics_config["config"]["uploadFrequency"]
 
     def enable_health(self) -> None:
         """Enable the Health Service for metrics monitoring.
@@ -352,8 +347,8 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        if self.services['Health Check'] is not True:
-            self._update_service_state('Health Check', self._enable_service)
+        if self.services["Health Check"] is not True:
+            self._update_service_state("Health Check", self._enable_service)
 
     def disable_health(self) -> None:
         """Disable the Health Service for this metrics instance.
@@ -366,8 +361,8 @@ class _Metrics(object):
             >>> print("Health Service has been disabled.")
         #ai-gen-doc
         """
-        if self.services['Health Check'] is True:
-            self._update_service_state('Health Check', self._disable_service)
+        if self.services["Health Check"] is True:
+            self._update_service_state("Health Check", self._disable_service)
 
     def enable_activity(self) -> None:
         """Enable the Activity Service for metrics collection.
@@ -381,8 +376,8 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        if self.services['Activity'] is not True:
-            self._update_service_state('Activity', self._enable_service)
+        if self.services["Activity"] is not True:
+            self._update_service_state("Activity", self._enable_service)
 
     def disable_activity(self) -> None:
         """Disable the Activity Service for metrics.
@@ -396,8 +391,8 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        if self.services['Activity'] is True:
-            self._update_service_state('Activity', self._disable_service)
+        if self.services["Activity"] is True:
+            self._update_service_state("Activity", self._disable_service)
 
     def enable_audit(self) -> None:
         """Enable the Audit Service for metrics collection.
@@ -411,8 +406,8 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        if self.services['Audit'] is not True:
-            self._update_service_state('Audit', self._enable_service)
+        if self.services["Audit"] is not True:
+            self._update_service_state("Audit", self._enable_service)
 
     def disable_audit(self) -> None:
         """Disable the Audit Service for the current metrics context.
@@ -426,13 +421,13 @@ class _Metrics(object):
             >>> print("Audit service has been disabled for metrics.")
         #ai-gen-doc
         """
-        if self.services['Audit'] is True:
-            self._update_service_state('Audit', self._disable_service)
+        if self.services["Audit"] is True:
+            self._update_service_state("Audit", self._disable_service)
 
     def enable_post_upgrade_check(self) -> None:
         """Enable the post-upgrade check service.
 
-        This method activates the post-upgrade check service, which can be used to verify 
+        This method activates the post-upgrade check service, which can be used to verify
         system integrity or configuration after an upgrade process.
 
         Example:
@@ -442,8 +437,8 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        if self.services['Post Upgrade Check'] is not True:
-            self._update_service_state('Post Upgrade Check', self._enable_service)
+        if self.services["Post Upgrade Check"] is not True:
+            self._update_service_state("Post Upgrade Check", self._enable_service)
 
     def disables_post_upgrade_check(self) -> None:
         """Disable the post-upgrade check service.
@@ -457,8 +452,8 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        if self.services['Post Upgrade Check'] is True:
-            self._update_service_state('Post Upgrade Check', self._disable_service)
+        if self.services["Post Upgrade Check"] is True:
+            self._update_service_state("Post Upgrade Check", self._disable_service)
 
     def disables_chargeback(self) -> None:
         """Disable the chargeback feature in the metrics service.
@@ -471,8 +466,8 @@ class _Metrics(object):
             >>> print("Chargeback feature disabled.")
         #ai-gen-doc
         """
-        if self.services['Charge Back'] is True:
-            self._update_service_state('Charge Back', self._disable_service)
+        if self.services["Charge Back"] is True:
+            self._update_service_state("Charge Back", self._disable_service)
 
     def enable_all_services(self) -> None:
         """Enable all available metric services.
@@ -487,9 +482,9 @@ class _Metrics(object):
         #ai-gen-doc
         """
         for index, service in enumerate(self._service_list):
-            if service['service']['name'] not in ['Post Upgrade Check', 'Upgrade Readiness']:
-                self._service_list[index]['enabled'] = self._enable_service
-                service_name = service['service']['name']
+            if service["service"]["name"] not in ["Post Upgrade Check", "Upgrade Readiness"]:
+                self._service_list[index]["enabled"] = self._enable_service
+                service_name = service["service"]["name"]
                 self.services[service_name] = self._enable_service
 
     def disable_all_services(self) -> None:
@@ -505,9 +500,9 @@ class _Metrics(object):
         #ai-gen-doc
         """
         for index, service in enumerate(self._service_list):
-            if service['service']['name'] not in ['Post Upgrade Check', 'Upgrade Readiness']:
-                self._service_list[index]['enabled'] = self._disable_service
-                service_name = service['service']['name']
+            if service["service"]["name"] not in ["Post Upgrade Check", "Upgrade Readiness"]:
+                self._service_list[index]["enabled"] = self._disable_service
+                service_name = service["service"]["name"]
                 self.services[service_name] = self._disable_service
 
     def set_upload_freq(self, days: int = 1) -> None:
@@ -527,8 +522,8 @@ class _Metrics(object):
         #ai-gen-doc
         """
         if days < 1:
-            raise SDKException('Metrics', '101', 'Invalid Upload Frequency supplied')
-        self._metrics_config['config']['uploadFrequency'] = days
+            raise SDKException("Metrics", "101", "Invalid Upload Frequency supplied")
+        self._metrics_config["config"]["uploadFrequency"] = days
 
     def set_data_collection_window(self, seconds: int = 28800) -> None:
         """Update the data collection window for metrics collection.
@@ -550,8 +545,8 @@ class _Metrics(object):
         #ai-gen-doc
         """
         if seconds < 300:  # minimum 5 minutes after 12 midnight
-            raise SDKException('Metrics', '101', 'Data collection window should be above 12.05 AM')
-        self._metrics_config['config']['dataCollectionTime'] = seconds
+            raise SDKException("Metrics", "101", "Data collection window should be above 12.05 AM")
+        self._metrics_config["config"]["dataCollectionTime"] = seconds
 
     def remove_data_collection_window(self) -> None:
         """Remove the data collection window configuration from the metrics object.
@@ -565,13 +560,13 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        self._metrics_config['config']['dataCollectionTime'] = -1
+        self._metrics_config["config"]["dataCollectionTime"] = -1
 
     def set_all_clientgroups(self) -> None:
         """Update the metrics configuration to include all client groups.
 
-        This method refreshes the metrics settings so that all available client groups 
-        are included in the configuration. Use this when you want metrics to apply 
+        This method refreshes the metrics settings so that all available client groups
+        are included in the configuration. Use this when you want metrics to apply
         universally across all client groups managed by the system.
 
         Example:
@@ -583,7 +578,7 @@ class _Metrics(object):
         """
 
         # sets the list to one row with client group id as -1
-        self._metrics_config['config']['clientGroupList'] = [{'_type_': 28, 'clientGroupId': -1}]
+        self._metrics_config["config"]["clientGroupList"] = [{"_type_": 28, "clientGroupId": -1}]
 
     def set_clientgroups(self, clientgroup_name: Optional[List[str]] = None) -> None:
         """Set the client groups to be used for metrics collection.
@@ -591,7 +586,7 @@ class _Metrics(object):
         If no client group names are provided, all available client groups will be enabled for metrics.
 
         Args:
-            clientgroup_name: Optional list of client group names to enable for metrics. 
+            clientgroup_name: Optional list of client group names to enable for metrics.
                 If None, all client groups will be enabled.
 
         Example:
@@ -606,12 +601,12 @@ class _Metrics(object):
         if clientgroup_name is None:
             self.set_all_clientgroups()
         else:
-            self._metrics_config['config']['clientGroupList'] = []
-            clientgroup = self._metrics_config['config']['clientGroupList']
+            self._metrics_config["config"]["clientGroupList"] = []
+            clientgroup = self._metrics_config["config"]["clientGroupList"]
             for each_client_grp in clientgroup_name:
                 cg_id = self._commcell_object.client_groups.get(each_client_grp).clientgroup_id
                 clientgroup.append(
-                    {'_type_': 28, 'clientGroupId': int(cg_id), 'clientGroupName': each_client_grp}
+                    {"_type_": 28, "clientGroupId": int(cg_id), "clientGroupName": each_client_grp}
                 )
 
     def enable_metrics(self) -> None:
@@ -625,7 +620,7 @@ class _Metrics(object):
             >>> print("Metrics have been enabled in CommServe.")
         #ai-gen-doc
         """
-        self._metrics_config['config']['commcellDiagUsage'] = self._enable_service
+        self._metrics_config["config"]["commcellDiagUsage"] = self._enable_service
 
     def disable_metrics(self) -> None:
         """Disable the Metrics feature in the CommServe environment.
@@ -640,7 +635,7 @@ class _Metrics(object):
 
         #ai-gen-doc
         """
-        self._metrics_config['config']['commcellDiagUsage'] = self._disable_service
+        self._metrics_config["config"]["commcellDiagUsage"] = self._disable_service
 
     def save_config(self) -> None:
         """Save the current configuration changes for the Metrics object.
@@ -659,10 +654,10 @@ class _Metrics(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._METRICS, self._metrics_config
+            "POST", self._METRICS, self._metrics_config
         )
         if not flag:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def upload_now(self) -> None:
         """Trigger an immediate upload of metrics data.
@@ -680,19 +675,19 @@ class _Metrics(object):
         #ai-gen-doc
         """
 
-        self._metrics_config['config']['uploadNow'] = 1
+        self._metrics_config["config"]["uploadNow"] = 1
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._METRICS, self._metrics_config
+            "POST", self._METRICS, self._metrics_config
         )
         if not flag:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
         # reset upload now flag
-        self._metrics_config['config']['uploadNow'] = 0
+        self._metrics_config["config"]["uploadNow"] = 0
 
     def wait_for_download_completion(self, timeout: int = 300) -> None:
         """Wait for the Metrics collection download to complete, up to the specified timeout.
 
-        This method blocks execution until the Metrics collection process finishes or the timeout 
+        This method blocks execution until the Metrics collection process finishes or the timeout
         (in seconds) is reached.
 
         Args:
@@ -714,8 +709,7 @@ class _Metrics(object):
                 sleep(30)
                 time_limit -= 30
                 self.refresh()
-        raise TimeoutError(
-            "Download process didn't complete after {0} seconds".format(timeout))
+        raise TimeoutError(f"Download process didn't complete after {timeout} seconds")
 
     def wait_for_collection_completion(self, timeout: int = 400) -> None:
         """Wait for the metrics collection process to complete within a specified timeout period.
@@ -745,7 +739,7 @@ class _Metrics(object):
                 sleep(30)
                 timelimit -= 30
                 self.refresh()
-        raise TimeoutError("Collection process didn't complete after {0} seconds".format(timeout))
+        raise TimeoutError(f"Collection process didn't complete after {timeout} seconds")
 
     def wait_for_upload_completion(self, timeout: int = 120) -> None:
         """Wait for the Metrics upload process to complete within a specified timeout period.
@@ -774,9 +768,11 @@ class _Metrics(object):
                 sleep(30)
                 timelimit -= 30
                 self.refresh()
-        raise TimeoutError("Upload process didn't complete after {0} seconds".format(timeout))
+        raise TimeoutError(f"Upload process didn't complete after {timeout} seconds")
 
-    def wait_for_uploadnow_completion(self, download_timeout: int = 300, collection_timeout: int = 400, upload_timeout: int = 120) -> None:
+    def wait_for_uploadnow_completion(
+        self, download_timeout: int = 300, collection_timeout: int = 400, upload_timeout: int = 120
+    ) -> None:
         """Wait for the Metrics uploadNow operation to complete, including both collection and upload phases.
 
         This method blocks execution until the Metrics uploadNow process has finished, or until the specified timeouts are reached for each phase.
@@ -816,12 +812,14 @@ class _Metrics(object):
         license_details = LicenseDetails(self._commcell_object)
         ccid = license_details.commcell_id
         if ccid == -1:
-            commcellid = 'FFFFF'
+            commcellid = "FFFFF"
         else:
-            commcellid = hex(ccid).split('x')[1].upper()
+            commcellid = hex(ccid).split("x")[1].upper()
         return commcellid
 
-    def get_uploaded_filename(self, query_id: Optional[int] = None, last_collection_time: Optional[int] = None) -> str:
+    def get_uploaded_filename(
+        self, query_id: Optional[int] = None, last_collection_time: Optional[int] = None
+    ) -> str:
         """Retrieve the name of the last uploaded file.
 
         This method returns the filename of the most recently uploaded file. Optionally, you can specify a query ID
@@ -861,8 +859,16 @@ class _Metrics(object):
         if query_id is None:
             file_name = "CSS" + "" + str(cs_lastcollectiontime) + "_" + str(commcellid) + ".xml"
         else:
-            file_name = "CSS" + "" + str(cs_lastcollectiontime) + "_" + str(
-                commcellid) + "_" + str(query_id) + ".xml"
+            file_name = (
+                "CSS"
+                + ""
+                + str(cs_lastcollectiontime)
+                + "_"
+                + str(commcellid)
+                + "_"
+                + str(query_id)
+                + ".xml"
+            )
         return file_name
 
     def get_uploaded_zip_filename(self, commserv_guid: str, backupjob_id: int) -> str:
@@ -886,9 +892,20 @@ class _Metrics(object):
         cs_lastcollectiontime = int(self.lastcollectiontime)
         if cs_lastcollectiontime == 0:
             raise Exception("last collection time is 0, Upload didn't complete or failed")
-        file_name = "CSS" + "" + str(cs_lastcollectiontime) + "_" + str(commcellid)\
-                    + "_" + str(commserv_guid) + "_" + str(backupjob_id) + ".zip"
+        file_name = (
+            "CSS"
+            + ""
+            + str(cs_lastcollectiontime)
+            + "_"
+            + str(commcellid)
+            + "_"
+            + str(commserv_guid)
+            + "_"
+            + str(backupjob_id)
+            + ".zip"
+        )
         return file_name
+
 
 class PrivateMetrics(_Metrics):
     """
@@ -941,9 +958,7 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        self._cloud['downloadURL'] = '{0}://{1}:{2}/downloads/sqlscripts/'.format(protocol,
-                                                                                  hostname,
-                                                                                  port)
+        self._cloud["downloadURL"] = f"{protocol}://{hostname}:{port}/downloads/sqlscripts/"
 
     def _update_private_upload_url(self, hostname: str, port: int, protocol: str) -> None:
         """Update the private upload URL using the specified hostname, port, and protocol.
@@ -960,7 +975,7 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        self._cloud['uploadURL'] = '{0}://{1}:{2}/commandcenter/'.format(protocol, hostname, port)
+        self._cloud["uploadURL"] = f"{protocol}://{hostname}:{port}/commandcenter/"
 
     def _update_chargeback_flags(self, daily: bool, weekly: bool, monthly: bool) -> None:
         """Update the chargeback flags for daily, weekly, and monthly metrics.
@@ -985,8 +1000,8 @@ class PrivateMetrics(_Metrics):
         if monthly:
             flags = flags | 16
         for service in self._service_list:
-            if service['service']['name'] == 'Charge Back':
-                service['flags'] = flags
+            if service["service"]["name"] == "Charge Back":
+                service["flags"] = flags
 
     @property
     def downloadurl(self) -> str:
@@ -1002,7 +1017,7 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['cloud']['downloadURL']
+        return self._metrics_config["config"]["cloud"]["downloadURL"]
 
     @property
     def uploadurl(self) -> str:
@@ -1018,7 +1033,7 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['cloud']['uploadURL']
+        return self._metrics_config["config"]["cloud"]["uploadURL"]
 
     @property
     def private_metrics_server_name(self) -> str:
@@ -1036,7 +1051,7 @@ class PrivateMetrics(_Metrics):
         """
         return urlparse(self.uploadurl).hostname
 
-    def update_url(self, hostname: str, port: int = 80, protocol: str = 'http') -> None:
+    def update_url(self, hostname: str, port: int = 80, protocol: str = "http") -> None:
         """Update the private Metrics URL in the CommServe configuration.
 
         This method sets the URL used by the CommServe to communicate with the private Metrics server,
@@ -1057,7 +1072,9 @@ class PrivateMetrics(_Metrics):
         self._update_private_download_url(hostname, port, protocol)
         self._update_private_upload_url(hostname, port, protocol)
 
-    def enable_chargeback(self, daily: bool = True, weekly: bool = False, monthly: bool = False) -> None:
+    def enable_chargeback(
+        self, daily: bool = True, weekly: bool = False, monthly: bool = False
+    ) -> None:
         """Enable the Chargeback service with daily, weekly, and/or monthly options.
 
         This method activates the Chargeback service according to the specified frequency flags.
@@ -1078,8 +1095,8 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Charge Back'] is not True:
-            self._update_service_state('Charge Back', self._enable_service)
+        if self.services["Charge Back"] is not True:
+            self._update_service_state("Charge Back", self._enable_service)
         self._update_chargeback_flags(daily, weekly, monthly)
 
     def enable_forwarding(self, forwarding_url: str) -> None:
@@ -1095,14 +1112,11 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        fwd_info = [{
-            "httpServerURL": forwarding_url,
-            "isPublic": False,
-            "urlPwd": "",
-            "urlUser": ""
-        }]
-        self._metrics_config['config']['tieringActive'] = True
-        self._metrics_config['config']['HttpServerInfo']["httpServer"] = fwd_info
+        fwd_info = [
+            {"httpServerURL": forwarding_url, "isPublic": False, "urlPwd": "", "urlUser": ""}
+        ]
+        self._metrics_config["config"]["tieringActive"] = True
+        self._metrics_config["config"]["HttpServerInfo"]["httpServer"] = fwd_info
 
     def disable_forwarding(self) -> None:
         """Disable the forwarding of private metrics.
@@ -1116,7 +1130,7 @@ class PrivateMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        self._metrics_config['config']['tieringActive'] = False
+        self._metrics_config["config"]["tieringActive"] = False
 
 
 class CloudMetrics(_Metrics):
@@ -1171,7 +1185,7 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['randomization']
+        return self._metrics_config["config"]["randomization"]
 
     def enable_chargeback(self) -> None:
         """Enable the Chargeback service for cloud metrics.
@@ -1185,8 +1199,8 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Charge Back'] is not True:
-            self._update_service_state('Charge Back', self._enable_service)
+        if self.services["Charge Back"] is not True:
+            self._update_service_state("Charge Back", self._enable_service)
 
     def enable_upgrade_readiness(self) -> None:
         """Enable the pre-upgrade readiness service for cloud metrics.
@@ -1200,13 +1214,13 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Upgrade Readiness'] is not True:
-            self._update_service_state('Upgrade Readiness', self._enable_service)
+        if self.services["Upgrade Readiness"] is not True:
+            self._update_service_state("Upgrade Readiness", self._enable_service)
 
     def disable_upgrade_readiness(self) -> None:
         """Disable the pre-upgrade readiness service for the cloud metrics environment.
 
-        This method turns off the pre-upgrade readiness checks, which may be used to prepare 
+        This method turns off the pre-upgrade readiness checks, which may be used to prepare
         the environment for upgrades or maintenance.
 
         Example:
@@ -1216,13 +1230,13 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Upgrade Readiness'] is True:
-            self._update_service_state('Upgrade Readiness', self._disable_service)
+        if self.services["Upgrade Readiness"] is True:
+            self._update_service_state("Upgrade Readiness", self._disable_service)
 
     def enable_proactive_support(self) -> None:
         """Enable the Proactive Support service for the cloud metrics system.
 
-        This method activates the Proactive Support feature, which may provide enhanced monitoring 
+        This method activates the Proactive Support feature, which may provide enhanced monitoring
         and support capabilities for your cloud environment.
 
         Example:
@@ -1232,8 +1246,8 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Proactive Support'] is not True:
-            self._update_service_state('Proactive Support', self._enable_service)
+        if self.services["Proactive Support"] is not True:
+            self._update_service_state("Proactive Support", self._enable_service)
 
     def disable_proactive_support(self) -> None:
         """Disable the Proactive Support service for the current CloudMetrics instance.
@@ -1248,8 +1262,8 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Proactive Support'] is True:
-            self._update_service_state('Proactive Support', self._disable_service)
+        if self.services["Proactive Support"] is True:
+            self._update_service_state("Proactive Support", self._disable_service)
 
     def enable_cloud_assist(self) -> None:
         """Enable the Cloud Assist service and proactive support if not already enabled.
@@ -1264,10 +1278,10 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Proactive Support'] is not True:
+        if self.services["Proactive Support"] is not True:
             # pro active support must be enabled to enable cloud assist
             self.enable_proactive_support()
-            self._update_service_state('Cloud Assist', self._enable_service)
+            self._update_service_state("Cloud Assist", self._enable_service)
 
     def disable_cloud_assist(self) -> None:
         """Disable the Cloud Assist service for this CloudMetrics instance.
@@ -1281,13 +1295,13 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        if self.services['Cloud Assist'] is True:
-            self._update_service_state('Cloud Assist', self._disable_service)
+        if self.services["Cloud Assist"] is True:
+            self._update_service_state("Cloud Assist", self._disable_service)
 
     def set_randomization_minutes(self, minutes: int = 0) -> None:
         """Set the randomization value (in minutes) in the gxglobal parameter.
 
-        This method updates the randomization setting, which may be used to stagger scheduled operations 
+        This method updates the randomization setting, which may be used to stagger scheduled operations
         to avoid simultaneous execution.
 
         Args:
@@ -1300,15 +1314,17 @@ class CloudMetrics(_Metrics):
 
         #ai-gen-doc
         """
-        qcommand = self._commcell_object._services['QCOMMAND']
-        qoperation = ('qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql '
-                      '-si CommservSurveyRandomizationEnabled -si y -si {0}'.format(minutes))
+        qcommand = self._commcell_object._services["QCOMMAND"]
+        qoperation = (
+            "qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql "
+            f"-si CommservSurveyRandomizationEnabled -si y -si {minutes}"
+        )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', qcommand, qoperation
+            "POST", qcommand, qoperation
         )
         if not flag:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
 
 class LocalMetrics:
@@ -1347,7 +1363,9 @@ class LocalMetrics:
         """
         self._commcell_object = commcell_object
         self._islocalmetrics = islocalmetrics
-        self._LOCAL_METRICS = self._commcell_object._services['LOCAL_METRICS'] % self._islocalmetrics
+        self._LOCAL_METRICS = (
+            self._commcell_object._services["LOCAL_METRICS"] % self._islocalmetrics
+        )
         self._get_metrics_config()
 
     def _get_metrics_config(self) -> dict:
@@ -1365,14 +1383,14 @@ class LocalMetrics:
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._LOCAL_METRICS
+            "GET", self._LOCAL_METRICS
         )
         if flag:
             self._metrics_config = response.json()
-            config_value = self._metrics_config['config']
+            config_value = self._metrics_config["config"]
             return config_value
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def refresh(self) -> None:
         """Update the metrics object with the latest configuration.
@@ -1404,7 +1422,7 @@ class LocalMetrics:
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['lastCollectionTime']
+        return self._metrics_config["config"]["lastCollectionTime"]
 
     @property
     def nextup_load_time(self) -> float:
@@ -1420,4 +1438,4 @@ class LocalMetrics:
 
         #ai-gen-doc
         """
-        return self._metrics_config['config']['nextUploadTime']
+        return self._metrics_config["config"]["nextUploadTime"]

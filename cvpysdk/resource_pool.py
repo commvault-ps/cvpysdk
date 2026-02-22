@@ -54,13 +54,14 @@ ResourcePool Attributes:
 
 """
 
+import enum
+from typing import TYPE_CHECKING
+
 from .exception import SDKException
 
-import enum
-
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import requests
+
     from cvpysdk.commcell import Commcell
 
 
@@ -79,6 +80,7 @@ class ResourcePoolTypes(enum.Enum):
 
     #ai-gen-doc
     """
+
     GENERIC = 0
     O365 = 1
     SALESFORCE = 2
@@ -128,7 +130,7 @@ class ResourcePools:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize a new instance of the ResourcePools class.
 
         Args:
@@ -145,17 +147,17 @@ class ResourcePools:
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
-        self._API_GET_ALL_RESOURCE_POOLS = self._services['GET_RESOURCE_POOLS']
-        self._API_DELETE_RESOURCE_POOL = self._services['DELETE_RESOURCE_POOL']
-        self._API_CREATE_RESOURCE_POOL = self._services['CREATE_RESOURCE_POOL']
+        self._API_GET_ALL_RESOURCE_POOLS = self._services["GET_RESOURCE_POOLS"]
+        self._API_DELETE_RESOURCE_POOL = self._services["DELETE_RESOURCE_POOL"]
+        self._API_CREATE_RESOURCE_POOL = self._services["CREATE_RESOURCE_POOL"]
         self._pools = {}
         self.refresh()
 
-    def _response_not_success(self, response: 'requests.Response') -> None:
+    def _response_not_success(self, response: "requests.Response") -> None:
         """Raise an exception if the API response status is not 200 (OK).
 
-        This helper function checks the status of the provided response object, typically 
-        obtained from the `requests` Python package, and raises an exception if the status 
+        This helper function checks the status of the provided response object, typically
+        obtained from the `requests` Python package, and raises an exception if the status
         code indicates a failure.
 
         Args:
@@ -163,7 +165,9 @@ class ResourcePools:
 
         #ai-gen-doc
         """
-        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+        raise SDKException(
+            "Response", "101", self._commcell_object._update_response_(response.text)
+        )
 
     def _get_resource_pools(self) -> dict:
         """Retrieve resource pool details from the CommServe (CS).
@@ -176,20 +180,22 @@ class ResourcePools:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._API_GET_ALL_RESOURCE_POOLS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._API_GET_ALL_RESOURCE_POOLS)
         output = {}
         if flag:
-            if response.json() and 'resourcePools' in response.json():
-                _resourcepools = response.json()['resourcePools']
+            if response.json() and "resourcePools" in response.json():
+                _resourcepools = response.json()["resourcePools"]
                 for _pool in _resourcepools:
-                    if 'name' in _pool:
-                        output.update({_pool['name'].lower(): _pool})
+                    if "name" in _pool:
+                        output.update({_pool["name"].lower(): _pool})
             elif bool(response.json()):
-                raise SDKException('ResourcePools', '103')
+                raise SDKException("ResourcePools", "103")
             return output
         self._response_not_success(response)
 
-    def create(self, name: str, resource_type: 'ResourcePoolTypes', **kwargs: str) -> 'ResourcePool':
+    def create(
+        self, name: str, resource_type: "ResourcePoolTypes", **kwargs: str
+    ) -> "ResourcePool":
         """Create a new resource pool in the CommServe.
 
         Args:
@@ -216,45 +222,60 @@ class ResourcePools:
         #ai-gen-doc
         """
         if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
-            raise SDKException('ResourcePools', '102', 'Resource pool creation is not supported for this resource type')
-        if resource_type.value == ResourcePoolTypes.THREATSCAN.value and 'index_server' not in kwargs:
-            raise SDKException('ResourcePools', '102', 'Index server name is missing in kwargs')
+            raise SDKException(
+                "ResourcePools",
+                "102",
+                "Resource pool creation is not supported for this resource type",
+            )
+        if (
+            resource_type.value == ResourcePoolTypes.THREATSCAN.value
+            and "index_server" not in kwargs
+        ):
+            raise SDKException("ResourcePools", "102", "Index server name is missing in kwargs")
         if self.has(name=name):
-            raise SDKException('ResourcePools', '107')
+            raise SDKException("ResourcePools", "107")
         _request_json = {
             "resourcePool": {
                 "appType": resource_type.value,
                 "dataAccessNodes": [],
-                "extendedProp": {
-                    "exchangeOnePassClientProperties": {}},
-                "resourcePool": {
-                    "resourcePoolId": 0,
-                    "resourcePoolName": name},
+                "extendedProp": {"exchangeOnePassClientProperties": {}},
+                "resourcePool": {"resourcePoolId": 0, "resourcePoolName": name},
                 "exchangeServerProps": {
-                    "jobResultsDirCredentials": {
-                        "userName": ""},
-                    "jobResultsDirPath": ""},
+                    "jobResultsDirCredentials": {"userName": ""},
+                    "jobResultsDirPath": "",
+                },
                 "roleId": None,
                 "indexServerMembers": [],
                 "indexServer": {
                     "clientId": self._commcell_object.index_servers.get(
-                        kwargs.get('index_server')).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
-                    "clientName": kwargs.get('index_server') if resource_type.value == ResourcePoolTypes.THREATSCAN.value else '',
-                    "displayName": kwargs.get('index_server') if resource_type.value == ResourcePoolTypes.THREATSCAN.value else '',
-                    "selected": True},
-                "accessNodes": {
-                    "clientGroups": [],
-                    "clients": []}}}
+                        kwargs.get("index_server")
+                    ).index_server_client_id
+                    if resource_type.value == ResourcePoolTypes.THREATSCAN.value
+                    else 0,
+                    "clientName": kwargs.get("index_server")
+                    if resource_type.value == ResourcePoolTypes.THREATSCAN.value
+                    else "",
+                    "displayName": kwargs.get("index_server")
+                    if resource_type.value == ResourcePoolTypes.THREATSCAN.value
+                    else "",
+                    "selected": True,
+                },
+                "accessNodes": {"clientGroups": [], "clients": []},
+            }
+        }
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._API_CREATE_RESOURCE_POOL, _request_json)
+            "POST", self._API_CREATE_RESOURCE_POOL, _request_json
+        )
         if flag:
-            if response.json() and 'error' in response.json():
-                _error = response.json()['error']
-                if _error.get('errorCode', 0) != 0:
-                    raise SDKException('ResourcePools', '102', f'Resource pool creation failed with {_error}')
+            if response.json() and "error" in response.json():
+                _error = response.json()["error"]
+                if _error.get("errorCode", 0) != 0:
+                    raise SDKException(
+                        "ResourcePools", "102", f"Resource pool creation failed with {_error}"
+                    )
                 self.refresh()
                 return self.get(name=name)
-            raise SDKException('ResourcePools', '108')
+            raise SDKException("ResourcePools", "108")
         self._response_not_success(response)
 
     def delete(self, name: str) -> None:
@@ -269,20 +290,22 @@ class ResourcePools:
         #ai-gen-doc
         """
         if not self.has(name=name):
-            raise SDKException('ResourcePools', '104')
-        api = self._API_DELETE_RESOURCE_POOL % (self._pools[name.lower()]['id'])
-        flag, response = self._cvpysdk_object.make_request('DELETE', api)
+            raise SDKException("ResourcePools", "104")
+        api = self._API_DELETE_RESOURCE_POOL % (self._pools[name.lower()]["id"])
+        flag, response = self._cvpysdk_object.make_request("DELETE", api)
         if flag:
-            if response.json() and 'error' in response.json():
-                _error = response.json()['error']
-                if _error.get('errorCode', 0) != 0:
-                    raise SDKException('ResourcePools', '102', f'Resource pool deletion failed with {_error}')
+            if response.json() and "error" in response.json():
+                _error = response.json()["error"]
+                if _error.get("errorCode", 0) != 0:
+                    raise SDKException(
+                        "ResourcePools", "102", f"Resource pool deletion failed with {_error}"
+                    )
                 self.refresh()
                 return
-            raise SDKException('ResourcePools', '106')
+            raise SDKException("ResourcePools", "106")
         self._response_not_success(response)
 
-    def get(self, name: str) -> 'ResourcePool':
+    def get(self, name: str) -> "ResourcePool":
         """Retrieve a ResourcePool object by its name.
 
         Args:
@@ -297,8 +320,12 @@ class ResourcePools:
         #ai-gen-doc
         """
         if not self.has(name):
-            raise SDKException('ResourcePools', '104')
-        return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()]['id'])
+            raise SDKException("ResourcePools", "104")
+        return ResourcePool(
+            commcell_object=self._commcell_object,
+            name=name,
+            pool_id=self._pools[name.lower()]["id"],
+        )
 
     def has(self, name: str) -> bool:
         """Check if a resource pool with the specified name exists in the CommServe.
@@ -318,7 +345,7 @@ class ResourcePools:
     def refresh(self) -> None:
         """Reload the resource pools associated with the CommServe (CS).
 
-        This method refreshes the internal state of the ResourcePools object, ensuring that 
+        This method refreshes the internal state of the ResourcePools object, ensuring that
         any changes to resource pools on the CommServe are reflected in the current instance.
 
         #ai-gen-doc
@@ -345,7 +372,7 @@ class ResourcePool:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', name: str, pool_id: int) -> None:
+    def __init__(self, commcell_object: "Commcell", name: str, pool_id: int) -> None:
         """Initialize a new instance of the ResourcePool class.
 
         Args:
@@ -366,10 +393,10 @@ class ResourcePool:
         self._resource_pool_name = name
         self._resource_pool_id = pool_id
         self._resource_details = None
-        self._API_GET_POOL_DETAILS = self._services['GET_RESOURCE_POOL_DETAILS']
+        self._API_GET_POOL_DETAILS = self._services["GET_RESOURCE_POOL_DETAILS"]
         self.refresh()
 
-    def _response_not_success(self, response: 'requests.Response') -> None:
+    def _response_not_success(self, response: "requests.Response") -> None:
         """Raise an exception if the API response status is not 200 (OK).
 
         This helper function checks the status of the provided response object,
@@ -381,7 +408,9 @@ class ResourcePool:
 
         #ai-gen-doc
         """
-        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+        raise SDKException(
+            "Response", "101", self._commcell_object._update_response_(response.text)
+        )
 
     def _get_pool_details(self) -> dict:
         """Retrieve the details of the resource pool from the CommServe.
@@ -395,17 +424,17 @@ class ResourcePool:
         #ai-gen-doc
         """
         api = self._API_GET_POOL_DETAILS % (self._resource_pool_id)
-        flag, response = self._cvpysdk_object.make_request('GET', api)
+        flag, response = self._cvpysdk_object.make_request("GET", api)
         if flag:
-            if response.json() and 'resourcePool' in response.json():
-                return response.json()['resourcePool']
-            raise SDKException('ResourcePools', '105')
+            if response.json() and "resourcePool" in response.json():
+                return response.json()["resourcePool"]
+            raise SDKException("ResourcePools", "105")
         self._response_not_success(response)
 
     def refresh(self) -> None:
         """Reload the details of the resource pool.
 
-        This method updates the internal state of the ResourcePool instance to reflect 
+        This method updates the internal state of the ResourcePool instance to reflect
         the latest information from the underlying data source or system.
 
         #ai-gen-doc
@@ -422,10 +451,10 @@ class ResourcePool:
 
         #ai-gen-doc
         """
-        return int(self._resource_details['resourcePool'].get('resourcePoolId'))
+        return int(self._resource_details["resourcePool"].get("resourcePoolId"))
 
     @property
-    def resource_pool_type(self) -> 'ResourcePoolTypes':
+    def resource_pool_type(self) -> "ResourcePoolTypes":
         """Get the pool type enum for this resource pool.
 
         Returns:
@@ -433,4 +462,4 @@ class ResourcePool:
 
         #ai-gen-doc
         """
-        return ResourcePoolTypes(int(self._resource_details['appType']))
+        return ResourcePoolTypes(int(self._resource_details["appType"]))

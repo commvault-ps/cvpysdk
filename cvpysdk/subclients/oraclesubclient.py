@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -70,10 +68,10 @@ OracleSubclient:
     is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient
 
 """
-from __future__ import unicode_literals
-from .dbsubclient import DatabaseSubclient
-from ..exception import SDKException
+
 from ..constants import InstanceBackupType
+from ..exception import SDKException
+from .dbsubclient import DatabaseSubclient
 
 
 class OracleSubclient(DatabaseSubclient):
@@ -91,100 +89,86 @@ class OracleSubclient(DatabaseSubclient):
             subclient_name    (str)     -- name of the subclient
             subclient_id      (str)     -- id of the subclient
         """
-        super(OracleSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
         self._get_subclient_properties()
-        #self._oracle_properties = {}
+        # self._oracle_properties = {}
 
-    def _oracle_backup_json(
-            self,
-            backup_level="full",
-            schedule_pattern=None,
-            options=None):
+    def _oracle_backup_json(self, backup_level="full", schedule_pattern=None, options=None):
         """Runs a backup job for the subclient of the level specified.
 
-            Args:
-                backup_level            (str)   --  level of backup the user wish to run
-                                                    Full / Incremental
+        Args:
+            backup_level            (str)   --  level of backup the user wish to run
+                                                Full / Incremental
 
-                schedule_pattern (dict) -- scheduling options to be included for the task
+            schedule_pattern (dict) -- scheduling options to be included for the task
 
-                        Please refer schedules.schedulePattern.createSchedule()
-                                                                    doc for the types of Jsons
+                    Please refer schedules.schedulePattern.createSchedule()
+                                                                doc for the types of Jsons
 
-                options          (dict) --  dictionary containing other oracle options
+            options          (dict) --  dictionary containing other oracle options
 
-            Returns:
-                dict    -- dict containing request JSON
+        Returns:
+            dict    -- dict containing request JSON
 
         """
-        oracle_options = {
-            "oracleOptions": {}
-        }
+        oracle_options = {"oracleOptions": {}}
         if options is not None:
             oracle_options.update(options)
         request_json = self._backup_json(
-            backup_level,
-            False,
-            "BEFORE_SYNTH",
-            schedule_pattern=schedule_pattern
+            backup_level, False, "BEFORE_SYNTH", schedule_pattern=schedule_pattern
         )
 
         # Add option to run RMAN cumulatives
         oracle_options["oracleOptions"]["cumulative"] = True
 
-        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-            oracle_options
-        )
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(oracle_options)
         return request_json
 
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of Oracle subclient.
-        """
+        """Gets the subclient  related properties of Oracle subclient."""
         if not bool(self._subclient_properties):
-            super(OracleSubclient, self)._get_subclient_properties()
+            super()._get_subclient_properties()
         self._oracle_subclient_properties = self._subclient_properties.get("oracleSubclientProp")
 
     def _get_subclient_properties_json(self):
         """returns subclient property json for oracle
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "commonProperties": self._commonProperties,
-                    "oracleSubclientProp": self._oracle_subclient_properties,
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "commonProperties": self._commonProperties,
+                "oracleSubclientProp": self._oracle_subclient_properties,
+            }
         }
         return subclient_json
 
     def set_prop_for_orcle_subclient(self, storage_policy, snap_engine=None, archivefilebfs=32):
         """Updates the subclient properties.
 
-            Args:
+        Args:
 
-                storage_policy      (str)   --  name of the storage policy to be associated
-                with the subclient
+            storage_policy      (str)   --  name of the storage policy to be associated
+            with the subclient
 
-                snap_engine         (str)   --  Snap Engine to be set for subclient (optional)
+            snap_engine         (str)   --  Snap Engine to be set for subclient (optional)
 
-                    default: None
+                default: None
 
-            Raises:
-                SDKException:
-                    if storage policy argument is not of type string
+        Raises:
+            SDKException:
+                if storage policy argument is not of type string
 
-                    if failed to update subclient
+                if failed to update subclient
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
-        if not archivefilebfs and (self.archive_files_per_bfs == '0'):
+        if not archivefilebfs and (self.archive_files_per_bfs == "0"):
             self.archive_files_per_bfs = 32
         else:
             self.archive_files_per_bfs = archivefilebfs
@@ -214,8 +198,7 @@ class OracleSubclient(DatabaseSubclient):
             Args:
                 data      (bool) --   True if data to be enabled on the subclient. Else False
         """
-        self._set_subclient_properties(
-            "_oracle_subclient_properties['data']", data)
+        self._set_subclient_properties("_oracle_subclient_properties['data']", data)
 
     @property
     def backup_archive_log(self):
@@ -238,7 +221,8 @@ class OracleSubclient(DatabaseSubclient):
                                                     on the subclient.Else False
         """
         self._set_subclient_properties(
-            "_oracle_subclient_properties['backupArchiveLog']", backup_archive_log)
+            "_oracle_subclient_properties['backupArchiveLog']", backup_archive_log
+        )
 
     @property
     def archive_delete(self):
@@ -261,7 +245,8 @@ class OracleSubclient(DatabaseSubclient):
                                                 on the subclient, Else False
         """
         self._set_subclient_properties(
-            "_oracle_subclient_properties['archiveDelete']", archive_delete)
+            "_oracle_subclient_properties['archiveDelete']", archive_delete
+        )
 
     @property
     def selective_online_full(self):
@@ -285,7 +270,8 @@ class OracleSubclient(DatabaseSubclient):
         """
         self.backup_archive_log = True
         self._set_subclient_properties(
-            "_oracle_subclient_properties['selectiveOnlineFull']", selective_online_full)
+            "_oracle_subclient_properties['selectiveOnlineFull']", selective_online_full
+        )
 
     @property
     def archive_files_per_bfs(self):
@@ -307,7 +293,8 @@ class OracleSubclient(DatabaseSubclient):
                                                         default : 32
         """
         self._set_subclient_properties(
-            "_oracle_subclient_properties['archiveFilesPerBFS']", archive_files_per_bfs)
+            "_oracle_subclient_properties['archiveFilesPerBFS']", archive_files_per_bfs
+        )
 
     @property
     def oracle_tag(self):
@@ -327,8 +314,7 @@ class OracleSubclient(DatabaseSubclient):
             Args:
                oracle_tag    (int)    --     value for oracle tag
         """
-        self._set_subclient_properties(
-            "_oracle_subclient_properties['oracleTag']", oracle_tag)
+        self._set_subclient_properties("_oracle_subclient_properties['oracleTag']", oracle_tag)
 
     @property
     def skip_offline(self):
@@ -350,8 +336,7 @@ class OracleSubclient(DatabaseSubclient):
                                                 False to disable it.
                                                 default=False
         """
-        self._set_subclient_properties(
-            "_oracle_subclient_properties['skipOffline']", skip_offline)
+        self._set_subclient_properties("_oracle_subclient_properties['skipOffline']", skip_offline)
 
     @property
     def skip_read_only(self):
@@ -375,7 +360,8 @@ class OracleSubclient(DatabaseSubclient):
 
         """
         self._set_subclient_properties(
-            "_oracle_subclient_properties['skipReadOnly']", skip_read_only)
+            "_oracle_subclient_properties['skipReadOnly']", skip_read_only
+        )
 
     @property
     def skip_inaccessible(self):
@@ -399,7 +385,8 @@ class OracleSubclient(DatabaseSubclient):
 
         """
         self._set_subclient_properties(
-            "_oracle_subclient_properties['skipInaccessible']", skip_inaccessible)
+            "_oracle_subclient_properties['skipInaccessible']", skip_inaccessible
+        )
 
     @property
     def data_stream(self):
@@ -422,7 +409,8 @@ class OracleSubclient(DatabaseSubclient):
                                             default = 1
         """
         self._set_subclient_properties(
-            "_oracle_subclient_properties['dataThresholdStreams']", data_stream)
+            "_oracle_subclient_properties['dataThresholdStreams']", data_stream
+        )
 
     @property
     def data_sp(self):
@@ -432,8 +420,9 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             string - string representing data storage policy
         """
-        return self._commonProperties['storageDevice'][
-            'dataBackupStoragePolicy']['storagePolicyName']
+        return self._commonProperties["storageDevice"]["dataBackupStoragePolicy"][
+            "storagePolicyName"
+        ]
 
     @property
     def is_table_browse_enabled(self):
@@ -444,7 +433,7 @@ class OracleSubclient(DatabaseSubclient):
             Bool - True if table browse is enabled on the subclient. Else False
         """
         # return self._oracle_subclient_properties['enableTableBrowse']
-        return self._subclient_properties['oracleSubclientProp']['enableTableBrowse']
+        return self._subclient_properties["oracleSubclientProp"]["enableTableBrowse"]
 
     @property
     def is_snapenabled(self):
@@ -455,7 +444,9 @@ class OracleSubclient(DatabaseSubclient):
             Bool - True if snap is enabled on the subclient. Else False
 
         """
-        return self._subclient_properties['commonProperties']['snapCopyInfo']['isSnapBackupEnabled']
+        return self._subclient_properties["commonProperties"]["snapCopyInfo"][
+            "isSnapBackupEnabled"
+        ]
 
     def enable_table_browse(self):
         """
@@ -471,43 +462,43 @@ class OracleSubclient(DatabaseSubclient):
 
     def disable_table_browse(self):
         """Disables Table Browse for the subclient.
-            Raises:
-                SDKException:
-                        if failed to disable tablebrowse for subclient
+        Raises:
+            SDKException:
+                    if failed to disable tablebrowse for subclient
         """
 
-        self._set_subclient_properties(
-            "_oracle_subclient_properties['enableTableBrowse']", False
-        )
+        self._set_subclient_properties("_oracle_subclient_properties['enableTableBrowse']", False)
 
     def set_backupcopy_interface(self, interface):
         """Sets the backup copy interafce for the subclient.
 
-            Args:
-                interface (str) -- type of the backup copy interface
+        Args:
+            interface (str) -- type of the backup copy interface
 
-            Raises:
-                SDKException:
-                    if failed to disable intelli snap for subclient
+        Raises:
+            SDKException:
+                if failed to disable intelli snap for subclient
         """
 
         if interface in self._backupcopy_interfaces:
             interface = self._backupcopy_interfaces[interface]
-            self._commonProperties['snapCopyInfo']['backupCopyInterface'] = interface
+            self._commonProperties["snapCopyInfo"]["backupCopyInterface"] = interface
         else:
             raise SDKException("Subclient", "101")
 
     @property
     def find(self, *args, **kwargs):
-        raise AttributeError("'{0}' object has no attribute '{1}'".format(
-            self.__class__.__name__, 'find'))
+        raise AttributeError(
+            "'{0}' object has no attribute '{1}'".format(self.__class__.__name__, "find")
+        )
 
     def backup(
-            self,
-            backup_level=InstanceBackupType.FULL.value,
-            cumulative=False,
-            schedule_pattern=None,
-            options=None):
+        self,
+        backup_level=InstanceBackupType.FULL.value,
+        cumulative=False,
+        schedule_pattern=None,
+        options=None,
+    ):
         """
 
         Args:
@@ -540,22 +531,18 @@ class OracleSubclient(DatabaseSubclient):
                 if response does not succeed
 
         """
-        if backup_level not in ['full', 'incremental']:
-            raise SDKException(r'Subclient', r'103')
+        if backup_level not in ["full", "incremental"]:
+            raise SDKException(r"Subclient", r"103")
 
         if not (cumulative or schedule_pattern or options):
-            return super(OracleSubclient, self).backup(backup_level)
+            return super().backup(backup_level)
 
         if cumulative:
             backup_level = InstanceBackupType.CUMULATIVE.value
-        request_json = self._oracle_backup_json(
-            backup_level,
-            schedule_pattern,
-            options
-        )
-        backup_service = self._commcell_object._services['CREATE_TASK']
+        request_json = self._oracle_backup_json(backup_level, schedule_pattern, options)
+        backup_service = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', backup_service, request_json
+            "POST", backup_service, request_json
         )
         return self._process_backup_response(flag, response)
 
@@ -578,8 +565,8 @@ class OracleSubclient(DatabaseSubclient):
                 if response does not succeed
 
         """
-        if backup_level not in ['full', 'incremental']:
-            raise SDKException(r'Subclient', r'103')
+        if backup_level not in ["full", "incremental"]:
+            raise SDKException(r"Subclient", r"103")
 
         backupcopy_level = 1
 
@@ -595,7 +582,7 @@ class OracleSubclient(DatabaseSubclient):
                 "skipConsistencyCheck": False,
                 "collectVMGranularRecoveryMetadataForBkpCopy": False,
                 "createNewIndex": False,
-                "verifySynthFull": True
+                "verifySynthFull": True,
             }
         }
 
@@ -604,21 +591,24 @@ class OracleSubclient(DatabaseSubclient):
             incremental_backup=False,
             incremental_level=backupcopy_level,
             advanced_options=backup_opts,
-            schedule_pattern=None)
+            schedule_pattern=None,
+        )
 
-        backup_service = self._commcell_object._services['CREATE_TASK']
+        backup_service = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', backup_service, request_json
+            "POST", backup_service, request_json
         )
         return self._process_backup_response(flag, response)
 
     def restore(
-            self,
-            files=None,
-            destination_client=None,
-            common_options=None,
-            browse_option=None,
-            oracle_options=None, tag=None):
+        self,
+        files=None,
+        destination_client=None,
+        common_options=None,
+        browse_option=None,
+        oracle_options=None,
+        tag=None,
+    ):
         """Performs restore the entire/partial database using latest backup/backupcopy
 
         Args:
@@ -655,17 +645,18 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             object -- Job containing restore details
         """
-        return self._backupset_object._instance_object.restore(files, destination_client,
-                                                               common_options, browse_option,
-                                                               oracle_options, tag)
+        return self._backupset_object._instance_object.restore(
+            files, destination_client, common_options, browse_option, oracle_options, tag
+        )
 
     def restore_in_place(
-            self,
-            db_password=None,
-            database_list=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            destination_path=None):
+        self,
+        db_password=None,
+        database_list=None,
+        dest_client_name=None,
+        dest_instance_name=None,
+        destination_path=None,
+    ):
         """
         Method to restore the logical dump
 
@@ -701,4 +692,5 @@ class OracleSubclient(DatabaseSubclient):
             database_list,
             dest_client_name,
             dest_instance_name,
-            dest_path=destination_path)
+            dest_path=destination_path,
+        )

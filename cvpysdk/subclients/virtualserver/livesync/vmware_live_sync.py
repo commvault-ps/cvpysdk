@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -28,27 +26,29 @@ VMWareLiveSync:
 
 """
 
-from .vsa_live_sync import VsaLiveSync
 from ....exception import SDKException
+from .vsa_live_sync import VsaLiveSync
 
 
 class VMWareLiveSync(VsaLiveSync):
     """Class for configuring and monitoring VMWare live sync operations"""
-    def configure_live_sync(self,
-                            schedule_name=None,
-                            destination_client=None,
-                            proxy_client=None,
-                            copy_precedence=0,
-                            vm_to_restore=None,
-                            destination_network=None,
-                            power_on=True,
-                            overwrite=False,
-                            distribute_vm_workload=None,
-                            datastore=None,
-                            restored_vm_name=None,
-                            restore_option=None,
-                            pattern_dict=None,
-                            ):
+
+    def configure_live_sync(
+        self,
+        schedule_name=None,
+        destination_client=None,
+        proxy_client=None,
+        copy_precedence=0,
+        vm_to_restore=None,
+        destination_network=None,
+        power_on=True,
+        overwrite=False,
+        distribute_vm_workload=None,
+        datastore=None,
+        restored_vm_name=None,
+        restore_option=None,
+        pattern_dict=None,
+    ):
         """To configure live
 
         Args:
@@ -132,7 +132,7 @@ class VMWareLiveSync(VsaLiveSync):
 
         if not restored_vm_name:
             restored_vm_name = "LiveSync_"
-        restore_option['restore_new_name'] = restored_vm_name
+        restore_option["restore_new_name"] = restored_vm_name
 
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
@@ -142,9 +142,8 @@ class VMWareLiveSync(VsaLiveSync):
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(overwrite, bool) and
-                    isinstance(power_on, bool)):
-                raise SDKException('Subclient', '101')
+            if not (isinstance(overwrite, bool) and isinstance(power_on, bool)):
+                raise SDKException("Subclient", "101")
 
         # set attr for all the option in restore xml from user inputs
         self._subclient_object._set_restore_inputs(
@@ -159,7 +158,7 @@ class VMWareLiveSync(VsaLiveSync):
             client_name=proxy_client,
             datastore=datastore,
             destination_network=destination_network,
-            in_place=False
+            in_place=False,
         )
 
         return self._configure_live_sync(schedule_name, restore_option, pattern_dict)

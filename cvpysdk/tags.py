@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -47,12 +45,14 @@ Tag:
         **tag_name  --  returns tag name
 
 """
+
 from typing import TYPE_CHECKING
 
 from cvpysdk.exception import SDKException
 
 if TYPE_CHECKING:
     from .commcell import Commcell
+
 
 class Tags:
     """Class for doing operations related to entity tags from backend
@@ -71,19 +71,19 @@ class Tags:
 
     DEFAULT_TAGSET_ID: int = -1
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Method to initialize tags class
 
-            Args:
-                commcell_object (Commcell)  -- instance of commcell class
-            Returns:
-                Tags (object)               -- instance of tags class
+        Args:
+            commcell_object (Commcell)  -- instance of commcell class
+        Returns:
+            Tags (object)               -- instance of tags class
         """
         self._commcell_object = commcell_object
         self._service = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
-        self._get_tags_url = self._service['GET_ENTITY_TAGS']
-        self._create_tags_url = self._service['CREATE_ENTITY_TAGS']
+        self._get_tags_url = self._service["GET_ENTITY_TAGS"]
+        self._create_tags_url = self._service["CREATE_ENTITY_TAGS"]
         self._tags: dict = None
 
         self.refresh()
@@ -91,34 +91,34 @@ class Tags:
     def _get_tags(self) -> dict:
         """Gets all the tags created by a user
 
-            Returns:
-                tags: name-id pair of tags associated to a user
-                    Example:
-                        {
-                            "tag1": 1,
-                            "tag2": 3,
-                            "tag3": 4
-                        }
-            Raises:
-                SDKException:
-                    if response is empty
+        Returns:
+            tags: name-id pair of tags associated to a user
+                Example:
+                    {
+                        "tag1": 1,
+                        "tag2": 3,
+                        "tag3": 4
+                    }
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._get_tags_url)
+        flag, response = self._cvpysdk_object.make_request("GET", self._get_tags_url)
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         resp = response.json()
         if not resp:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
-        self.DEFAULT_TAGSET_ID = resp['tagSetInfo']['id']
+        self.DEFAULT_TAGSET_ID = resp["tagSetInfo"]["id"]
 
         tag_dict: dict = {}
-        if 'tags' in resp:
+        if "tags" in resp:
             for tag in resp.get("tags", []):
                 tag_dict[tag.get("name").lower()] = tag.get("id")
             return tag_dict
@@ -127,14 +127,14 @@ class Tags:
     def all_tags(self) -> dict:
         """Returns a dictionary containing tags and their ID associated to a user
 
-            Returns:
-                tags: name-id pair of tags associated to a user
-                    Example:
-                        {
-                            "tag1": 1,
-                            "tag2": 3,
-                            "tag3": 4
-                        }
+        Returns:
+            tags: name-id pair of tags associated to a user
+                Example:
+                    {
+                        "tag1": 1,
+                        "tag2": 3,
+                        "tag3": 4
+                    }
         """
 
         return self._tags
@@ -142,95 +142,91 @@ class Tags:
     def has_tag(self, tag_name: str) -> bool:
         """Checks if a tag exist for the logged-in user
 
-            Args:
-                tag_name (str): name of the tag to search
+        Args:
+            tag_name (str): name of the tag to search
 
-            Returns:
-                bool: return True if tag is found, else returns false
+        Returns:
+            bool: return True if tag is found, else returns false
 
-            Raises:
-                SDKException:
-                    if type of the tag name argument is not string
+        Raises:
+            SDKException:
+                if type of the tag name argument is not string
 
         """
         if not isinstance(tag_name, str):
-            raise SDKException('EntityTags', '101')
+            raise SDKException("EntityTags", "101")
 
         return self._tags and tag_name.lower() in self._tags
 
-    def get(self, name: str) -> 'Tag':
+    def get(self, name: str) -> "Tag":
         """Returns an instance of the Tag class for the given tag name.
 
-            Args:
-                name (str): name of the tag to get the instance of
+        Args:
+            name (str): name of the tag to get the instance of
 
-            Returns:
-                object: instance of the Tag class for the given tag name
+        Returns:
+            object: instance of the Tag class for the given tag name
 
-            Raises:
-                SDKException:
-                    if type of the tag name argument is not string
+        Raises:
+            SDKException:
+                if type of the tag name argument is not string
 
-                    if no tag exists with the given name
+                if no tag exists with the given name
 
         """
         if self.has_tag(name):
             name = name.lower()
             return Tag(self._commcell_object, name, self._tags[name])
 
-        raise SDKException('EntityTags', '105')
+        raise SDKException("EntityTags", "105")
 
     def refresh(self) -> None:
         """Refresh the list of tags"""
         self._tags = self._get_tags()
 
-    def add(self, tag_name: str) -> 'Tag':
+    def add(self, tag_name: str) -> "Tag":
         """Method to add an entity tag
 
-            Args:
-                tag_name (str): entity tag name
+        Args:
+            tag_name (str): entity tag name
 
-            Returns:
-                object: instance of the Tag class, for the newly created entity tag
+        Returns:
+            object: instance of the Tag class, for the newly created entity tag
 
-            Raises:
-                SDKException:
-                    if tag_name is not a string
+        Raises:
+            SDKException:
+                if tag_name is not a string
 
-                    if response is not success
+                if response is not success
 
-                    if error occurs while creating tag
+                if error occurs while creating tag
 
-            Usage:
-                >>> tags.add('mytag')
+        Usage:
+            >>> tags.add('mytag')
         """
         if not isinstance(tag_name, str):
-            raise SDKException('EntityTags', '101')
+            raise SDKException("EntityTags", "101")
 
         payload = {
-            'container': {
-                'containerId': self.DEFAULT_TAGSET_ID
-                },
-            'tags': [
-                {
-                    'name': f"{tag_name}"
-                }
-            ]
+            "container": {"containerId": self.DEFAULT_TAGSET_ID},
+            "tags": [{"name": f"{tag_name}"}],
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._service['CREATE_ENTITY_TAGS'], payload)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._service["CREATE_ENTITY_TAGS"], payload
+        )
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         response_json = response.json()
-        if 'errList' in response_json:
-            err_message = response_json.get('errLogMessage')
-            err_code = response_json.get('errorCode')
+        if "errList" in response_json:
+            err_message = response_json.get("errLogMessage")
+            err_code = response_json.get("errorCode")
 
             if err_code or err_message:
-                raise SDKException('EntityTags', '103', err_message)
+                raise SDKException("EntityTags", "103", err_message)
 
         self.refresh()
         return self.get(tag_name)
@@ -253,26 +249,28 @@ class Tags:
             >>> tags.delete('mytag')
         """
         if not self.has_tag(tag_name):
-            raise SDKException("EntityTags", '105')
+            raise SDKException("EntityTags", "105")
 
         tag_name = tag_name.lower()
         tag_id = self._tags[tag_name]
 
-        flag, response = self._cvpysdk_object.make_request('DELETE', self._service['DELETE_ENTITY_TAGS'] % tag_id)
+        flag, response = self._cvpysdk_object.make_request(
+            "DELETE", self._service["DELETE_ENTITY_TAGS"] % tag_id
+        )
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         resp = response.json()
         err_code: int = 0
         err_message: str = ""
         if resp:
-            err_code = resp.get('errorCode', 0)
-            err_message = resp.get('errorMessage', "")
+            err_code = resp.get("errorCode", 0)
+            err_message = resp.get("errorMessage", "")
 
         if err_code or err_message:
-            raise SDKException("EntityTags", '102', f"Error: {err_message}")
+            raise SDKException("EntityTags", "102", f"Error: {err_message}")
 
         self.refresh()
 
@@ -292,19 +290,19 @@ class Tag:
         >>> tag = Tag(commcell_object, 'mytag', '123')
     """
 
-    def __init__(self, commcell_object: 'Commcell', tag_name: str, tag_id: str = None) -> None:
+    def __init__(self, commcell_object: "Commcell", tag_name: str, tag_id: str = None) -> None:
         """Initialise the Tag class instance.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+        Args:
+            commcell_object     (object)    --  instance of the Commcell class
 
-                tag_name            (str)       --  name of the entity tag
+            tag_name            (str)       --  name of the entity tag
 
-                tag_id              (str)       --  id of the entity tag
-                    default: None
+            tag_id              (str)       --  id of the entity tag
+                default: None
 
-            Returns:
-                object  -   instance of the tag class
+        Returns:
+            object  -   instance of the tag class
 
         """
         self._commcell_object = commcell_object

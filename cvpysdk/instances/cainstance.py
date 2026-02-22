@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -52,12 +50,11 @@ To add a new Instance for Cloud Apps agent, please follow these steps:
 
 """
 
-from __future__ import unicode_literals
-
-from ..instance import Instance
-from ..exception import SDKException
-
 from typing import TYPE_CHECKING
+
+from ..exception import SDKException
+from ..instance import Instance
+
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -78,7 +75,7 @@ class CloudAppsInstance(Instance):
     #ai-gen-doc
     """
 
-    def __new__(cls, agent_object: 'Agent', instance_name: str, instance_id: int) -> object:
+    def __new__(cls, agent_object: "Agent", instance_name: str, instance_id: int) -> object:
         """Create and return a new instance of the CloudAppsInstance class.
 
         Args:
@@ -96,19 +93,21 @@ class CloudAppsInstance(Instance):
 
         #ai-gen-doc
         """
-        from .cloudapps.google_instance import GoogleInstance
-        from .cloudapps.salesforce_instance import SalesforceInstance
-        from .cloudapps.cloud_storage_instance import CloudStorageInstance
-        from .cloudapps.amazon_instance import AmazonRedshiftInstance
-        from .cloudapps.amazon_instance import AmazonDocumentDBInstance
-        from .cloudapps.amazon_instance import AmazonRDSInstance
-        from .cloudapps.amazon_instance import AmazonDynamoDBInstance
-        from .cloudapps.dynamics365_instance import MSDynamics365Instance
-        from .cloudapps.teams_instance import TeamsInstance
-        from .cloudapps.spanner_instance import GoogleSpannerInstance
-        from .cloudapps.onedrive_instance import OneDriveInstance
+        from .cloudapps.amazon_instance import (
+            AmazonDocumentDBInstance,
+            AmazonDynamoDBInstance,
+            AmazonRDSInstance,
+            AmazonRedshiftInstance,
+        )
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
+        from .cloudapps.cloud_storage_instance import CloudStorageInstance
+        from .cloudapps.dynamics365_instance import MSDynamics365Instance
+        from .cloudapps.google_instance import GoogleInstance
+        from .cloudapps.onedrive_instance import OneDriveInstance
         from .cloudapps.powerbi_instance import PowerBIInstance
+        from .cloudapps.salesforce_instance import SalesforceInstance
+        from .cloudapps.spanner_instance import GoogleSpannerInstance
+        from .cloudapps.teams_instance import TeamsInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -131,20 +130,20 @@ class CloudAppsInstance(Instance):
             36: TeamsInstance,  # Office 365 Teams
             37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
-            51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
-            60: PowerBIInstance     # Power Platform PowerBi Instance
+            51: AzureCosmosDBInstance,  # Azure Cosmos DB MongoDBAPI Instance
+            60: PowerBIInstance,  # Power Platform PowerBi Instance
         }
 
         commcell_object = agent_object._commcell_object
-        instance_service = 'Instance/{0}'.format(instance_id)
+        instance_service = f"Instance/{instance_id}"
 
-        response = commcell_object.request('GET', instance_service)
+        response = commcell_object.request("GET", instance_service)
 
         if response.json() and "instanceProperties" in response.json():
             properties = response.json()["instanceProperties"][0]
         else:
-            raise SDKException('Instance', '105')
+            raise SDKException("Instance", "105")
 
-        cloud_apps_instance_type = properties['cloudAppsInstance']['instanceType']
+        cloud_apps_instance_type = properties["cloudAppsInstance"]["instanceType"]
 
         return object.__new__(instance_type[cloud_apps_instance_type])

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -31,10 +29,8 @@ NASBackupset:
 
 """
 
-from __future__ import unicode_literals
-
-from .fsbackupset import FSBackupset
 from ..exception import SDKException
+from .fsbackupset import FSBackupset
 
 
 class NASBackupset(FSBackupset):
@@ -69,14 +65,14 @@ class NASBackupset(FSBackupset):
 
         #ai-gen-doc
         """
-        super(NASBackupset, self)._get_backupset_properties()
+        super()._get_backupset_properties()
 
         self._is_image_backupset = False
 
-        if 'fsBackupSet' in self._properties:
-            if 'netAppImageBackup' in self._properties['fsBackupSet']:
+        if "fsBackupSet" in self._properties:
+            if "netAppImageBackup" in self._properties["fsBackupSet"]:
                 self._is_image_backupset = bool(
-                    self._properties['fsBackupSet']['netAppImageBackup']
+                    self._properties["fsBackupSet"]["netAppImageBackup"]
                 )
 
     @property
@@ -116,19 +112,16 @@ class NASBackupset(FSBackupset):
         if self.is_image_backupset is False:
             request_json = {
                 "association": {
-                    "entity": [{
-                        "clientName":
-                            self._instance_object._agent_object._client_object.client_name,
-                        "appName": self._instance_object._agent_object.agent_name,
-                        "instanceName": self._instance_object.instance_name,
-                        "backupsetName": self.backupset_name
-                    }]
+                    "entity": [
+                        {
+                            "clientName": self._instance_object._agent_object._client_object.client_name,
+                            "appName": self._instance_object._agent_object.agent_name,
+                            "instanceName": self._instance_object.instance_name,
+                            "backupsetName": self.backupset_name,
+                        }
+                    ]
                 },
-                "backupsetProperties": {
-                    "fsBackupSet": {
-                        "netAppImageBackup": True
-                    }
-                }
+                "backupsetProperties": {"fsBackupSet": {"netAppImageBackup": True}},
             }
 
             output = self._process_update_reponse(request_json)
@@ -137,4 +130,4 @@ class NASBackupset(FSBackupset):
                 return
             else:
                 o_str = 'Failed to set the backupset as Image backupset\nError: "{0}"'
-                raise SDKException('Backupset', '102', o_str.format(output[2]))
+                raise SDKException("Backupset", "102", o_str.format(output[2]))

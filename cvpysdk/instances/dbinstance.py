@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -35,12 +33,11 @@ DatabaseInstance:
 
 """
 
-from __future__ import unicode_literals
 from base64 import b64encode
+from typing import TYPE_CHECKING
 
 from ..instance import Instance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -63,7 +60,7 @@ class DatabaseInstance(Instance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
         """Initialize a DatabaseInstance object for a Sybase instance.
 
         Args:
@@ -73,8 +70,7 @@ class DatabaseInstance(Instance):
 
         #ai-gen-doc
         """
-        super(DatabaseInstance, self).__init__(
-            agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     def _get_restore_to_disk_json(
         self,
@@ -82,7 +78,7 @@ class DatabaseInstance(Instance):
         destination_path: str,
         backup_job_ids: list,
         user_name: str,
-        password: str
+        password: str,
     ) -> dict:
         """Create a JSON payload for application-free restore to disk.
 
@@ -121,12 +117,14 @@ class DatabaseInstance(Instance):
             restore_jobs=backup_job_ids,
             restore_to_disk=True,
             impersonate_user=user_name,
-            impersonate_password=encoded_password
+            impersonate_password=encoded_password,
         )
-        restore_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["jobIds"] = backup_job_ids
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "fileOption"]["sourceItem"] = self._get_source_item_app_free(backup_job_ids)
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["jobIds"] = (
+            backup_job_ids
+        )
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"][
+            "sourceItem"
+        ] = self._get_source_item_app_free(backup_job_ids)
         return restore_json
 
     def _get_source_item_app_free(self, job_ids: list) -> list:
@@ -143,6 +141,6 @@ class DatabaseInstance(Instance):
         commcell_id = self._commcell_object.commcell_id
         source_items = []
         for job_id in job_ids:
-            single_item = "{0}:{1}".format(commcell_id, job_id)
+            single_item = f"{commcell_id}:{job_id}"
             source_items.append(single_item)
         return source_items

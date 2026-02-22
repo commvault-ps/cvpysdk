@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -39,8 +37,8 @@ from ..vssubclient import VirtualServerSubclient
 
 class VcloudVirtualServerSubclient(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient Base class.
-       This represents a Vcloud virtual server subclient,
-       and can perform restore operations on only that subclient.
+    This represents a Vcloud virtual server subclient,
+    and can perform restore operations on only that subclient.
 
     """
 
@@ -52,21 +50,9 @@ class VcloudVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        super(VcloudVirtualServerSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
         self.diskExtension = [".vmdk"]
 
-        self._disk_option = {
-            'Original': 0,
-            'Thick Lazy Zero': 1,
-            'Thin': 2,
-            'Thick Eager Zero': 3
-        }
+        self._disk_option = {"Original": 0, "Thick Lazy Zero": 1, "Thin": 2, "Thick Eager Zero": 3}
 
-        self._transport_mode = {
-            'Auto': 0,
-            'SAN': 1,
-            'Hot Add': 2,
-            'NBD': 5,
-            'NBD SSL': 4
-        }
+        self._transport_mode = {"Auto": 0, "SAN": 1, "Hot Add": 2, "NBD": 5, "NBD SSL": 4}

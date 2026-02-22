@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -34,11 +32,13 @@ PostgresBackupset:
     restore_postgres_server()            --  method to restore the Postgres server
 
 """
-from __future__ import unicode_literals
+
+from typing import Any, Dict, List, Optional
+
 from ..backupset import Backupset
 from ..exception import SDKException
 from ..schedules import Schedule, Schedules
-from typing import Any, Optional, List, Dict
+
 
 class PostgresBackupset(Backupset):
     """
@@ -69,7 +69,9 @@ class PostgresBackupset(Backupset):
     #ai-gen-doc
     """
 
-    def __init__(self, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -> None:
+    def __init__(
+        self, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None
+    ) -> None:
         """Initialize a PostgresBackupset instance.
 
         Args:
@@ -84,11 +86,10 @@ class PostgresBackupset(Backupset):
 
         #ai-gen-doc
         """
-        super(PostgresBackupset, self).__init__(
-            instance_object, backupset_name, backupset_id)
-        self._LIVE_SYNC = self._commcell_object._services['LIVE_SYNC']
+        super().__init__(instance_object, backupset_name, backupset_id)
+        self._LIVE_SYNC = self._commcell_object._services["LIVE_SYNC"]
 
-    def configure_live_sync(self, request_json: Dict[str, Any]) -> 'Schedule':
+    def configure_live_sync(self, request_json: Dict[str, Any]) -> "Schedule":
         """Configure live sync for the Postgres backupset using the provided request JSON.
 
         This method sends a POST request to the Task API to create a live sync configuration.
@@ -116,32 +117,28 @@ class PostgresBackupset(Backupset):
             >>> print(f"Live sync schedule created: {schedule}")
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._LIVE_SYNC, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._LIVE_SYNC, request_json)
 
         if flag:
             if response.json():
                 if "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()["taskId"])
 
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    error_message = 'Live Sync configuration failed\nError: "{0}"'.format(
-                        error_message)
-                    raise SDKException('Backupset', '102', error_message)
+                    error_message = f'Live Sync configuration failed\nError: "{error_message}"'
+                    raise SDKException("Backupset", "102", error_message)
                 else:
-                    raise SDKException('Backupset', '102', 'Failed to create schedule')
+                    raise SDKException("Backupset", "102", "Failed to create schedule")
             else:
-                raise SDKException('Backupset', '102')
+                raise SDKException("Backupset", "102")
         else:
-            raise SDKException('Backupset', '101', self._update_response_(response.text))
+            raise SDKException("Backupset", "101", self._update_response_(response.text))
 
     def run_live_sync(
-            self,
-            dest_client_name: str,
-            dest_instance_name: str,
-            baseline_job: Any
-        ) -> 'Schedule':
+        self, dest_client_name: str, dest_instance_name: str, baseline_job: Any
+    ) -> "Schedule":
         """Run a live sync replication operation for a PostgreSQL backupset.
 
         This method initiates a live sync replication from the current backupset to a specified
@@ -178,46 +175,45 @@ class PostgresBackupset(Backupset):
             no_image=True,
             overwrite=True,
             baseline_jobid=int(baseline_job.job_id),
-            baseline_ref_time=int(baseline_job.summary['jobStartTime']))
+            baseline_ref_time=int(baseline_job.summary["jobStartTime"]),
+        )
 
-        request_json['taskInfo']['subTasks'][0]['options']['backupOpts'] = {
-            'backupLevel': 2,
-            'vsaBackupOptions': {}
-            }
-        request_json['taskInfo']['task']['taskType'] = 2
-        request_json['taskInfo']['subTasks'][0]['subTask']['operationType'] = 1007
-        request_json['taskInfo']['subTasks'][0]['subTask']['subTaskName'] = "automation"
-        request_json['taskInfo']['subTasks'][0]['pattern'] = {
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = {
+            "backupLevel": 2,
+            "vsaBackupOptions": {},
+        }
+        request_json["taskInfo"]["task"]["taskType"] = 2
+        request_json["taskInfo"]["subTasks"][0]["subTask"]["operationType"] = 1007
+        request_json["taskInfo"]["subTasks"][0]["subTask"]["subTaskName"] = "automation"
+        request_json["taskInfo"]["subTasks"][0]["pattern"] = {
             "freq_type": 4096,
-            "timeZone": {
-                "TimeZoneName": "(UTC) Coordinated Universal Time"
-                }
-            }
+            "timeZone": {"TimeZoneName": "(UTC) Coordinated Universal Time"},
+        }
 
         return self.configure_live_sync(request_json)
 
     def restore_postgres_server(
-            self,
-            database_list: Optional[List[str]] = None,
-            dest_client_name: Optional[str] = None,
-            dest_instance_name: Optional[str] = None,
-            copy_precedence: Optional[int] = None,
-            from_time: Optional[str] = None,
-            to_time: Optional[str] = None,
-            clone_env: bool = False,
-            clone_options: Optional[Dict[str, Any]] = None,
-            media_agent: Optional[str] = None,
-            table_level_restore: bool = False,
-            staging_path: Optional[str] = None,
-            no_of_streams: Optional[int] = None,
-            volume_level_restore: bool = False,
-            redirect_enabled: bool = False,
-            redirect_path: Optional[str] = None,
-            restore_to_disk: bool = False,
-            restore_to_disk_job: Optional[List[int]] = None,
-            destination_path: Optional[str] = None,
-            revert: bool = False
-        ) -> Any:
+        self,
+        database_list: Optional[List[str]] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        clone_env: bool = False,
+        clone_options: Optional[Dict[str, Any]] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        staging_path: Optional[str] = None,
+        no_of_streams: Optional[int] = None,
+        volume_level_restore: bool = False,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        restore_to_disk: bool = False,
+        restore_to_disk_job: Optional[List[int]] = None,
+        destination_path: Optional[str] = None,
+        revert: bool = False,
+    ) -> Any:
         """Restore the Postgres server with various restore options.
 
         This method initiates a restore operation for the Postgres server, supporting advanced options
@@ -303,7 +299,7 @@ class PostgresBackupset(Backupset):
         else:
             backupset_flag = False
 
-        instance_object._restore_association = self._properties['backupSetEntity']
+        instance_object._restore_association = self._properties["backupSetEntity"]
         return instance_object.restore_in_place(
             database_list,
             dest_client_name,
@@ -325,4 +321,5 @@ class PostgresBackupset(Backupset):
             restore_to_disk=restore_to_disk,
             restore_to_disk_job=restore_to_disk_job,
             destination_path=destination_path,
-            revert=revert)
+            revert=revert,
+        )

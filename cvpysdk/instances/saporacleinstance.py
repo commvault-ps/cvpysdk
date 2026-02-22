@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -49,9 +47,9 @@ SAPOracleInstance:
     saporacle_archivelogbackupstreams() -- Getter for getting archivelog backup streams
 
     saporacle_instanceid()              -- Getter for getting InstanceId
-    
+
     saporacle_snapbackup_enable()       -- Getter for getting Snap backup enabled or not
-    
+
     saporacle_snapengine_name()         -- Getter for getting snap enginename
 
     _restore_request_json()             -- returns the restore request json
@@ -64,13 +62,10 @@ SAPOracleInstance:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from ..agent import Agent
-from ..instance import Instance
 from ..client import Client
 from ..exception import SDKException
+from ..instance import Instance
 
 
 class SAPOracleInstance(Instance):
@@ -106,7 +101,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        super(SAPOracleInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
         self._instanceprop = {}  # variable to hold instance properties to be changed
 
     @property
@@ -118,7 +113,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['oracleHome']
+        return self._properties["sapOracleInstance"]["oracleHome"]
 
     @property
     def sapdata_home(self) -> str:
@@ -129,7 +124,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['sapDataPath']
+        return self._properties["sapOracleInstance"]["sapDataPath"]
 
     @property
     def sapexepath(self) -> str:
@@ -140,7 +135,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['sapExeFolder']
+        return self._properties["sapOracleInstance"]["sapExeFolder"]
 
     @property
     def os_user(self) -> str:
@@ -151,7 +146,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['oracleUser']['userName']
+        return self._properties["sapOracleInstance"]["oracleUser"]["userName"]
 
     @property
     def cmd_sp(self) -> str:
@@ -162,8 +157,9 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['oracleStorageDevice'][
-            'commandLineStoragePolicy']['storagePolicyName']
+        return self._properties["sapOracleInstance"]["oracleStorageDevice"][
+            "commandLineStoragePolicy"
+        ]["storagePolicyName"]
 
     @property
     def log_sp(self) -> str:
@@ -174,8 +170,9 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['oracleStorageDevice'][
-            'logBackupStoragePolicy']['storagePolicyName']
+        return self._properties["sapOracleInstance"]["oracleStorageDevice"][
+            "logBackupStoragePolicy"
+        ]["storagePolicyName"]
 
     @property
     def saporacle_db_user(self) -> str:
@@ -186,7 +183,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['sqlConnect']['userName']
+        return self._properties["sapOracleInstance"]["sqlConnect"]["userName"]
 
     @property
     def saporacle_db_connectstring(self) -> str:
@@ -197,7 +194,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['sqlConnect']['domainName']
+        return self._properties["sapOracleInstance"]["sqlConnect"]["domainName"]
 
     @property
     def saporacle_blocksize(self) -> int:
@@ -208,7 +205,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['blockSize']
+        return self._properties["sapOracleInstance"]["blockSize"]
 
     @property
     def saporacle_sapsecurestore(self) -> str:
@@ -219,7 +216,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['useSAPSecureStore']
+        return self._properties["sapOracleInstance"]["useSAPSecureStore"]
 
     @property
     def saporacle_archivelogbackupstreams(self) -> int:
@@ -230,7 +227,7 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['numberOfArchiveLogBackupStreams']
+        return self._properties["sapOracleInstance"]["numberOfArchiveLogBackupStreams"]
 
     @property
     def saporacle_instanceid(self) -> int:
@@ -241,8 +238,8 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['instance']['instanceId']
-    
+        return self._properties["instance"]["instanceId"]
+
     @property
     def saporacle_snapbackup_enable(self) -> bool:
         """Get the status of the SAP Oracle SnapBackup enable option for this instance.
@@ -252,8 +249,8 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['snapProtectInfo']['isSnapBackupEnabled']
-    
+        return self._properties["sapOracleInstance"]["snapProtectInfo"]["isSnapBackupEnabled"]
+
     @property
     def saporacle_snapengine_name(self) -> str:
         """Get the Snap Engine name option for the SAP Oracle instance.
@@ -263,7 +260,9 @@ class SAPOracleInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['sapOracleInstance']['snapProtectInfo']['snapSelectedEngine']['snapShotEngineName']
+        return self._properties["sapOracleInstance"]["snapProtectInfo"]["snapSelectedEngine"][
+            "snapShotEngineName"
+        ]
 
     def _restore_saporacle_request_json(self, value: dict) -> dict:
         """Generate the JSON request payload for SAP Oracle restore operations.
@@ -285,54 +284,58 @@ class SAPOracleInstance(Instance):
             "taskInfo": {
                 "associations": [self._restore_association],
                 "task": self._task,
-                "subTasks": [{
-                    "subTask": self._restore_sub_task,
-                    "options": {
-                        "restoreOptions": {
-                            "oracleOpt": {
-                                "noCatalog": value.get("noCatalog", True),
-                                "backupValidationOnly": value.get("backupValidationOnly", False),
-                                "restoreData": value.get("restoreData", True),
-                                "archiveLog": value.get("archiveLog", True),
-                                "recover": value.get("recover", True),
-                                "switchDatabaseMode": value.get("switchDatabaseMode", True),
-                                "restoreStream": value.get("restoreStream", 1),
-                                "restoreControlFile": value.get("restoreControlFile", True),
-                                "partialRestore": value.get("partialRestore", False),
-                                "openDatabase": value.get("openDatabase", True),
-                                "resetLogs": value.get("resetLogs", 1),
-                                "restoreTablespace": value.get("restoreTablespace", False),
-                                "databaseCopy": value.get("databaseCopy", False),
-                                "archiveLogBy": value.get("archiveLogBy", 'default'),
-                                "recoverTime":{
-                                    "time":value.get("point_in_time", 0)},
-                            },
-                            
-                            "destination": {
-                                "destinationInstance": {
-                                    "clientName": value.get("destination_client"),
-                                    "appName": self._agent_object.agent_name,
-                                    "instanceName": value.get("destination_instance")
+                "subTasks": [
+                    {
+                        "subTask": self._restore_sub_task,
+                        "options": {
+                            "restoreOptions": {
+                                "oracleOpt": {
+                                    "noCatalog": value.get("noCatalog", True),
+                                    "backupValidationOnly": value.get(
+                                        "backupValidationOnly", False
+                                    ),
+                                    "restoreData": value.get("restoreData", True),
+                                    "archiveLog": value.get("archiveLog", True),
+                                    "recover": value.get("recover", True),
+                                    "switchDatabaseMode": value.get("switchDatabaseMode", True),
+                                    "restoreStream": value.get("restoreStream", 1),
+                                    "restoreControlFile": value.get("restoreControlFile", True),
+                                    "partialRestore": value.get("partialRestore", False),
+                                    "openDatabase": value.get("openDatabase", True),
+                                    "resetLogs": value.get("resetLogs", 1),
+                                    "restoreTablespace": value.get("restoreTablespace", False),
+                                    "databaseCopy": value.get("databaseCopy", False),
+                                    "archiveLogBy": value.get("archiveLogBy", "default"),
+                                    "recoverTime": {"time": value.get("point_in_time", 0)},
                                 },
-                                "destClient": {
-                                    "clientName":value.get("destination_client")
-                                }
-                            },
-                            "fileOption": {
-                                "sourceItem": value.get("sourceItem", ["/+BROWSE+"])
-                            },
-                            "browseOption": {
-                                "backupset": {
-                                    "clientName": self._agent_object._client_object.client_name
+                                "destination": {
+                                    "destinationInstance": {
+                                        "clientName": value.get("destination_client"),
+                                        "appName": self._agent_object.agent_name,
+                                        "instanceName": value.get("destination_instance"),
+                                    },
+                                    "destClient": {"clientName": value.get("destination_client")},
                                 },
-                                "mediaOption":{
-                                     "copyPrecedence": {
-                                             "copyPrecedenceApplicable": value.get("copyPrecedenceApplicable", False),
-                                             "copyPrecedence":value.get("copyPrecedence", 0)}}
+                                "fileOption": {
+                                    "sourceItem": value.get("sourceItem", ["/+BROWSE+"])
+                                },
+                                "browseOption": {
+                                    "backupset": {
+                                        "clientName": self._agent_object._client_object.client_name
+                                    },
+                                    "mediaOption": {
+                                        "copyPrecedence": {
+                                            "copyPrecedenceApplicable": value.get(
+                                                "copyPrecedenceApplicable", False
+                                            ),
+                                            "copyPrecedence": value.get("copyPrecedence", 0),
+                                        }
+                                    },
+                                },
                             }
-                        }
+                        },
                     }
-                }]
+                ],
             }
         }
         return request_json
@@ -341,7 +344,7 @@ class SAPOracleInstance(Instance):
         self,
         destination_client: str = None,
         destination_instance: str = None,
-        sap_options: dict = None
+        sap_options: dict = None,
     ) -> None:
         """Perform an in-place restore and recovery of a SAP Oracle database.
 
@@ -409,13 +412,13 @@ class SAPOracleInstance(Instance):
 
         if isinstance(destination_client, Client):
             destination_client = destination_client
-            
+
         elif isinstance(destination_client, str):
             destination_client = Client(self._commcell_object, destination_client)
         else:
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
-        dest_agent = Agent(destination_client, 'sap for oracle', '61')
+        dest_agent = Agent(destination_client, "sap for oracle", "61")
 
         # check if instance name is correct
         if destination_instance is None:
@@ -426,7 +429,7 @@ class SAPOracleInstance(Instance):
         elif isinstance(destination_instance, str):
             destination_instance = dest_agent.instances.get(destination_instance)
         else:
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         sap_options["destination_client"] = destination_client.client_name
         sap_options["destination_instance"] = destination_instance.instance_name
         # sap_options["copyPrecedence"] = sap_options.get("copyPrecedence", "0")

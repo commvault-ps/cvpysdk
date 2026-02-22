@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -189,7 +187,7 @@ StoragePolicyCopy:
     get_jobs_on_copy_v2()                   --  Fetches the Details of jobs on Storage Policy Copy (API based)
 
     _run_job_operations_on_storage_copy()    -- Run different job operations for a Storage Copy
-    
+
     _pick_job_for_backup_copy()             --  Method to pick jobs for backup copy
 
     delete_job()                            --  delete a job from storage policy copy node
@@ -223,7 +221,7 @@ StoragePolicyCopy:
     set_default_datapath()                  --  sets default data path
 
     set_ddb_resiliency()                    -- set/unset ddb resiliency for storage policy copy
-    
+
     rotate_encryption_master_key()          -- Rotates the encryption key for this copy
 
     get_store_seal_frequency()              -- Gets the store seal frequency for this copy
@@ -279,23 +277,20 @@ Attributes
     ***is_compliance_lock_enabled***            --  Checks whether compliance lock on copy is enabled or not
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 import time
-from typing import TYPE_CHECKING, Dict, Optional, Union, List
 from enum import IntEnum
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
+from ..client import Client
 from ..exception import SDKException
 from ..job import Job
-from ..schedules import Schedules, SchedulePattern
-from ..client import Client
-
-from ..storage import DiskLibrary
-from ..storage import MediaAgent
+from ..schedules import SchedulePattern, Schedules
+from ..storage import DiskLibrary, MediaAgent
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
     from .storage_policies import StoragePolicyCopy
+
 
 class JobOperationsOnStorageCopy:
     """Enum for different job operations on Storage Copy.
@@ -309,13 +304,15 @@ class JobOperationsOnStorageCopy:
     Usage:
         >>> operation = JobOperationsOnStorageCopy.DELETE
     """
-    DELETE: str = 'DELETE'
-    PREVENT_COPY: str = 'DISALLOW_COPY'
-    ALLOW_COPY: str = 'ALLOW_COPY'
-    RECOPY: str = 'RECOPY'
-    PICK_FOR_VERIFICATION: str = 'pickForVerification'
-    MARK_JOBS_BAD: str = 'markJobsBad'
-    PICK_FOR_BACKUPCOPY: str = 'pickforbackupcopy'
+
+    DELETE: str = "DELETE"
+    PREVENT_COPY: str = "DISALLOW_COPY"
+    ALLOW_COPY: str = "ALLOW_COPY"
+    RECOPY: str = "RECOPY"
+    PICK_FOR_VERIFICATION: str = "pickForVerification"
+    MARK_JOBS_BAD: str = "markJobsBad"
+    PICK_FOR_BACKUPCOPY: str = "pickforbackupcopy"
+
 
 class StoragePolicyCopyType(IntEnum):
     """Enum for different storage policy copy types.
@@ -329,8 +326,9 @@ class StoragePolicyCopyType(IntEnum):
         TAPE_IMPORT (int): Represents the 'TAPE_IMPORT' copy type.
         BLOCK_REPLICATION (int): Represents the 'BLOCK_REPLICATION' copy type.
         PRIMARY (int): Represents the 'PRIMARY' copy type."""
+
     SYNCHRONOUS: int = 1
-    SELECTIVE: int = 2 
+    SELECTIVE: int = 2
     SNAP: int = 3
     VAULT: int = 4
     TRANSITIVE: int = 5
@@ -339,7 +337,8 @@ class StoragePolicyCopyType(IntEnum):
     BLOCK_REPLICATION: int = 8
     PRIMARY: int = 100
 
-class StoragePolicies(object):
+
+class StoragePolicies:
     """Class for getting all the storage policies associated with the commcell.
 
     Attributes:
@@ -353,7 +352,7 @@ class StoragePolicies(object):
         storage_policies = StoragePolicies(commcell_object)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the StoragePolicies class.
 
         Args:
@@ -363,8 +362,8 @@ class StoragePolicies(object):
             object: instance of the StoragePolicies class
         """
         self._commcell_object = commcell_object
-        self._POLICY = self._commcell_object._services['STORAGE_POLICY']
-        self._DELETE_POLICY = self._commcell_object._services['DELETE_STORAGE_POLICY']
+        self._POLICY = self._commcell_object._services["STORAGE_POLICY"]
+        self._DELETE_POLICY = self._commcell_object._services["DELETE_STORAGE_POLICY"]
         self._policies = None
         self.refresh()
 
@@ -374,10 +373,10 @@ class StoragePolicies(object):
         Returns:
             str: string of all the storage policies associated with the commcell
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Storage Policy')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Storage Policy")
 
         for index, policy in enumerate(self._policies):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, policy)
+            sub_str = f"{index + 1:^5}\t{policy:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -403,11 +402,12 @@ class StoragePolicies(object):
                 if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._POLICY + "?getAll=TRUE")
+            "GET", self._POLICY + "?getAll=TRUE"
+        )
 
         if flag:
-            if response.json() and 'policies' in response.json():
-                policies = response.json()['policies']
+            if response.json() and "policies" in response.json():
+                policies = response.json()["policies"]
 
                 if policies == []:
                     return {}
@@ -415,8 +415,8 @@ class StoragePolicies(object):
                 policies_dict = {}
 
                 for policy in policies:
-                    temp_name = policy['storagePolicyName'].lower()
-                    temp_id = str(policy['storagePolicyId']).lower()
+                    temp_name = policy["storagePolicyName"].lower()
+                    temp_id = str(policy["storagePolicyId"]).lower()
                     policies_dict[temp_name] = temp_id
 
                 return policies_dict
@@ -424,7 +424,7 @@ class StoragePolicies(object):
                 return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_storage_policies(self) -> dict:
@@ -453,11 +453,11 @@ class StoragePolicies(object):
                 if type of the storage policy name argument is not string
         """
         if not isinstance(policy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         return self._policies and policy_name.lower() in self._policies
 
-    def get(self, storage_policy_name: str) -> 'StoragePolicy':
+    def get(self, storage_policy_name: str) -> "StoragePolicy":
         """Returns a StoragePolicy object of the specified storage policy name.
 
         Args:
@@ -477,7 +477,7 @@ class StoragePolicies(object):
             storage_policy = storage_policies.get('MyStoragePolicy')
         """
         if not isinstance(storage_policy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         storage_policy_name = storage_policy_name.lower()
 
@@ -487,15 +487,17 @@ class StoragePolicies(object):
             )
         else:
             raise SDKException(
-                'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
+                "Storage", "102", f"No policy exists with name: {storage_policy_name}"
             )
 
-    def add_global_storage_policy(self,
-                                  global_storage_policy_name: str,
-                                  library: str,
-                                  media_agent: str,
-                                  dedup_path: str = None,
-                                  dedup_path_media_agent: str = None) -> 'StoragePolicy':
+    def add_global_storage_policy(
+        self,
+        global_storage_policy_name: str,
+        library: str,
+        media_agent: str,
+        dedup_path: str = None,
+        dedup_path_media_agent: str = None,
+    ) -> "StoragePolicy":
         """adds a global storage policy
 
         Args:
@@ -532,34 +534,33 @@ class StoragePolicies(object):
             )
         """
 
-        if not (isinstance(global_storage_policy_name, str) and
-                isinstance(library, str) and
-                isinstance(media_agent, str)):
+        if not (
+            isinstance(global_storage_policy_name, str)
+            and isinstance(library, str)
+            and isinstance(media_agent, str)
+        ):
             raise SDKException("Storage", "101")
 
-        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
-                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, str)):
+        if (
+            (dedup_path is not None and not isinstance(dedup_path, str))
+            or dedup_path_media_agent is not None
+            and not isinstance(dedup_path_media_agent, str)
+        ):
             raise SDKException("Storage", "101")
 
         request_json = {
             "storagePolicyName": global_storage_policy_name,
             "copyName": "Primary_Global",
             "storagePolicyCopyInfo": {
-                "storagePolicyFlags": {
-                    "globalStoragePolicy": 1
-                },
-                "library": {
-                    "libraryName": library
-                },
-                "mediaAgent": {
-                    "mediaAgentName": media_agent
-                },
+                "storagePolicyFlags": {"globalStoragePolicy": 1},
+                "library": {"libraryName": library},
+                "mediaAgent": {"mediaAgentName": media_agent},
                 "retentionRules": {
                     "retainArchiverDataForDays": -1,
                     "retainBackupDataForCycles": -1,
-                    "retainBackupDataForDays": -1
-                }
-            }
+                    "retainBackupDataForDays": -1,
+                },
+            },
         }
 
         if dedup_path is not None and dedup_path_media_agent is not None:
@@ -567,137 +568,130 @@ class StoragePolicies(object):
                 "dedupeFlags": {
                     "enableDASHFull": 1,
                     "hostGlobalDedupStore": 1,
-                    "enableDeduplication": 1
+                    "enableDeduplication": 1,
                 },
-                "storagePolicyFlags": {
-                    "blockLevelDedup": 1,
-                    "enableGlobalDeduplication": 1
-                },
+                "storagePolicyFlags": {"blockLevelDedup": 1, "enableGlobalDeduplication": 1},
                 "DDBPartitionInfo": {
                     "maInfoList": [
                         {
-                            "mediaAgent": {
-                                "mediaAgentName": dedup_path_media_agent
-                            },
+                            "mediaAgent": {"mediaAgentName": dedup_path_media_agent},
                             "subStoreList": [
                                 {
                                     "diskFreeWarningThreshholdMB": 10240,
                                     "diskFreeThresholdMB": 5120,
-                                    "accessPath": {
-                                        "path": dedup_path
-                                    }
+                                    "accessPath": {"path": dedup_path},
                                 }
-                            ]
+                            ],
                         }
                     ]
-                }
+                },
             }
             request_json["storagePolicyCopyInfo"].update(storage_policy_copy_info)
 
         # don't create dedup global storage policy if the arguments are not supplied
-        elif (dedup_path or dedup_path_media_agent):
-            raise SDKException("Storage", "101", "cannot create dedup global policy without complete arguments \n"
-                               "supply both dedup path and dedup path media agent")
+        elif dedup_path or dedup_path_media_agent:
+            raise SDKException(
+                "Storage",
+                "101",
+                "cannot create dedup global policy without complete arguments \n"
+                "supply both dedup path and dedup path media agent",
+            )
 
         # checking to create non dedup global storage policy
-        elif (dedup_path is None and dedup_path_media_agent is None):
-            storage_policy_copyinfo = {
-                "extendedFlags": {
-                    "globalStoragePolicy": 1
-                }
-            }
+        elif dedup_path is None and dedup_path_media_agent is None:
+            storage_policy_copyinfo = {"extendedFlags": {"globalStoragePolicy": 1}}
             request_json["storagePolicyCopyInfo"].update(storage_policy_copyinfo)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._POLICY, request_json
+            "POST", self._POLICY, request_json
         )
 
         if flag:
             if response.json():
-                if 'error' in response.json() and response.json()['error']['errorCode'] == 0:
+                if "error" in response.json() and response.json()["error"]["errorCode"] == 0:
                     # initialize the policies again
                     # so the policies object has all the policies
                     self.refresh()
 
                 else:
-                    error_message = response.json()['error']['errorMessage']
+                    error_message = response.json()["error"]["errorMessage"]
                     o_str = 'Failed to create storage policy\nError: "{0}"'
 
-                    raise SDKException('Storage', '102', o_str.format(error_message))
+                    raise SDKException("Storage", "102", o_str.format(error_message))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return self.get(global_storage_policy_name)
 
-    def add(self,
-            storage_policy_name: str,
-            library: str = None,
-            media_agent: str = None,
-            dedup_path: str = None,
-            incremental_sp: str = None,
-            retention_period: int = 5,
-            number_of_streams: int = None,
-            ocum_server: str = None,
-            dedup_media_agent: str = None,
-            dr_sp: bool = False,
-            **kwargs) -> object:
+    def add(
+        self,
+        storage_policy_name: str,
+        library: str = None,
+        media_agent: str = None,
+        dedup_path: str = None,
+        incremental_sp: str = None,
+        retention_period: int = 5,
+        number_of_streams: int = None,
+        ocum_server: str = None,
+        dedup_media_agent: str = None,
+        dr_sp: bool = False,
+        **kwargs,
+    ) -> object:
         """Adds a new Storage Policy to the Commcell.
 
-            Args:
-                storage_policy_name (str): name of the new storage policy to add
-                library             (str): name or instance of the library to add the policy to
-                media_agent         (str): name or instance of media agent to add the policy to
-                dedup_path          (str): the path of the deduplication database
-                incremental_sp      (str): the name of the incremental storage policy associated with the storage policy
-                retention_period    (int): time period in days to retain the data backup for
-                number_of_streams   (int): the number of streams for the storage policy
-                ocum_server         (str): On Command Unified Server Name
-                dedup_media_agent   (str): name of media agent where deduplication database is hosted.
-                dr_sp                (bool): if True creates dr storage policy if False creates data protection policy
-                **kwargs (dict): dict of keyword arguments as follows:
-                    global_policy_name   (str): name of the global storage policy on which you want the policy being created to be dependent.
-                    global_dedup_policy (bool): whether the global storage policy has a global deduplication pool or not
+        Args:
+            storage_policy_name (str): name of the new storage policy to add
+            library             (str): name or instance of the library to add the policy to
+            media_agent         (str): name or instance of media agent to add the policy to
+            dedup_path          (str): the path of the deduplication database
+            incremental_sp      (str): the name of the incremental storage policy associated with the storage policy
+            retention_period    (int): time period in days to retain the data backup for
+            number_of_streams   (int): the number of streams for the storage policy
+            ocum_server         (str): On Command Unified Server Name
+            dedup_media_agent   (str): name of media agent where deduplication database is hosted.
+            dr_sp                (bool): if True creates dr storage policy if False creates data protection policy
+            **kwargs (dict): dict of keyword arguments as follows:
+                global_policy_name   (str): name of the global storage policy on which you want the policy being created to be dependent.
+                global_dedup_policy (bool): whether the global storage policy has a global deduplication pool or not
 
-            Returns:
-                object: The created storage policy object.
+        Returns:
+            object: The created storage policy object.
 
-            Raises:
-                SDKException:
-                    if type of the storage policy name argument is not string
-                    if type of the retention period argument is not int
-                    if type of the library argument is not either string or DiskLibrary instance
-                    if type of the media agent argument is not either string or MediaAgent instance
-                    if failed to create storage policy
-                    if response is empty
-                    if response is not success
+        Raises:
+            SDKException:
+                if type of the storage policy name argument is not string
+                if type of the retention period argument is not int
+                if type of the library argument is not either string or DiskLibrary instance
+                if type of the media agent argument is not either string or MediaAgent instance
+                if failed to create storage policy
+                if response is empty
+                if response is not success
 
-            Usage:
-                # Add a new storage policy
-                storage_policies.add(storage_policy_name='SP01', library='DiskLib1', media_agent='MA01', dedup_path='/dedup/path', retention_period=10)
+        Usage:
+            # Add a new storage policy
+            storage_policies.add(storage_policy_name='SP01', library='DiskLib1', media_agent='MA01', dedup_path='/dedup/path', retention_period=10)
 
-                # Add a new storage policy with incremental storage policy
-                storage_policies.add(storage_policy_name='SP02', library='DiskLib2', media_agent='MA02', incremental_sp='IncSP02', retention_period=7)
+            # Add a new storage policy with incremental storage policy
+            storage_policies.add(storage_policy_name='SP02', library='DiskLib2', media_agent='MA02', incremental_sp='IncSP02', retention_period=7)
 
-                # Add a new storage policy with global policy
-                storage_policies.add(storage_policy_name='SP03', global_policy_name='GlobalSP03')
+            # Add a new storage policy with global policy
+            storage_policies.add(storage_policy_name='SP03', global_policy_name='GlobalSP03')
         """
 
-        extra_arguments = {
-            'global_policy_name': None,
-            'global_dedup_policy': True
-        }
+        extra_arguments = {"global_policy_name": None, "global_dedup_policy": True}
         # if global_dedup_policy will always have some value
         # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
-                (not (isinstance(storage_policy_name, str) and
-                      isinstance(retention_period, int))) or
-                (incremental_sp is not None and not isinstance(incremental_sp, str))):
-            raise SDKException('Storage', '101')
+        if (
+            (dedup_path is not None and not isinstance(dedup_path, str))
+            or (not (isinstance(storage_policy_name, str) and isinstance(retention_period, int)))
+            or (incremental_sp is not None and not isinstance(incremental_sp, str))
+        ):
+            raise SDKException("Storage", "101")
 
         if isinstance(library, DiskLibrary):
             disk_library = library
@@ -707,7 +701,7 @@ class StoragePolicies(object):
             pass
             # when existing global_dedup_policy is used then library details not needed
         else:
-            raise SDKException('Storage', '104')
+            raise SDKException("Storage", "104")
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
@@ -717,7 +711,7 @@ class StoragePolicies(object):
             pass
             # when existing global_dedup_policy is used then MA details not needed
         else:
-            raise SDKException('Storage', '103')
+            raise SDKException("Storage", "103")
 
         sp_type = 2 if dr_sp else 1
 
@@ -725,18 +719,12 @@ class StoragePolicies(object):
             # then populate request json using supplied Library, MA and dedup path
             request_json = {
                 "storagePolicyCopyInfo": {
-                    "library": {
-                        "libraryId": int(disk_library.library_id)
-                    },
-                    "mediaAgent": {
-                        "mediaAgentId": int(media_agent.media_agent_id)
-                    },
-                    "retentionRules": {
-                        "retainBackupDataForDays": retention_period
-                    }
+                    "library": {"libraryId": int(disk_library.library_id)},
+                    "mediaAgent": {"mediaAgentId": int(media_agent.media_agent_id)},
+                    "retentionRules": {"retainBackupDataForDays": retention_period},
                 },
                 "storagePolicyName": storage_policy_name,
-                "type": sp_type
+                "type": sp_type,
             }
 
             if dedup_path:
@@ -745,25 +733,21 @@ class StoragePolicies(object):
                 elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
                     dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
                 else:
-                    raise SDKException('Storage', '103')
+                    raise SDKException("Storage", "103")
 
                 dedup_info = {
                     "storagePolicyCopyInfo": {
-                        "dedupeFlags": {
-                            "enableDeduplication": 1
-                        },
+                        "dedupeFlags": {"enableDeduplication": 1},
                         "DDBPartitionInfo": {
-                            "maInfoList": [{
-                                "mediaAgent": {
-                                    "mediaAgentName": dedup_media_agent.media_agent_name
-                                },
-                                "subStoreList": [{
-                                    "accessPath": {
-                                        "path": dedup_path
-                                    }
-                                }]
-                            }]
-                        }
+                            "maInfoList": [
+                                {
+                                    "mediaAgent": {
+                                        "mediaAgentName": dedup_media_agent.media_agent_name
+                                    },
+                                    "subStoreList": [{"accessPath": {"path": dedup_path}}],
+                                }
+                            ]
+                        },
                     }
                 }
 
@@ -774,111 +758,109 @@ class StoragePolicies(object):
         # it will take up the settings of the global storage policy
         # thus defining request_json
 
-        if extra_arguments["global_policy_name"] is not None and extra_arguments["global_dedup_policy"] is True:
-            pool_obj = self._commcell_object.storage_pools.get(extra_arguments["global_policy_name"])
+        if (
+            extra_arguments["global_policy_name"] is not None
+            and extra_arguments["global_dedup_policy"] is True
+        ):
+            pool_obj = self._commcell_object.storage_pools.get(
+                extra_arguments["global_policy_name"]
+            )
             request_json = {
                 "storagePolicyCopyInfo": {
                     "useGlobalPolicy": {
                         "storagePolicyName": extra_arguments["global_policy_name"]
                     },
-                    "retentionRules": {
-                        "retainBackupDataForDays": retention_period
-                    },
+                    "retentionRules": {"retainBackupDataForDays": retention_period},
                     "dedupeFlags": {
                         "useGlobalDedupStore": 1,
                         "enableClientSideDedup": 1,
                         "enableDASHFull": 1,
-                        "enableDeduplication": 1
+                        "enableDeduplication": 1,
                     },
                     "extendedFlags": {
-                        "overRideGACPRetention": "SET_FALSE" if pool_obj.is_worm_storage_lock_enabled else "SET_TRUE"
-                    }
+                        "overRideGACPRetention": "SET_FALSE"
+                        if pool_obj.is_worm_storage_lock_enabled
+                        else "SET_TRUE"
+                    },
                 },
-                "storagePolicyName": storage_policy_name
+                "storagePolicyName": storage_policy_name,
             }
 
-        elif extra_arguments["global_policy_name"] is not None and extra_arguments["global_dedup_policy"] is False:
+        elif (
+            extra_arguments["global_policy_name"] is not None
+            and extra_arguments["global_dedup_policy"] is False
+        ):
             request_json = {
                 "storagePolicyName": storage_policy_name,
                 "storagePolicyCopyInfo": {
-                    "dedupeFlags": {
-                        "enableDASHFull": 1
-                    },
-                    "retentionRules": {
-                        "retainBackupDataForDays": retention_period
-                    },
-                    "extendedFlags": {
-                        "useGlobalStoragePolicy": 1
-                    },
+                    "dedupeFlags": {"enableDASHFull": 1},
+                    "retentionRules": {"retainBackupDataForDays": retention_period},
+                    "extendedFlags": {"useGlobalStoragePolicy": 1},
                     "useGlobalPolicy": {
                         "storagePolicyName": extra_arguments["global_policy_name"]
-                    }
-                }
+                    },
+                },
             }
 
         if number_of_streams is not None:
-            number_of_streams_dict = {
-                "numberOfStreams": number_of_streams
-            }
+            number_of_streams_dict = {"numberOfStreams": number_of_streams}
             request_json.update(number_of_streams_dict)
 
         if ocum_server is not None:
-            ocum_server_dict1 = {
-                "dfmServer": {
-                    "name": ocum_server,
-                    "id": 0
-                }
-            }
+            ocum_server_dict1 = {"dfmServer": {"name": ocum_server, "id": 0}}
             ocum_server_dict2 = {
                 "storagePolicyCopyInfo": {
-                    "snapLibrary": {
-                        "libraryName": "Use primary copy's library and mediaAgent"
-                    },
-                    "storagePolicyFlags": {
-                        "enableSnapshot": 1
-                    }
+                    "snapLibrary": {"libraryName": "Use primary copy's library and mediaAgent"},
+                    "storagePolicyFlags": {"enableSnapshot": 1},
                 }
             }
 
-            request_json["storagePolicyCopyInfo"].update(ocum_server_dict2["storagePolicyCopyInfo"])
+            request_json["storagePolicyCopyInfo"].update(
+                ocum_server_dict2["storagePolicyCopyInfo"]
+            )
             request_json.update(ocum_server_dict1)
 
         if incremental_sp:
             incremental_sp_info = {
-                "incrementalStoragePolicy": {
-                    "storagePolicyName": incremental_sp
-                }
+                "incrementalStoragePolicy": {"storagePolicyName": incremental_sp}
             }
 
             request_json.update(incremental_sp_info)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._POLICY, request_json
+            "POST", self._POLICY, request_json
         )
 
         if flag:
             if response.json():
-                if 'error' in response.json() and response.json()['error']['errorCode'] == 0:
+                if "error" in response.json() and response.json()["error"]["errorCode"] == 0:
                     # initialize the policies again
                     # so the policies object has all the policies
                     self.refresh()
 
                 else:
-                    error_message = response.json()['error']['errorMessage']
+                    error_message = response.json()["error"]["errorMessage"]
                     o_str = 'Failed to create storage policy\nError: "{0}"'
 
-                    raise SDKException('Storage', '102', o_str.format(error_message))
+                    raise SDKException("Storage", "102", o_str.format(error_message))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return self.get(storage_policy_name)
 
-
-    def add_tape_sp(self, storage_policy_name: str, library: str, media_agent: str, drive_pool: str, scratch_pool: str, retention_period_days: int = 15,
-                    ocum_server: str = None) -> 'StoragePolicy':
+    def add_tape_sp(
+        self,
+        storage_policy_name: str,
+        library: str,
+        media_agent: str,
+        drive_pool: str,
+        scratch_pool: str,
+        retention_period_days: int = 15,
+        ocum_server: str = None,
+    ) -> "StoragePolicy":
         """Adds storage policy with tape data path
 
         Args:
@@ -911,143 +893,137 @@ class StoragePolicies(object):
                 storage_policies.add_tape_sp(storage_policy_name='TapeSP02', library='TapeLib2', media_agent='MA04', drive_pool='DrivePool2', scratch_pool='ScratchPool2', ocum_server='OCUMServer')
         """
         tape_library = library
-        if not (isinstance(drive_pool, str) and
-                isinstance(scratch_pool, str) and
-                isinstance(tape_library, str) and
-                isinstance(media_agent, str) and
-                isinstance(storage_policy_name, str) and
-                (retention_period_days is None or isinstance(retention_period_days, int))):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(drive_pool, str)
+            and isinstance(scratch_pool, str)
+            and isinstance(tape_library, str)
+            and isinstance(media_agent, str)
+            and isinstance(storage_policy_name, str)
+            and (retention_period_days is None or isinstance(retention_period_days, int))
+        ):
+            raise SDKException("Storage", "101")
 
         request_json = {
             "storagePolicyCopyInfo": {
-                "retentionRules": {
-                    "retainBackupDataForDays": retention_period_days
-                },
-                "library": {
-                    "libraryName": tape_library
-                },
-                "mediaAgent": {
-                    "mediaAgentName": media_agent
-                }
+                "retentionRules": {"retainBackupDataForDays": retention_period_days},
+                "library": {"libraryName": tape_library},
+                "mediaAgent": {"mediaAgentName": media_agent},
             },
             "drivePool": drive_pool,
             "scratchpool": scratch_pool,
-            "storagePolicyName": storage_policy_name
+            "storagePolicyName": storage_policy_name,
         }
 
         if ocum_server is not None:
-            ocum_server_dict1 = {
-                "dfmServer": {
-                    "name": ocum_server,
-                    "id": 0
-                }
-            }
+            ocum_server_dict1 = {"dfmServer": {"name": ocum_server, "id": 0}}
 
             ocum_server_dict2 = {
                 "storagePolicyCopyInfo": {
-                    "snapLibrary": {
-                        "libraryName": "Use primary copy's library and mediaAgent"
-                    },
-                    "storagePolicyFlags": {
-                        "enableSnapshot": 1
-                    }
+                    "snapLibrary": {"libraryName": "Use primary copy's library and mediaAgent"},
+                    "storagePolicyFlags": {"enableSnapshot": 1},
                 }
             }
 
-            request_json["storagePolicyCopyInfo"].update(ocum_server_dict2["storagePolicyCopyInfo"])
+            request_json["storagePolicyCopyInfo"].update(
+                ocum_server_dict2["storagePolicyCopyInfo"]
+            )
             request_json.update(ocum_server_dict1)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._POLICY, request_json
+            "POST", self._POLICY, request_json
         )
 
         if flag:
             if response.json():
-                if 'error' in response.json() and response.json()['error']['errorCode'] == 0:
+                if "error" in response.json() and response.json()["error"]["errorCode"] == 0:
                     # initialize the policies again
                     # so the policies object has all the policies
                     self.refresh()
 
                 else:
-                    error_message = response.json()['error']['errorMessage']
+                    error_message = response.json()["error"]["errorMessage"]
                     o_str = 'Failed to create storage policy with tape data path\nError: "{0}"'
 
-                    raise SDKException('Storage', '102', o_str.format(error_message))
+                    raise SDKException("Storage", "102", o_str.format(error_message))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return self.get(storage_policy_name)
-
 
     def delete(self, storage_policy_name: str) -> str:
         """Deletes a storage policy from the commcell.
 
-            Args:
-                storage_policy_name (str): name of the storage policy to delete
+        Args:
+            storage_policy_name (str): name of the storage policy to delete
 
-            Returns:
-                str: Response text after deleting the storage policy.
+        Returns:
+            str: Response text after deleting the storage policy.
 
-            Raises:
-                SDKException:
-                    if type of the storage policy name argument is not string
-                    if failed to delete storage policy
-                    if response is empty
-                    if response is not success
+        Raises:
+            SDKException:
+                if type of the storage policy name argument is not string
+                if failed to delete storage policy
+                if response is empty
+                if response is not success
 
-            Usage:
-                # Delete a storage policy
-                storage_policies.delete(storage_policy_name='SP01')
+        Usage:
+            # Delete a storage policy
+            storage_policies.delete(storage_policy_name='SP01')
         """
         if not isinstance(storage_policy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if self.has_policy(storage_policy_name):
             storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
-            policy_delete_service = self._DELETE_POLICY + '/{0}'.format(storagepolicy_id)
+            policy_delete_service = self._DELETE_POLICY + f"/{storagepolicy_id}"
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'DELETE', policy_delete_service
+                "DELETE", policy_delete_service
             )
 
             if flag:
                 try:
                     if response.json():
-                        if 'error' in response.json():
-                            if 'errorCode' in response.json()['error'] and 'errorMessage' in response.json()['error']:
-                                error_message = response.json()['error']['errorMessage']
+                        if "error" in response.json():
+                            if (
+                                "errorCode" in response.json()["error"]
+                                and "errorMessage" in response.json()["error"]
+                            ):
+                                error_message = response.json()["error"]["errorMessage"]
                                 o_str = 'Failed to delete storage policy\nError: "{0}"'
 
-                                raise SDKException('Storage', '102', o_str.format(error_message))
-                            elif 'errorCode' in response.json()['error'] and response.json()['error']['errorCode'] == 0:
+                                raise SDKException("Storage", "102", o_str.format(error_message))
+                            elif (
+                                "errorCode" in response.json()["error"]
+                                and response.json()["error"]["errorCode"] == 0
+                            ):
                                 self.refresh()
                                 return response.text.strip()
                 except ValueError:
                     if response.text:
-                        if 'errorCode' in response.text and 'errorMessage' in response.text:
-                            raise SDKException('Storage', '102', response.text.strip())
+                        if "errorCode" in response.text and "errorMessage" in response.text:
+                            raise SDKException("Storage", "102", response.text.strip())
                         self.refresh()
                         return response.text.strip()
                     else:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
             raise SDKException(
-                'Storage', '102', 'No policy exists with name: {0}'.format(storage_policy_name)
+                "Storage", "102", f"No policy exists with name: {storage_policy_name}"
             )
-
 
     def refresh(self) -> None:
         """Refresh the storage policies associated with the Commcell."""
         self._policies = self._get_policies()
 
-class StoragePolicy(object):
+
+class StoragePolicy:
     """Class for performing storage policy operations for a specific storage policy
 
     Attributes:
@@ -1067,7 +1043,9 @@ class StoragePolicy(object):
             if storage policy does not exist
     """
 
-    def __init__(self, commcell_object: 'Commcell', storage_policy_name: str, storage_policy_id: str = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", storage_policy_name: str, storage_policy_id: str = None
+    ) -> None:
         """Initialise the Storage Policy class instance.
 
         Args:
@@ -1089,12 +1067,12 @@ class StoragePolicy(object):
         else:
             self._storage_policy_id = self._get_storage_policy_id()
 
-        self._STORAGE_POLICY = self._commcell_object._services['GET_STORAGE_POLICY'] % (
+        self._STORAGE_POLICY = self._commcell_object._services["GET_STORAGE_POLICY"] % (
             self.storage_policy_id
         )
-        self._STORAGE_POLICY_ADVANCED = self._commcell_object._services['GET_STORAGE_POLICY_ADVANCED'] % (
-            self.storage_policy_id
-        )
+        self._STORAGE_POLICY_ADVANCED = self._commcell_object._services[
+            "GET_STORAGE_POLICY_ADVANCED"
+        ] % (self.storage_policy_id)
         self._storage_policy_properties = None
         self._storage_policy_advanced_properties = None
         self._copies = {}
@@ -1131,17 +1109,17 @@ class StoragePolicy(object):
                 if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._STORAGE_POLICY_ADVANCED
+            "GET", self._STORAGE_POLICY_ADVANCED
         )
 
         if flag:
             if response.json():
                 return response.json()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_storage_policy_properties(self) -> dict:
         """Gets the storage policy properties of this storage policy.
@@ -1156,36 +1134,36 @@ class StoragePolicy(object):
                 if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._STORAGE_POLICY
+            "GET", self._STORAGE_POLICY
         )
 
         if flag:
             if response.json():
                 return response.json()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _initialize_storage_policy_properties(self) -> None:
         """Initializes the common properties for the storage policy."""
         self._storage_policy_properties = self._get_storage_policy_properties()
         self._copies = {}
 
-        if 'copy' in self._storage_policy_properties:
-            for copy in self._storage_policy_properties['copy']:
-                copy_type = copy['copyType']
-                active = copy['active']
-                copy_id = copy['StoragePolicyCopy']['copyId']
-                copy_name = copy['StoragePolicyCopy']['copyName'].lower()
+        if "copy" in self._storage_policy_properties:
+            for copy in self._storage_policy_properties["copy"]:
+                copy_type = copy["copyType"]
+                active = copy["active"]
+                copy_id = copy["StoragePolicyCopy"]["copyId"]
+                copy_name = copy["StoragePolicyCopy"]["copyName"].lower()
                 try:
-                    library_name = copy['library']['libraryName']
+                    library_name = copy["library"]["libraryName"]
                 except:
                     library_name = None
-                copy_precedence = copy['copyPrecedence']
-                is_snap_copy = bool(int(copy['isSnapCopy']))
-                is_default_copy = bool(int(copy.get('isDefault', 0)))
+                copy_precedence = copy["copyPrecedence"]
+                is_snap_copy = bool(int(copy["isSnapCopy"]))
+                is_default_copy = bool(int(copy.get("isDefault", 0)))
                 temp = {
                     "copyType": copy_type,
                     "active": active,
@@ -1193,7 +1171,7 @@ class StoragePolicy(object):
                     "libraryName": library_name,
                     "copyPrecedence": copy_precedence,
                     "isSnapCopy": is_snap_copy,
-                    "isDefault": is_default_copy
+                    "isDefault": is_default_copy,
                 }
                 self._copies[copy_name] = temp
 
@@ -1215,34 +1193,34 @@ class StoragePolicy(object):
             sp.edit_block_size_on_gdsp(size=1024)
         """
         request_json = {
-                        "App_UpdateStoragePolicyReq": {
-                            "StoragePolicy": {
-                                "storagePolicyName": self._storage_policy_name
-                            },
-                            "sidbBlockSizeKB": size
-                          }
-                        }
+            "App_UpdateStoragePolicyReq": {
+                "StoragePolicy": {"storagePolicyName": self._storage_policy_name},
+                "sidbBlockSizeKB": size,
+            }
+        }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        if 'errorMessage' in response.json()['error']:
-                            error_message = "Failed to update block size factor on gdsp with error \
-                                    {0}".format(str(response.json()['error']['errorMessage']))
+                        if "errorMessage" in response.json()["error"]:
+                            error_message = (
+                                "Failed to update block size factor on gdsp with error \
+                                    {0}".format(str(response.json()["error"]["errorMessage"]))
+                            )
                         else:
                             error_message = "Failed to update block size factor on gdsp"
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def edit_max_device_stream(self, stream: int = 50) -> None:
         """edit the max device stream
@@ -1261,30 +1239,30 @@ class StoragePolicy(object):
         Usage:
             sp.edit_max_device_stream(stream=100)
         """
-        request_json = {
-            "numberOfStreams": stream
-        }
-        url = self._commcell_object._services['UPDATE_STORAGE_POLCY']%(self.storage_policy_id)
+        request_json = {"numberOfStreams": stream}
+        url = self._commcell_object._services["UPDATE_STORAGE_POLCY"] % (self.storage_policy_id)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._commcell_object._services['UPDATE_STORAGE_POLCY']%(self.storage_policy_id), request_json
+            "PUT",
+            self._commcell_object._services["UPDATE_STORAGE_POLCY"] % (self.storage_policy_id),
+            request_json,
         )
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        if 'errorMessage' in response.json()['error']:
+                        if "errorMessage" in response.json()["error"]:
                             error_message = "Failed to update device stream with error \
-                                    {0}".format(str(response.json()['error']['errorMessage']))
+                                    {0}".format(str(response.json()["error"]["errorMessage"]))
                         else:
                             error_message = "Failed to update max device stream"
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def has_copy(self, copy_name: str) -> bool:
         """Checks if a storage policy copy exists for this storage
@@ -1304,22 +1282,24 @@ class StoragePolicy(object):
             sp.has_copy('copy1')
         """
         if not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         return self._copies and copy_name.lower() in self._copies
 
-    def create_secondary_copy(self,
-                              copy_name: str,
-                              library_name: str = None,
-                              media_agent_name: str = None,
-                              drive_pool: str = None,
-                              spare_pool: str = None,
-                              tape_library_id: str = None,
-                              drive_pool_id: str = None,
-                              spare_pool_id: str = None,
-                              snap_copy: bool = False,
-                              global_policy: str = None,
-                              retention_days: int = 30) -> None:
+    def create_secondary_copy(
+        self,
+        copy_name: str,
+        library_name: str = None,
+        media_agent_name: str = None,
+        drive_pool: str = None,
+        spare_pool: str = None,
+        tape_library_id: str = None,
+        drive_pool_id: str = None,
+        spare_pool_id: str = None,
+        snap_copy: bool = False,
+        global_policy: str = None,
+        retention_days: int = 30,
+    ) -> None:
         """Creates Synchronous copy for this storage policy
 
         Args:
@@ -1354,137 +1334,140 @@ class StoragePolicy(object):
         """
         if global_policy is not None:
             if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
-                raise SDKException('Storage', '101')
+                raise SDKException("Storage", "101")
 
             if self.has_copy(copy_name):
                 err_msg = f'Storage Policy copy "{copy_name}" already exists.'
-                raise SDKException('Storage', '102', err_msg)
+                raise SDKException("Storage", "102", err_msg)
 
             if not self._commcell_object.storage_pools.has_storage_pool(global_policy):
                 err_msg = f'No Global Storage Policy "{global_policy}" exists.'
-                raise SDKException('Storage', '102', err_msg)
+                raise SDKException("Storage", "102", err_msg)
 
             global_policy = self._commcell_object.storage_pools.get(global_policy)
 
-            global_policy_copy = StoragePolicyCopy (self._commcell_object, global_policy.storage_pool_name, global_policy.copy_name)
-            
-            copy_details = global_policy_copy.storage_policy.storage_policy_properties.get('copy', [])
-            global_aux_policy = next(iter(copy_details), {}).get('extendedFlags', {}).get('globalAuxCopyPolicy', 0)
+            global_policy_copy = StoragePolicyCopy(
+                self._commcell_object, global_policy.storage_pool_name, global_policy.copy_name
+            )
 
-            is_global_dedupe_policy = global_policy_copy._dedupe_flags.get('enableDeduplication', 0)
-            
+            copy_details = global_policy_copy.storage_policy.storage_policy_properties.get(
+                "copy", []
+            )
+            global_aux_policy = (
+                next(iter(copy_details), {}).get("extendedFlags", {}).get("globalAuxCopyPolicy", 0)
+            )
+
+            is_global_dedupe_policy = global_policy_copy._dedupe_flags.get(
+                "enableDeduplication", 0
+            )
+
             request = {
-                       "copyName": copy_name,
-                       "storagePolicyCopyInfo": {
-                          "copyType": 1,
-                          "isDefault": 0,
-                          "isMirrorCopy": 0,
-                          "isSnapCopy": 0,
-                          "numberOfStreamsToCombine": 1,
-                          "StoragePolicyCopy": {
-                             "_type_": 18,
-                             "storagePolicyName": self.storage_policy_name
-                          },
-                          "retentionRules": {
-                             "retainArchiverDataForDays": -1,
-                             "retainBackupDataForCycles": 1,
-                             "retainBackupDataForDays": retention_days
-                          },
-                          "dedupeFlags": {
-                              "enableDeduplication": is_global_dedupe_policy,
-                              "useGlobalDedupStore": is_global_dedupe_policy
-                          }
-                       }
-                    }
+                "copyName": copy_name,
+                "storagePolicyCopyInfo": {
+                    "copyType": 1,
+                    "isDefault": 0,
+                    "isMirrorCopy": 0,
+                    "isSnapCopy": 0,
+                    "numberOfStreamsToCombine": 1,
+                    "StoragePolicyCopy": {
+                        "_type_": 18,
+                        "storagePolicyName": self.storage_policy_name,
+                    },
+                    "retentionRules": {
+                        "retainArchiverDataForDays": -1,
+                        "retainBackupDataForCycles": 1,
+                        "retainBackupDataForDays": retention_days,
+                    },
+                    "dedupeFlags": {
+                        "enableDeduplication": is_global_dedupe_policy,
+                        "useGlobalDedupStore": is_global_dedupe_policy,
+                    },
+                },
+            }
             if global_aux_policy:
-                request["storagePolicyCopyInfo"]["extendedFlags"] = {
-                    "useGlobalAuxCopyPolicy": 1
-                }
-                request["storagePolicyCopyInfo"]["globalAuxCopy"]= {
+                request["storagePolicyCopyInfo"]["extendedFlags"] = {"useGlobalAuxCopyPolicy": 1}
+                request["storagePolicyCopyInfo"]["globalAuxCopy"] = {
                     "storagePolicyName": global_policy.storage_pool_name
                 }
             else:
-                request["storagePolicyCopyInfo"]["extendedFlags"] = {
-                    "useGlobalStoragePolicy" : 1
-                }
+                request["storagePolicyCopyInfo"]["extendedFlags"] = {"useGlobalStoragePolicy": 1}
                 request["storagePolicyCopyInfo"]["useGlobalPolicy"] = {
                     "storagePolicyName": global_policy.storage_pool_name
                 }
         else:
-            if not (isinstance(copy_name, str) and
-                    isinstance(library_name, str) and
-                    isinstance(media_agent_name, str)):
-                raise SDKException('Storage', '101')
+            if not (
+                isinstance(copy_name, str)
+                and isinstance(library_name, str)
+                and isinstance(media_agent_name, str)
+            ):
+                raise SDKException("Storage", "101")
 
             if self.has_copy(copy_name):
-                err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
-                raise SDKException('Storage', '102', err_msg)
+                err_msg = f'Storage Policy copy "{copy_name}" already exists.'
+                raise SDKException("Storage", "102", err_msg)
 
-            media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()]['id']
+            media_agent_id = self._commcell_object.media_agents._media_agents[
+                media_agent_name.lower()
+            ]["id"]
 
             snap_copy = int(snap_copy)
 
             if drive_pool is not None:
-                    request = """
-                            <App_CreateStoragePolicyCopyReq copyName="{0}">
-                                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{11}" numberOfStreamsToCombine="1">
-                                    <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
-                                    <library _type_="9" libraryId="{3}" libraryName="{4}" />
-                                    <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
-                                    <drivePool drivePoolId = "{7}" drivePoolName = "{8}"  libraryName = "{4}" />
-                                    <spareMediaGroup spareMediaGroupId = "{9}" spareMediaGroupName = "{10}" libraryName = "{4}" />
+                request = f"""
+                            <App_CreateStoragePolicyCopyReq copyName="{copy_name}">
+                                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{snap_copy}" numberOfStreamsToCombine="1">
+                                    <StoragePolicyCopy _type_="18" storagePolicyId="{self.storage_policy_id}" storagePolicyName="{self.storage_policy_name}" />
+                                    <library _type_="9" libraryId="{tape_library_id}" libraryName="{library_name}" />
+                                    <mediaAgent _type_="11" mediaAgentId="{media_agent_id}" mediaAgentName="{media_agent_name}" />
+                                    <drivePool drivePoolId = "{drive_pool_id}" drivePoolName = "{drive_pool}"  libraryName = "{library_name}" />
+                                    <spareMediaGroup spareMediaGroupId = "{spare_pool_id}" spareMediaGroupName = "{spare_pool}" libraryName = "{library_name}" />
                                     <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
                                 </storagePolicyCopyInfo>
                             </App_CreateStoragePolicyCopyReq>
-                            """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
-                                       tape_library_id, library_name, media_agent_id, media_agent_name,
-                                       drive_pool_id, drive_pool, spare_pool_id, spare_pool, snap_copy)
+                            """
 
             else:
                 library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
-                request = """
-                <App_CreateStoragePolicyCopyReq copyName="{0}">
-                    <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{7}" numberOfStreamsToCombine="1">
-                        <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
-                        <library _type_="9" libraryId="{3}" libraryName="{4}" />
-                        <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                request = f"""
+                <App_CreateStoragePolicyCopyReq copyName="{copy_name}">
+                    <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{snap_copy}" numberOfStreamsToCombine="1">
+                        <StoragePolicyCopy _type_="18" storagePolicyId="{self.storage_policy_id}" storagePolicyName="{self.storage_policy_name}" />
+                        <library _type_="9" libraryId="{library_id}" libraryName="{library_name}" />
+                        <mediaAgent _type_="11" mediaAgentId="{media_agent_id}" mediaAgentName="{media_agent_name}" />
                         <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
                     </storagePolicyCopyInfo>
                 </App_CreateStoragePolicyCopyReq>
-                """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
-                           library_id, library_name, media_agent_id, media_agent_name, snap_copy)
+                """
 
-        create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
+        create_copy_service = self._commcell_object._services["CREATE_STORAGE_POLICY_COPY"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_copy_service, request
+            "POST", create_copy_service, request
         )
 
         self.refresh()
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        if 'errorMessage' in response.json()['error']:
+                        if "errorMessage" in response.json()["error"]:
                             error_message = "Failed to create {0} Storage Policy copy with error \
-                            {1}".format(copy_name, str(response.json()['error']['errorMessage']))
+                            {1}".format(copy_name, str(response.json()["error"]["errorMessage"]))
                         else:
-                            error_message = "Failed to create {0} Storage Policy copy".format(
-                                copy_name
-                            )
-                        raise SDKException('Storage', '102', error_message)
+                            error_message = f"Failed to create {copy_name} Storage Policy copy"
+                        raise SDKException("Storage", "102", error_message)
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def run_content_indexing(self) -> 'Job':
+    def run_content_indexing(self) -> "Job":
         """starts the offline CI job for this storage policy
 
         Args:
@@ -1506,11 +1489,11 @@ class StoragePolicy(object):
         Usage:
             job = sp.run_content_indexing()
         """
-        request_xml = """<TMMsg_CreateTaskReq>
+        request_xml = f"""<TMMsg_CreateTaskReq>
         <taskInfo>
-        <associations subclientId="0" storagePolicyId="{0}" applicationId="0" clientName="" backupsetId="0"
+        <associations subclientId="0" storagePolicyId="{self._storage_policy_id}" applicationId="0" clientName="" backupsetId="0"
         instanceId="0" commCellId="0" clientId="0" subclientName="" mediaAgentId="0" mediaAgentName="" backupsetName=""
-        instanceName="" storagePolicyName="{1}" _type_="0" appName="" />
+        instanceName="" storagePolicyName="{self._storage_policy_name}" _type_="0" appName="" />
         <task ownerId="1" taskType="1" ownerName="admin" sequenceNumber="0" initiatedFrom="1" policyType="0" taskId="0">
         <taskFlags disabled="0" /></task>
         <subTasks subTaskOperation="1"><subTask subTaskType="1" operationType="4022" />
@@ -1522,30 +1505,31 @@ class StoragePolicy(object):
         </adminOpts>
         <restoreOptions><virtualServerRstOption isBlockLevelReplication="0" /><commonOptions syncRestore="0" />
         </restoreOptions></options></subTasks>
-        </taskInfo></TMMsg_CreateTaskReq>""".format(self._storage_policy_id, self._storage_policy_name)
+        </taskInfo></TMMsg_CreateTaskReq>"""
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_xml
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 else:
-                    raise SDKException('Storage', '102', 'Unable to get job id for CI job')
+                    raise SDKException("Storage", "102", "Unable to get job id for CI job")
             else:
-                raise SDKException('Response', '102', 'Empty response')
+                raise SDKException("Response", "102", "Empty response")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def enable_content_indexing(
-            self,
-            cloud_id: str,
-            include_doc_type: str = None,
-            max_doc_size: str = None,
-            min_doc_size: str = None,
-            exclude_doc_type: str = None) -> None:
+        self,
+        cloud_id: str,
+        include_doc_type: str = None,
+        max_doc_size: str = None,
+        min_doc_size: str = None,
+        exclude_doc_type: str = None,
+    ) -> None:
         """configures offline CI for this storage policy
 
         Args:
@@ -1571,11 +1555,13 @@ class StoragePolicy(object):
             storage_policy.enable_content_indexing(cloud_id='cloud789', max_doc_size='102400', min_doc_size='10')
         """
         if not isinstance(cloud_id, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if include_doc_type is None:
-            include_doc_type = "*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg,*.log,*.msg,*.odg," \
-                               "*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt,*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml"
+            include_doc_type = (
+                "*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg,*.log,*.msg,*.odg,"
+                "*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt,*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml"
+            )
         if max_doc_size is None:
             max_doc_size = "51200"
 
@@ -1585,35 +1571,36 @@ class StoragePolicy(object):
         if exclude_doc_type is None:
             exclude_doc_type = ""
 
-        request_xml = """<EVGui_ContentIndexingControlReq operation="16"><header localeId="0" userId="0"/>
-        <ciProps archGroupId="{0}" calendarId="1" cloudId="{1}" contentIndexDataOver="0" dayNumber="0" deferredDays="0"
-         enable="1" entityIds="" excludeDocTypes="{5}" filterSelected="1" flags="0"
-         includeDocTypes="{2}" indexType="0" jobsOlderThan="0"
-         maxDocSizeKB="{3}" minDocSizeKB="{4}" numPeriod="1" retentionDays="-1" sourceCopyId="0" startTime="0"
-         synchronizeOn="0" type="0"/></EVGui_ContentIndexingControlReq>"""\
-            .format(self._storage_policy_id, cloud_id, include_doc_type, max_doc_size, min_doc_size, exclude_doc_type)
-
+        request_xml = f"""<EVGui_ContentIndexingControlReq operation="16"><header localeId="0" userId="0"/>
+        <ciProps archGroupId="{self._storage_policy_id}" calendarId="1" cloudId="{cloud_id}" contentIndexDataOver="0" dayNumber="0" deferredDays="0"
+         enable="1" entityIds="" excludeDocTypes="{exclude_doc_type}" filterSelected="1" flags="0"
+         includeDocTypes="{include_doc_type}" indexType="0" jobsOlderThan="0"
+         maxDocSizeKB="{max_doc_size}" minDocSizeKB="{min_doc_size}" numPeriod="1" retentionDays="-1" sourceCopyId="0" startTime="0"
+         synchronizeOn="0" type="0"/></EVGui_ContentIndexingControlReq>"""
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_xml
         )
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 1:
                         error_message = "Failed to enable content indexing for this storage policy"
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102', 'No success error code found in response')
+                    raise SDKException(
+                        "Response", "102", "No success error code found in response"
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def enable_entity_extraction(self, entity_details: list, entity_names: list, ca_client_name: str) -> None:
+    def enable_entity_extraction(
+        self, entity_details: list, entity_names: list, ca_client_name: str
+    ) -> None:
         """configures offline CI entity extraction for given subclient id's on this storage policy
 
         Args:
@@ -1637,11 +1624,11 @@ class StoragePolicy(object):
             storage_policy.enable_entity_extraction(entity_details, entity_names, 'CA_Client')
         """
         if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         if not isinstance(ca_client_name, str):
-            raise SDKException('Storage', '101')
-        request_xml = """<EVGui_SetEntityExtractionListReq archGroupId="{0}">
-        <entityExtraction isConfigured="1">""".format(self._storage_policy_id)
+            raise SDKException("Storage", "101")
+        request_xml = f"""<EVGui_SetEntityExtractionListReq archGroupId="{self._storage_policy_id}">
+        <entityExtraction isConfigured="1">"""
         for subclient in entity_details:
             client_name = subclient[0]
             app_name = subclient[1]
@@ -1652,60 +1639,71 @@ class StoragePolicy(object):
             backup_set_obj = agent_obj.backupsets.get(backup_set_name)
             subclient_obj = backup_set_obj.subclients.get(subclient_name)
             if subclient_obj.storage_policy.lower() != self._storage_policy_name.lower():
-                err_msg = 'Subclient "{0}" is not a part of this storage policy'.format(subclient_name)
-                raise SDKException('Storage', '102', err_msg)
+                err_msg = f'Subclient "{subclient_name}" is not a part of this storage policy'
+                raise SDKException("Storage", "102", err_msg)
             subclient_prop = subclient_obj.properties
-            request_xml = request_xml + """<appList appOperation="0" appTypeId="{0}" archGroupId="0"
+            request_xml = (
+                request_xml
+                + """<appList appOperation="0" appTypeId="{0}" archGroupId="0"
                 backupSetId="{1}" clientId="{2}" instanceId="{3}" subClientId="{4}"/>""".format(
-                subclient_prop['subClientEntity']['applicationId'],
-                subclient_prop['subClientEntity']['backupsetId'],
-                subclient_prop['subClientEntity']['clientId'],
-                subclient_prop['subClientEntity']['instanceId'],
-                subclient_prop['subClientEntity']['subclientId'],
+                    subclient_prop["subClientEntity"]["applicationId"],
+                    subclient_prop["subClientEntity"]["backupsetId"],
+                    subclient_prop["subClientEntity"]["clientId"],
+                    subclient_prop["subClientEntity"]["instanceId"],
+                    subclient_prop["subClientEntity"]["subclientId"],
+                )
             )
 
         for entity in entity_names:
             entity_obj = self._commcell_object.activate.entity_manager().get(entity)
-            request_xml = request_xml + """<entities enabled="1" entityId="{0}" entityName="{1}"/>"""\
-                .format(entity_obj.entity_id, entity)
+            request_xml = (
+                request_xml
+                + f"""<entities enabled="1" entityId="{entity_obj.entity_id}" entityName="{entity}"/>"""
+            )
 
         client_obj = self._commcell_object.clients.get(ca_client_name)
-        request_xml = request_xml + """<extractingClientList enabled="1">
-        <eeClient clientId="{0}" clientName="{1}"/>
-        </extractingClientList></entityExtraction></EVGui_SetEntityExtractionListReq>"""\
-            .format(client_obj.client_id, ca_client_name)
-
+        request_xml = (
+            request_xml
+            + f"""<extractingClientList enabled="1">
+        <eeClient clientId="{client_obj.client_id}" clientName="{ca_client_name}"/>
+        </extractingClientList></entityExtraction></EVGui_SetEntityExtractionListReq>"""
+        )
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_xml
         )
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = int(response.json()['errorCode'])
+                if "errorCode" in response.json():
+                    error_code = int(response.json()["errorCode"])
                     if error_code != 0:
-                        error_message = "Failed to enable entity extraction for this storage policy"
-                        raise SDKException('Storage', '102', error_message)
+                        error_message = (
+                            "Failed to enable entity extraction for this storage policy"
+                        )
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102', 'No success error code found in response')
+                    raise SDKException(
+                        "Response", "102", "No success error code found in response"
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def create_snap_copy(self,
-                         copy_name: str,
-                         is_mirror_copy: bool,
-                         is_snap_copy: bool,
-                         library_name: str,
-                         media_agent_name: str,
-                         source_copy: str,
-                         provisioning_policy: str = None,
-                         resource_pool: str = None,
-                         is_replica_copy: bool = None,
-                         **kwargs) -> None:
+    def create_snap_copy(
+        self,
+        copy_name: str,
+        is_mirror_copy: bool,
+        is_snap_copy: bool,
+        library_name: str,
+        media_agent_name: str,
+        source_copy: str,
+        provisioning_policy: str = None,
+        resource_pool: str = None,
+        is_replica_copy: bool = None,
+        **kwargs,
+    ) -> None:
         """Creates Snap copy for this storage policy
 
         Args:
@@ -1759,14 +1757,16 @@ class StoragePolicy(object):
                 enable_selective_copy=1
             )
         """
-        if not (isinstance(copy_name, str) and
-                isinstance(library_name, str) and
-                isinstance(media_agent_name, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_name, str)
+            and isinstance(library_name, str)
+            and isinstance(media_agent_name, str)
+        ):
+            raise SDKException("Storage", "101")
 
         if self.has_copy(copy_name):
-            err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
-            raise SDKException('Storage', '102', err_msg)
+            err_msg = f'Storage Policy copy "{copy_name}" already exists.'
+            raise SDKException("Storage", "102", err_msg)
 
         if is_replica_copy:
             arrayReplicaCopy = "1"
@@ -1786,82 +1786,74 @@ class StoragePolicy(object):
             provisioning_policy = ""
             resource_pool = ""
 
-        is_c2c_target = kwargs.get('is_c2c_target', False)
+        is_c2c_target = kwargs.get("is_c2c_target", False)
         isNetAppSnapCloudTargetCopy = 1 if is_c2c_target else 0
 
-        job_based_retention = kwargs.get('job_based_retention', False)
+        job_based_retention = kwargs.get("job_based_retention", False)
         job_retention = 1 if job_based_retention else 0
 
-        selectiveRule = kwargs.get('enable_selective_copy', None)
+        selectiveRule = kwargs.get("enable_selective_copy", None)
         if selectiveRule is None:
-            request_xml = """
-                    <App_CreateStoragePolicyCopyReq copyName="{0}">
-                        <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
-                            <StoragePolicyCopy _type_="18" copyName="{0}" storagePolicyName="{4}" />
-                            <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
-                            <library _type_="9" libraryName="{7}" />
-                            <mediaAgent _type_="11" mediaAgentName="{8}" />
-                            <spareMediaGroup _type_="67" libraryName="{7}" />
+            request_xml = f"""
+                    <App_CreateStoragePolicyCopyReq copyName="{copy_name}">
+                        <storagePolicyCopyInfo active="1" isMirrorCopy="{is_mirror_copy}" isSnapCopy="{is_snap_copy}" provisioningPolicyName="{provisioning_policy}">
+                            <StoragePolicyCopy _type_="18" copyName="{copy_name}" storagePolicyName="{self.storage_policy_name}" />
+                            <extendedFlags arrayReplicaCopy="{arrayReplicaCopy}" isNetAppSnapCloudTargetCopy="{isNetAppSnapCloudTargetCopy}" useOfflineArrayReplication="{useOfflineReplication}" />
+                            <library _type_="9" libraryName="{library_name}" />
+                            <mediaAgent _type_="11" mediaAgentName="{media_agent_name}" />
+                            <spareMediaGroup _type_="67" libraryName="{library_name}" />
                             <retentionRules jobs="8" retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1">
-                            <retentionFlags jobBasedRetention="{11}" />
+                            <retentionFlags jobBasedRetention="{job_retention}" />
                             </retentionRules>
-                            <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
-                            <resourcePoolsList operation="1" resourcePoolName="{10}" />
+                            <sourceCopy _type_="18" copyName="{source_copy}" storagePolicyName="{self.storage_policy_name}" />
+                            <resourcePoolsList operation="1" resourcePoolName="{resource_pool}" />
                         </storagePolicyCopyInfo>
                     </App_CreateStoragePolicyCopyReq>
-                    """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
-                               self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
+                    """
         else:
-            request_xml = """
-                                        <App_CreateStoragePolicyCopyReq copyName="{0}">
-                                            <storagePolicyCopyInfo copyType="2" description= \"\" isMirrorCopy="{1}" isSnapCopy="{2}">
-                                                <StoragePolicyCopy copyName="{0}" storagePolicyName="{4}" />
-                                                <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
-                                                <library  libraryName="{7}" />
-                                                <mediaAgent _type_="11" mediaAgentName="{8}" />
+            request_xml = f"""
+                                        <App_CreateStoragePolicyCopyReq copyName="{copy_name}">
+                                            <storagePolicyCopyInfo copyType="2" description= \"\" isMirrorCopy="{is_mirror_copy}" isSnapCopy="{is_snap_copy}">
+                                                <StoragePolicyCopy copyName="{copy_name}" storagePolicyName="{self.storage_policy_name}" />
+                                                <extendedFlags arrayReplicaCopy="{arrayReplicaCopy}" isNetAppSnapCloudTargetCopy="{isNetAppSnapCloudTargetCopy}" useOfflineArrayReplication="{useOfflineReplication}" />
+                                                <library  libraryName="{library_name}" />
+                                                <mediaAgent _type_="11" mediaAgentName="{media_agent_name}" />
                                                 <retentionRules jobs="8" retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1">
-                                                <retentionFlags jobBasedRetention="{11}" />
+                                                <retentionFlags jobBasedRetention="{job_retention}" />
                                                 </retentionRules>
-                                                <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
-                                                <selectiveCopyRules selectiveRule="{13}"/>
+                                                <sourceCopy _type_="18" copyName="{source_copy}" storagePolicyName="{self.storage_policy_name}" />
+                                                <selectiveCopyRules selectiveRule="{selectiveRule}"/>
                                                 </storagePolicyCopyInfo>
                                         </App_CreateStoragePolicyCopyReq>
-                                        """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
-                                                   self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                                                   library_name, media_agent_name, source_copy, resource_pool,
-                                                   job_retention, isNetAppSnapCloudTargetCopy, selectiveRule)
+                                        """
 
-        create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
+        create_copy_service = self._commcell_object._services["CREATE_STORAGE_POLICY_COPY"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_copy_service, request_xml
+            "POST", create_copy_service, request_xml
         )
 
         self.refresh()
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        if 'errorMessage' in response.json()['error']:
+                        if "errorMessage" in response.json()["error"]:
                             error_message = "Failed to create {0} Storage Policy copy with error \
-                            {1}".format(copy_name, str(response.json()['error']['errorMessage']))
+                            {1}".format(copy_name, str(response.json()["error"]["errorMessage"]))
                         else:
-                            error_message = "Failed to create {0} Storage Policy copy".format(
-                                copy_name
-                            )
-                        raise SDKException('Storage', '102', error_message)
+                            error_message = f"Failed to create {copy_name} Storage Policy copy"
+                        raise SDKException("Storage", "102", error_message)
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def delete_secondary_copy(self, copy_name: str) -> None:
         """Deletes the copy associated with this storage policy
@@ -1885,54 +1877,58 @@ class StoragePolicy(object):
             storage_policy.delete_secondary_copy('copy1')
         """
         if not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         else:
             copy_name = copy_name.lower()
 
         if not self.has_copy(copy_name):
-            err_msg = 'Storage Policy copy "{0}" doesn\'t exists.'.format(copy_name)
-            raise SDKException('Storage', '102', err_msg)
+            err_msg = f'Storage Policy copy "{copy_name}" doesn\'t exists.'
+            raise SDKException("Storage", "102", err_msg)
 
-        delete_copy_service = self._commcell_object._services['DELETE_STORAGE_POLICY_COPY']
+        delete_copy_service = self._commcell_object._services["DELETE_STORAGE_POLICY_COPY"]
 
         request_xml = """
         <App_DeleteStoragePolicyCopyReq>
             <archiveGroupCopy _type_="18" copyId="{0}" copyName="{1}" storagePolicyId="{2}" storagePolicyName="{3}" />
         </App_DeleteStoragePolicyCopyReq>
-        """.format(self._copies[copy_name]['copyId'], copy_name, self.storage_policy_id,
-                   self.storage_policy_name)
+        """.format(
+            self._copies[copy_name]["copyId"],
+            copy_name,
+            self.storage_policy_id,
+            self.storage_policy_name,
+        )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', delete_copy_service, request_xml
+            "POST", delete_copy_service, request_xml
         )
 
         self.refresh()
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        error_message = "Failed to delete {0} Storage Policy copy".format(
-                            copy_name
-                        )
-                        raise SDKException('Storage', '102', error_message)
+                        error_message = f"Failed to delete {copy_name} Storage Policy copy"
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def create_selective_copy(self,
-                              copy_name: str,
-                              library_name: str,
-                              media_agent_name: str,
-                              sel_freq: str,
-                              first_or_last_full: str,
-                              backups_from: str,
-                              daystartson: Optional[Dict[str, Union[str, int]]] = None) -> None:
+    def create_selective_copy(
+        self,
+        copy_name: str,
+        library_name: str,
+        media_agent_name: str,
+        sel_freq: str,
+        first_or_last_full: str,
+        backups_from: str,
+        daystartson: Optional[Dict[str, Union[str, int]]] = None,
+    ) -> None:
         """Creates Selective copy for this storage policy
 
         Args:
@@ -1977,23 +1973,41 @@ class StoragePolicy(object):
                 daystartson='Friday'
             )
         """
-        if not (isinstance(copy_name, str) and
-                isinstance(library_name, str) and
-                isinstance(media_agent_name, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_name, str)
+            and isinstance(library_name, str)
+            and isinstance(media_agent_name, str)
+        ):
+            raise SDKException("Storage", "101")
 
         if self.has_copy(copy_name):
-            err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
-            raise SDKException('Storage', '102', err_msg)
+            err_msg = f'Storage Policy copy "{copy_name}" already exists.'
+            raise SDKException("Storage", "102", err_msg)
 
-        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()]['id']
+        media_agent_id = self._commcell_object.media_agents._media_agents[
+            media_agent_name.lower()
+        ]["id"]
 
-        selective_copy_freq = {'all': 2, 'hourly': 262144, 'daily': 524288, 'weekly': 4, 'monthly': 8,
-                               'quarterly': 16, 'halfyearly': 32, 'yearly': 64, 'advanced': 16777216
-                               }
-        week_starts_on = {'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4,
-                          'Friday': 5, 'Saturday': 6
-                          }
+        selective_copy_freq = {
+            "all": 2,
+            "hourly": 262144,
+            "daily": 524288,
+            "weekly": 4,
+            "monthly": 8,
+            "quarterly": 16,
+            "halfyearly": 32,
+            "yearly": 64,
+            "advanced": 16777216,
+        }
+        week_starts_on = {
+            "Sunday": 0,
+            "Monday": 1,
+            "Tuesday": 2,
+            "Wednesday": 3,
+            "Thursday": 4,
+            "Friday": 5,
+            "Saturday": 6,
+        }
 
         selective_rule = selective_copy_freq[sel_freq]
         copyflags = ""
@@ -2003,73 +2017,89 @@ class StoragePolicy(object):
             copyflags = """<copyFlags lastFull = "1" lastFullWait="1" />"""
 
         dsostr = ""
-        if (sel_freq == 'daily' or sel_freq == 'hourly') and daystartson is not None \
-                and isinstance(daystartson, dict):
+        if (
+            (sel_freq == "daily" or sel_freq == "hourly")
+            and daystartson is not None
+            and isinstance(daystartson, dict)
+        ):
             dsostr = """
                         <dayStartsAt amOrPm = "{3}"> 
                         <dayStartsHoursMinutes hours="{0}" minutes = "{1}"  seconds= "{2}" />
                         </dayStartsAt> 
-                     """.format(daystartson["hours"], daystartson["minutes"], daystartson["seconds"],
-                                daystartson["ampm"])
+                     """.format(
+                daystartson["hours"],
+                daystartson["minutes"],
+                daystartson["seconds"],
+                daystartson["ampm"],
+            )
 
         day_starts = ""
-        if sel_freq == 'weekly':
+        if sel_freq == "weekly":
             if daystartson is not None:
-                day_starts = """ weekDayStartsOn="{0}" """.format(week_starts_on[daystartson])
+                day_starts = f""" weekDayStartsOn="{week_starts_on[daystartson]}" """
             else:
-                day_starts = """ weekDayStartsOn="{0}" """.format(week_starts_on['Friday'])
+                day_starts = """ weekDayStartsOn="{0}" """.format(week_starts_on["Friday"])
 
         # monthStartsOn
-        if sel_freq == 'monthly':
+        if sel_freq == "monthly":
             if daystartson is not None:
-                day_starts = """ monthStartsOn="{0}" """.format(daystartson)
+                day_starts = f""" monthStartsOn="{daystartson}" """
             else:
-                day_starts = """ monthStartsOn="{}" """.format(1)
+                day_starts = f""" monthStartsOn="{1}" """
 
         library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
-        request_xml = str("""<App_CreateStoragePolicyCopyReq copyName="{0}">
+        request_xml = str(
+            """<App_CreateStoragePolicyCopyReq copyName="{0}">
                 <storagePolicyCopyInfo copyType="2" isDefault="0" isMirrorCopy="0" isSnapCopy="0" numberOfStreamsToCombine="1">
                     <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
                     <library _type_="9" libraryId="{3}" libraryName="{4}" />
                     <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
                     <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="100" retainBackupDataForDays="150" />
                     <startTime  timeValue = "{7}" />
-                    <selectiveCopyRules selectiveRule="{8}" {10} > {9} </selectiveCopyRules> """ + copyflags +
-                              """</storagePolicyCopyInfo>
-                          </App_CreateStoragePolicyCopyReq>""").format(copy_name, self.storage_policy_id,
-                                                                       self.storage_policy_name,
-                                                                       library_id, library_name, media_agent_id,
-                                                                       media_agent_name, backups_from,
-                                                                       selective_rule, dsostr, day_starts)
-        create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
+                    <selectiveCopyRules selectiveRule="{8}" {10} > {9} </selectiveCopyRules> """
+            + copyflags
+            + """</storagePolicyCopyInfo>
+                          </App_CreateStoragePolicyCopyReq>"""
+        ).format(
+            copy_name,
+            self.storage_policy_id,
+            self.storage_policy_name,
+            library_id,
+            library_name,
+            media_agent_id,
+            media_agent_name,
+            backups_from,
+            selective_rule,
+            dsostr,
+            day_starts,
+        )
+        create_copy_service = self._commcell_object._services["CREATE_STORAGE_POLICY_COPY"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_copy_service, request_xml)
+            "POST", create_copy_service, request_xml
+        )
 
         self.refresh()
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        if 'errorMessage' in response.json()['error']:
+                        if "errorMessage" in response.json()["error"]:
                             error_message = "Failed to create {0} Storage Policy copy with error \
-                            {1}".format(copy_name, str(response.json()['error']['errorMessage']))
+                            {1}".format(copy_name, str(response.json()["error"]["errorMessage"]))
                         else:
-                            error_message = "Failed to create {0} Storage Policy copy".format(
-                                copy_name
-                            )
-                        raise SDKException('Storage', '102', error_message)
+                            error_message = f"Failed to create {copy_name} Storage Policy copy"
+                        raise SDKException("Storage", "102", error_message)
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     @property
     def copies(self) -> Dict:
@@ -2080,7 +2110,6 @@ class StoragePolicy(object):
         """
         return self._copies
 
-
     @property
     def storage_policy_id(self) -> str:
         """Treats the storage policy id as a read-only attribute.
@@ -2090,7 +2119,6 @@ class StoragePolicy(object):
         """
         return self._storage_policy_id
 
-
     @property
     def name(self) -> str:
         """Returns the Storage Policy display name
@@ -2098,8 +2126,7 @@ class StoragePolicy(object):
         Returns:
             str: The display name of the storage policy.
         """
-        return self._storage_policy_properties['storagePolicy']['storagePolicyName']
-
+        return self._storage_policy_properties["storagePolicy"]["storagePolicyName"]
 
     @property
     def storage_policy_name(self) -> str:
@@ -2110,7 +2137,6 @@ class StoragePolicy(object):
         """
         return self._storage_policy_name
 
-
     @property
     def description(self) -> Optional[str]:
         """Returns the Storage Policy Description Field
@@ -2119,9 +2145,10 @@ class StoragePolicy(object):
             Optional[str]: The description of the storage policy, or None if not available.
         """
         if self._storage_policy_advanced_properties is None:
-            self._storage_policy_advanced_properties = self._get_storage_policy_advanced_properties()
-        return self._storage_policy_advanced_properties.get('policies',[{}])[0].get('description')
-
+            self._storage_policy_advanced_properties = (
+                self._get_storage_policy_advanced_properties()
+            )
+        return self._storage_policy_advanced_properties.get("policies", [{}])[0].get("description")
 
     def get_copy_precedence(self, copy_name: str) -> int:
         """returns the copy precedence value associated with the copy name
@@ -2140,13 +2167,9 @@ class StoragePolicy(object):
         """
         policy_copies = self.copies
         if policy_copies.get(copy_name):
-            if policy_copies[copy_name].get('copyPrecedence'):
-                return policy_copies[copy_name]['copyPrecedence']
-        raise SDKException(
-            'Storage',
-            '102',
-            'Failed to get copy precedence from policy')
-
+            if policy_copies[copy_name].get("copyPrecedence"):
+                return policy_copies[copy_name]["copyPrecedence"]
+        raise SDKException("Storage", "102", "Failed to get copy precedence from policy")
 
     def update_snapshot_options(self, **options: Dict[str, Union[str, int, bool, None]]) -> None:
         """
@@ -2213,10 +2236,10 @@ class StoragePolicy(object):
                 subclientName='subclient2'
             )
         """
-        enable_backup_copy = options['enable_backup_copy']
-        enable_snapshot_catalog = options['enable_snapshot_catalog']
+        enable_backup_copy = options["enable_backup_copy"]
+        enable_snapshot_catalog = options["enable_snapshot_catalog"]
 
-        if options['is_ocum']:
+        if options["is_ocum"]:
             if enable_backup_copy and enable_snapshot_catalog:
                 defferred_catalog_value = backup_copy_value = 16
             else:
@@ -2231,21 +2254,24 @@ class StoragePolicy(object):
             else:
                 defferred_catalog_value = backup_copy_value = 3
 
-        if options['source_copy_for_snap_to_tape'] is not None:
-            source_copy_for_snap_to_tape_id = self._copies[options['source_copy_for_snap_to_tape'].lower()]['copyId']
+        if options["source_copy_for_snap_to_tape"] is not None:
+            source_copy_for_snap_to_tape_id = self._copies[
+                options["source_copy_for_snap_to_tape"].lower()
+            ]["copyId"]
         else:
             source_copy_for_snap_to_tape_id = 0
-        if options['source_copy_for_snapshot_catalog'] is not None:
-            source_copy_for_snapshot_catalog_id = self._copies[options['source_copy_for_snapshot_catalog'].lower(
-            )]['copyId']
+        if options["source_copy_for_snapshot_catalog"] is not None:
+            source_copy_for_snapshot_catalog_id = self._copies[
+                options["source_copy_for_snapshot_catalog"].lower()
+            ]["copyId"]
         else:
             source_copy_for_snapshot_catalog_id = 0
 
-        selective_type = options.get('enable_selective_copy', 0)
+        selective_type = options.get("enable_selective_copy", 0)
 
-        update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
+        update_snapshot_tab_service = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
-        if options['disassociate_sc_from_backup_copy'] == True:
+        if options["disassociate_sc_from_backup_copy"] == True:
             disass_sc_xml = f"""
                                <archGroupToAppListWithExclude _type_="2">
            	                    <flags include="1"/>
@@ -2254,32 +2280,36 @@ class StoragePolicy(object):
            	                    <flags include="1"/>
                                </archGroupToAppListWithExclude>
                            <archGroupToAppListWithExclude _type_="7" 
-                           appName="{options['appName']}" applicationId="{options['applicationId']}"
-                                backupsetId="{options['backupsetId']}" backupsetName="{options['backupsetName']}" 
-                                clientId="{options['clientId']}" clientName="{options['clientName']}" instanceId="1" 
+                           appName="{options["appName"]}" applicationId="{options["applicationId"]}"
+                                backupsetId="{options["backupsetId"]}" backupsetName="{options["backupsetName"]}" 
+                                clientId="{options["clientId"]}" clientName="{options["clientName"]}" instanceId="1" 
                                 instanceName="DefaultInstanceName" 
-                                subclientId="{options['subclientId']}" subclientName="{options['subclientName']}">
+                                subclientId="{options["subclientId"]}" subclientName="{options["subclientName"]}">
            	                <flags exclude="1"/>
                            </archGroupToAppListWithExclude>"""
 
-            request_xml = f"""
+            request_xml = (
+                f"""
                         <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{defferred_catalog_value}" snapshotToTapeOperation="{backup_copy_value}">
                             <header localeId="0" userId="0" />
                             <snapshotToTapeProps archGroupId="{self.storage_policy_id}" calendarId="1" dayNumber="0" deferredDays="0"
                                 enable="{int(enable_backup_copy)}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
                                 sourceCopyId="{source_copy_for_snap_to_tape_id}" startTime="0" type="{selective_type}" > """.format(
-                                    defferred_catalog_value,
-                                    backup_copy_value,
-                                    self.storage_policy_id,
-                                    int(enable_backup_copy),
-                                    source_copy_for_snap_to_tape_id, selective_type) + \
-                          f"""{disass_sc_xml}
+                    defferred_catalog_value,
+                    backup_copy_value,
+                    self.storage_policy_id,
+                    int(enable_backup_copy),
+                    source_copy_for_snap_to_tape_id,
+                    selective_type,
+                )
+                + f"""{disass_sc_xml}
                             </snapshotToTapeProps>                           
                         </EVGui_SetSnapOpPropsReq>
                            """
+            )
 
-        elif options['disassociate_sc_from_backup_copy'] == False:
-            disass_sc_xml = f"""
+        elif options["disassociate_sc_from_backup_copy"] == False:
+            disass_sc_xml = """
                             <archGroupToAppListWithExclude _type_="2">
                        	                    <flags include="1"/>
                                            </archGroupToAppListWithExclude>
@@ -2287,61 +2317,55 @@ class StoragePolicy(object):
                        	                    <flags include="1"/>
                                            </archGroupToAppListWithExclude>"""
 
-            request_xml = """
-                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+            request_xml = (
+                f"""
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{defferred_catalog_value}" snapshotToTapeOperation="{backup_copy_value}">
                                            <header localeId="0" userId="0" />
-                                           <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                                               enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                                               sourceCopyId="{4}" startTime="0" type="{5}" > """.format(
-                        defferred_catalog_value,
-                        backup_copy_value, self.storage_policy_id,
-                        int(enable_backup_copy), source_copy_for_snap_to_tape_id, selective_type) + \
-                        f"""{disass_sc_xml}
+                                           <snapshotToTapeProps archGroupId="{self.storage_policy_id}" calendarId="1" dayNumber="0" deferredDays="0"
+                                               enable="{int(enable_backup_copy)}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                               sourceCopyId="{source_copy_for_snap_to_tape_id}" startTime="0" type="{selective_type}" > """
+                + f"""{disass_sc_xml}
                                         </snapshotToTapeProps>                                                                    
                                     </EVGui_SetSnapOpPropsReq>
                            """
-        elif options['disassociate_sc_from_backup_copy'] is None:
-            request_xml = """
-                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+            )
+        elif options["disassociate_sc_from_backup_copy"] is None:
+            request_xml = f"""
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{defferred_catalog_value}" snapshotToTapeOperation="{backup_copy_value}">
                                                <header localeId="0" userId="0" />
-                                               <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                                                   enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                                                   sourceCopyId="{4}" startTime="0" type="{7}" />
-                                               <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                                                   enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                                                   sourceCopyId="{6}" startTime="0" type="0" />
+                                               <snapshotToTapeProps archGroupId="{self.storage_policy_id}" calendarId="1" dayNumber="0" deferredDays="0"
+                                                   enable="{int(enable_backup_copy)}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                                   sourceCopyId="{source_copy_for_snap_to_tape_id}" startTime="0" type="{selective_type}" />
+                                               <deferredCatalogProps archGroupId="{self.storage_policy_id}" calendarId="1" dayNumber="0" deferredDays="0"
+                                                   enable="{int(enable_snapshot_catalog)}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                                   sourceCopyId="{source_copy_for_snapshot_catalog_id}" startTime="0" type="0" />
                                            </EVGui_SetSnapOpPropsReq>
-                               """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
-                                          int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                                          int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id,
-                                          selective_type)
-
+                               """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', update_snapshot_tab_service, request_xml
+            "POST", update_snapshot_tab_service, request_xml
         )
 
         self.refresh()
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 1:
-                        error_message = "Failed to Update {0} Storage Policy".format(
-                            self.storage_policy_name
+                        error_message = (
+                            f"Failed to Update {self.storage_policy_name} Storage Policy"
                         )
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def run_backup_copy(self) -> 'Job':
+    def run_backup_copy(self) -> "Job":
         """
         Runs the backup copy from Commcell for the given storage policy
 
@@ -2364,59 +2388,48 @@ class StoragePolicy(object):
         """
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "storagePolicyName": self.storage_policy_name
-                    }
-                ],
+                "associations": [{"storagePolicyName": self.storage_policy_name}],
                 "task": {
                     "initiatedFrom": 2,
                     "taskType": 1,
                     "policyType": 3,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4028
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4028},
                         "options": {
                             "adminOpts": {
-                                "snapToTapeOption": {
-                                    "allowMaximum": True,
-                                    "noofJobsToRun": 1
-                                }
+                                "snapToTapeOption": {"allowMaximum": True, "noofJobsToRun": 1}
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
-        backup_copy = self._commcell_object._services['CREATE_TASK']
+        backup_copy = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', backup_copy, request_json)
+            "POST", backup_copy, request_json
+        )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'Backup copy job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '106', o_str)
+                    o_str = f'Backup copy job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "106", o_str)
                 else:
-                    raise SDKException('Storage', '106', 'Failed to run the backup copy job')
+                    raise SDKException("Storage", "106", "Failed to run the backup copy job")
             else:
-                raise SDKException('Response', '106')
+                raise SDKException("Response", "106")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def modify_dynamic_stream_allocation(self, enable: bool = True) -> None:
         """
@@ -2426,18 +2439,18 @@ class StoragePolicy(object):
                     enable      (bool)  --   False - Disable DSA
                                              True - Enable DSA
         """
-        request_xml = '''<App_UpdateStoragePolicyReq>
+        request_xml = f"""<App_UpdateStoragePolicyReq>
                        <StoragePolicy>
-                           <storagePolicyName>{0}</storagePolicyName>
+                           <storagePolicyName>{self.storage_policy_name}</storagePolicyName>
                        </StoragePolicy>
                        <flag>
-                           <distributeDataEvenlyAmongStreams>{1}</distributeDataEvenlyAmongStreams>
+                           <distributeDataEvenlyAmongStreams>{int(enable)}</distributeDataEvenlyAmongStreams>
                        </flag>
                        </App_UpdateStoragePolicyReq>
-                       '''.format(self.storage_policy_name, int(enable))
+                       """
         self._commcell_object.qoperation_execute(request_xml)
 
-    def run_snapshot_cataloging(self) -> 'Job':
+    def run_snapshot_cataloging(self) -> "Job":
         """
         Runs the deferred catalog job from Commcell for the given storage policy
 
@@ -2459,68 +2472,58 @@ class StoragePolicy(object):
 
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "storagePolicyName": self.storage_policy_name
-                    }
-                ],
+                "associations": [{"storagePolicyName": self.storage_policy_name}],
                 "task": {
                     "taskType": 1,
                     "initiatedFrom": 2,
                     "policyType": 0,
-                    "taskFlags": {
-                        "isEdgeDrive": False,
-                        "disabled": False
-                    }
+                    "taskFlags": {"isEdgeDrive": False, "disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4043
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4043},
                         "options": {
                             "backupOpts": {
                                 "backupLevel": 2,
                                 "dataOpt": {
                                     "useCatalogServer": True,
-                                    "enforceTransactionLogUsage": False
-                                }
+                                    "enforceTransactionLogUsage": False,
+                                },
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
-        snapshot_catalog = self._commcell_object._services['CREATE_TASK']
+        snapshot_catalog = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', snapshot_catalog, request_json)
+            "POST", snapshot_catalog, request_json
+        )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'Deferred catalog job failed\nError: "{0}"'.format(
-                        error_message)
-                    raise SDKException('Storage', '107', o_str)
+                    o_str = f'Deferred catalog job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "107", o_str)
                 else:
-                    raise SDKException('Storage', '107', 'Failed to run the deferred catalog job')
+                    raise SDKException("Storage", "107", "Failed to run the deferred catalog job")
             else:
-                raise SDKException('Response', '107')
+                raise SDKException("Response", "107")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def storage_policy_properties(self) -> dict:
         """Returns the storage policy properties
 
-            dict - consists of storage policy properties
+        dict - consists of storage policy properties
         """
         return self._storage_policy_properties
 
@@ -2528,27 +2531,29 @@ class StoragePolicy(object):
     def storage_policy_advanced_properties(self) -> dict:
         """Returns the  storage policy advanced properties
 
-            dict - consists of storage policy advanced properties
+        dict - consists of storage policy advanced properties
         """
         if self._storage_policy_advanced_properties is None:
-            self._storage_policy_advanced_properties = self._get_storage_policy_advanced_properties()
+            self._storage_policy_advanced_properties = (
+                self._get_storage_policy_advanced_properties()
+            )
         return self._storage_policy_advanced_properties
 
     @property
     def library_name(self) -> str:
         """Treats the library name as a read-only attribute."""
-        primary_copy = self._storage_policy_properties.get('copy')
-        if 'library' in primary_copy[0]:
-            library = primary_copy[0].get('library', {})
-            return library.get('libraryName')
+        primary_copy = self._storage_policy_properties.get("copy")
+        if "library" in primary_copy[0]:
+            library = primary_copy[0].get("library", {})
+            return library.get("libraryName")
 
     @property
     def library_id(self) -> int:
         """Treats the library id as a read-only attribute."""
-        primary_copy = self._storage_policy_properties.get('copy')
-        if 'library' in primary_copy[0]:
-            library = primary_copy[0].get('library', {})
-            return library.get('libraryId')
+        primary_copy = self._storage_policy_properties.get("copy")
+        if "library" in primary_copy[0]:
+            library = primary_copy[0].get("library", {})
+            return library.get("libraryId")
 
     @property
     def aux_copies(self) -> list:
@@ -2559,7 +2564,7 @@ class StoragePolicy(object):
         """
         aux_copies = []
         for _copy, value in self.copies.items():
-            if not value['isSnapCopy'] and _copy != 'primary':
+            if not value["isSnapCopy"] and _copy != "primary":
                 aux_copies.append(_copy)
         return aux_copies
 
@@ -2572,49 +2577,56 @@ class StoragePolicy(object):
         """
         snap_copy = None
         for _copy, value in self.copies.items():
-            if value['isSnapCopy']:
+            if value["isSnapCopy"]:
                 snap_copy = _copy
         return snap_copy
 
-    def run_aux_copy(self, storage_policy_copy_name: str = None,
-                     media_agent: str = None, use_scale: bool = True, streams: int = 0,
-                     all_copies: bool = True, total_jobs_to_process: int = 1000, schedule_pattern: dict = None, **kwargs) -> 'Job':
+    def run_aux_copy(
+        self,
+        storage_policy_copy_name: str = None,
+        media_agent: str = None,
+        use_scale: bool = True,
+        streams: int = 0,
+        all_copies: bool = True,
+        total_jobs_to_process: int = 1000,
+        schedule_pattern: dict = None,
+        **kwargs,
+    ) -> "Job":
         """Runs the aux copy job from the commcell.
-            Args:
+        Args:
 
-                storage_policy_copy_name (str)  --  name of the storage policy copy
+            storage_policy_copy_name (str)  --  name of the storage policy copy
 
-                media_agent              (str)  --  name of the media agent
+            media_agent              (str)  --  name of the media agent
 
-                use_scale                (bool) --  use Scalable Resource Management (True/False)
+            use_scale                (bool) --  use Scalable Resource Management (True/False)
 
-                streams                  (int)  --  number of streams to use
+            streams                  (int)  --  number of streams to use
 
-                all_copies               (bool) -- run auxcopy job on all copies or select copy
-                                                   (True/False)
+            all_copies               (bool) -- run auxcopy job on all copies or select copy
+                                               (True/False)
 
-                total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
+            total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
 
-                **kwargs    --  dict of keyword arguments as follows:
-                ignore_dv_failed_jobs  (bool)  -- Ignore DV failed jobs
-                job_description     (str)      -- Description for Job
+            **kwargs    --  dict of keyword arguments as follows:
+            ignore_dv_failed_jobs  (bool)  -- Ignore DV failed jobs
+            job_description     (str)      -- Description for Job
 
-            Returns:
-                object - instance of the Job class for this aux copy job
+        Returns:
+            object - instance of the Job class for this aux copy job
 
-            Raises:
-                SDKException:
-                    if type of the  argument is not string
+        Raises:
+            SDKException:
+                if type of the  argument is not string
 
-                    if aux copy job failed
+                if aux copy job failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
-        if not (isinstance(total_jobs_to_process, int) and
-                isinstance(streams, int)):
-            raise SDKException('Storage', '101')
+        if not (isinstance(total_jobs_to_process, int) and isinstance(streams, int)):
+            raise SDKException("Storage", "101")
 
         use_max_streams = True
         if streams != 0:
@@ -2624,17 +2636,17 @@ class StoragePolicy(object):
             all_copies = False
 
             if not isinstance(storage_policy_copy_name, str):
-                raise SDKException('Storage', '101')
+                raise SDKException("Storage", "101")
             if media_agent and not isinstance(media_agent, str):
-                raise SDKException('Storage', '101')
+                raise SDKException("Storage", "101")
         else:
             if all_copies is False:
-                raise SDKException('Storage', '110')
+                raise SDKException("Storage", "110")
             storage_policy_copy_name = ""
             media_agent = ""
 
         ignore_dv_failed_jobs = False
-        if kwargs.get('ignore_dv_failed_jobs') is True:
+        if kwargs.get("ignore_dv_failed_jobs") is True:
             ignore_dv_failed_jobs = True
 
         request_json = {
@@ -2642,24 +2654,19 @@ class StoragePolicy(object):
                 "associations": [
                     {
                         "copyName": storage_policy_copy_name,
-                        "storagePolicyName": self.storage_policy_name
+                        "storagePolicyName": self.storage_policy_name,
                     }
                 ],
                 "task": {
                     "initiatedFrom": 2,
                     "taskType": 1,
                     "policyType": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4003
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4003},
                         "options": {
                             "backupOpts": {
                                 "mediaOpt": {
@@ -2669,52 +2676,50 @@ class StoragePolicy(object):
                                         "useScallableResourceManagement": use_scale,
                                         "totalJobsToProcess": total_jobs_to_process,
                                         "ignoreDataVerificationFailedJobs": ignore_dv_failed_jobs,
-                                        "allCopies": all_copies
+                                        "allCopies": all_copies,
                                     }
                                 }
                             },
-                            "commonOpts": {
-                                "jobDescription": kwargs.get('job_description', '')
-                            }
-                        }
+                            "commonOpts": {"jobDescription": kwargs.get("job_description", "")},
+                        },
                     }
-                ]
+                ],
             }
         }
         if media_agent:
-            request_json['taskInfo']['subTasks'][0]['options']['backupOpts']['mediaOpt']['auxcopyJobOption']['mediaAgent'] ={
-                "mediaAgentName": media_agent
-            }
+            request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"]["mediaOpt"][
+                "auxcopyJobOption"
+            ]["mediaAgent"] = {"mediaAgentName": media_agent}
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-        aux_copy = self._commcell_object._services['CREATE_TASK']
+        aux_copy = self._commcell_object._services["CREATE_TASK"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', aux_copy, request_json
+            "POST", aux_copy, request_json
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    o_str = f'Restore job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
 
                 elif "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()["taskId"])
 
                 else:
-                    raise SDKException('Storage', '102', 'Failed to run the aux copy job')
+                    raise SDKException("Storage", "102", "Failed to run the aux copy job")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Refresh the properties of the StoragePolicy."""
@@ -2733,20 +2738,22 @@ class StoragePolicy(object):
                     if type of input parameters is not string
         """
         if not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        request_xml = """
+        request_xml = f"""
         <App_SealSIDBStoreReq>
             <archiveGroupCopy>
-                <copyName>{0}</copyName>
-                <storagePolicyName>{1}</storagePolicyName>
+                <copyName>{copy_name}</copyName>
+                <storagePolicyName>{self.storage_policy_name}</storagePolicyName>
             </archiveGroupCopy>
         </App_SealSIDBStoreReq>
 
-        """.format(copy_name, self.storage_policy_name)
+        """
         self._commcell_object._qoperation_execute(request_xml)
 
-    def update_transactional_ddb(self, update_value: bool, copy_name: str, media_agent_name: str) -> None:
+    def update_transactional_ddb(
+        self, update_value: bool, copy_name: str, media_agent_name: str
+    ) -> None:
         """
         Updates TransactionalDDB option on the deduplication database
 
@@ -2760,72 +2767,80 @@ class StoragePolicy(object):
                     if type of input parameters is not string
         """
         if not (isinstance(copy_name, str) and isinstance(media_agent_name, str)):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        request_xml = """
+        request_xml = f"""
         <App_UpdateStoragePolicyCopyReq >
             <storagePolicyCopyInfo >
                 <StoragePolicyCopy>
-                    <copyName>{0}</copyName>
-                    <storagePolicyName>{1}</storagePolicyName>
+                    <copyName>{copy_name}</copyName>
+                    <storagePolicyName>{self.storage_policy_name}</storagePolicyName>
                 </StoragePolicyCopy>
                 <DDBPartitionInfo>
                     <maInfoList>
                         <mediaAgent>
-                            <mediaAgentName>{2}</mediaAgentName>
+                            <mediaAgentName>{media_agent_name}</mediaAgentName>
                         </mediaAgent>
                             </maInfoList>
                             <sidbStoreInfo>
                                 <sidbStoreFlags>
-                            <enableTransactionalDDB>{3}</enableTransactionalDDB>
+                            <enableTransactionalDDB>{int(update_value)}</enableTransactionalDDB>
                         </sidbStoreFlags>
                             </sidbStoreInfo>
                     </DDBPartitionInfo>
            </storagePolicyCopyInfo>
         </App_UpdateStoragePolicyCopyReq>
-        """.format(copy_name, self.storage_policy_name, media_agent_name, int(update_value))
+        """
 
         self._commcell_object._qoperation_execute(request_xml)
 
-    def create_dedupe_secondary_copy(self, copy_name: str, library_name: str,
-                                     media_agent_name: str, path: str, ddb_media_agent: str,
-                                     dash_full: bool = None,
-                                     source_side_disk_cache: bool = None,
-                                     software_compression: bool = None) -> None:
+    def create_dedupe_secondary_copy(
+        self,
+        copy_name: str,
+        library_name: str,
+        media_agent_name: str,
+        path: str,
+        ddb_media_agent: str,
+        dash_full: bool = None,
+        source_side_disk_cache: bool = None,
+        software_compression: bool = None,
+    ) -> None:
         """Creates Synchronous copy for this storage policy
 
-            Args:
-                copy_name               (str)   --  copy name to create
-                library_name            (str)   --  library name to be assigned
-                media_agent_name        (str)   --  media_agent to be assigned
-                path                    (str)   --  path where deduplication store is to be hosted
-                ddb_media_agent         (str)   --  media agent name on which deduplication store
-                                                    is to be hosted
-                dash_full               (bool)  --  enable DASH full on deduplication store (True/False)
-                                                    Default None
-                source_side_disk_cache  (bool)  -- enable source side disk cache (True/False)
-                                                    Default None
-                software_compression    (bool)  -- enable software compression (True/False)
-                                                    Default None
+        Args:
+            copy_name               (str)   --  copy name to create
+            library_name            (str)   --  library name to be assigned
+            media_agent_name        (str)   --  media_agent to be assigned
+            path                    (str)   --  path where deduplication store is to be hosted
+            ddb_media_agent         (str)   --  media agent name on which deduplication store
+                                                is to be hosted
+            dash_full               (bool)  --  enable DASH full on deduplication store (True/False)
+                                                Default None
+            source_side_disk_cache  (bool)  -- enable source side disk cache (True/False)
+                                                Default None
+            software_compression    (bool)  -- enable software compression (True/False)
+                                                Default None
 
-            Raises:
-                SDKException:
-                    if type of inputs in not string
+        Raises:
+            SDKException:
+                if type of inputs in not string
 
-                    if copy with given name already exists
+                if copy with given name already exists
 
-                    if failed to create copy
+                if failed to create copy
 
-                    if response received is empty
+                if response received is empty
 
-                    if response is not success
+                if response is not success
         """
-        if not (isinstance(copy_name, str) and
-                isinstance(library_name, str) and
-                isinstance(path, str) and
-                isinstance(ddb_media_agent, str) and
-                isinstance(media_agent_name, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_name, str)
+            and isinstance(library_name, str)
+            and isinstance(path, str)
+            and isinstance(ddb_media_agent, str)
+            and isinstance(media_agent_name, str)
+        ):
+            raise SDKException("Storage", "101")
 
         if dash_full is None:
             dash_full = "2"
@@ -2835,81 +2850,78 @@ class StoragePolicy(object):
             software_compression = "2"
 
         if self.has_copy(copy_name):
-            err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
-            raise SDKException('Storage', '102', err_msg)
+            err_msg = f'Storage Policy copy "{copy_name}" already exists.'
+            raise SDKException("Storage", "102", err_msg)
 
         library_id = self._commcell_object.disk_libraries.get(library_name).library_id
-        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]['id']
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name]["id"]
 
-        request_xml = """
-        <App_CreateStoragePolicyCopyReq copyName="{0}">
+        request_xml = f"""
+        <App_CreateStoragePolicyCopyReq copyName="{copy_name}">
             <storagePolicyCopyInfo copyType="0" isDefault="0">
-                <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
-                <library _type_="9" libraryId="{3}" libraryName="{4}" />
-                <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                <StoragePolicyCopy _type_="18" storagePolicyId="{self._storage_policy_id}" storagePolicyName="{self.storage_policy_name}" />
+                <library _type_="9" libraryId="{library_id}" libraryName="{library_name}" />
+                <mediaAgent _type_="11" mediaAgentId="{media_agent_id}" mediaAgentName="{media_agent_name}" />
                 <copyFlags auxCopyReencryptData="0" />
-                <dedupeFlags enableDeduplication="1" enableDASHFull="{9}" enableSourceSideDiskCache="{10}"/>
+                <dedupeFlags enableDeduplication="1" enableDASHFull="{int(dash_full)}" enableSourceSideDiskCache="{int(source_side_disk_cache)}"/>
                 <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
                 <DDBPartitionInfo>
                     <maInfoList>
-                        <mediaAgent mediaAgentName="{8}"/>
+                        <mediaAgent mediaAgentName="{ddb_media_agent}"/>
                         <subStoreList>
                             <diskFreeThresholdMB>5120</diskFreeThresholdMB>
                             <diskFreeWarningThreshholdMB>10240</diskFreeWarningThreshholdMB>
-                            <accessPath path="{7}"/>
+                            <accessPath path="{path}"/>
                         </subStoreList>
                     </maInfoList>
                     <sidbStoreInfo>
                         <operation>1</operation>
-                        <copyName>{0}</copyName>
-                        <sidbStoreFlags enableSoftwareCompression="{11}"/>
+                        <copyName>{copy_name}</copyName>
+                        <sidbStoreFlags enableSoftwareCompression="{int(software_compression)}"/>
                     </sidbStoreInfo>
                 </DDBPartitionInfo>
 
             </storagePolicyCopyInfo>
         </App_CreateStoragePolicyCopyReq>
-        """.format(copy_name, self._storage_policy_id, self.storage_policy_name,
-                   library_id, library_name, media_agent_id, media_agent_name,
-                   path, ddb_media_agent, int(dash_full),
-                   int(source_side_disk_cache), int(software_compression))
+        """
 
-        create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
+        create_copy_service = self._commcell_object._services["CREATE_STORAGE_POLICY_COPY"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_copy_service, request_xml
+            "POST", create_copy_service, request_xml
         )
 
         self.refresh()
 
         if flag:
             if response.json():
-                if 'error' in response.json():
-                    error_code = int(response.json()['error']['errorCode'])
+                if "error" in response.json():
+                    error_code = int(response.json()["error"]["errorCode"])
                     if error_code != 0:
-                        if 'errorMessage' in response.json()['error']:
+                        if "errorMessage" in response.json()["error"]:
                             error_message = "Failed to create {0} Storage Policy copy with error \
-                            {1}".format(copy_name, str(response.json()['error']['errorMessage']))
+                            {1}".format(copy_name, str(response.json()["error"]["errorMessage"]))
                         else:
-                            error_message = "Failed to create {0} Storage Policy copy".format(
-                                copy_name
-                            )
+                            error_message = f"Failed to create {copy_name} Storage Policy copy"
 
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def run_ddb_verification(self,
-                             copy_name: str,
-                             ver_type: str,
-                             ddb_ver_level: str,
-                             use_scalable: bool = True,
-                             orphan_chunk_listing: bool = False) -> object:
+    def run_ddb_verification(
+        self,
+        copy_name: str,
+        ver_type: str,
+        ddb_ver_level: str,
+        use_scalable: bool = True,
+        orphan_chunk_listing: bool = False,
+    ) -> object:
         """Runs DDB verification job
 
         Args:
@@ -2943,32 +2955,31 @@ class StoragePolicy(object):
             >>> storage_policy.run_ddb_verification(copy_name='MyCopy', ver_type='Full', ddb_ver_level='DDB_VERIFICATION')
             >>> storage_policy.run_ddb_verification(copy_name='MyCopy', ver_type='Incremental', ddb_ver_level='DDB_DEFRAGMENTATION', orphan_chunk_listing=True)
         """
-        if not (isinstance(copy_name, str) and
-                isinstance(ver_type, str) and
-                isinstance(ddb_ver_level, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_name, str)
+            and isinstance(ver_type, str)
+            and isinstance(ddb_ver_level, str)
+        ):
+            raise SDKException("Storage", "101")
         run_defrag = False
-        if ddb_ver_level == 'DDB_DEFRAGMENTATION':
+        if ddb_ver_level == "DDB_DEFRAGMENTATION":
             run_defrag = True
         request = {
             "taskInfo": {
                 "associations": [
-                    {
-                        "copyName": copy_name, "storagePolicyName": self.storage_policy_name
-                    }
-                ], "task": {
+                    {"copyName": copy_name, "storagePolicyName": self.storage_policy_name}
+                ],
+                "task": {
                     "taskType": 1,
                     "initiatedFrom": 1,
                     "policyType": 0,
                     "taskId": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
-                }, "subTasks": [
+                    "taskFlags": {"disabled": False},
+                },
+                "subTasks": [
                     {
-                        "subTaskOperation": 1, "subTask": {
-                            "subTaskType": 1, "operationType": 4007
-                        },
+                        "subTaskOperation": 1,
+                        "subTask": {"subTaskType": 1, "operationType": 4007},
                         "options": {
                             "backupOpts": {
                                 "mediaOpt": {
@@ -2977,51 +2988,57 @@ class StoragePolicy(object):
                                         "allCopies": True,
                                         "useMaximumStreams": True,
                                         "useScallableResourceManagement": use_scalable,
-                                        "mediaAgent": {
-                                            "mediaAgentName": ""
-                                        }
+                                        "mediaAgent": {"mediaAgentName": ""},
                                     }
                                 }
-                            }, "adminOpts": {
+                            },
+                            "adminOpts": {
                                 "archiveCheckOption": {
                                     "ddbVerificationLevel": ddb_ver_level,
                                     "jobsToVerify": 0,
                                     "allCopies": True,
                                     "backupLevel": ver_type,
                                     "ocl": orphan_chunk_listing,
-                                    "runDefrag": run_defrag
+                                    "runDefrag": run_defrag,
                                 }
-                            }
-                        }
+                            },
+                        },
                     }
-                ]
+                ],
             }
         }
-        data_verf = self._commcell_object._services['CREATE_TASK']
+        data_verf = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', data_verf, request
+            "POST", data_verf, request
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'DDB verification job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    o_str = f'DDB verification job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
                 else:
-                    raise SDKException('Storage', '109')
+                    raise SDKException("Storage", "109")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def run_data_verification(self, media_agent_name: str = '', copy_name: str = '', streams: int = 0,
-                              jobs_to_verify: str = 'NEW', use_scalable: bool = True, schedule_pattern: object = None, **kwargs) -> object:
+    def run_data_verification(
+        self,
+        media_agent_name: str = "",
+        copy_name: str = "",
+        streams: int = 0,
+        jobs_to_verify: str = "NEW",
+        use_scalable: bool = True,
+        schedule_pattern: object = None,
+        **kwargs,
+    ) -> object:
         """Runs Data verification job
 
         Args:
@@ -3055,33 +3072,31 @@ class StoragePolicy(object):
             >>> storage_policy.run_data_verification(media_agent_name='MyMediaAgent', copy_name='MyCopy', streams=5, jobs_to_verify='NEW')
             >>> storage_policy.run_data_verification(copy_name='MyCopy', jobs_to_verify='ALL', job_description='Verify all jobs')
         """
-        if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
-                and isinstance(media_agent_name, str) and isinstance(streams, int)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_name, str)
+            and isinstance(jobs_to_verify, str)
+            and isinstance(media_agent_name, str)
+            and isinstance(streams, int)
+        ):
+            raise SDKException("Storage", "101")
 
-        if jobs_to_verify.upper() == 'NEW':
-            jobs_to_verify = 'NEWLY_AVAILABLE'
-        elif jobs_to_verify.upper() == 'VERF_EXPIRED':
-            jobs_to_verify = 'VERIFICATION_EXP'
-        elif jobs_to_verify.upper() == 'ALL':
-            jobs_to_verify = 'BOTH_NEWLY_AVAILABLE_AND_VERIFICATION_EXP'
+        if jobs_to_verify.upper() == "NEW":
+            jobs_to_verify = "NEWLY_AVAILABLE"
+        elif jobs_to_verify.upper() == "VERF_EXPIRED":
+            jobs_to_verify = "VERIFICATION_EXP"
+        elif jobs_to_verify.upper() == "ALL":
+            jobs_to_verify = "BOTH_NEWLY_AVAILABLE_AND_VERIFICATION_EXP"
 
         request = {
             "taskInfo": {
                 "associations": [
-                    {
-                        "copyName": copy_name,
-                        "storagePolicyName": self.storage_policy_name
-                    }
+                    {"copyName": copy_name, "storagePolicyName": self.storage_policy_name}
                 ],
                 "task": {},
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4007
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4007},
                         "options": {
                             "backupOpts": {
                                 "mediaOpt": {
@@ -3089,9 +3104,7 @@ class StoragePolicy(object):
                                         "maxNumberOfStreams": streams,
                                         "useMaximumStreams": not bool(streams),
                                         "useScallableResourceManagement": use_scalable,
-                                        "mediaAgent": {
-                                            "mediaAgentName": media_agent_name
-                                        }
+                                        "mediaAgent": {"mediaAgentName": media_agent_name},
                                     }
                                 }
                             },
@@ -3100,12 +3113,10 @@ class StoragePolicy(object):
                                     "jobsToVerify": jobs_to_verify,
                                 }
                             },
-                            "commonOpts": {
-                                "jobDescription": kwargs.get('job_description','')
-                            }
-                        }
+                            "commonOpts": {"jobDescription": kwargs.get("job_description", "")},
+                        },
                     }
-                ]
+                ],
             }
         }
 
@@ -3113,36 +3124,37 @@ class StoragePolicy(object):
             request["taskInfo"]["task"] = {"taskType": 2}
             request = SchedulePattern().create_schedule(request, schedule_pattern)
 
-        data_verf = self._commcell_object._services['CREATE_TASK']
+        data_verf = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', data_verf, request
+            "POST", data_verf, request
         )
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Data verification Request failed. Error: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Data verification Request failed. Error: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
                 elif "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()["taskId"])
                 else:
-                    raise SDKException('Storage', '109')
+                    raise SDKException("Storage", "109")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def move_dedupe_store(self,
-                          copy_name: str,
-                          dest_path: str,
-                          src_path: str,
-                          dest_media_agent: str,
-                          src_media_agent: str,
-                          config_only: bool = False) -> 'Job':
+    def move_dedupe_store(
+        self,
+        copy_name: str,
+        dest_path: str,
+        src_path: str,
+        dest_media_agent: str,
+        src_media_agent: str,
+        config_only: bool = False,
+    ) -> "Job":
         """
         Moves a deduplication store
 
@@ -3177,83 +3189,79 @@ class StoragePolicy(object):
             >>> storage_policy.move_dedupe_store(copy_name='MyCopy', dest_path='/new/path', src_path='/old/path', dest_media_agent='DestMA', src_media_agent='SrcMA')
             >>> storage_policy.move_dedupe_store(copy_name='MyCopy', dest_path='/new/path', src_path='/old/path', dest_media_agent='DestMA', src_media_agent='SrcMA', config_only=True)
         """
-        if not (isinstance(copy_name, str) and
-                isinstance(dest_path, str) and
-                isinstance(src_path, str) and
-                isinstance(dest_media_agent, str) and
-                isinstance(src_media_agent, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_name, str)
+            and isinstance(dest_path, str)
+            and isinstance(src_path, str)
+            and isinstance(dest_media_agent, str)
+            and isinstance(src_media_agent, str)
+        ):
+            raise SDKException("Storage", "101")
 
         request = {
             "taskInfo": {
                 "associations": [
-                    {
-                        "copyName": copy_name, "storagePolicyName": self.storage_policy_name
-                    }
-                ], "task": {
+                    {"copyName": copy_name, "storagePolicyName": self.storage_policy_name}
+                ],
+                "task": {
                     "taskType": 1,
                     "initiatedFrom": 1,
                     "policyType": 0,
                     "taskId": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
-                }, "subTasks": [
+                    "taskFlags": {"disabled": False},
+                },
+                "subTasks": [
                     {
-                        "subTaskOperation": 1, "subTask": {
-                            "subTaskType": 1, "operationType": 5013
-                        }, "options": {
+                        "subTaskOperation": 1,
+                        "subTask": {"subTaskType": 1, "operationType": 5013},
+                        "options": {
                             "adminOpts": {
                                 "libraryOption": {
-                                    "operation": 20, "ddbMoveOption": {
-                                        "flags": 2, "subStoreList": [
+                                    "operation": 20,
+                                    "ddbMoveOption": {
+                                        "flags": 2,
+                                        "subStoreList": [
                                             {
-                                                    "srcPath": src_path,
-                                                    "changeOnlyDB": config_only,
-                                                    "destPath": dest_path,
-                                                    "destMediaAgent": {
-                                                        "name": dest_media_agent
-                                                    }, "srcMediaAgent": {
-                                                        "name": src_media_agent
-                                                    }
+                                                "srcPath": src_path,
+                                                "changeOnlyDB": config_only,
+                                                "destPath": dest_path,
+                                                "destMediaAgent": {"name": dest_media_agent},
+                                                "srcMediaAgent": {"name": src_media_agent},
                                             }
-                                        ]
-                                    }
+                                        ],
+                                    },
                                 }
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
-        ddb_move = self._commcell_object._services['CREATE_TASK']
+        ddb_move = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', ddb_move, request
+            "POST", ddb_move, request
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    o_str = f'DDB move job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
                 else:
-                    raise SDKException('Storage', '108')
+                    raise SDKException("Storage", "108")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def add_ddb_partition(self,
-                          copy_id: str,
-                          sidb_store_id: str,
-                          sidb_new_path: str,
-                          media_agent: str) -> None:
+    def add_ddb_partition(
+        self, copy_id: str, sidb_store_id: str, sidb_new_path: str, media_agent: str
+    ) -> None:
         """
         Adds a new DDB partition
         Args:
@@ -3272,32 +3280,32 @@ class StoragePolicy(object):
         Usage:
             >>> storage_policy.add_ddb_partition(copy_id='123', sidb_store_id='456', sidb_new_path='/new/path', media_agent='MyMediaAgent')
         """
-        if not (isinstance(copy_id, str) and
-                isinstance(sidb_store_id, str) and
-                isinstance(sidb_new_path, str) and
-                isinstance(media_agent, str)):
-            raise SDKException('Storage', '101')
+        if not (
+            isinstance(copy_id, str)
+            and isinstance(sidb_store_id, str)
+            and isinstance(sidb_new_path, str)
+            and isinstance(media_agent, str)
+        ):
+            raise SDKException("Storage", "101")
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
         elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
-        request_xml = """
-        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15">
-        <SIDBStore SIDBStoreId="{1}"/>
+        request_xml = f"""
+        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{copy_id}" operation="15">
+        <SIDBStore SIDBStoreId="{sidb_store_id}"/>
         <dedupconfigItem commCellId="0">
-        <maInfoList><clientInfo id="{2}" name="{3}"/>
-        <subStoreList><accessPath path="{4}"/>
+        <maInfoList><clientInfo id="{media_agent.media_agent_id}" name="{media_agent.media_agent_name}"/>
+        <subStoreList><accessPath path="{sidb_new_path}"/>
         </subStoreList></maInfoList></dedupconfigItem>
         </EVGui_ParallelDedupConfigReq>
 
-        """.format(copy_id, sidb_store_id, media_agent.media_agent_id,
-                   media_agent.media_agent_name, sidb_new_path)
+        """
         self._commcell_object._qoperation_execute(request_xml)
 
-
-    def get_copy(self, copy_name: str) -> 'StoragePolicyCopy':
+    def get_copy(self, copy_name: str) -> "StoragePolicyCopy":
         """Returns a storage policy copy object if copy exists
 
         Args:
@@ -3316,17 +3324,14 @@ class StoragePolicy(object):
             >>> copy = storage_policy.get_copy(copy_name='MyCopy')
         """
         if not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if self.has_copy(copy_name):
             return StoragePolicyCopy(self._commcell_object, self.storage_policy_name, copy_name)
         else:
-            raise SDKException(
-                'Storage', '102', 'No copy exists with name: {0}'.format(copy_name)
-            )
+            raise SDKException("Storage", "102", f"No copy exists with name: {copy_name}")
 
-
-    def get_primary_copy(self) -> 'StoragePolicyCopy':
+    def get_primary_copy(self) -> "StoragePolicyCopy":
         """Returns the primary copy of the storage policy
 
         Returns:
@@ -3341,13 +3346,12 @@ class StoragePolicy(object):
         """
 
         for copy_name, copy_info in self.copies.items():
-            if copy_info['isDefault']:
+            if copy_info["isDefault"]:
                 return self.get_copy(copy_name)
 
-        raise SDKException('Storage', '102', 'Unable to find a primary copy in the storage policy')
+        raise SDKException("Storage", "102", "Unable to find a primary copy in the storage policy")
 
-
-    def get_secondary_copies(self) -> List['StoragePolicyCopy']:
+    def get_secondary_copies(self) -> List["StoragePolicyCopy"]:
         """Returns all the secondary copies in the storage policy sorted by copy precedence
 
         Returns:
@@ -3357,16 +3361,19 @@ class StoragePolicy(object):
             >>> secondary_copies = storage_policy.get_secondary_copies()
         """
 
-        sorted_copies = sorted(self.copies.items(), key=lambda x: x[1]['copyPrecedence'])  # Sort by copy precedence
+        sorted_copies = sorted(
+            self.copies.items(), key=lambda x: x[1]["copyPrecedence"]
+        )  # Sort by copy precedence
         result = []
 
         for copy_name, copy_info in sorted_copies:
-            if not copy_info['isDefault'] and not copy_info['isSnapCopy']:  # Skip primary copy and snap primary copies
+            if (
+                not copy_info["isDefault"] and not copy_info["isSnapCopy"]
+            ):  # Skip primary copy and snap primary copies
                 copy_obj = self.get_copy(copy_name)
                 result.append(copy_obj)
 
         return result
-
 
     def delete_job(self, job_id: str, commcell_id: str = 2) -> None:
         """Deletes a job on Storage Policy
@@ -3385,9 +3392,9 @@ class StoragePolicy(object):
         """
 
         if not isinstance(job_id, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        job_list_tag = ''
+        job_list_tag = ""
         for copy_name, copy_info in self.copies.items():
             job_list_tag += f"""<jobList appType="" commCellId="{commcell_id}" jobId="{job_id}">
             <copyInfo copyName="{copy_name}" storagePolicyName="{self.storage_policy_name}"/></jobList>"""
@@ -3399,8 +3406,9 @@ class StoragePolicy(object):
 
         self._commcell_object._qoperation_execute(request_xml)
 
-
-    def mark_for_recovery(self, store_id: str, sub_store_id: str, media_agent_name: str, dedupe_path: str) -> None:
+    def mark_for_recovery(
+        self, store_id: str, sub_store_id: str, media_agent_name: str, dedupe_path: str
+    ) -> None:
         """Marks Deduplication store for recovery
 
         Args:
@@ -3416,43 +3424,50 @@ class StoragePolicy(object):
             >>> storage_policy.mark_for_recovery(store_id='123', sub_store_id='456', media_agent_name='MyMediaAgent', dedupe_path='/dedupe/path')
         """
 
-        request_xml = """
-                <EVGui_IdxSIDBSubStoreOpReq><info SIDBStoreId="{0}" SubStoreId="{1}" opType="1" path="{3}">
-                <mediaAgent name="{2}"/>
+        request_xml = f"""
+                <EVGui_IdxSIDBSubStoreOpReq><info SIDBStoreId="{store_id}" SubStoreId="{sub_store_id}" opType="1" path="{dedupe_path}">
+                <mediaAgent name="{media_agent_name}"/>
                 </info>
                 </EVGui_IdxSIDBSubStoreOpReq>
-                """.format(store_id, sub_store_id, media_agent_name, dedupe_path)
+                """
         self._commcell_object._qoperation_execute(request_xml)
 
-    def run_recon(self, copy_name: str, sp_name: str, store_id: str, full_reconstruction: int = 0, use_scalable_resource: str = 'false') -> None:
+    def run_recon(
+        self,
+        copy_name: str,
+        sp_name: str,
+        store_id: str,
+        full_reconstruction: int = 0,
+        use_scalable_resource: str = "false",
+    ) -> None:
         """Runs non-mem DB Reconstruction job
 
-            Args:
-               copy_name             (str): name of the storage policy copy
-               sp_name               (str): name of the storage policy
-               store_id              (str): SIDB store id associated with the copy
-               full_reconstruction   (int): flag to enable full reconstruction job
-               use_scalable_resource (str): to enable scalable resources
+        Args:
+           copy_name             (str): name of the storage policy copy
+           sp_name               (str): name of the storage policy
+           store_id              (str): SIDB store id associated with the copy
+           full_reconstruction   (int): flag to enable full reconstruction job
+           use_scalable_resource (str): to enable scalable resources
 
-            Returns:
-                dict: JSON response from the API if the request was successful.
+        Returns:
+            dict: JSON response from the API if the request was successful.
 
-            Usage:
-                storage_policy.run_recon(copy_name='copy1', sp_name='sp1', store_id='123')
-                storage_policy.run_recon(copy_name='copy2', sp_name='sp2', store_id='456', full_reconstruction=1, use_scalable_resource='true')
+        Usage:
+            storage_policy.run_recon(copy_name='copy1', sp_name='sp1', store_id='123')
+            storage_policy.run_recon(copy_name='copy2', sp_name='sp2', store_id='456', full_reconstruction=1, use_scalable_resource='true')
         """
-        request_xml = """
+        request_xml = f"""
         <TMMsg_DedupSyncTaskReq flags="0">
             <taskInfo><associations _type_="0" appName="" applicationId="0" backupsetId="0" backupsetName=""
-            clientId="0" clientName="" clientSidePackage="1" commCellId="0" consumeLicense="1" copyName="{0}"
-            instanceId="1" instanceName="" srmReportSet="0" srmReportType="0" storagePolicyName="{1}"
+            clientId="0" clientName="" clientSidePackage="1" commCellId="0" consumeLicense="1" copyName="{copy_name}"
+            instanceId="1" instanceName="" srmReportSet="0" srmReportType="0" storagePolicyName="{sp_name}"
             subclientId="0" subclientName="" type="0"/>
             <subTasks>
                 <options>
                     <adminOpts>
                         <contentIndexingOption subClientBasedAnalytics="0"/>
-                        <dedupDBSyncOption SIDBStoreId="{2}"/>
-                        <reconstructDedupDBOption allowMaximum="0" flags="{4}" noOfStreams="0" useScallableResourceManagement="{3}">
+                        <dedupDBSyncOption SIDBStoreId="{store_id}"/>
+                        <reconstructDedupDBOption allowMaximum="0" flags="{full_reconstruction}" noOfStreams="0" useScallableResourceManagement="{use_scalable_resource}">
                         <mediaAgent _type_="11" mediaAgentId="0" mediaAgentName="&lt;ANY MEDIAAGENT>"/>
                         </reconstructDedupDBOption>
                     </adminOpts>
@@ -3467,17 +3482,16 @@ class StoragePolicy(object):
             </task>
             </taskInfo>
         </TMMsg_DedupSyncTaskReq>
-        """.format(copy_name, sp_name, store_id, use_scalable_resource, full_reconstruction)
+        """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_xml
         )
 
         if flag:
             if response.json():
                 return response.json()
 
-
-    def reassociate_all_subclients(self, dest_storage_policy_name: str = 'CV_DEFAULT') -> None:
+    def reassociate_all_subclients(self, dest_storage_policy_name: str = "CV_DEFAULT") -> None:
         """Reassociates all subclients associated to Storage Policy
 
         Args:
@@ -3496,201 +3510,168 @@ class StoragePolicy(object):
         request_json = {
             "App_ReassociateStoragePolicyReq": {
                 "forceNextBkpToFull": True,
-                "newStoragePolicy": {
-                    "storagePolicyName": dest_storage_policy_name
-                },
-                "currentStoragePolicy": {
-                    "storagePolicyName": self.storage_policy_name
-                }
+                "newStoragePolicy": {"storagePolicyName": dest_storage_policy_name},
+                "currentStoragePolicy": {"storagePolicyName": self.storage_policy_name},
             }
         }
-        reassociate_subclients = self._commcell_object._services['EXECUTE_QCOMMAND']
+        reassociate_subclients = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', reassociate_subclients, request_json
+            "POST", reassociate_subclients, request_json
         )
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = int(response.json()['errorCode'])
+                if "errorCode" in response.json():
+                    error_code = int(response.json()["errorCode"])
                     if error_code != 0:
                         error_message = "Failed to Reassociate the Subclients"
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
-
 
     def start_over(self) -> None:
         """performs a start over operation on the specified storage policy/gdsp
 
-            Raises:
-                Exception: if the policy is a dependent policy.
-                SDKException: if response is bad/ flag is false
+        Raises:
+            Exception: if the policy is a dependent policy.
+            SDKException: if response is bad/ flag is false
 
-            Usage:
-                storage_policy.start_over()
+        Usage:
+            storage_policy.start_over()
         """
-        dependent_flag = self.storage_policy_properties["copy"][0]["dedupeFlags"].get("useGlobalDedupStore", 0)
+        dependent_flag = self.storage_policy_properties["copy"][0]["dedupeFlags"].get(
+            "useGlobalDedupStore", 0
+        )
         if dependent_flag == 1:
             raise Exception("Dependent policy cannot be started over ...")
 
         request = {
             "MediaManager_MMStartOverReq": {
-                    "bSealDDB": True,
-                    "storagePolicy": {
-                        "storagePolicyName": self.storage_policy_name
-                    }
-                }
+                "bSealDDB": True,
+                "storagePolicy": {"storagePolicyName": self.storage_policy_name},
             }
+        }
 
-        startover = self._commcell_object._services['EXECUTE_QCOMMAND']
+        startover = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', startover, request
+            "POST", startover, request
         )
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = int(response.json()['errorCode'])
+                if "errorCode" in response.json():
+                    error_code = int(response.json()["errorCode"])
                     if error_code != 0:
                         error_message = "Failed to Start Over"
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
-
 
     def run_data_forecast(self, **kwargs: dict) -> None:
         """runs data forecast and retention report generation operation
 
-            Args:
-                **kwargs (dict): dict of keyword arguments as follows:
-                    localeName (str): localeName for report [defaults to "en-us"]
+        Args:
+            **kwargs (dict): dict of keyword arguments as follows:
+                localeName (str): localeName for report [defaults to "en-us"]
 
-            Raises:
-                SDKException: if response is bad/ flag is false
+        Raises:
+            SDKException: if response is bad/ flag is false
 
-            Returns:
-                Job: Returns the Job object if the data forecast was successfully started.
+        Returns:
+            Job: Returns the Job object if the data forecast was successfully started.
 
-            Usage:
-                storage_policy.run_data_forecast()
-                storage_policy.run_data_forecast(localeName='fr-CA')
+        Usage:
+            storage_policy.run_data_forecast()
+            storage_policy.run_data_forecast(localeName='fr-CA')
         """
         request = {
-                    "processinginstructioninfo": {},
-                    "taskInfo": {
-                        "task": {
-                            "taskType": 1,
-                            "initiatedFrom": 2,
-                            "taskFlags": {
-                                "disabled": False
-                            }
-                        },
-                        "appGroup": {},
-                        "subTasks": [
-                            {
-                                "subTaskOperation": 1,
-                                "subTask": {
-                                    "subTaskName": "",
-                                    "subTaskType": 1,
-                                    "operationType": 4004
-                                },
-                                "options": {
-                                    "adminOpts": {
-                                        "reportOption": {
-                                            "showHiddenStoragePolicies": False,
-                                            "showGlobalStoragePolicies": False,
-                                            "storagePolicyCopyList": [
-                                                {
-                                                    "storagePolicyName": self.storage_policy_name
-                                                }
-                                            ],
-                                            "mediaInfoReport": {
-                                                "mediaLocIn": True,
-                                                "mediaLocOut": True
-                                            },
-                                            "commonOpt": {
-                                                "dateFormat": "mm/dd/yyyy",
-                                                "overrideDateTimeFormat": 0,
-                                                "reportType": 7738,
-                                                "summaryOnly": False,
-                                                "reportCustomName": "",
-                                                "timeFormat": "hh:mm:ss am/pm",
-                                                "onCS": True,
-                                                "locale": {
-                                                    "country": "English",
-                                                    "language": "UnitedStates",
-                                                    "localeName": kwargs.get("localeName", "en-us")
-                                                },
-                                                "outputFormat": {
-                                                    "outputType": 1,
-                                                    "isNetworkDrive": False
-                                                }
-                                            },
-                                            "computerSelectionList": {
-                                                "includeAll": True
-                                            },
-                                            "jobSummaryReport": {
-                                                "subclientFilter": False
-                                            },
-                                            "dataRetentionForecastReport": {
-                                                "pruneData": True,
-                                                "retainedBeyondBasicRet": False,
-                                                "forecastDays": 0,
-                                                "unPrunableData": True,
-                                                "sortByOption": 2
-                                            },
-                                            "agentList": [
-                                                {
-                                                    "type": 0,
-                                                    "flags": {
-                                                        "include": True
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    }
+            "processinginstructioninfo": {},
+            "taskInfo": {
+                "task": {"taskType": 1, "initiatedFrom": 2, "taskFlags": {"disabled": False}},
+                "appGroup": {},
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {"subTaskName": "", "subTaskType": 1, "operationType": 4004},
+                        "options": {
+                            "adminOpts": {
+                                "reportOption": {
+                                    "showHiddenStoragePolicies": False,
+                                    "showGlobalStoragePolicies": False,
+                                    "storagePolicyCopyList": [
+                                        {"storagePolicyName": self.storage_policy_name}
+                                    ],
+                                    "mediaInfoReport": {"mediaLocIn": True, "mediaLocOut": True},
+                                    "commonOpt": {
+                                        "dateFormat": "mm/dd/yyyy",
+                                        "overrideDateTimeFormat": 0,
+                                        "reportType": 7738,
+                                        "summaryOnly": False,
+                                        "reportCustomName": "",
+                                        "timeFormat": "hh:mm:ss am/pm",
+                                        "onCS": True,
+                                        "locale": {
+                                            "country": "English",
+                                            "language": "UnitedStates",
+                                            "localeName": kwargs.get("localeName", "en-us"),
+                                        },
+                                        "outputFormat": {"outputType": 1, "isNetworkDrive": False},
+                                    },
+                                    "computerSelectionList": {"includeAll": True},
+                                    "jobSummaryReport": {"subclientFilter": False},
+                                    "dataRetentionForecastReport": {
+                                        "pruneData": True,
+                                        "retainedBeyondBasicRet": False,
+                                        "forecastDays": 0,
+                                        "unPrunableData": True,
+                                        "sortByOption": 2,
+                                    },
+                                    "agentList": [{"type": 0, "flags": {"include": True}}],
                                 }
                             }
-                        ]
+                        },
                     }
-                }
+                ],
+            },
+        }
 
-        forecast = self._commcell_object._services['CREATE_TASK']
+        forecast = self._commcell_object._services["CREATE_TASK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', forecast, request)
+            "POST", forecast, request
+        )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'Failed to Run Data Forecast\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    o_str = f'Failed to Run Data Forecast\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
                 else:
-                    raise SDKException('Storage', '108')
+                    raise SDKException("Storage", "108")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-class StoragePolicyCopy(object):
+
+class StoragePolicyCopy:
     """Class for performing storage policy copy operations for a specific storage policy copy.
 
     Attributes:
@@ -3718,17 +3699,23 @@ class StoragePolicyCopy(object):
         sp_copy = StoragePolicyCopy(commcell_object, storage_policy, copy_name)
     """
 
-    def __init__(self, commcell_object: 'Commcell', storage_policy: Union[str, 'StoragePolicy'], copy_name: str, copy_id: str = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        storage_policy: Union[str, "StoragePolicy"],
+        copy_name: str,
+        copy_id: str = None,
+    ) -> None:
         """Initialise the Storage Policy Copy class instance.
 
-            Args:
-                commcell_object (object): instance of the Commcell class
-                storage_policy (str/object): storage policy to which copy is associated with
-                copy_name (str): copy name
-                copy_id (str, optional): copy ID. Defaults to None
+        Args:
+            commcell_object (object): instance of the Commcell class
+            storage_policy (str/object): storage policy to which copy is associated with
+            copy_name (str): copy name
+            copy_id (str, optional): copy ID. Defaults to None
 
-            Returns:
-                None
+        Returns:
+            None
 
         """
         self._copy_name = copy_name.lower()
@@ -3751,11 +3738,12 @@ class StoragePolicyCopy(object):
             self.copy_id = str(self.get_copy_id())
 
         self._copy_properties = None
-        self._STORAGE_POLICY_COPY = self._services['STORAGE_POLICY_COPY'] % (
-            self.storage_policy_id, self.copy_id)
-        self._V4_PLAN_COPY_JOBS = self._services['V4_PLAN_BACKUPDESTINATION_JOBS'] % (self.copy_id)
+        self._STORAGE_POLICY_COPY = self._services["STORAGE_POLICY_COPY"] % (
+            self.storage_policy_id,
+            self.copy_id,
+        )
+        self._V4_PLAN_COPY_JOBS = self._services["V4_PLAN_BACKUPDESTINATION_JOBS"] % (self.copy_id)
         self.refresh()
-
 
     def __repr__(self) -> str:
         """String representation of the instance of this class.
@@ -3763,23 +3751,23 @@ class StoragePolicyCopy(object):
         Returns:
             str: String representation of the Storage Policy Copy object.
         """
-        representation_string = 'Storage Policy Copy class instance for Storage Policy/ Copy: "{0}/{1}"'
+        representation_string = (
+            'Storage Policy Copy class instance for Storage Policy/ Copy: "{0}/{1}"'
+        )
         return representation_string.format(self._storage_policy_name, self._copy_name)
-
 
     @property
     def all_copies(self) -> dict:
         """Returns dict of  the storage policy copy associated with this storage policy
 
-            dict - consists of stoarge policy copy properties
-                    "copyType": copy_type,
-                    "active": active,
-                    "copyId": copy_id,
-                    "libraryName": library_name,
-                    "copyPrecedence": copy_precedence
+        dict - consists of stoarge policy copy properties
+                "copyType": copy_type,
+                "active": active,
+                "copyId": copy_id,
+                "libraryName": library_name,
+                "copyPrecedence": copy_precedence
         """
         return self.storage_policy._copies[self._copy_name]
-
 
     def get_copy_id(self) -> str:
         """Gets the storage policy id asscoiated with the storage policy.
@@ -3789,7 +3777,6 @@ class StoragePolicyCopy(object):
         """
         return self.all_copies["copyId"]
 
-
     def get_copy_Precedence(self) -> str:
         """Gets the copyprecendence asscoiated with the storage policy copy.
 
@@ -3798,7 +3785,6 @@ class StoragePolicyCopy(object):
         """
         return self.all_copies["copyPrecedence"]
 
-
     @property
     def is_active(self) -> bool:
         """Gets whether the Storage Policy Copy is active or not.
@@ -3806,105 +3792,100 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if the storage policy copy is active, False otherwise.
         """
-        return bool(self._copy_properties.get('active'))
-
+        return bool(self._copy_properties.get("active"))
 
     @is_active.setter
     def is_active(self, active: bool) -> None:
         """Marks the Storage Policy Copy as active/inactive (True/False)
-            Args:
-                active    (bool):    mark the Storage Policy Copy as active/inactive (True/False)
+        Args:
+            active    (bool):    mark the Storage Policy Copy as active/inactive (True/False)
 
-            Raises:
-                SDKException:
-                    if failed to update the property
+        Raises:
+            SDKException:
+                if failed to update the property
 
-                    if the type of 'active' input is not correct
+                if the type of 'active' input is not correct
         """
         if not isinstance(active, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._copy_properties['active'] = int(active)
+        self._copy_properties["active"] = int(active)
         self._set_copy_properties()
-
 
     def refresh(self) -> None:
         """Refresh the properties of the StoragePolicy."""
         self._get_copy_properties()
 
-
     def _get_request_json(self) -> dict:
-        """ Gets all the storage policy copy properties .
+        """Gets all the storage policy copy properties .
 
-           Returns:
-                dict: all storage policy copy properties put inside a dict
+        Returns:
+             dict: all storage policy copy properties put inside a dict
 
         """
         self._copy_properties["StoragePolicyCopy"]["storagePolicyName"] = self._storage_policy_name
-        copy_json = {
-            "storagePolicyCopyInfo": self._copy_properties
-        }
+        copy_json = {"storagePolicyCopyInfo": self._copy_properties}
         return copy_json
-
 
     def _get_copy_properties(self) -> None:
         """Gets the storage policy copy properties.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
 
-        flag, response = self._cvpysdk_object.make_request('GET', self._STORAGE_POLICY_COPY)
+        flag, response = self._cvpysdk_object.make_request("GET", self._STORAGE_POLICY_COPY)
         if flag:
-            if response.json() and 'copy' in response.json():
-                self._copy_properties = response.json()['copy']
+            if response.json() and "copy" in response.json():
+                self._copy_properties = response.json()["copy"]
 
-                self._storage_policy_flags = self._copy_properties.get('StoragePolicyFlags')
+                self._storage_policy_flags = self._copy_properties.get("StoragePolicyFlags")
 
-                self._copy_flags = self._copy_properties.get('copyFlags')
+                self._copy_flags = self._copy_properties.get("copyFlags")
 
-                self._extended_flags = self._copy_properties.get('extendedFlags')
+                self._extended_flags = self._copy_properties.get("extendedFlags")
 
-                self._data_path_config = self._copy_properties.get('dataPathConfiguration')
-                
-                if not self._copy_properties.get('mediaProperties'):
-                    self._copy_properties['mediaProperties'] = {}
-                self._media_properties = self._copy_properties.get('mediaProperties')
+                self._data_path_config = self._copy_properties.get("dataPathConfiguration")
 
-                self._retention_rules = self._copy_properties.get('retentionRules')
+                if not self._copy_properties.get("mediaProperties"):
+                    self._copy_properties["mediaProperties"] = {}
+                self._media_properties = self._copy_properties.get("mediaProperties")
 
-                self._data_encryption = self._copy_properties.get('dataEncryption')
+                self._retention_rules = self._copy_properties.get("retentionRules")
 
-                self._dedupe_flags = self._copy_properties.get('dedupeFlags')
+                self._data_encryption = self._copy_properties.get("dataEncryption")
 
-                self._media_agent = self._copy_properties.get('mediaAgent')
+                self._dedupe_flags = self._copy_properties.get("dedupeFlags")
+
+                self._media_agent = self._copy_properties.get("mediaAgent")
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
-
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def _set_copy_properties(self) -> None:
         """sets the properties of this storage policy copy.
 
-            Raises:
-                SDKException:
-                    if failed to update number properties for subclient
+        Raises:
+            SDKException:
+                if failed to update number properties for subclient
 
         """
         request_json = self._get_request_json()
-        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
-                                                           request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "PUT", self._STORAGE_POLICY_COPY, request_json
+        )
         self.refresh()
         if flag:
             if response.json():
                 if "response" in response.json():
-                    error_code = str(
-                        response.json()["response"][0]["errorCode"])
+                    error_code = str(response.json()["response"][0]["errorCode"])
 
                     if error_code == "0":
                         return True, "0", ""
@@ -3912,19 +3893,17 @@ class StoragePolicyCopy(object):
                         error_message = ""
 
                         if "errorString" in response.json()["response"][0]:
-                            error_message = response.json(
-                            )["response"][0]["errorString"]
+                            error_message = response.json()["response"][0]["errorString"]
 
                         if error_message:
                             return (False, error_code, error_message)
                         else:
                             return (False, error_code, "")
             else:
-                raise SDKException('Response', '111')
+                raise SDKException("Response", "111")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     @property
     def copy_name(self) -> str:
@@ -3934,14 +3913,12 @@ class StoragePolicyCopy(object):
     @property
     def copy_type(self) -> int:
         """Returns the type of the copy"""
-        return int(self._copy_properties.get('copyType', 0))
-
+        return int(self._copy_properties.get("copyType", 0))
 
     @property
     def override_pool_retention(self) -> bool:
         """Returns if Override Pool Retention flag is set or not"""
-        return bool(self._extended_flags.get('overRideGACPRetention', 0))
-
+        return bool(self._extended_flags.get("overRideGACPRetention", 0))
 
     @override_pool_retention.setter
     def override_pool_retention(self, override: bool) -> None:
@@ -3950,7 +3927,7 @@ class StoragePolicyCopy(object):
         Args:
             override(bool):   Override the pool Retention (True/False)
         """
-        self._extended_flags['overRideGACPRetention'] = int(override)
+        self._extended_flags["overRideGACPRetention"] = int(override)
         self._set_copy_properties()
 
     @property
@@ -3961,25 +3938,25 @@ class StoragePolicyCopy(object):
         Returns:
             dict: Selective copy rules if present, else None.
         """
-        rules = self._copy_properties.get('selectiveCopyRules')
+        rules = self._copy_properties.get("selectiveCopyRules")
         if not rules:
             return {}
         selective_rule_map = {
-            2: 'all',
-            4: 'weekly',
-            8: 'monthly',
-            16: 'quarterly',
-            32: 'halfyearly',
-            64: 'yearly',
-            262144: 'hourly',
-            524288: 'daily',
-            16777216: 'advanced'
+            2: "all",
+            4: "weekly",
+            8: "monthly",
+            16: "quarterly",
+            32: "halfyearly",
+            64: "yearly",
+            262144: "hourly",
+            524288: "daily",
+            16777216: "advanced",
         }
-        selective_rule = rules['selectiveRule']
+        selective_rule = rules["selectiveRule"]
         return {
-            'selectMostRecentJob': rules['selectMostRecentJob'],
-            'firstFullBackup': rules['firstFullBackup'],
-            'selectiveRule': selective_rule_map.get(selective_rule, selective_rule)
+            "selectMostRecentJob": rules["selectMostRecentJob"],
+            "firstFullBackup": rules["firstFullBackup"],
+            "selectiveRule": selective_rule_map.get(selective_rule, selective_rule),
         }
 
     @selective_copy_rules.setter
@@ -4003,26 +3980,26 @@ class StoragePolicyCopy(object):
             SDKException: if failed to update selective copy rules on the copy
         """
         if not (isinstance(selective_rules, tuple) and len(selective_rules) == 3):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         selective_rule_map = {
-            'all': 2,
-            'weekly': 4,
-            'monthly': 8,
-            'quarterly': 16,
-            'halfyearly': 32,
-            'yearly': 64,
-            'hourly': 262144,
-            'daily': 524288,
-            'advanced': 16777216
+            "all": 2,
+            "weekly": 4,
+            "monthly": 8,
+            "quarterly": 16,
+            "halfyearly": 32,
+            "yearly": 64,
+            "hourly": 262144,
+            "daily": 524288,
+            "advanced": 16777216,
         }
 
-        rules = self._copy_properties.get('selectiveCopyRules', {})
-        rules['selectMostRecentJob'] = selective_rules[0]
-        rules['firstFullBackup'] = selective_rules[1]
-        rules['selectiveRule'] = selective_rule_map.get(selective_rules[2], selective_rules[2])
+        rules = self._copy_properties.get("selectiveCopyRules", {})
+        rules["selectMostRecentJob"] = selective_rules[0]
+        rules["firstFullBackup"] = selective_rules[1]
+        rules["selectiveRule"] = selective_rule_map.get(selective_rules[2], selective_rules[2])
 
-        self._copy_properties['selectiveCopyRules'] = rules
+        self._copy_properties["selectiveCopyRules"] = rules
         self._set_copy_properties()
 
     @property
@@ -4033,56 +4010,54 @@ class StoragePolicyCopy(object):
             dict: A dictionary containing the retention values for days, cycles, archiveDays and jobs.
         """
         retention_values = {}
-        retention_values["days"] = self._retention_rules['retainBackupDataForDays']
-        retention_values["cycles"] = self._retention_rules['retainBackupDataForCycles']
-        retention_values["archiveDays"] = self._retention_rules['retainArchiverDataForDays']
-        retention_values["jobs"] = self._retention_rules['jobs']
+        retention_values["days"] = self._retention_rules["retainBackupDataForDays"]
+        retention_values["cycles"] = self._retention_rules["retainBackupDataForCycles"]
+        retention_values["archiveDays"] = self._retention_rules["retainArchiverDataForDays"]
+        retention_values["jobs"] = self._retention_rules["jobs"]
         return retention_values
-
 
     @copy_retention.setter
     def copy_retention(self, retention_values: tuple) -> None:
         """Sets the copy retention as the value provided as input.
-            Args:
-                retention_values    (tuple) --  retention values to be set on a copy
+        Args:
+            retention_values    (tuple) --  retention values to be set on a copy
 
-                    tuple:
+                tuple:
 
-                        **int** -   value to specify retainBackupDataForDays
+                    **int** -   value to specify retainBackupDataForDays
 
-                        **int** -   value to specify retainBackupDataForCycles
+                    **int** -   value to specify retainBackupDataForCycles
 
-                        **int** -   value to specify retainArchiverDataForDays
+                    **int** -   value to specify retainArchiverDataForDays
 
-                        **int** -   value to specify jobs
+                    **int** -   value to specify jobs
 
-                        **bool** -  True, to set infinite retention (retainBackupDataForDays)
+                    **bool** -  True, to set infinite retention (retainBackupDataForDays)
 
-                    e.g. :
-                         storage_policy_copy.copy_retention = (30, 15, 1, 8, True)
+                e.g. :
+                     storage_policy_copy.copy_retention = (30, 15, 1, 8, True)
 
-            Raises:
-                SDKException:
-                    if failed to update retention values on the copy
+        Raises:
+            SDKException:
+                if failed to update retention values on the copy
 
         """
         if retention_values[0] >= 0:
-            self._retention_rules['retainBackupDataForDays'] = retention_values[0]
+            self._retention_rules["retainBackupDataForDays"] = retention_values[0]
         if retention_values[1] >= 0:
-            self._retention_rules['retainBackupDataForCycles'] = retention_values[1]
+            self._retention_rules["retainBackupDataForCycles"] = retention_values[1]
         if retention_values[2] >= 0:
-            self._retention_rules['retainArchiverDataForDays'] = retention_values[2]
+            self._retention_rules["retainArchiverDataForDays"] = retention_values[2]
         if len(retention_values) > 3:
-            self._retention_rules['jobs'] = retention_values[3]
+            self._retention_rules["jobs"] = retention_values[3]
             if retention_values[3] > 0:
-                self._retention_rules['retentionFlags']['jobBasedRetention'] = 1
+                self._retention_rules["retentionFlags"]["jobBasedRetention"] = 1
             else:
-                self._retention_rules['retentionFlags']['jobBasedRetention'] = 0
+                self._retention_rules["retentionFlags"]["jobBasedRetention"] = 0
         if len(retention_values) > 4 and retention_values[4]:
-                self._retention_rules['retainBackupDataForDays'] = -1
+            self._retention_rules["retainBackupDataForDays"] = -1
 
         self._set_copy_properties()
-
 
     @property
     def copy_software_compression(self) -> bool:
@@ -4091,31 +4066,29 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if software compression is enabled, False otherwise.
         """
-        return 'compressionOnClients' in self._extended_flags
-
+        return "compressionOnClients" in self._extended_flags
 
     def set_copy_software_compression(self, value: bool) -> None:
         """Sets the copy software compression setting as the value provided as input.
-            Args:
-                value    (bool):  software compression value to be set on a copy (True/False)
+        Args:
+            value    (bool):  software compression value to be set on a copy (True/False)
 
-            Raises:
-                SDKException:
-                    if failed to update compression values on copy
+        Raises:
+            SDKException:
+                if failed to update compression values on copy
 
-                    if the type of value input is not correct
+                if the type of value input is not correct
 
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if value is False:
-            if 'compressionOnClients' in self._extended_flags:
-                self._extended_flags['compressionOnClients'] = 0
+            if "compressionOnClients" in self._extended_flags:
+                self._extended_flags["compressionOnClients"] = 0
 
-        self._extended_flags['compressionOnClients'] = int(value)
+        self._extended_flags["compressionOnClients"] = int(value)
         self._set_copy_properties()
-
 
     @property
     def copy_dedupe_dash_full(self) -> bool:
@@ -4124,32 +4097,30 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if DASH full is enabled, False otherwise.
         """
-        return 'enableDASHFull' in self._dedupe_flags
-
+        return "enableDASHFull" in self._dedupe_flags
 
     @copy_dedupe_dash_full.setter
     def copy_dedupe_dash_full(self, value: bool) -> None:
         """Sets the copy deduplication setting as the value provided as input.
-            Args:
-                value    (bool):  dash full value to be set on a copy (True/False)
+        Args:
+            value    (bool):  dash full value to be set on a copy (True/False)
 
-            Raises:
-                SDKException:
-                    if failed to update deduplication values on copy
+        Raises:
+            SDKException:
+                if failed to update deduplication values on copy
 
-                    if the type of value input is not correct
+                if the type of value input is not correct
 
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if value is False:
-            if 'enableSourceSideDiskCache' in self._dedupe_flags:
-                self._dedupe_flags['enableSourceSideDiskCache'] = 0
+            if "enableSourceSideDiskCache" in self._dedupe_flags:
+                self._dedupe_flags["enableSourceSideDiskCache"] = 0
 
-        self._dedupe_flags['enableDASHFull'] = int(value)
+        self._dedupe_flags["enableDASHFull"] = int(value)
         self._set_copy_properties()
-
 
     @property
     def copy_dedupe_disk_cache(self) -> bool:
@@ -4158,28 +4129,26 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if disk cache is enabled, False otherwise.
         """
-        return 'enableSourceSideDiskCache' in self._dedupe_flags
-
+        return "enableSourceSideDiskCache" in self._dedupe_flags
 
     @copy_dedupe_disk_cache.setter
     def copy_dedupe_disk_cache(self, value: bool) -> None:
         """Sets the copy deduplication setting as the value provided as input.
-            Args:
-                value    (bool):  disk cache value to be set on a copy (True/False)
+        Args:
+            value    (bool):  disk cache value to be set on a copy (True/False)
 
-            Raises:
-                SDKException:
-                    if failed to update deduplication values on copy
+        Raises:
+            SDKException:
+                if failed to update deduplication values on copy
 
-                    if the type of value input is not correct
+                if the type of value input is not correct
         """
 
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
-        self._dedupe_flags['enableSourceSideDiskCache'] = int(value)
+            raise SDKException("Storage", "101")
+        self._dedupe_flags["enableSourceSideDiskCache"] = int(value)
 
         self._set_copy_properties()
-
 
     @property
     def store_priming(self) -> bool:
@@ -4188,29 +4157,27 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if store priming is enabled, False otherwise.
         """
-        return self._dedupe_flags.get('useDDBPrimingOption', 0) > 0
-
+        return self._dedupe_flags.get("useDDBPrimingOption", 0) > 0
 
     @store_priming.setter
     def store_priming(self, value: bool) -> None:
         """Sets the copy store priming setting as the value provided as input.
-            Args:
-                value    (bool):  store priming flag to be set on a copy (True/False)
+        Args:
+            value    (bool):  store priming flag to be set on a copy (True/False)
 
-            Raises:
-                SDKException:
-                    if failed to update deduplication values on copy
+        Raises:
+            SDKException:
+                if failed to update deduplication values on copy
 
-                    if the type of value input is not correct
+                if the type of value input is not correct
 
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._dedupe_flags['useDDBPrimingOption'] = int(value)
+        self._dedupe_flags["useDDBPrimingOption"] = int(value)
 
         self._set_copy_properties()
-
 
     @property
     def copy_client_side_dedup(self) -> bool:
@@ -4219,37 +4186,34 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if client-side deduplication is enabled, False otherwise.
         """
-        return 'enableClientSideDedup' in self._dedupe_flags
-
+        return "enableClientSideDedup" in self._dedupe_flags
 
     @copy_client_side_dedup.setter
     def copy_client_side_dedup(self, value: bool) -> None:
         """Sets the copy deduplication setting as the value provided as input.
-            Args:
-                value    (bool):  client side dedupe value to be set on a copy (True/False)
+        Args:
+            value    (bool):  client side dedupe value to be set on a copy (True/False)
 
-            Raises:
-                SDKException:
-                    if failed to update deduplication values on copy
+        Raises:
+            SDKException:
+                if failed to update deduplication values on copy
 
-                    if the type of value input is not correct
+                if the type of value input is not correct
 
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._dedupe_flags['enableClientSideDedup'] = int(value)
+        self._dedupe_flags["enableClientSideDedup"] = int(value)
 
         self._set_copy_properties()
-
 
     def is_dedupe_enabled(self) -> bool:
         """
         checks whether deduplication is enabled on the give storage policy copy
         returns Boolean
         """
-        return bool(self._dedupe_flags.get('enableDeduplication', 0))
-
+        return bool(self._dedupe_flags.get("enableDeduplication", 0))
 
     @property
     def source_copy(self) -> str:
@@ -4258,8 +4222,7 @@ class StoragePolicyCopy(object):
         Returns:
             str: The name of the source copy.
         """
-        return self._copy_properties.get('sourceCopy', {}).get('copyName')
-
+        return self._copy_properties.get("sourceCopy", {}).get("copyName")
 
     @source_copy.setter
     def source_copy(self, copy_name: str) -> None:
@@ -4283,13 +4246,13 @@ class StoragePolicyCopy(object):
         copy = policy.get_copy(copy_name)
 
         if not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        if not self._copy_properties.get('sourceCopy', False):
-            self._copy_properties['sourceCopy'] = {}
+        if not self._copy_properties.get("sourceCopy", False):
+            self._copy_properties["sourceCopy"] = {}
 
-        self._copy_properties['sourceCopy']['copyId'] = copy.get_copy_id()
-        self._copy_properties['sourceCopy']['copyName'] = copy.copy_name
+        self._copy_properties["sourceCopy"]["copyId"] = copy.get_copy_id()
+        self._copy_properties["sourceCopy"]["copyName"] = copy.copy_name
 
         self._set_copy_properties()
 
@@ -4338,51 +4301,47 @@ class StoragePolicyCopy(object):
             "AES"                       256
             "DES3"                      192
         """
-        preserve = props.get('preserve', False)
-        plain_text = props.get('plain_text', False)
-        network_encryption = props.get('network_encryption', False)
-        re_encryption = props.get('re_encryption', False)
-        encryption_type = props.get('encryption_type', 'BlowFish')
-        encryption_length = props.get('encryption_length', 128)
+        preserve = props.get("preserve", False)
+        plain_text = props.get("plain_text", False)
+        network_encryption = props.get("network_encryption", False)
+        re_encryption = props.get("re_encryption", False)
+        encryption_type = props.get("encryption_type", "BlowFish")
+        encryption_length = props.get("encryption_length", 128)
 
-        if not isinstance(preserve, bool) or \
-                not isinstance(plain_text, bool) or \
-                not isinstance(network_encryption, bool) or \
-                not isinstance(re_encryption, bool) or \
-                not isinstance(encryption_type, str) or \
-                not isinstance(encryption_length, int):
-            raise SDKException('Storage', '101')
+        if (
+            not isinstance(preserve, bool)
+            or not isinstance(plain_text, bool)
+            or not isinstance(network_encryption, bool)
+            or not isinstance(re_encryption, bool)
+            or not isinstance(encryption_type, str)
+            or not isinstance(encryption_length, int)
+        ):
+            raise SDKException("Storage", "101")
 
-        self._copy_flags['preserveEncryptionModeAsInSource'] = int(preserve)
-        self._copy_flags['auxCopyReencryptData'] = int(re_encryption)
-        self._copy_flags['storePlainText'] = int(plain_text)
-        self._copy_flags['encryptOnNetworkUsingSelectedCipher'] = int(network_encryption)
+        self._copy_flags["preserveEncryptionModeAsInSource"] = int(preserve)
+        self._copy_flags["auxCopyReencryptData"] = int(re_encryption)
+        self._copy_flags["storePlainText"] = int(plain_text)
+        self._copy_flags["encryptOnNetworkUsingSelectedCipher"] = int(network_encryption)
 
-        self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 0
+        self._copy_properties["extendedFlags"]["encryptOnDependentPrimary"] = 0
 
         if plain_text and not network_encryption:
-
-            self._copy_properties['dataEncryption'] = {}
+            self._copy_properties["dataEncryption"] = {}
 
         else:
-
             if "dataEncryption" not in self._copy_properties:
-                self._copy_properties["dataEncryption"] = {
-                    "encryptData": 0
-                }
+                self._copy_properties["dataEncryption"] = {"encryptData": 0}
                 self._data_encryption = self._copy_properties["dataEncryption"]
 
         if re_encryption or network_encryption:
-
-            self._data_encryption['encryptData'] = 1
-            self._data_encryption['encryptionType'] = encryption_type
-            self._data_encryption['encryptionKeyLength'] = encryption_length
+            self._data_encryption["encryptData"] = 1
+            self._data_encryption["encryptionType"] = encryption_type
+            self._data_encryption["encryptionKeyLength"] = encryption_length
 
             if re_encryption:
-                self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 1
+                self._copy_properties["extendedFlags"]["encryptOnDependentPrimary"] = 1
 
         self._set_copy_properties()
-
 
     @property
     def copy_reencryption(self) -> str:
@@ -4393,73 +4352,69 @@ class StoragePolicyCopy(object):
         """
         encryption_setting = "False"
 
-        if 'auxCopyReencryptData' in self._copy_flags:
-            if self._copy_flags['auxCopyReencryptData'] == 1:
+        if "auxCopyReencryptData" in self._copy_flags:
+            if self._copy_flags["auxCopyReencryptData"] == 1:
                 encryption_setting = "True"
 
-        if 'preserveEncryptionModeAsInSource' in self._copy_flags:
-            if self._copy_flags['preserveEncryptionModeAsInSource'] == 1:
+        if "preserveEncryptionModeAsInSource" in self._copy_flags:
+            if self._copy_flags["preserveEncryptionModeAsInSource"] == 1:
                 encryption_setting = "False"
 
         return encryption_setting
 
-
     @copy_reencryption.setter
     def copy_reencryption(self, encryption_values: tuple) -> None:
         """Sets the secondary copy encryption as the value provided as input.
-            Args:
-                encryption_values (tuple): Encryption values to be set on a copy.
-                    The tuple should contain:
-                        bool: Value to specify encrypt data [True/False].
-                        str: Value to specify cipher type.
-                        int: Value to specify key length [128/256].
-                        int: Value to specify GDSP dependent copy [True/False].
+        Args:
+            encryption_values (tuple): Encryption values to be set on a copy.
+                The tuple should contain:
+                    bool: Value to specify encrypt data [True/False].
+                    str: Value to specify cipher type.
+                    int: Value to specify key length [128/256].
+                    int: Value to specify GDSP dependent copy [True/False].
 
-            Raises:
-                SDKException:
-                    - if failed to update encryption settings for copy
-                    - if the type of value input is not correct
+        Raises:
+            SDKException:
+                - if failed to update encryption settings for copy
+                - if the type of value input is not correct
 
-            Usage:
-                To enable encryption:
-                >>> storage_policy_copy.copy_reencryption = (True, "TWOFISH", 128, False)
+        Usage:
+            To enable encryption:
+            >>> storage_policy_copy.copy_reencryption = (True, "TWOFISH", 128, False)
 
-                To disable encryption:
-                >>> storage_policy_copy.copy_reencryption = (False, "", 0, False)
+            To disable encryption:
+            >>> storage_policy_copy.copy_reencryption = (False, "", 0, False)
         """
         if "dataEncryption" not in self._copy_properties:
             self._copy_properties["dataEncryption"] = {
                 "encryptData": "",
                 "encryptionType": "",
-                "encryptionKeyLength": ""}
+                "encryptionKeyLength": "",
+            }
             self._data_encryption = self._copy_properties["dataEncryption"]
 
         if not isinstance(encryption_values[0], bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if int(encryption_values[0]) == 0:
             if int(encryption_values[3]) == 1:
-                self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 0
-            self._copy_properties["dataEncryption"] = {
-                "encryptData": 0
-            }
-            self._copy_flags['auxCopyReencryptData'] = 0
-            self._copy_flags['preserveEncryptionModeAsInSource'] = 1
+                self._copy_properties["extendedFlags"]["encryptOnDependentPrimary"] = 0
+            self._copy_properties["dataEncryption"] = {"encryptData": 0}
+            self._copy_flags["auxCopyReencryptData"] = 0
+            self._copy_flags["preserveEncryptionModeAsInSource"] = 1
 
         if int(encryption_values[0]) == 1:
-            if (isinstance(encryption_values[1], str)
-                    and isinstance(encryption_values[2], int)):
-                self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 1
-                self._copy_flags['auxCopyReencryptData'] = 1
-                self._copy_flags['preserveEncryptionModeAsInSource'] = 0
-                self._data_encryption['encryptData'] = 1
-                self._data_encryption['encryptionType'] = encryption_values[1]
-                self._data_encryption['encryptionKeyLength'] = encryption_values[2]
+            if isinstance(encryption_values[1], str) and isinstance(encryption_values[2], int):
+                self._copy_properties["extendedFlags"]["encryptOnDependentPrimary"] = 1
+                self._copy_flags["auxCopyReencryptData"] = 1
+                self._copy_flags["preserveEncryptionModeAsInSource"] = 0
+                self._data_encryption["encryptData"] = 1
+                self._data_encryption["encryptionType"] = encryption_values[1]
+                self._data_encryption["encryptionKeyLength"] = encryption_values[2]
             else:
-                raise SDKException('Response', '110')
+                raise SDKException("Response", "110")
 
         self._set_copy_properties()
-
 
     @property
     def copy_precedence(self) -> int:
@@ -4470,7 +4425,6 @@ class StoragePolicyCopy(object):
         """
         return self.all_copies["copyPrecedence"]
 
-
     @property
     def media_agent(self) -> str:
         """Gets the media agent name of the copy
@@ -4478,11 +4432,17 @@ class StoragePolicyCopy(object):
         Returns:
             str: The media agent name.
         """
-        return self._media_agent.get('mediaAgentName')
+        return self._media_agent.get("mediaAgentName")
 
-
-    def get_jobs_on_copy(self, from_date: str = None, to_date: str = None, backup_type: str = None, retained_by: int = 0,
-                         include_to_be_copied_jobs: bool = False, list_partial_jobs_only: bool = False) -> list:
+    def get_jobs_on_copy(
+        self,
+        from_date: str = None,
+        to_date: str = None,
+        backup_type: str = None,
+        retained_by: int = 0,
+        include_to_be_copied_jobs: bool = False,
+        list_partial_jobs_only: bool = False,
+    ) -> list:
         """Fetches the Details of jobs on Storage Policy Copy
 
         Args:
@@ -4525,8 +4485,10 @@ class StoragePolicyCopy(object):
             Include jobs that are to be copied:
             >>> storage_policy_copy.get_jobs_on_copy(include_to_be_copied_jobs=True)
         """
-        command = f"qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName='{self._storage_policy_name}'" \
-                  f" -si @i_copyName='{self.copy_name}'"
+        command = (
+            f"qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName='{self._storage_policy_name}'"
+            f" -si @i_copyName='{self.copy_name}'"
+        )
         if from_date:
             command = f"{command} -si @i_fromTime='{from_date}'"
         if to_date:
@@ -4552,12 +4514,21 @@ class StoragePolicyCopy(object):
                 return []
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '102', response_string)
+                raise SDKException("Response", "102", response_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-    
-    def get_jobs_on_copy_v2(self, view: str = 'last24Hours', aged_data: int = None, backup_level: int = None, clients: Union[List[Client], List[str], Client, str] = None, copy_state: Union[List[int], int] = None, startTime: int = None, endTime: int = None) -> list:
+            raise SDKException("Response", "101", response_string)
+
+    def get_jobs_on_copy_v2(
+        self,
+        view: str = "last24Hours",
+        aged_data: int = None,
+        backup_level: int = None,
+        clients: Union[List[Client], List[str], Client, str] = None,
+        copy_state: Union[List[int], int] = None,
+        startTime: int = None,
+        endTime: int = None,
+    ) -> list:
         """
         Get jobs on a copy through V4 API
         Args:
@@ -4579,71 +4550,87 @@ class StoragePolicyCopy(object):
             SDKException: if the response/fetch operation failed
         """
         client_string = None
-        params = '?'
-        if view not in ['last24Hours', 'lastWeek', 'lastMonth', 'last3Months', 'All']:
-            raise SDKException('Storage', '101', f'Invalid view type: {view}')
+        params = "?"
+        if view not in ["last24Hours", "lastWeek", "lastMonth", "last3Months", "All"]:
+            raise SDKException("Storage", "101", f"Invalid view type: {view}")
         if aged_data is not None and aged_data not in [0, 1, 2]:
-            raise SDKException('Storage', '101', f'Invalid aged data value: {aged_data}')
+            raise SDKException("Storage", "101", f"Invalid aged data value: {aged_data}")
         if backup_level is not None and backup_level not in [1, 2, 4, 8, 64]:
-            raise SDKException('Storage', '101', f'Invalid backup level: {backup_level}')
+            raise SDKException("Storage", "101", f"Invalid backup level: {backup_level}")
         if clients is not None and not isinstance(clients, (list, str, Client)):
-            raise SDKException('Storage', '101', f'Invalid client type: {type(clients)}')
+            raise SDKException("Storage", "101", f"Invalid client type: {type(clients)}")
         if copy_state is not None:
             if isinstance(copy_state, int):
                 if copy_state not in [0, 1, 4, 8, 16]:
-                    raise SDKException('Storage', '101', f'Invalid copy state value: {copy_state}')
+                    raise SDKException("Storage", "101", f"Invalid copy state value: {copy_state}")
             elif isinstance(copy_state, list):
                 if not all(state in [0, 1, 4, 8, 16] for state in copy_state):
-                    raise SDKException('Storage', '101', f'Invalid copy state value(s): {copy_state}')
+                    raise SDKException(
+                        "Storage", "101", f"Invalid copy state value(s): {copy_state}"
+                    )
             else:
-                raise SDKException('Storage', '101', f'Invalid copy state type: {type(copy_state)}')
-        if view != 'All' and (startTime is not None or endTime is not None):
-            raise SDKException('Storage', '101', 'startTime and endTime can only be used with view type "All"')
+                raise SDKException(
+                    "Storage", "101", f"Invalid copy state type: {type(copy_state)}"
+                )
+        if view != "All" and (startTime is not None or endTime is not None):
+            raise SDKException(
+                "Storage", "101", 'startTime and endTime can only be used with view type "All"'
+            )
         if clients is not None:
             if isinstance(clients, Client):
                 client_string = clients.client_id
             elif isinstance(clients, str):
                 client_string = self._commcell_object.clients.get(clients).client_id
             else:
-                client_string = ','.join([str(client.client_id) if isinstance(client, Client) else str(self._commcell_object.clients.get(client).client_id) for client in clients])
+                client_string = ",".join(
+                    [
+                        str(client.client_id)
+                        if isinstance(client, Client)
+                        else str(self._commcell_object.clients.get(client).client_id)
+                        for client in clients
+                    ]
+                )
         if aged_data is not None:
-            params += f'&agedData={aged_data}'
+            params += f"&agedData={aged_data}"
         if backup_level is not None:
-            params += f'&backupLevel={backup_level}'
+            params += f"&backupLevel={backup_level}"
         if client_string is not None:
-            params += f'&clients={client_string}'
+            params += f"&clients={client_string}"
         if copy_state is not None:
             if isinstance(copy_state, int):
-                params += f'&copyState={copy_state}'
+                params += f"&copyState={copy_state}"
             else:
-                params += f'&copyState={sum(copy_state)}'
-        if view == 'All':
-            params += '&view=custom'
+                params += f"&copyState={sum(copy_state)}"
+        if view == "All":
+            params += "&view=custom"
             if startTime is None and endTime is None:
-                params += f'&startTime={1}&endTime={int(time.time())}'
+                params += f"&startTime={1}&endTime={int(time.time())}"
             if startTime is not None:
-                params += f'&startTime={startTime}'
+                params += f"&startTime={startTime}"
             if endTime is not None:
-                params += f'&endTime={endTime}'
+                params += f"&endTime={endTime}"
         else:
-            params += f'&view={view}'
+            params += f"&view={view}"
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._V4_PLAN_COPY_JOBS+params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "GET", self._V4_PLAN_COPY_JOBS + params
+        )
         if flag:
-            if response.json() and 'jobs' in response.json():
-                jobs = response.json().get('jobs', [])
+            if response.json() and "jobs" in response.json():
+                jobs = response.json().get("jobs", [])
                 return jobs
             else:
-                error_code = response.json().get('errorCode')
+                error_code = response.json().get("errorCode")
                 if error_code != 0:
-                    error_message = response.json().get('errorMessage', '')
-                    raise SDKException('Storage', '102', error_message)
+                    error_message = response.json().get("errorMessage", "")
+                    raise SDKException("Storage", "102", error_message)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string) 
+            raise SDKException("Response", "101", response_string)
 
-
-    def _run_job_operations_on_storage_copy(self, job_id: Union[int, str, list], operation: str) -> None:
+    def _run_job_operations_on_storage_copy(
+        self, job_id: Union[int, str, list], operation: str
+    ) -> None:
         """Run different job operations for a Storage Copy
 
         Args:
@@ -4669,18 +4656,20 @@ class StoragePolicyCopy(object):
             "loadDependentJobs": False,
             "loadArchiverJobs": False,
         }
-        url = self._services['V4_JOB_OPERATIONS_ON_STORAGE_COPY']
+        url = self._services["V4_JOB_OPERATIONS_ON_STORAGE_COPY"]
 
         # Checking if job_id is a comma separated string
-        if isinstance(job_id, str) and ',' in job_id:
-            job_id = [j.strip() for j in job_id.split(',')]
+        if isinstance(job_id, str) and "," in job_id:
+            job_id = [j.strip() for j in job_id.split(",")]
 
         if isinstance(job_id, (int, str)):
             job_id = [int(job_id)]
         elif isinstance(job_id, list):
             job_id = [int(j) for j in job_id if j.isdigit()]
         else:
-            raise SDKException('Storage', '101', 'job_id should be an int, str or a list of int/str')
+            raise SDKException(
+                "Storage", "101", "job_id should be an int, str or a list of int/str"
+            )
 
         if operation not in [
             JobOperationsOnStorageCopy.DELETE,
@@ -4688,29 +4677,25 @@ class StoragePolicyCopy(object):
             JobOperationsOnStorageCopy.ALLOW_COPY,
             JobOperationsOnStorageCopy.RECOPY,
         ]:
-            raise SDKException('Storage', '101', f'Invalid operation type: {operation}')
+            raise SDKException("Storage", "101", f"Invalid operation type: {operation}")
 
         payload = payload_template.copy()
-        payload.update({
-            "jobIds": job_id
-        })
+        payload.update({"jobIds": job_id})
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            method='POST',
-            url=url,
-            payload=payload
+            method="POST", url=url, payload=payload
         )
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = response.json()['errorCode']
+                if "errorCode" in response.json():
+                    error_code = response.json()["errorCode"]
                     if error_code != 0:
-                        error_message = response.json().get('errorMessage', '')
-                        raise SDKException('Storage', '102', error_message)
+                        error_message = response.json().get("errorMessage", "")
+                        raise SDKException("Storage", "102", error_message)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _pick_job_for_backup_copy(self, job_id: Union[int, str, list], operation: str) -> None:
         """Method to pick jobs for backup copy
@@ -4732,52 +4717,56 @@ class StoragePolicyCopy(object):
         plan_name = self._storage_policy_name + "_Plan"
         plan_obj = self._commcell_object.plans.get(plan_name)
         if plan_obj is None:
-            raise SDKException('Storage', '102', f"Plan '{plan_name}' not found for storage policy '{self._storage_policy_name}'")
+            raise SDKException(
+                "Storage",
+                "102",
+                f"Plan '{plan_name}' not found for storage policy '{self._storage_policy_name}'",
+            )
         plan_id = plan_obj.plan_id
-        payload_template = {
-            "operationType": operation,
-            "jobs": []
-        }
+        payload_template = {"operationType": operation, "jobs": []}
         # Validate if the required service endpoint exists
-        if 'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS' not in self._services:
-            raise SDKException('Storage', '101', "Service endpoint 'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS' not found in services dictionary")
-        url = self._services['V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS'] % (plan_id, int(self.copy_id))
+        if "V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS" not in self._services:
+            raise SDKException(
+                "Storage",
+                "101",
+                "Service endpoint 'V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS' not found in services dictionary",
+            )
+        url = self._services["V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS"] % (
+            plan_id,
+            int(self.copy_id),
+        )
 
         # Checking if job_id is a comma separated string
-        if isinstance(job_id, str) and ',' in job_id:
-            job_id = [j.strip() for j in job_id.split(',')]
+        if isinstance(job_id, str) and "," in job_id:
+            job_id = [j.strip() for j in job_id.split(",")]
 
         if isinstance(job_id, (int, str)):
             job_id = [int(job_id)]
         elif isinstance(job_id, list):
             job_id = [int(j) for j in job_id if j.isdigit()]
         else:
-            raise SDKException('Storage', '101', 'job_id should be an int, str or a list of int/str')
+            raise SDKException(
+                "Storage", "101", "job_id should be an int, str or a list of int/str"
+            )
 
-        if operation not in ['PICK']:
-            raise SDKException('Storage', '101', f'Invalid operation type: {operation}')
+        if operation not in ["PICK"]:
+            raise SDKException("Storage", "101", f"Invalid operation type: {operation}")
         payload = payload_template.copy()
-        payload.update({
-            "jobs": [
-                {"jobId": jid, "commcellId": 2} for jid in job_id
-            ]
-        })
+        payload.update({"jobs": [{"jobId": jid, "commcellId": 2} for jid in job_id]})
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            method='PUT',
-            url=url,
-            payload=payload
+            method="PUT", url=url, payload=payload
         )
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = response.json()['errorCode']
+                if "errorCode" in response.json():
+                    error_code = response.json()["errorCode"]
                     if error_code != 0:
-                        error_message = response.json().get('errorMessage', '')
-                        raise SDKException('Storage', '102', error_message)
+                        error_message = response.json().get("errorMessage", "")
+                        raise SDKException("Storage", "102", error_message)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def delete_job(self, job_id: str) -> None:
         """Deletes a job on Storage Policy
@@ -4793,12 +4782,12 @@ class StoragePolicyCopy(object):
             >>> storage_policy_copy.delete_job(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
-            job_id=job_id,
-            operation=JobOperationsOnStorageCopy.DELETE
+            job_id=job_id, operation=JobOperationsOnStorageCopy.DELETE
         )
 
-
-    def _mark_jobs_on_copy(self, job_id: Union[int, str, list], operation: JobOperationsOnStorageCopy) -> None:
+    def _mark_jobs_on_copy(
+        self, job_id: Union[int, str, list], operation: JobOperationsOnStorageCopy
+    ) -> None:
         """Marks job(s) for given operation on a secondary copy
 
         Args:
@@ -4815,38 +4804,39 @@ class StoragePolicyCopy(object):
             This is a private method and should not be called directly.
         """
         if not isinstance(job_id, str) and not isinstance(job_id, int):
-            if not isinstance(job_id, list) or\
-                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, str) for id in job_id)):
-                raise SDKException('Storage', '101')
+            if not isinstance(job_id, list) or (
+                not all(isinstance(id, int) for id in job_id)
+                and not all(isinstance(id, str) for id in job_id)
+            ):
+                raise SDKException("Storage", "101")
 
         # send multiple requests to counter limit of URL length in IIS
         job_strings = []
         if isinstance(job_id, list):
-            string = ''
+            string = ""
             for id in job_id:
-                string += f',{id}'
+                string += f",{id}"
                 if len(string) > 200:
-                    job_strings.append(string.strip(','))
-                    string = ''
+                    job_strings.append(string.strip(","))
+                    string = ""
             if string:
-                job_strings.append(string.strip(','))
+                job_strings.append(string.strip(","))
         else:
             job_strings.append(job_id)
 
         for string in job_strings:
-            qcommand = f' -sn MarkJobsOnCopy -si {self._storage_policy_name} -si {self._copy_name} -si {operation} -si {string}'
-            url = self._services['EXECUTE_QSCRIPT'] % (qcommand)
+            qcommand = f" -sn MarkJobsOnCopy -si {self._storage_policy_name} -si {self._copy_name} -si {operation} -si {string}"
+            url = self._services["EXECUTE_QSCRIPT"] % (qcommand)
             flag, response = self._commcell_object._cvpysdk_object.make_request("POST", url)
             if flag:
                 if response.text:
-                    if 'jobs do not belong' in response.text.lower():
-                        raise SDKException('Storage', '102', response.text.strip())
+                    if "jobs do not belong" in response.text.lower():
+                        raise SDKException("Storage", "102", response.text.strip())
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
-
+                raise SDKException("Response", "101", response_string)
 
     def pick_for_copy(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) to be Picked for Copy to a secondary copy
@@ -4858,10 +4848,8 @@ class StoragePolicyCopy(object):
             >>> storage_policy_copy.pick_for_copy(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
-            job_id=job_id,
-            operation=JobOperationsOnStorageCopy.ALLOW_COPY
+            job_id=job_id, operation=JobOperationsOnStorageCopy.ALLOW_COPY
         )
-
 
     def recopy_jobs(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) to be picked for ReCopying to a secondary copy
@@ -4873,10 +4861,8 @@ class StoragePolicyCopy(object):
             >>> storage_policy_copy.recopy_jobs(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
-            job_id=job_id,
-            operation=JobOperationsOnStorageCopy.RECOPY
+            job_id=job_id, operation=JobOperationsOnStorageCopy.RECOPY
         )
-
 
     def do_not_copy_jobs(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) as Do Not Copy to a secondary copy
@@ -4888,10 +4874,8 @@ class StoragePolicyCopy(object):
             >>> storage_policy_copy.do_not_copy_jobs(job_id='1234')
         """
         self._run_job_operations_on_storage_copy(
-            job_id=job_id,
-            operation=JobOperationsOnStorageCopy.PREVENT_COPY
+            job_id=job_id, operation=JobOperationsOnStorageCopy.PREVENT_COPY
         )
-
 
     def pick_jobs_for_data_verification(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) on a copy to be Picked for Data Verification
@@ -4902,8 +4886,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.pick_jobs_for_data_verification(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, 'pickForVerification')
-
+        self._mark_jobs_on_copy(job_id, "pickForVerification")
 
     def do_not_verify_data(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) on a copy to not be Picked for Data Verification
@@ -4914,8 +4897,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.do_not_verify_data(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, 'donotPickForVerification')
-
+        self._mark_jobs_on_copy(job_id, "donotPickForVerification")
 
     def mark_jobs_bad(self, job_id: Union[int, str, list]) -> None:
         """Marks job(s) on a copy as Bad
@@ -4926,8 +4908,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.mark_jobs_bad(job_id='1234')
         """
-        self._mark_jobs_on_copy(job_id, 'markJobsBad')
-
+        self._mark_jobs_on_copy(job_id, "markJobsBad")
 
     def pick_jobs_for_backupcopy(self, job_id: Union[int, str, list]) -> None:
         """This method is used to re-pick the job from backup which are unpick manually
@@ -4938,7 +4919,7 @@ class StoragePolicyCopy(object):
         Usage:
             >>> storage_policy_copy.pick_jobs_for_backupcopy(job_id='1234')
         """
-        self._pick_job_for_backup_copy(job_id, 'PICK')
+        self._pick_job_for_backup_copy(job_id, "PICK")
 
     @property
     def extended_retention_rules(self) -> tuple:
@@ -4979,31 +4960,36 @@ class StoragePolicyCopy(object):
         rule_one = dict()
         rule_two = dict()
         rule_three = dict()
-        if 'extendedRetentionRuleOne' in self._retention_rules:
-            rule_one['isEnabled'] = self._retention_rules['extendedRetentionRuleOne']['isEnabled']
-            rule_one['rule'] = mapping[self._retention_rules['extendedRetentionRuleOne']['rule']]
-            rule_one['endDays'] = self._retention_rules['extendedRetentionRuleOne']['endDays']
-            rule_one['graceDays'] = self._retention_rules['extendedRetentionRuleOne']['graceDays']
+        if "extendedRetentionRuleOne" in self._retention_rules:
+            rule_one["isEnabled"] = self._retention_rules["extendedRetentionRuleOne"]["isEnabled"]
+            rule_one["rule"] = mapping[self._retention_rules["extendedRetentionRuleOne"]["rule"]]
+            rule_one["endDays"] = self._retention_rules["extendedRetentionRuleOne"]["endDays"]
+            rule_one["graceDays"] = self._retention_rules["extendedRetentionRuleOne"]["graceDays"]
         else:
             rule_one = False
 
-        if 'extendedRetentionRuleTwo' in self._retention_rules:
-            rule_two['isEnabled'] = self._retention_rules['extendedRetentionRuleTwo']['isEnabled']
-            rule_two['rule'] = mapping[self._retention_rules['extendedRetentionRuleTwo']['rule']]
-            rule_two['endDays'] = self._retention_rules['extendedRetentionRuleTwo']['endDays']
-            rule_two['graceDays'] = self._retention_rules['extendedRetentionRuleTwo']['graceDays']
+        if "extendedRetentionRuleTwo" in self._retention_rules:
+            rule_two["isEnabled"] = self._retention_rules["extendedRetentionRuleTwo"]["isEnabled"]
+            rule_two["rule"] = mapping[self._retention_rules["extendedRetentionRuleTwo"]["rule"]]
+            rule_two["endDays"] = self._retention_rules["extendedRetentionRuleTwo"]["endDays"]
+            rule_two["graceDays"] = self._retention_rules["extendedRetentionRuleTwo"]["graceDays"]
         else:
             rule_two = False
 
-        if 'extendedRetentionRuleThree' in self._retention_rules:
-            rule_three['isEnabled'] = self._retention_rules['extendedRetentionRuleThree']['isEnabled']
-            rule_three['rule'] = mapping[self._retention_rules['extendedRetentionRuleThree']['rule']]
-            rule_three['endDays'] = self._retention_rules['extendedRetentionRuleThree']['endDays']
-            rule_three['graceDays'] = self._retention_rules['extendedRetentionRuleThree']['graceDays']
+        if "extendedRetentionRuleThree" in self._retention_rules:
+            rule_three["isEnabled"] = self._retention_rules["extendedRetentionRuleThree"][
+                "isEnabled"
+            ]
+            rule_three["rule"] = mapping[
+                self._retention_rules["extendedRetentionRuleThree"]["rule"]
+            ]
+            rule_three["endDays"] = self._retention_rules["extendedRetentionRuleThree"]["endDays"]
+            rule_three["graceDays"] = self._retention_rules["extendedRetentionRuleThree"][
+                "graceDays"
+            ]
         else:
             rule_three = False
         return rule_one, rule_two, rule_three
-
 
     @extended_retention_rules.setter
     def extended_retention_rules(self, extended_retention: tuple) -> None:
@@ -5040,9 +5026,9 @@ class StoragePolicyCopy(object):
 
         """
         mapping = {
-            1: 'extendedRetentionRuleOne',
-            2: 'extendedRetentionRuleTwo',
-            3: 'extendedRetentionRuleThree'
+            1: "extendedRetentionRuleOne",
+            2: "extendedRetentionRuleTwo",
+            3: "extendedRetentionRuleThree",
         }
 
         rule = mapping[extended_retention[0]]
@@ -5051,18 +5037,19 @@ class StoragePolicyCopy(object):
                 "isEnabled": "",
                 "rule": "",
                 "endDays": "",
-                "graceDays": ""}
+                "graceDays": "",
+            }
 
         if extended_retention[0] is not None:
-            self._retention_rules[rule]['isEnabled'] = int(extended_retention[1])
-            self._retention_rules[rule]['rule'] = extended_retention[2]
-            self._retention_rules[rule]['endDays'] = extended_retention[3]
-            self._retention_rules[rule]['graceDays'] = extended_retention[4]
+            self._retention_rules[rule]["isEnabled"] = int(extended_retention[1])
+            self._retention_rules[rule]["rule"] = extended_retention[2]
+            self._retention_rules[rule]["endDays"] = extended_retention[3]
+            self._retention_rules[rule]["graceDays"] = extended_retention[4]
         else:
-            raise SDKException('Storage', '110')
+            raise SDKException("Storage", "110")
 
         self._set_copy_properties()
-    
+
     @property
     def associations(self) -> dict:
         """Returns the associations of the storage policy copy.
@@ -5070,8 +5057,8 @@ class StoragePolicyCopy(object):
         Returns:
             dict: A dictionary containing the associations of the storage policy copy.
         """
-        return self._copy_properties.get('associations', {})
-    
+        return self._copy_properties.get("associations", {})
+
     @property
     def selective_copy_rules(self) -> dict:
         """Returns the selective copy rules of the storage policy copy.
@@ -5079,8 +5066,8 @@ class StoragePolicyCopy(object):
         Returns:
             dict: A dictionary containing the selective copy rules of the storage policy copy.
         """
-        return self._copy_properties.get('selectiveCopyRules', {})
-    
+        return self._copy_properties.get("selectiveCopyRules", {})
+
     @property
     def multiplexing_factor(self) -> int:
         """Treats the multiplexing factor setting as a read-only attribute.
@@ -5088,7 +5075,7 @@ class StoragePolicyCopy(object):
         Returns:
             int: The multiplexing factor value.
         """
-        return int(self._copy_properties.get('multiplexingFactor', 0))
+        return int(self._copy_properties.get("multiplexingFactor", 0))
 
     def is_primary_copy(self) -> bool:
         """Checks if the copy is a primary copy.
@@ -5096,7 +5083,7 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if the copy is a primary copy, False otherwise.
         """
-        return self._copy_properties.get('copyPrecedence', 0) == 1
+        return self._copy_properties.get("copyPrecedence", 0) == 1
 
     @property
     def copy_retention_managed_disk_space(self) -> bool:
@@ -5105,8 +5092,7 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if managed disk space is enabled, False otherwise.
         """
-        return 'enableManagedDiskSpace' in self._retention_rules
-
+        return "enableManagedDiskSpace" in self._retention_rules
 
     @copy_retention_managed_disk_space.setter
     def copy_retention_managed_disk_space(self, managed_disk_space_value: bool) -> None:
@@ -5125,14 +5111,13 @@ class StoragePolicyCopy(object):
             copy_obj.copy_retention_managed_disk_space = False
         """
         if not isinstance(managed_disk_space_value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if not managed_disk_space_value:
-            self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 0
+            self._retention_rules["retentionFlags"]["enableManagedDiskSpace"] = 0
         if managed_disk_space_value:
-            self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 1
+            self._retention_rules["retentionFlags"]["enableManagedDiskSpace"] = 1
         self._set_copy_properties()
-
 
     @property
     def is_parallel_copy(self) -> bool:
@@ -5141,11 +5126,10 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if parallel copy is enabled, False otherwise.
         """
-        return 'enableParallelCopy' in self._copy_flags
-
+        return "enableParallelCopy" in self._copy_flags
 
     def set_parallel_copy(self, value: bool) -> None:
-        """ Sets the parallel copy on storage policy copy as the value provided as input.
+        """Sets the parallel copy on storage policy copy as the value provided as input.
             Args:
                 value    (bool) --  parallel copy on storage policy copy value to be set on a copy (True/False)
 
@@ -5160,9 +5144,9 @@ class StoragePolicyCopy(object):
             copy_obj.set_parallel_copy(False)
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._copy_flags['enableParallelCopy'] = int(value)
+        self._copy_flags["enableParallelCopy"] = int(value)
 
         self._set_copy_properties()
 
@@ -5173,7 +5157,10 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if round robin data path flag is enabled, False otherwise.
         """
-        return 'roundRobbinDataPath' in self._copy_flags and self._copy_flags['roundRobbinDataPath'] == 1
+        return (
+            "roundRobbinDataPath" in self._copy_flags
+            and self._copy_flags["roundRobbinDataPath"] == 1
+        )
 
     @property
     def use_last_full_for_selective(self) -> bool:
@@ -5182,7 +5169,7 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if last full flag is enabled, False otherwise.
         """
-        return 'lastFull' in self._copy_flags and self._copy_flags['lastFull'] == 1
+        return "lastFull" in self._copy_flags and self._copy_flags["lastFull"] == 1
 
     @property
     def enable_data_aging(self) -> bool:
@@ -5192,8 +5179,8 @@ class StoragePolicyCopy(object):
             bool: True if data aging is enabled, False otherwise.
         """
         retention_rules = self._retention_rules
-        retention_flags = retention_rules.get('retentionFlags', {})
-        enable_data_aging_flag = retention_flags.get('enableDataAging', 0)
+        retention_flags = retention_rules.get("retentionFlags", {})
+        enable_data_aging_flag = retention_flags.get("enableDataAging", 0)
         return enable_data_aging_flag == 1
 
     @property
@@ -5203,10 +5190,9 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if space optimized auxillary copy is enabled, False otherwise.
         """
-        if self._copy_properties.get('extendedFlags', {}).get('spaceOptimizedAuxCopy'):
+        if self._copy_properties.get("extendedFlags", {}).get("spaceOptimizedAuxCopy"):
             return True
         return False
-
 
     @space_optimized_auxillary_copy.setter
     def space_optimized_auxillary_copy(self, value: bool) -> None:
@@ -5224,11 +5210,10 @@ class StoragePolicyCopy(object):
             copy_obj.space_optimized_auxillary_copy = False
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
-        self._copy_properties['extendedFlags']['spaceOptimizedAuxCopy'] = int(value)
+            raise SDKException("Storage", "101")
+        self._copy_properties["extendedFlags"]["spaceOptimizedAuxCopy"] = int(value)
 
         self._set_copy_properties()
-
 
     @property
     def is_inline_copy(self) -> bool:
@@ -5237,11 +5222,10 @@ class StoragePolicyCopy(object):
         Returns:
             bool: True if inline copy is enabled, False otherwise.
         """
-        return 'inlineAuxCopy' in self._copy_flags
-
+        return "inlineAuxCopy" in self._copy_flags
 
     def set_inline_copy(self, value: bool) -> None:
-        """ Sets the inline copy on storage policy copy as the value provided as input.
+        """Sets the inline copy on storage policy copy as the value provided as input.
             Args:
                 value    (bool) --  inline copy on storage policy copy value to be set on a copy (True/False)
 
@@ -5256,26 +5240,24 @@ class StoragePolicyCopy(object):
             copy_obj.set_inline_copy(False)
         """
         if not isinstance(value, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._copy_flags['inlineAuxCopy'] = int(value)
+        self._copy_flags["inlineAuxCopy"] = int(value)
 
         self._set_copy_properties()
-
 
     @property
     def network_throttle_bandwidth(self) -> int:
         """Treats the Network Throttle Bandwidth as a read-only attribute.
 
-            Returns:
-                (int) : Value of Network Throttle Bandwidth set in MBPH
+        Returns:
+            (int) : Value of Network Throttle Bandwidth set in MBPH
         """
-        return int(self._copy_properties.get('throttleNetworkBandWidthMBHR'))
-
+        return int(self._copy_properties.get("throttleNetworkBandWidthMBHR"))
 
     @network_throttle_bandwidth.setter
     def network_throttle_bandwidth(self, value: int) -> None:
-        """ Sets the Network Throttle Bandwidth on storage policy copy as the value provided as input.
+        """Sets the Network Throttle Bandwidth on storage policy copy as the value provided as input.
             Args:
                 value    (int):  value of Network Throttle Bandwidth in MBPH
 
@@ -5289,29 +5271,30 @@ class StoragePolicyCopy(object):
             copy_obj.network_throttle_bandwidth = 100
         """
         if not isinstance(value, int):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._copy_properties['throttleNetworkBandWidthMBHR'] = value
+        self._copy_properties["throttleNetworkBandWidthMBHR"] = value
         self._set_copy_properties()
 
     @property
     def storage_pool(self) -> tuple[int, str]:
         """Retrieves the storage pool details associated with this copy.
 
-            Returns:
-                tuple: A tuple containing the storage pool ID and name.
+        Returns:
+            tuple: A tuple containing the storage pool ID and name.
 
-            Remarks:
-                Returns (0, "") if storage pool association is not present.
+        Remarks:
+            Returns (0, "") if storage pool association is not present.
         """
-        storage_pool_details = self._copy_properties.get('storagePool', {})
-        storage_pool_id = storage_pool_details.get('storagePoolId', 0)
-        storage_pool_name = storage_pool_details.get('storagePoolName', "")
+        storage_pool_details = self._copy_properties.get("storagePool", {})
+        storage_pool_id = storage_pool_details.get("storagePoolId", 0)
+        storage_pool_name = storage_pool_details.get("storagePoolName", "")
         return storage_pool_id, storage_pool_name
 
-    def add_svm_association(self, src_array_id: int, source_array: str, tgt_array_id: int,
-                            target_array: str, **kwargs) -> None:
-        """ Method to add SVM association on Replica/vault and Mirror Copy
+    def add_svm_association(
+        self, src_array_id: int, source_array: str, tgt_array_id: int, target_array: str, **kwargs
+    ) -> None:
+        """Method to add SVM association on Replica/vault and Mirror Copy
 
             Agrs:
                 src_array_id    (int)   --  Controlhost id of source SVM
@@ -5329,16 +5312,13 @@ class StoragePolicyCopy(object):
         Usage:
             copy_obj.add_svm_association(123, "source_array", 456, "target_array", target_vendor="vendor", tgt_vendor_id=789)
         """
-        target_vendor = kwargs.get('target_vendor', "")
-        tgt_vendor_id = kwargs.get('tgt_vendor_id', 0)
+        target_vendor = kwargs.get("target_vendor", "")
+        tgt_vendor_id = kwargs.get("tgt_vendor_id", 0)
 
         request_json = {
             "EVGui_MMSMArrayReplicaPairReq": {
                 "processinginstructioninfo": {
-                    "locale": {
-                        "_type_": 66,
-                        "localeId": 0
-                    },
+                    "locale": {"_type_": 66, "localeId": 0},
                     "formatFlags": {
                         "ignoreUnknownTags": True,
                         "elementBased": False,
@@ -5346,13 +5326,9 @@ class StoragePolicyCopy(object):
                         "formatted": False,
                         "filterUnInitializedFields": False,
                         "skipNameToIdConversion": False,
-                        "continueOnError": False
+                        "continueOnError": False,
                     },
-                    "user": {
-                        "_type_": 13,
-                        "userName": "admin",
-                        "userId": 1
-                    }
+                    "user": {"_type_": 13, "userName": "admin", "userId": 1},
                 },
                 "copyId": self.copy_id,
                 "flags": 0,
@@ -5363,51 +5339,38 @@ class StoragePolicyCopy(object):
                         "copyId": 0,
                         "flags": 0,
                         "replicaPairId": 0,
-                        "srcArray": {
-                            "name": source_array,
-                            "id": src_array_id
-                        },
-                        "vendor": {
-                            "name": "",
-                            "id": 0
-                        },
-                        "tgtVendor": {
-                            "name": target_vendor,
-                            "id": tgt_vendor_id
-                        },
-                        "tgtArray": {
-                            "name": target_array,
-                            "id": tgt_array_id
-                        }
+                        "srcArray": {"name": source_array, "id": src_array_id},
+                        "vendor": {"name": "", "id": 0},
+                        "tgtVendor": {"name": target_vendor, "id": tgt_vendor_id},
+                        "tgtArray": {"name": target_array, "id": tgt_array_id},
                     }
-                ]
+                ],
             }
         }
 
-        add_svm_association_service = self._commcell_object._services['EXECUTE_QCOMMAND']
+        add_svm_association_service = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', add_svm_association_service, request_json
+            "POST", add_svm_association_service, request_json
         )
         self.refresh()
 
         if flag:
             if response.json():
-                if 'errorCode' in response.json():
-                    error_code = int(response.json()['errorCode'])
+                if "errorCode" in response.json():
+                    error_code = int(response.json()["errorCode"])
                     if error_code != 0:
-                        error_message = "Failed to Update SVM Association on Copy: {0}".format(
-                            self._copy_name
+                        error_message = (
+                            f"Failed to Update SVM Association on Copy: {self._copy_name}"
                         )
-                        raise SDKException('Storage', '102', error_message)
+                        raise SDKException("Storage", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def set_key_management_server(self, kms_name: str) -> None:
         """Sets the Key Management Server to this copy
@@ -5425,14 +5388,13 @@ class StoragePolicyCopy(object):
             copy_obj.set_key_management_server("kms_server_name")
         """
         if not isinstance(kms_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         self._copy_properties["dataEncryption"] = {
             "keyProviderName": kms_name,
-            "rotateMasterKey": True
+            "rotateMasterKey": True,
         }
         self._set_copy_properties()
-
 
     def set_multiplexing_factor(self, mux_factor: int) -> None:
         """Sets/Unset the multiplexing factor for the storage policy copy
@@ -5450,22 +5412,18 @@ class StoragePolicyCopy(object):
             copy_obj.set_multiplexing_factor(4)
         """
         if not isinstance(mux_factor, int):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
-        self._copy_properties['mediaProperties'] = {
-            "multiplexingFactor" : mux_factor
-        }
+        self._copy_properties["mediaProperties"] = {"multiplexingFactor": mux_factor}
         self._set_copy_properties()
-
 
     @property
     def ddb_resiliency(self) -> bool:
         """Treats the Resiliency Flag as a read-only attribute.
-            Returns:
-                (bool) : Value of Resiliency Flag
+        Returns:
+            (bool) : Value of Resiliency Flag
         """
-        return bool(self._dedupe_flags.get('allowJobsToRunWithoutAllPartitions'))
-
+        return bool(self._dedupe_flags.get("allowJobsToRunWithoutAllPartitions"))
 
     def set_ddb_resiliency(self, is_enabled: bool, min_num_partitions: int) -> None:
         """Sets Resiliency On or Off, and set partition threshold for Resiliency
@@ -5483,17 +5441,20 @@ class StoragePolicyCopy(object):
             copy_obj.set_ddb_resiliency(False, 2)
         """
         if isinstance(is_enabled, bool) or isinstance(min_num_partitions, int):
-            SDKException('Storage', '101')
+            SDKException("Storage", "101")
         if is_enabled:
             if min_num_partitions < 1:
-                SDKException('Storage', '102', "error min_num_partitions should be greater than or equal to 1")
-            self._copy_properties['minimumNumberOfPartitionsForJobsToRun'] = min_num_partitions
-            self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 1
+                SDKException(
+                    "Storage",
+                    "102",
+                    "error min_num_partitions should be greater than or equal to 1",
+                )
+            self._copy_properties["minimumNumberOfPartitionsForJobsToRun"] = min_num_partitions
+            self._dedupe_flags["allowJobsToRunWithoutAllPartitions"] = 1
             self._set_copy_properties()
         else:
-            self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 0
+            self._dedupe_flags["allowJobsToRunWithoutAllPartitions"] = 0
             self._set_copy_properties()
-
 
     def delete_datapath(self, library_name: str, media_agent_name: str) -> None:
         """
@@ -5513,41 +5474,35 @@ class StoragePolicyCopy(object):
             copy_obj.delete_datapath("library1", "media_agent1")
         """
         if not (isinstance(media_agent_name, str)) and isinstance(library_name):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         request_json = {
             "storagePolicyCopyInfo": {
                 "dataPathProperties": [
                     {
-                        "operationFlags": {
-                            "removeDataPath": True
-                        },
-                        "mediaAgent": {
-                            "mediaAgentName": media_agent_name
-                        },
-                        "library": {
-                            "libraryName": library_name
-                        }
+                        "operationFlags": {"removeDataPath": True},
+                        "mediaAgent": {"mediaAgentName": media_agent_name},
+                        "library": {"libraryName": library_name},
                     }
                 ]
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
-                                                           request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "PUT", self._STORAGE_POLICY_COPY, request_json
+        )
         self.refresh()
         if flag:
             if response.json():
                 response = response.json()
                 if "error" in response and response.get("error", {}).get("errorCode") != 0:
                     error_message = response.get("error", {}).get("errorMessage")
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             error_message = response.json().get("errorMessage")
-            raise SDKException('Response', '111', error_message)
-
+            raise SDKException("Response", "111", error_message)
 
     def rotate_encryption_master_key(self) -> None:
         """
@@ -5556,9 +5511,7 @@ class StoragePolicyCopy(object):
         Usage:
             copy_obj.rotate_encryption_master_key()
         """
-        self._copy_properties["dataEncryption"] = {
-            "rotateMasterKey": True
-        }
+        self._copy_properties["dataEncryption"] = {"rotateMasterKey": True}
         self._set_copy_properties()
 
     def set_default_datapath(self, library_name: str, media_agent_name: str) -> None:
@@ -5577,41 +5530,35 @@ class StoragePolicyCopy(object):
             storage_policy_copy.set_default_datapath('mylibrary', 'myagent')
         """
         if not (isinstance(media_agent_name, str)) and isinstance(library_name):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         request_json = {
             "storagePolicyCopyInfo": {
                 "dataPathProperties": [
                     {
-                        "operationFlags": {
-                            "setDefault": True
-                        },
-                        "mediaAgent": {
-                            "mediaAgentName": media_agent_name
-                        },
-                        "library": {
-                            "libraryName": library_name
-                        }
+                        "operationFlags": {"setDefault": True},
+                        "mediaAgent": {"mediaAgentName": media_agent_name},
+                        "library": {"libraryName": library_name},
                     }
                 ]
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
-                                                           request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "PUT", self._STORAGE_POLICY_COPY, request_json
+        )
         self.refresh()
         if flag:
             if response.json():
                 response = response.json()
                 if "error" in response and response.get("error", {}).get("errorCode") != 0:
                     error_message = response.get("error", {}).get("errorMessage")
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             error_message = response.json().get("errorMessage")
-            raise SDKException('Response', '111', error_message)
-
+            raise SDKException("Response", "111", error_message)
 
     @property
     def is_compliance_lock_enabled(self) -> bool:
@@ -5623,7 +5570,7 @@ class StoragePolicyCopy(object):
         Usage:
             is_enabled = storage_policy_copy.is_compliance_lock_enabled
         """
-        return 'wormCopy' in self._copy_flags
+        return "wormCopy" in self._copy_flags
 
     def get_store_seal_frequency(self) -> dict:
         """Gets the store seal frequency for the copy
@@ -5644,27 +5591,26 @@ class StoragePolicyCopy(object):
             "EVGui_StoragePolicySummaryReq": {
                 "spId": self.storage_policy_id,
                 "spCopyId": self.copy_id,
-                "reportType": 5 # storage policy copy's dedup information summary
+                "reportType": 5,  # storage policy copy's dedup information summary
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
             if response and response.json():
                 dedup_summary = response.json()
-                dedup_options = dedup_summary['options']['dedupOptions']
+                dedup_options = dedup_summary["options"]["dedupOptions"]
                 seal_frequency_dict = {
-                    'size': dedup_options['storeCreationSize'],
-                    'days': dedup_options['storeCreationDays'],
-                    'months': dedup_options['storeCreationMonths']
+                    "size": dedup_options["storeCreationSize"],
+                    "days": dedup_options["storeCreationDays"],
+                    "months": dedup_options["storeCreationMonths"],
                 }
                 return seal_frequency_dict
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
-
+        raise SDKException("Response", "101", response_string)
 
     def enable_compliance_lock(self) -> None:
         """Sets compliance lock (wormCopy flag)
@@ -5677,12 +5623,11 @@ class StoragePolicyCopy(object):
         Usage:
             storage_policy_copy.enable_compliance_lock()
         """
-        self._copy_properties['copyFlags']['wormCopy'] = 1
+        self._copy_properties["copyFlags"]["wormCopy"] = 1
         self._set_copy_properties()
 
         if not self.is_compliance_lock_enabled:
-            raise SDKException('Response', '101', 'Failed to set compliance lock')
-
+            raise SDKException("Response", "101", "Failed to set compliance lock")
 
     def disable_compliance_lock(self) -> None:
         """Unsets compliance lock (wormCopy flag)
@@ -5696,11 +5641,13 @@ class StoragePolicyCopy(object):
             storage_policy_copy.disable_compliance_lock()
         """
 
-        disable_compliance_lock_url = self._services['DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK'] % (
-            self.storage_policy_id, self.copy_id)
+        disable_compliance_lock_url = self._services["DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK"] % (
+            self.storage_policy_id,
+            self.copy_id,
+        )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', disable_compliance_lock_url
+            "POST", disable_compliance_lock_url
         )
 
         # Adding a refresh to ensure we have the latest properties to verify if the compliance lock is disabled.
@@ -5708,30 +5655,34 @@ class StoragePolicyCopy(object):
 
         if flag:
             if response.json():
-                if ('genericError' in response.json()) and ('errorCode' in response.json()['genericError']):
-                    error_code = int(response.json()['genericError']['errorCode'])
+                if ("genericError" in response.json()) and (
+                    "errorCode" in response.json()["genericError"]
+                ):
+                    error_code = int(response.json()["genericError"]["errorCode"])
                     if error_code != 0:
                         error_message = "Failed to disable compliance lock"
-                        if "errorMessage" in response.json()["copies"][0]['genericError']:
-                            error_message = response.json()["copies"][0]['genericError']["errorMessage"]
-                        raise SDKException('Storage', '111', error_message)
+                        if "errorMessage" in response.json()["copies"][0]["genericError"]:
+                            error_message = response.json()["copies"][0]["genericError"][
+                                "errorMessage"
+                            ]
+                        raise SDKException("Storage", "111", error_message)
                 else:
                     if "error" in response.json():
                         warning_message = ""
                         if "warningMessage" in response.json()["error"]:
                             warning_message = response.json()["error"]["warningMessage"]
-                        raise SDKException('Storage', '111', warning_message)
+                        raise SDKException("Storage", "111", warning_message)
                     else:
-                        raise SDKException('Storage', '111')
+                        raise SDKException("Storage", "111")
             else:
-                raise SDKException('Storage', '111')
+                raise SDKException("Storage", "111")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         if self.is_compliance_lock_enabled:
-            raise SDKException('Response', '101', 'Failed to unset compliance lock')
-    
+            raise SDKException("Response", "101", "Failed to unset compliance lock")
+
     def enable_retention_lock(self, retention_lock_days: int) -> None:
         """Enables retention lock on the copy
 
@@ -5746,37 +5697,36 @@ class StoragePolicyCopy(object):
         Usage:
             storage_policy_copy.enable_retention_lock(30)
         """
-        enable_retention_lock_url = self._services['ENABLE_RETENTION_LOCK'] % (
-            self.storage_policy_id, self.copy_id)
+        enable_retention_lock_url = self._services["ENABLE_RETENTION_LOCK"] % (
+            self.storage_policy_id,
+            self.copy_id,
+        )
 
-        request_json = {
-            "retentionDays": retention_lock_days
-        }
+        request_json = {"retentionDays": retention_lock_days}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', enable_retention_lock_url, request_json
+            "POST", enable_retention_lock_url, request_json
         )
 
         if flag:
             if response.json():
                 if "errorCode" in response.json():
-                    error_code = int(response.json()['errorCode'])
+                    error_code = int(response.json()["errorCode"])
                     if error_code != 0:
                         if "errorMessage" in response.json():
                             error_message = response.json()
-                        raise SDKException('Storage', '111', error_message)
+                        raise SDKException("Storage", "111", error_message)
             else:
-                raise SDKException('Response', '101')
+                raise SDKException("Response", "101")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         # Adding a refresh to ensure we have the latest properties to verify if the retention lock is enabled.
         self.refresh()
 
-        if not int(self._copy_properties.get('dataRetentionLockDays', 0)) == retention_lock_days:
-            raise SDKException('Response', '101', 'Failed to enable retention lock')
-
+        if not int(self._copy_properties.get("dataRetentionLockDays", 0)) == retention_lock_days:
+            raise SDKException("Response", "101", "Failed to enable retention lock")
 
     def is_media_refresh_enabled(self) -> bool:
         """Checks whether Media Refresh on copy is enabled or not
@@ -5787,16 +5737,15 @@ class StoragePolicyCopy(object):
         Usage:
             is_enabled = storage_policy_copy.is_media_refresh_enabled()
         """
-        mediaRefreshEnabled = self._copy_flags.get('enableMediaRefresh', 0)
+        mediaRefreshEnabled = self._copy_flags.get("enableMediaRefresh", 0)
         return mediaRefreshEnabled == 1
-
 
     def update_media_refresh(self, enable: bool = True, **kwargs) -> None:
         """
         update media refresh (enable/disable) on storage pool/policy copy property.
-        
+
         Args:
-                enable                  (bool): True to enable media refresh, False to disable media refresh 
+                enable                  (bool): True to enable media refresh, False to disable media refresh
                                                         (default: True)
                 monthsBeforeMediaAged   (int): months before media is aged.
                                                         (default: 3)
@@ -5815,21 +5764,19 @@ class StoragePolicyCopy(object):
             storage_policy_copy.update_media_refresh(enable=False)
             storage_policy_copy.update_media_refresh(monthsBeforeMediaAged=6, monthsAfterMediaWritten=18, percentage=75)
         """
-        monthsBeforeMediaAged = kwargs.get('monthsBeforeMediaAged', 3)
-        monthsAfterMediaWritten = kwargs.get('monthsAfterMediaWritten', 12)
-        percentage = kwargs.get('percentage', 51)
+        monthsBeforeMediaAged = kwargs.get("monthsBeforeMediaAged", 3)
+        monthsAfterMediaWritten = kwargs.get("monthsAfterMediaWritten", 12)
+        percentage = kwargs.get("percentage", 51)
 
-        self._copy_flags['enableMediaRefresh'] = 1 if enable else 0
+        self._copy_flags["enableMediaRefresh"] = 1 if enable else 0
         if enable:
-            self._media_properties['mediaRefreshProperties'] = {
+            self._media_properties["mediaRefreshProperties"] = {
                 "percentage": percentage,
-                "monthsBeforeMediaAged": {
-                    "months": monthsBeforeMediaAged
-                },
-                "monthsAfterMediaWritten": {
-                    "months": monthsAfterMediaWritten
-                }
+                "monthsBeforeMediaAged": {"months": monthsBeforeMediaAged},
+                "monthsAfterMediaWritten": {"months": monthsAfterMediaWritten},
             }
         self._set_copy_properties()
         if self.is_media_refresh_enabled() != enable:
-            raise SDKException('Response', '101', f"Failed to {'enable' if enable else 'disable'} Media Refresh")
+            raise SDKException(
+                "Response", "101", f"Failed to {'enable' if enable else 'disable'} Media Refresh"
+            )

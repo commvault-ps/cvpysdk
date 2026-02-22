@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -14,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-""" File for operating on a MongoDB instance.
+"""File for operating on a MongoDB instance.
 MongoDBInstance :   Derived class from BigDataAppsInstance Base class, representing a
                         MongoDBInstance instance and to perform operations on that instance
 MongoDBInstance:
@@ -26,13 +25,13 @@ MongoDBInstance:
     refresh_mongo_instance()        -- Refresh mongoDB call by yaking machine response as input
 
 """
-from __future__ import unicode_literals
 
 from typing import Any, Dict
 
-from ..bigdataappsinstance import BigDataAppsInstance
 from ...exception import SDKException
 from ...job import Job
+from ..bigdataappsinstance import BigDataAppsInstance
+
 
 class MongoDBInstance(BigDataAppsInstance):
     """
@@ -49,6 +48,7 @@ class MongoDBInstance(BigDataAppsInstance):
 
     #ai-gen-doc
     """
+
     def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
         """Initialize a MongoDBInstance object.
 
@@ -68,14 +68,9 @@ class MongoDBInstance(BigDataAppsInstance):
         self._agent_object = agent_object
         self._browse_request = {}
         self._browse_url = None
-        super(
-            MongoDBInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
-    def restore(self, restore_options: Dict[str, Any]) -> 'Job':
+    def restore(self, restore_options: Dict[str, Any]) -> "Job":
         """Restore the content of this MongoDB instance using the specified options.
 
         Args:
@@ -149,36 +144,37 @@ class MongoDBInstance(BigDataAppsInstance):
         #ai-gen-doc
         """
         if not (isinstance(restore_options, dict)):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         request_json = self._restore_json(restore_option=restore_options)
 
         request_json["taskInfo"]["associations"][0]["subclientId"] = restore_options.get(
-            "subclient_id", -1)
+            "subclient_id", -1
+        )
         request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options.get(
-            "backupset_name")
-        request_json["taskInfo"]["associations"][0]["_type_"] = restore_options.get(
-            "_type_")
+            "backupset_name"
+        )
+        request_json["taskInfo"]["associations"][0]["_type_"] = restore_options.get("_type_")
 
         distributed_restore_json = {
             "distributedRestore": True,
         }
 
-
-        client_object_source = self._commcell_object.clients.get(restore_options['clientName'])
-        client_object_destination = self._commcell_object.clients.get(restore_options['destclientName'])
+        client_object_source = self._commcell_object.clients.get(restore_options["clientName"])
+        client_object_destination = self._commcell_object.clients.get(
+            restore_options["destclientName"]
+        )
 
         distributed_restore_json["mongoDBRestoreOptions"] = {
-                "destShardList": [
-                ],
-                "restoreFilesOnly": False,
-                "recover": True,
-                "pointInTimeToEndOfBackup": True,
-                "latestOpLogSync": True,
-                "latestEndOfBackup": True,
-                "isGranularRecovery": False,
-                "autoDBShutDown": True,
-                "isInplaceRestore": True
-            }
+            "destShardList": [],
+            "restoreFilesOnly": False,
+            "recover": True,
+            "pointInTimeToEndOfBackup": True,
+            "latestOpLogSync": True,
+            "latestEndOfBackup": True,
+            "isGranularRecovery": False,
+            "autoDBShutDown": True,
+            "isInplaceRestore": True,
+        }
 
         if restore_options.get("clusterConfig"):
             for host_info in restore_options.get("clusterConfig"):
@@ -187,7 +183,7 @@ class MongoDBInstance(BigDataAppsInstance):
                 port = int(host_info.get("port", ""))
                 clientname = host_info.get("clientname", "")
                 clientid = int(host_info.get("clientid", ""))
-                dbpath =  host_info.get("dbpath", "")
+                dbpath = host_info.get("dbpath", "")
 
                 shard_entry = {
                     "srcShardName": shard_name,
@@ -195,7 +191,7 @@ class MongoDBInstance(BigDataAppsInstance):
                     "target": {
                         "hostName": hostname,
                         "clientName": clientname,
-                        "clientId": clientid
+                        "clientId": clientid,
                     },
                     "destHostName": hostname,
                     "destPortNumber": port,
@@ -203,22 +199,25 @@ class MongoDBInstance(BigDataAppsInstance):
                     "bkpSecondary": {
                         "clientName": clientname,
                         "hostName": hostname,
-                        "clientId": clientid
+                        "clientId": clientid,
                     },
                     "bkpHostName": hostname,
                     "bkpPortNumber": port,
                     "bkpDataDir": dbpath,
                     "useDestAsSecondary": False,
-                    "primaryPortNumber": port
+                    "primaryPortNumber": port,
                 }
 
-                distributed_restore_json["mongoDBRestoreOptions"]["destShardList"].append(shard_entry)
+                distributed_restore_json["mongoDBRestoreOptions"]["destShardList"].append(
+                    shard_entry
+                )
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "distributedAppsRestoreOptions"] = distributed_restore_json
+            "distributedAppsRestoreOptions"
+        ] = distributed_restore_json
         return self._process_restore_response(request_json)
 
-    def restore_collection(self, restore_options: dict) -> 'Job':
+    def restore_collection(self, restore_options: dict) -> "Job":
         """Restore the content of this MongoDB instance for an in-place collection restore.
 
         Args:
@@ -289,39 +288,43 @@ class MongoDBInstance(BigDataAppsInstance):
         #ai-gen-doc
         """
         if not (isinstance(restore_options, dict)):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         request_json = self._restore_json(restore_option=restore_options)
 
         request_json["taskInfo"]["associations"][0]["subclientId"] = restore_options.get(
-            "subclient_id", )
+            "subclient_id",
+        )
         request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options.get(
-            "backupset_name")
-        request_json["taskInfo"]["associations"][0]["_type_"] = restore_options.get(
-            "_type_")
+            "backupset_name"
+        )
+        request_json["taskInfo"]["associations"][0]["_type_"] = restore_options.get("_type_")
         distributed_restore_json = {
             "distributedRestore": True,
         }
-        client_object_source = self._commcell_object.clients.get(restore_options['clientName'])
-        client_object_destination = self._commcell_object.clients.get(restore_options['destclientName'])
+        client_object_source = self._commcell_object.clients.get(restore_options["clientName"])
+        client_object_destination = self._commcell_object.clients.get(
+            restore_options["destclientName"]
+        )
         distributed_restore_json["mongoDBRestoreOptions"] = {
-                "destShardList": [],
-                "destGranularEntityList": [
-                    {
-                        "srcDbName": restore_options.get("source_db_name", False),
-                        "destDbName": restore_options.get("restore_db_name", False),
-                        "isDbEntity": True,
-                        "destCollectionName": ""
-                    }
-                ],
-                "restoreFilesOnly": False,
-                "recover": True,
-                "pointInTimeToEndOfBackup": True,
-                "latestOpLogSync": True,
-                "latestEndOfBackup": True,
-                "isGranularRecovery": True
-            }
+            "destShardList": [],
+            "destGranularEntityList": [
+                {
+                    "srcDbName": restore_options.get("source_db_name", False),
+                    "destDbName": restore_options.get("restore_db_name", False),
+                    "isDbEntity": True,
+                    "destCollectionName": "",
+                }
+            ],
+            "restoreFilesOnly": False,
+            "recover": True,
+            "pointInTimeToEndOfBackup": True,
+            "latestOpLogSync": True,
+            "latestEndOfBackup": True,
+            "isGranularRecovery": True,
+        }
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "distributedAppsRestoreOptions"] = distributed_restore_json
+            "distributedAppsRestoreOptions"
+        ] = distributed_restore_json
         return self._process_restore_response(request_json)
 
     def discover_mongo_nodes(self, options: dict):
@@ -348,8 +351,16 @@ class MongoDBInstance(BigDataAppsInstance):
         """
 
         required = [
-            "instance_id", "master_node", "master_hostname", "master_client_id",
-            "port", "bin_path", "db_user", "os_user", "db_credential_id", "ssl_credential_id"
+            "instance_id",
+            "master_node",
+            "master_hostname",
+            "master_client_id",
+            "port",
+            "bin_path",
+            "db_user",
+            "os_user",
+            "db_credential_id",
+            "ssl_credential_id",
         ]
 
         # check for missing keys
@@ -361,9 +372,7 @@ class MongoDBInstance(BigDataAppsInstance):
         request_json = {
             "distAppsProperties": {
                 "clusterType": 8,  # MongoDB cluster type
-                "subclient": {
-                    "instanceId": options["instance_id"]
-                },
+                "subclient": {"instanceId": options["instance_id"]},
                 "clusterConfig": {
                     "mdbConfig": {
                         "mdbServerType": "STATUS_UNKNOWN",
@@ -374,35 +383,30 @@ class MongoDBInstance(BigDataAppsInstance):
                             "binPath": options["bin_path"],
                             "client": {
                                 "clientId": options["master_client_id"],
-                                "clientName": options["master_node"]
-                            }
+                                "clientName": options["master_node"],
+                            },
                         },
                         "sslCMCredInfo": {
                             "credentialId": options["ssl_credential_id"],
-                            "credentialName": ""
+                            "credentialName": "",
                         },
                         "authCMCredInfo": {
                             "credentialId": options["db_credential_id"],
-                            "credentialName": ""
-                        }
+                            "credentialName": "",
+                        },
                     }
-                }
+                },
             },
             "path": "/",
             "foldersOnly": True,
-            "clientEntity": {
-                "clientId": options["master_client_id"]
-            }
+            "clientEntity": {"clientId": options["master_client_id"]},
         }
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST',
-            self._services['MACHINE_BROWSE'] % (options["master_client_id"]),
-            request_json
+            "POST", self._services["MACHINE_BROWSE"] % (options["master_client_id"]), request_json
         )
 
         return flag, response
-        
 
     def refresh_mongo_instance(self, options: dict):
         """
@@ -445,8 +449,7 @@ class MongoDBInstance(BigDataAppsInstance):
 
         # Step 2: Fetch current instance properties
         flag, inst_response = self._cvpysdk_object.make_request(
-            'GET',
-            self._services['INSTANCE'] % (instance_id)
+            "GET", self._services["INSTANCE"] % (instance_id)
         )
         if not flag:
             raise Exception("Failed to get instance properties")
@@ -455,33 +458,31 @@ class MongoDBInstance(BigDataAppsInstance):
 
         # Step 3: Extract new mdbConfig from MachineBrowse response
         try:
-            new_mdb_config = config['browseItems'][0]['mdbItem']['mdbConfig']
+            new_mdb_config = config["browseItems"][0]["mdbItem"]["mdbConfig"]
         except (KeyError, IndexError, TypeError):
-            raise ValueError("Invalid config format. 'browseItems[0].mdbItem.mdbConfig' not found.")
+            raise ValueError(
+                "Invalid config format. 'browseItems[0].mdbItem.mdbConfig' not found."
+            )
 
-        props = instance_json.get('instanceProperties')
+        props = instance_json.get("instanceProperties")
         if isinstance(props, list):
             props = props[0]  # Take the first element if wrapped in a list
 
         # Step 4: Preserve critical values from old mdbConfig
-        old_mdb_config = props['distributedClusterInstance']['clusterConfig']['mdbConfig']
+        old_mdb_config = props["distributedClusterInstance"]["clusterConfig"]["mdbConfig"]
         for key in ("sslCMCredInfo", "authCMCredInfo", "masterNode"):
             if key in old_mdb_config:
                 new_mdb_config[key] = old_mdb_config[key]
 
         # Step 5: Replace mdbConfig in instance JSON
-        props['distributedClusterInstance']['clusterConfig']['mdbConfig'] = new_mdb_config
+        props["distributedClusterInstance"]["clusterConfig"]["mdbConfig"] = new_mdb_config
         request_json = {"instanceProperties": props}
 
         # Step 6: Submit updated config
         flag, update_response = self._cvpysdk_object.make_request(
-            'POST',
-            self._services['INSTANCE'] % (instance_id),
-            request_json
+            "POST", self._services["INSTANCE"] % (instance_id), request_json
         )
         if not flag:
             raise Exception(f"Update Failed: {update_response.text}")
 
         return update_response.json()
-
-

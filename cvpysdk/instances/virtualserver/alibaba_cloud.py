@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -41,9 +39,10 @@ AlibabaCloudInstance:
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -65,7 +64,7 @@ class AlibabaCloudInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize an AlibabaCloudInstance object for a specific Virtual Server instance.
 
         Args:
@@ -85,7 +84,7 @@ class AlibabaCloudInstance(VirtualServerInstance):
         self._server_name = []
         self._server_host_name = None
         self._username = None
-        super(AlibabaCloudInstance, self).__init__(agent, instance_name, instance_id)
+        super().__init__(agent, instance_name, instance_id)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this Alibaba Cloud instance.
@@ -104,22 +103,22 @@ class AlibabaCloudInstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(AlibabaCloudInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         if "vmwareVendor" in self._virtualserverinstance:
-            self._server_host_name = [self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['domainName']]
+            self._server_host_name = [
+                self._virtualserverinstance["vmwareVendor"]["virtualCenter"]["domainName"]
+            ]
 
             self._username = (
-                self._virtualserverinstance
-                .get('vmwareVendor', {})
-                .get('virtualCenter', {})
-                .get('userName', None)
+                self._virtualserverinstance.get("vmwareVendor", {})
+                .get("virtualCenter", {})
+                .get("userName", None)
             )
 
-        for _each_client in self._asscociatedclients['memberServers']:
-            client = _each_client['client']
-            if 'clientName' in client.keys():
-                self._server_name.append(str(client['clientName']))
+        for _each_client in self._asscociatedclients["memberServers"]:
+            client = _each_client["client"]
+            if "clientName" in client.keys():
+                self._server_name.append(str(client["clientName"]))
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient as a dictionary.
@@ -130,16 +129,16 @@ class AlibabaCloudInstance(VirtualServerInstance):
         #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": self._virtualserverinstance['vmwareVendor'],
-                    "xenServer": {}
-                    }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": self._virtualserverinstance["vmwareVendor"],
+                    "xenServer": {},
+                },
             }
         }
         return instance_json

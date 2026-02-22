@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -25,12 +23,10 @@ LNSubclient:        Class for representing all the Lotus Notes iDAs and performi
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from ...subclient import Subclient
 from ...exception import SDKException
 from ...job import Job
+from ...subclient import Subclient
+
 
 class LNSubclient(Subclient):
     """
@@ -53,15 +49,15 @@ class LNSubclient(Subclient):
     """
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore files or folders to their original location within the same client.
 
         This method initiates an in-place restore operation for the specified files or folders.
@@ -81,7 +77,7 @@ class LNSubclient(Subclient):
             Job: An instance of the Job class representing the restore job.
 
         Raises:
-            SDKException: If 'paths' is not a list, if the job fails to initialize, 
+            SDKException: If 'paths' is not a list, if the job fails to initialize,
                 or if the restore response is empty or unsuccessful.
 
         Example:
@@ -98,21 +94,23 @@ class LNSubclient(Subclient):
 
         #ai-gen-doc
         """
-        if not (isinstance(paths, list) and
-                isinstance(overwrite, bool) and
-                isinstance(restore_data_and_acl, bool)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(paths, list)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Subclient", "101")
 
-        if kwargs.get('common_options_dict') is None:
-            kwargs['common_options_dict'] = {}
+        if kwargs.get("common_options_dict") is None:
+            kwargs["common_options_dict"] = {}
 
-        if kwargs.get('lndb_restore_options') is None:
-            kwargs['lndb_restore_options'] = {}
+        if kwargs.get("lndb_restore_options") is None:
+            kwargs["lndb_restore_options"] = {}
 
         paths = self._filter_paths(paths)
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
@@ -123,23 +121,23 @@ class LNSubclient(Subclient):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
-            **kwargs
+            **kwargs,
         )
 
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore files or folders to a different client and location.
 
         This method restores the specified files or folders from backup to a given destination path
@@ -177,21 +175,23 @@ class LNSubclient(Subclient):
         #ai-gen-doc
         """
 
-        if not (isinstance(paths, list) and
-                isinstance(overwrite, bool) and
-                isinstance(restore_data_and_acl, bool)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(paths, list)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Subclient", "101")
 
-        if kwargs.get('common_options_dict') is None:
-            kwargs['common_options_dict'] = {}
+        if kwargs.get("common_options_dict") is None:
+            kwargs["common_options_dict"] = {}
 
-        if kwargs.get('lndb_restore_options') is None:
-            kwargs['lndb_restore_options'] = {}
+        if kwargs.get("lndb_restore_options") is None:
+            kwargs["lndb_restore_options"] = {}
 
         paths = self._filter_paths(paths)
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
@@ -205,15 +205,18 @@ class LNSubclient(Subclient):
             from_time=from_time,
             to_time=to_time,
             in_place=False,
-            **kwargs)
+            **kwargs,
+        )
 
         return self._process_restore_response(request_json)
 
-    def backup(self,
-               backup_level: str = "Incremental",
-               incremental_backup: bool = False,
-               incremental_level: str = 'BEFORE_SYNTH',
-               schedule_pattern: dict = None) -> dict:
+    def backup(
+        self,
+        backup_level: str = "Incremental",
+        incremental_backup: bool = False,
+        incremental_level: str = "BEFORE_SYNTH",
+        schedule_pattern: dict = None,
+    ) -> dict:
         """Generate the JSON request for a backup operation with the specified options.
 
         This method constructs and returns a JSON request payload to be used with the API,
@@ -254,18 +257,20 @@ class LNSubclient(Subclient):
                 backup_level,
                 incremental_backup,
                 incremental_level,
-                schedule_pattern=schedule_pattern)
+                schedule_pattern=schedule_pattern,
+            )
 
-            backup_service = self._services['CREATE_TASK']
+            backup_service = self._services["CREATE_TASK"]
 
             flag, response = self._cvpysdk_object.make_request(
-                'POST', backup_service, request_json
+                "POST", backup_service, request_json
             )
 
         else:
-            return super(LNSubclient, self).backup(
+            return super().backup(
                 backup_level=backup_level,
                 incremental_backup=incremental_backup,
-                incremental_level=incremental_level)
+                incremental_level=incremental_level,
+            )
 
         return self._process_backup_response(flag, response)

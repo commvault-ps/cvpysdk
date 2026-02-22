@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -30,9 +28,10 @@ GoogleCloudInstance:
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -53,7 +52,8 @@ class GoogleCloudInstance(VirtualServerInstance):
 
     #ai-gen-doc
     """
-    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+
+    def __init__(self, agent: "Agent", name: str, iid: str) -> None:
         """Initialize a GoogleCloudInstance object with the specified agent, name, and instance ID.
 
         Args:
@@ -69,7 +69,7 @@ class GoogleCloudInstance(VirtualServerInstance):
         """
         self._vendor_id = 16
         self._server_name = []
-        super(GoogleCloudInstance, self).__init__(agent, name, iid)
+        super().__init__(agent, name, iid)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this Google Cloud instance.
@@ -84,15 +84,16 @@ class GoogleCloudInstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(GoogleCloudInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         self._server_name = []
-        if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
-                ["associatedClients"]["memberServers"]
+        if "virtualServerInstance" in self._properties:
+            _member_servers = self._properties["virtualServerInstance"]["associatedClients"][
+                "memberServers"
+            ]
             for _each_client in _member_servers:
-                client = _each_client['client']
-                if 'clientName' in client.keys():
-                    self._server_name.append(str(client['clientName']))
+                client = _each_client["client"]
+                if "clientName" in client.keys():
+                    self._server_name.append(str(client["clientName"]))
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient as a dictionary.
@@ -108,10 +109,10 @@ class GoogleCloudInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": self._virtualserverinstance['vmwareVendor']
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": self._virtualserverinstance["vmwareVendor"],
+                },
             }
         }
 

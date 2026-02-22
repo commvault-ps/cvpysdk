@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
 
 # --------------------------------------------------------------------------
@@ -34,6 +33,7 @@ the argument
 subclient_content()     --      sets backup content at subclient level
 
 """
+
 from cvpysdk.subclients.bigdataappssubclient import BigDataAppsSubclient
 
 
@@ -68,14 +68,14 @@ class SplunkSubclient(BigDataAppsSubclient):
         instance_obj = self._instance_object
 
         instance_obj._restore_association = self._subClientEntity
-        parameter_dict = self._restore_json(paths=index_list, copy_precedence=copy_precedence, from_time=from_time,
-                                            to_time=to_time)
-        parameter_dict["taskInfo"]["associations"] \
-            [0]["subclientId"] = subclient_id
-        parameter_dict["taskInfo"]["associations"] \
-            [0]["backupsetId"] = backupset_id
-        parameter_dict["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["browseOption"]["backupset"]["backupsetId"] = backupset_id
+        parameter_dict = self._restore_json(
+            paths=index_list, copy_precedence=copy_precedence, from_time=from_time, to_time=to_time
+        )
+        parameter_dict["taskInfo"]["associations"][0]["subclientId"] = subclient_id
+        parameter_dict["taskInfo"]["associations"][0]["backupsetId"] = backupset_id
+        parameter_dict["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+            "backupset"
+        ]["backupsetId"] = backupset_id
 
         return self._process_restore_response(parameter_dict)
 
@@ -117,17 +117,12 @@ class SplunkSubclient(BigDataAppsSubclient):
             "path": "indexes/" + index_list_copy[0],
             "level": 1,
             "type": 1,
-            "title": index_list_copy[0]
+            "title": index_list_copy[0],
         }
         subclient_prop["splunkProps"]["contentList"][0] = content_prop_dict
         del index_list_copy[0]
         for index in index_list_copy:
-            content_prop_dict = {
-                "path": "indexes/" + index,
-                "level": 1,
-                "type": 1,
-                "title": index
-            }
+            content_prop_dict = {"path": "indexes/" + index, "level": 1, "type": 1, "title": index}
             subclient_prop["splunkProps"]["contentList"].append(content_prop_dict)
 
         self.update_properties(subclient_prop)

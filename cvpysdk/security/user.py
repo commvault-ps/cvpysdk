@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -148,13 +146,14 @@ User
 """
 
 from base64 import b64encode
-from .security_association import SecurityAssociation
-from ..additional_settings import AdditionalSettings
-from ..exception import SDKException
 from typing import Any, Dict, List, Optional, Union
 
+from ..additional_settings import AdditionalSettings
+from ..exception import SDKException
+from .security_association import SecurityAssociation
 
-class Users(object):
+
+class Users:
     """Class for maintaining all the configured users on this commcell.
 
     Attributes:
@@ -189,10 +188,10 @@ class Users(object):
         Returns:
             str: String of all the users configured on the commcell.
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Users')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Users")
 
         for index, user in enumerate(self._users):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, user)
+            sub_str = f"{index + 1:^5}\t{user:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -226,29 +225,29 @@ class Users(object):
             users = self._get_users()
             full_users = self._get_users(full_response=True)
         """
-        get_all_user_service = self._commcell_object._services['USERS']
+        get_all_user_service = self._commcell_object._services["USERS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_all_user_service
+            "GET", get_all_user_service
         )
 
         if flag:
-            if response.json() and 'users' in response.json():
+            if response.json() and "users" in response.json():
                 if full_response:
                     return response.json()
                 users_dict = {}
 
-                for user in response.json()['users']:
-                    temp_name = user['userEntity']['userName'].lower()
-                    temp_id = user['userEntity']['userId']
+                for user in response.json()["users"]:
+                    temp_name = user["userEntity"]["userName"].lower()
+                    temp_id = user["userEntity"]["userId"]
                     users_dict[temp_name] = temp_id
 
                 return users_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_v4_users(self, full_response: bool = False) -> dict:
         """Returns the list of v4 users configured on this commcell
@@ -271,29 +270,29 @@ class Users(object):
             users = self._get_v4_users()
             full_users = self._get_v4_users(full_response=True)
         """
-        get_all_user_service = self._commcell_object._services['V4_USERS']
+        get_all_user_service = self._commcell_object._services["V4_USERS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_all_user_service
+            "GET", get_all_user_service
         )
 
         if flag:
-            if response.json() and 'users' in response.json():
+            if response.json() and "users" in response.json():
                 if full_response:
                     return response.json()
                 users_dict = {}
 
-                for user in response.json()['users']:
-                    temp_name = user['name'].lower()
-                    temp_id = user['id']
+                for user in response.json()["users"]:
+                    temp_name = user["name"].lower()
+                    temp_id = user["id"]
                     users_dict[temp_name] = temp_id
 
                 return users_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_fl_parameters(self, fl: list = None) -> str:
         """
@@ -314,26 +313,26 @@ class Users(object):
             all_fl_params = self._get_fl_parameters()
         """
         self.valid_columns = {
-            'userName': 'users.userEntity.userName',
-            'userId': 'users.userEntity.userId',
-            'email': 'users.email',
-            'fullName': 'users.fullName',
-            'description': 'users.description',
-            'UPN': 'users.UPN',
-            'enableUser': 'users.enableUser',
-            'isAccountLocked': 'users.isAccountLocked',
-            'numDevices': 'users.numDevices',
-            'company': 'users.userEntity.entityInfo.companyName',
-            'lastLogIntime': 'users.lastLogIntime',
-            'commcell': 'users.userEntity.entityInfo.multiCommcellName'
+            "userName": "users.userEntity.userName",
+            "userId": "users.userEntity.userId",
+            "email": "users.email",
+            "fullName": "users.fullName",
+            "description": "users.description",
+            "UPN": "users.UPN",
+            "enableUser": "users.enableUser",
+            "isAccountLocked": "users.isAccountLocked",
+            "numDevices": "users.numDevices",
+            "company": "users.userEntity.entityInfo.companyName",
+            "lastLogIntime": "users.lastLogIntime",
+            "commcell": "users.userEntity.entityInfo.multiCommcellName",
         }
-        default_columns = 'users.userEntity'
+        default_columns = "users.userEntity"
 
         if fl:
             if all(col in self.valid_columns for col in fl):
                 fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
             else:
-                raise SDKException('User', '102', 'Invalid column name passed')
+                raise SDKException("User", "102", "Invalid column name passed")
         else:
             fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
 
@@ -360,10 +359,10 @@ class Users(object):
         """
         sort_type = str(sort[1])
         col = sort[0]
-        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
-            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        if col in self.valid_columns.keys() and sort_type in ["1", "-1"]:
+            sort_parameter = "&sort=" + self.valid_columns[col] + ":" + sort_type
         else:
-            raise SDKException('User', '102', 'Invalid column name passed')
+            raise SDKException("User", "102", "Invalid column name passed")
         return sort_parameter
 
     def _get_fq_parameters(self, fq: list = None) -> str:
@@ -389,7 +388,7 @@ class Users(object):
 
         for column, condition, *value in fq or []:
             if column not in self.valid_columns:
-                raise SDKException('User', '102', 'Invalid column name passed')
+                raise SDKException("User", "102", "Invalid column name passed")
 
             if condition in conditions:
                 params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
@@ -400,7 +399,7 @@ class Users(object):
                 params.append(f"&fq={self.valid_columns[column]}:gteq:{start}")
                 params.append(f"&fq={self.valid_columns[column]}:lteq:{end}")
             else:
-                raise SDKException('User', '102', 'Invalid condition passed')
+                raise SDKException("User", "102", "Invalid condition passed")
 
         return "".join(params)
 
@@ -436,17 +435,25 @@ class Users(object):
             users_cache_filtered = self.get_users_cache(fl=['userName', 'email'], sort=['userName', '1'], limit=['0', '50'], search='test', fq=[['userName', 'contains', 'test']])
         """
         # computing params
-        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
-        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', None)
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
-        hard_refresh = '&hardRefresh=true' if hard else ''
-        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        fl_parameters = self._get_fl_parameters(kwargs.get("fl", None))
+        fq_parameters = self._get_fq_parameters(kwargs.get("fq", None))
+        limit = kwargs.get("limit", None)
+        limit_parameters = f"start={limit[0]}&limit={limit[1]}" if limit else ""
+        hard_refresh = "&hardRefresh=true" if hard else ""
+        sort_parameters = (
+            self._get_sort_parameters(kwargs.get("sort", None)) if kwargs.get("sort", None) else ""
+        )
 
         # Search operation can only be performed on limited columns, so filtering out the columns on which search works
         searchable_columns = ["userName", "email", "fullName", "company", "description"]
-        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
-                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+        search_parameter = (
+            (
+                f"&search={','.join(self.valid_columns[col] for col in searchable_columns)}:contains:"
+                f"{kwargs.get('search', None)}"
+            )
+            if kwargs.get("search", None)
+            else ""
+        )
 
         params = [
             limit_parameters,
@@ -454,7 +461,7 @@ class Users(object):
             fl_parameters,
             hard_refresh,
             search_parameter,
-            fq_parameters
+            fq_parameters,
         ]
 
         # adding required additional param for comet layer
@@ -466,35 +473,35 @@ class Users(object):
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         users_cache = {}
-        if response.json() and 'users' in response.json():
-            self.filter_query_count = response.json().get('numberOfUsers', 0)
-            for user in response.json()['users']:
-                name = user.get('name', '')
+        if response.json() and "users" in response.json():
+            self.filter_query_count = response.json().get("numberOfUsers", 0)
+            for user in response.json()["users"]:
+                name = user.get("name", "")
                 users_config = {
-                    'userName': name,
-                    'userId': user.get('id'),
-                    'email': user.get('email'),
-                    'fullName': user.get('fullName'),
-                    'description': user.get('description', ''),
-                    'UPN': user.get('userPrincipalName'),
-                    'enableUser': user.get('enabled'),
-                    'isAccountLocked': user.get('lockInfo', {}).get('isLocked'),
-                    'numDevices': user.get('numberOfLaptops'),
-                    'company': user.get('company', {}).get('name'),
-                    'lastLogIntime': user.get('lastLoggedIn', 0)
+                    "userName": name,
+                    "userId": user.get("id"),
+                    "email": user.get("email"),
+                    "fullName": user.get("fullName"),
+                    "description": user.get("description", ""),
+                    "UPN": user.get("userPrincipalName"),
+                    "enableUser": user.get("enabled"),
+                    "isAccountLocked": user.get("lockInfo", {}).get("isLocked"),
+                    "numDevices": user.get("numberOfLaptops"),
+                    "company": user.get("company", {}).get("name"),
+                    "lastLogIntime": user.get("lastLoggedIn", 0),
                 }
                 if self._commcell_object.is_global_scope():
-                    users_config['commcell'] = user.get('commcell', {}).get('name')
+                    users_config["commcell"] = user.get("commcell", {}).get("name")
 
                     # Handle duplicate names for different commcells
                     unique_name = name
                     i = 1
                     while unique_name in users_cache:
                         existing_user = users_cache[unique_name]
-                        if existing_user.get('commcell') != users_config.get('commcell'):
+                        if existing_user.get("commcell") != users_config.get("commcell"):
                             unique_name = f"{name}__{i}"
                             i += 1
                         else:
@@ -505,7 +512,7 @@ class Users(object):
 
             return users_cache
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     @property
     def all_users_cache(self) -> dict:
@@ -545,16 +552,18 @@ class Users(object):
             self._users_cache = self.get_users_cache()
         return self._users_cache
 
-    def v4_add(self,
-            user_name: str,
-            email: str,
-            full_name: Optional[str] = None,
-            domain: Optional[str] = None,
-            password: Optional[str] = None,
-            system_generated_password: bool = False,
-            local_usergroups: Optional[List[str]] = None,
-            entity_dictionary: Optional[Dict[str, Any]] = None,
-            **kwargs) -> 'User':
+    def v4_add(
+        self,
+        user_name: str,
+        email: str,
+        full_name: Optional[str] = None,
+        domain: Optional[str] = None,
+        password: Optional[str] = None,
+        system_generated_password: bool = False,
+        local_usergroups: Optional[List[str]] = None,
+        entity_dictionary: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> "User":
         """Adds a local/external user to this commcell.
 
         Args:
@@ -601,7 +610,7 @@ class Users(object):
         upn = kwargs.get("upn", email)
 
         if domain:
-            username = "{0}\\{1}".format(domain, user_name)
+            username = f"{domain}\\{user_name}"
             password = ""
             system_generated_password = False
         else:
@@ -609,17 +618,16 @@ class Users(object):
             if not password:
                 system_generated_password = True
 
-        if not (isinstance(username, str) and
-                isinstance(email, str)):
-            raise SDKException('User', '101')
+        if not (isinstance(username, str) and isinstance(email, str)):
+            raise SDKException("User", "101")
 
         if self.has_user(username):
-            raise SDKException('User', '103', 'User: {0}'.format(username))
+            raise SDKException("User", "103", f"User: {username}")
 
         if password is not None:
             password = b64encode(password.encode()).decode()
         else:
-            password = ''
+            password = ""
 
         if local_usergroups:
             groups_json = [{"name": lname} for lname in local_usergroups]
@@ -627,67 +635,73 @@ class Users(object):
             groups_json = [{}]
 
         create_user_request = {
-            "users": [{
-                "password": password,
-                "email": email,
-                "userPrincipalName": upn,
-                "fullName": full_name,
-                "useSystemGeneratePassword": system_generated_password,
-                "name": username,
-                "userGroups": groups_json
-            }]
+            "users": [
+                {
+                    "password": password,
+                    "email": email,
+                    "userPrincipalName": upn,
+                    "fullName": full_name,
+                    "useSystemGeneratePassword": system_generated_password,
+                    "name": username,
+                    "userGroups": groups_json,
+                }
+            ]
         }
-        add_user = self._commcell_object._services['V4_USERS']
+        add_user = self._commcell_object._services["V4_USERS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', add_user, create_user_request)
+            "POST", add_user, create_user_request
+        )
         if flag:
             if response.json():
                 response_json = response.json()
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         created_user_username = response_json.get("users", [{}])[0].get("name")
         created_user_id = response_json.get("users", [{}])[0].get("id")
 
         if entity_dictionary:
             security_request = SecurityAssociation._security_association_json(
-                entity_dictionary=entity_dictionary)
+                entity_dictionary=entity_dictionary
+            )
             security_json = {
-                "users": [{
-                    "securityAssociations": {
-                        "associationsOperationType": "ADD",
-                        "associations": security_request
+                "users": [
+                    {
+                        "securityAssociations": {
+                            "associationsOperationType": "ADD",
+                            "associations": security_request,
+                        }
                     }
-                }]
+                ]
             }
-            security_asssociation_url = self._commcell_object._services['USER'] % created_user_id
+            security_asssociation_url = self._commcell_object._services["USER"] % created_user_id
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', security_asssociation_url, security_json
+                "POST", security_asssociation_url, security_json
             )
             if flag:
                 if response.json():
-                    if 'response' in response.json():
-                        response_json = response.json()['response'][0]
-                        error_code = response_json.get('errorCode', 0)
-                        error_message = response_json.get('errorString', '')
-                    elif 'errorCode' in response.json():
-                        error_code = response.json().get('errorCode', 0)
-                        error_message = response.json().get('errorMessage', '')
+                    if "response" in response.json():
+                        response_json = response.json()["response"][0]
+                        error_code = response_json.get("errorCode", 0)
+                        error_message = response_json.get("errorString", "")
+                    elif "errorCode" in response.json():
+                        error_code = response.json().get("errorCode", 0)
+                        error_message = response.json().get("errorMessage", "")
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
 
         self.refresh()
         return self.get(created_user_username)
@@ -710,24 +724,24 @@ class Users(object):
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    if 'errorString' in response_json:
-                        error_message = response_json['errorString']
-                elif 'errorCode' in response.json():
-                    error_code = response.json()['errorCode']
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    if "errorString" in response_json:
+                        error_message = response_json["errorString"]
+                elif "errorCode" in response.json():
+                    error_code = response.json()["errorCode"]
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
 
                 return error_code, error_message
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _add_user(self, create_user_request: dict) -> dict:
         """Makes the add user request on the server
@@ -745,33 +759,35 @@ class Users(object):
         Usage:
             response = self._add_user(create_user_request)
         """
-        add_user = self._commcell_object._services['USERS']
+        add_user = self._commcell_object._services["USERS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', add_user, create_user_request
+            "POST", add_user, create_user_request
         )
         error_code, error_message = self._process_add_or_delete_response(flag, response)
 
         if not error_message:
-            error_message = 'Failed to add user. Please check logs for further details.'
+            error_message = "Failed to add user. Please check logs for further details."
 
         if error_code != 0:
-            raise SDKException('User', '102', error_message)
+            raise SDKException("User", "102", error_message)
 
         self._users = self._get_v4_users()
 
         return response.json()
 
-    def add(self,
-            user_name: str,
-            email: str,
-            full_name: Optional[str] = None,
-            domain: Optional[str] = None,
-            password: Optional[str] = None,
-            system_generated_password: bool = False,
-            local_usergroups: Optional[List[str]] = None,
-            entity_dictionary: Optional[Dict[str, Any]] = None,
-            **kwargs) -> 'User':
+    def add(
+        self,
+        user_name: str,
+        email: str,
+        full_name: Optional[str] = None,
+        domain: Optional[str] = None,
+        password: Optional[str] = None,
+        system_generated_password: bool = False,
+        local_usergroups: Optional[List[str]] = None,
+        entity_dictionary: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> "User":
         """Adds a local/external user to this commcell.
 
         Args:
@@ -818,7 +834,7 @@ class Users(object):
         upn = kwargs.get("upn", email)
 
         if domain:
-            username = "{0}\\{1}".format(domain, user_name)
+            username = f"{domain}\\{user_name}"
             password = ""
             system_generated_password = False
         else:
@@ -826,17 +842,16 @@ class Users(object):
             if not password:
                 system_generated_password = True
 
-        if not (isinstance(username, str) and
-                isinstance(email, str)):
-            raise SDKException('User', '101')
+        if not (isinstance(username, str) and isinstance(email, str)):
+            raise SDKException("User", "101")
 
         if self.has_user(username):
-            raise SDKException('User', '103', 'User: {0}'.format(username))
+            raise SDKException("User", "103", f"User: {username}")
 
         if password is not None:
             password = b64encode(password.encode()).decode()
         else:
-            password = ''
+            password = ""
 
         if local_usergroups:
             groups_json = [{"userGroupName": lname} for lname in local_usergroups]
@@ -846,38 +861,39 @@ class Users(object):
         security_json = {}
         if entity_dictionary:
             security_request = SecurityAssociation._security_association_json(
-                entity_dictionary=entity_dictionary)
-            security_json = {
-                "associationsOperationType": "ADD",
-                "associations": security_request
-                }
+                entity_dictionary=entity_dictionary
+            )
+            security_json = {"associationsOperationType": "ADD", "associations": security_request}
 
         create_user_request = {
-            "users": [{
-                **({"password": password} if domain is None else {}),
-                "email": email,
-                "UPN": upn,
-                "fullName": full_name,
-                "systemGeneratePassword": system_generated_password,
-                "userEntity": {
-                    "userName": username
-                },
-                "securityAssociations": security_json,
-                "associatedUserGroups": groups_json
-            }]
+            "users": [
+                {
+                    **({"password": password} if domain is None else {}),
+                    "email": email,
+                    "UPN": upn,
+                    "fullName": full_name,
+                    "systemGeneratePassword": system_generated_password,
+                    "userEntity": {"userName": username},
+                    "securityAssociations": security_json,
+                    "associatedUserGroups": groups_json,
+                }
+            ]
         }
         response_json = self._add_user(create_user_request)
 
-
-        created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
+        created_user_username = (
+            response_json.get("response", [{}])[0].get("entity", {}).get("userName")
+        )
 
         return self.get(created_user_username)
 
-    def add_service_account(self,
-                           user_name: str,
-                           full_name: Optional[str] = None,
-                           local_usergroups: Optional[List[str]] = None,
-                           entity_dictionary: Optional[Dict[str, Any]] = None) -> 'User':
+    def add_service_account(
+        self,
+        user_name: str,
+        full_name: Optional[str] = None,
+        local_usergroups: Optional[List[str]] = None,
+        entity_dictionary: Optional[Dict[str, Any]] = None,
+    ) -> "User":
         """Creates a service account in the commcell.
 
         Service accounts are special users designed for API access and automation purposes.
@@ -929,10 +945,10 @@ class Users(object):
             )
         """
         if not isinstance(user_name, str):
-            raise SDKException('User', '101')
+            raise SDKException("User", "101")
 
         if self.has_user(user_name):
-            raise SDKException('User', '103', 'User: {0}'.format(user_name))
+            raise SDKException("User", "103", f"User: {user_name}")
 
         if local_usergroups:
             groups_json = [{"userGroupName": lname} for lname in local_usergroups]
@@ -942,30 +958,29 @@ class Users(object):
         security_json = {}
         if entity_dictionary:
             security_request = SecurityAssociation._security_association_json(
-                entity_dictionary=entity_dictionary)
-            security_json = {
-                "associationsOperationType": "ADD",
-                "associations": security_request
-            }
+                entity_dictionary=entity_dictionary
+            )
+            security_json = {"associationsOperationType": "ADD", "associations": security_request}
 
         create_user_request = {
-            "users": [{
-                "fullName": full_name,
-                "isServiceAccount": True,
-                "userEntity": {
-                    "userName": user_name
-                },
-                "securityAssociations": security_json,
-                "associatedUserGroups": groups_json
-            }]
+            "users": [
+                {
+                    "fullName": full_name,
+                    "isServiceAccount": True,
+                    "userEntity": {"userName": user_name},
+                    "securityAssociations": security_json,
+                    "associatedUserGroups": groups_json,
+                }
+            ]
         }
 
         response_json = self._add_user(create_user_request)
 
-        created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
+        created_user_username = (
+            response_json.get("response", [{}])[0].get("entity", {}).get("userName")
+        )
 
         return self.get(created_user_username)
-
 
     def has_user(self, user_name: str) -> bool:
         """Checks if any user with specified name exists on this commcell.
@@ -984,12 +999,11 @@ class Users(object):
             users.has_user(user_name='testuser')
         """
         if not isinstance(user_name, str):
-            raise SDKException('User', '101')
+            raise SDKException("User", "101")
 
         return self._users and user_name.lower() in self._users
 
-
-    def get(self, user_name: str) -> 'User':
+    def get(self, user_name: str) -> "User":
         """Returns the user object for the specified user name.
 
         Args:
@@ -1006,18 +1020,13 @@ class Users(object):
             user = users.get(user_name='testuser')
         """
         if not self.has_user(user_name):
-            raise SDKException(
-                'User', '102', "User {0} doesn't exists on this commcell.".format(
-                    user_name)
-            )
+            raise SDKException("User", "102", f"User {user_name} doesn't exists on this commcell.")
 
         return User(self._commcell_object, user_name, self._users[user_name.lower()])
 
-
-    def delete(self,
-               user_name: str,
-               new_user: Optional[str] = None,
-               new_usergroup: Optional[str] = None) -> None:
+    def delete(
+        self, user_name: str, new_user: Optional[str] = None, new_usergroup: Optional[str] = None
+    ) -> None:
         """Deletes the specified user from the existing commcell users.
 
         Args:
@@ -1039,21 +1048,19 @@ class Users(object):
             users.delete(user_name='testuser', new_usergroup='newusergroup')
         """
         if not self.has_user(user_name):
-            raise SDKException(
-                'User', '102', "User {0} doesn't exists on this commcell.".format(
-                    user_name)
-            )
+            raise SDKException("User", "102", f"User {user_name} doesn't exists on this commcell.")
         if new_user and new_usergroup:
             raise SDKException(
-                'User', '102', "{0} and {1} both can not be set as owner!! "
-                "please send either new_user or new_usergroup".format(new_user, new_usergroup)
+                "User",
+                "102",
+                f"{new_user} and {new_usergroup} both can not be set as owner!! "
+                "please send either new_user or new_usergroup",
             )
         else:
             if new_user:
                 if not self.has_user(new_user):
                     raise SDKException(
-                        'User', '102', "User {0} doesn't exists on this commcell.".format(
-                            new_user)
+                        "User", "102", f"User {new_user} doesn't exists on this commcell."
                     )
                 new_user_id = self._users[new_user.lower()]
                 new_group_id = 0
@@ -1061,33 +1068,35 @@ class Users(object):
                 if new_usergroup:
                     if not self._commcell_object.user_groups.has_user_group(new_usergroup):
                         raise SDKException(
-                            'UserGroup', '102', "UserGroup {0} doesn't exists "
-                            "on this commcell.".format(new_usergroup)
+                            "UserGroup",
+                            "102",
+                            f"UserGroup {new_usergroup} doesn't exists on this commcell.",
                         )
                 else:
                     raise SDKException(
-                        'User', '102',
-                        "Ownership transfer is mondatory!! Please provide new owner information"
+                        "User",
+                        "102",
+                        "Ownership transfer is mondatory!! Please provide new owner information",
                     )
                 new_group_id = self._commcell_object.user_groups.get(new_usergroup).user_group_id
                 new_user_id = 0
 
-        delete_user = self._commcell_object._services['DELETE_USER'] %(
-            self._users[user_name.lower()], new_user_id, new_group_id)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'DELETE', delete_user
+        delete_user = self._commcell_object._services["DELETE_USER"] % (
+            self._users[user_name.lower()],
+            new_user_id,
+            new_group_id,
         )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("DELETE", delete_user)
         error_code, error_message = self._process_add_or_delete_response(flag, response)
         if not error_message:
-            error_message = 'Failed to delete user. Please check logs for further details.'
+            error_message = "Failed to delete user. Please check logs for further details."
         if error_code != 0:
-            raise SDKException('User', '102', error_message)
+            raise SDKException("User", "102", error_message)
         self._users = self._get_v4_users()
 
-    def v4_delete(self,
-               user_name: str,
-               new_user: Optional[str] = None,
-               new_usergroup: Optional[str] = None) -> None:
+    def v4_delete(
+        self, user_name: str, new_user: Optional[str] = None, new_usergroup: Optional[str] = None
+    ) -> None:
         """Deletes the specified user from the existing commcell users.
 
         Args:
@@ -1109,21 +1118,19 @@ class Users(object):
             users.delete(user_name='testuser', new_usergroup='newusergroup')
         """
         if not self.has_user(user_name):
-            raise SDKException(
-                'User', '102', "User {0} doesn't exists on this commcell.".format(
-                    user_name)
-            )
+            raise SDKException("User", "102", f"User {user_name} doesn't exists on this commcell.")
         if new_user and new_usergroup:
             raise SDKException(
-                'User', '102', "{0} and {1} both can not be set as owner!! "
-                "please send either new_user or new_usergroup".format(new_user, new_usergroup)
+                "User",
+                "102",
+                f"{new_user} and {new_usergroup} both can not be set as owner!! "
+                "please send either new_user or new_usergroup",
             )
         else:
             if new_user:
                 if not self.has_user(new_user):
                     raise SDKException(
-                        'User', '102', "User {0} doesn't exists on this commcell.".format(
-                            new_user)
+                        "User", "102", f"User {new_user} doesn't exists on this commcell."
                     )
                 new_user_id = self._users[new_user.lower()]
                 new_group_id = 0
@@ -1131,34 +1138,37 @@ class Users(object):
                 if new_usergroup:
                     if not self._commcell_object.user_groups.has_user_group(new_usergroup):
                         raise SDKException(
-                            'UserGroup', '102', "UserGroup {0} doesn't exists "
-                            "on this commcell.".format(new_usergroup)
+                            "UserGroup",
+                            "102",
+                            f"UserGroup {new_usergroup} doesn't exists on this commcell.",
                         )
                 else:
                     raise SDKException(
-                        'User', '102',
-                        "Ownership transfer is mondatory!! Please provide new owner information"
+                        "User",
+                        "102",
+                        "Ownership transfer is mondatory!! Please provide new owner information",
                     )
                 new_group_id = self._commcell_object.user_groups.get(new_usergroup).user_group_id
                 new_user_id = 0
 
-        delete_user = self._commcell_object._services['V4_DELETE_USER'] %(
-            self._users[user_name.lower()], new_user_id, new_group_id)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'DELETE', delete_user
+        delete_user = self._commcell_object._services["V4_DELETE_USER"] % (
+            self._users[user_name.lower()],
+            new_user_id,
+            new_group_id,
         )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("DELETE", delete_user)
         if flag:
             if response.json():
                 response_json = response.json()
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         self._users = self._get_v4_users()
 
@@ -1179,22 +1189,21 @@ class Users(object):
         """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['GET_USERSPACE_SERVICE']
+            "GET", self._commcell_object._services["GET_USERSPACE_SERVICE"]
         )
 
         if flag:
-            if response.json() and 'users' in response.json():
+            if response.json() and "users" in response.json():
                 users_space_dict = {}
-                for user in response.json()['users']:
-                    users_space_dict[user['userEntity']['userName']] = user
+                for user in response.json()["users"]:
+                    users_space_dict[user["userEntity"]["userName"]] = user
                 return users_space_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     @property
     def service_commcell_users_space(self) -> Dict[str, Any]:
@@ -1214,7 +1223,6 @@ class Users(object):
             self._users_on_service = self._get_users_on_service_commcell()
         return self._users_on_service
 
-
     def refresh(self, **kwargs: Any) -> None:
         """Refresh the list of users on this commcell.
 
@@ -1228,14 +1236,13 @@ class Users(object):
             users.refresh(mongodb=True)
             users.refresh(mongodb=True, hard=True)
         """
-        mongodb = kwargs.get('mongodb', False)
-        hard = kwargs.get('hard', False)
+        mongodb = kwargs.get("mongodb", False)
+        hard = kwargs.get("hard", False)
 
         self._users = self._get_v4_users()
         self._users_on_service = None
         if mongodb:
             self._users_cache = self.get_users_cache(hard=hard)
-
 
     @property
     def all_users(self) -> Dict[str, int]:
@@ -1252,7 +1259,6 @@ class Users(object):
         """
         return self._users
 
-
     @property
     def all_users_prop(self) -> List[Dict[str, Any]]:
         """Returns complete GET API response.
@@ -1263,10 +1269,11 @@ class Users(object):
         Usage:
             all_users_properties = users.all_users_prop
         """
-        self._all_users_prop = self._get_v4_users(full_response=True).get('users', [])
+        self._all_users_prop = self._get_v4_users(full_response=True).get("users", [])
         return self._all_users_prop
 
-class User(object):
+
+class User:
     """Class for representing a particular user configured on this commcell
 
     Attributes:
@@ -1291,7 +1298,9 @@ class User(object):
         ```
     """
 
-    def __init__(self, commcell_object: object, user_name: str, user_id: Optional[str] = None) -> None:
+    def __init__(
+        self, commcell_object: object, user_name: str, user_id: Optional[str] = None
+    ) -> None:
         """Initialize the User class object for specified user
 
         Args:
@@ -1307,7 +1316,7 @@ class User(object):
         else:
             self._user_id = user_id
 
-        self._user = self._commcell_object._services['USER'] % (self._user_id)
+        self._user = self._commcell_object._services["USER"] % (self._user_id)
         self._user_status = None
         self._email = None
         self._description = None
@@ -1349,42 +1358,44 @@ class User(object):
                 if response is not success
                 if response is empty
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._user
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._user)
 
         if flag:
-            if response.json() and 'users' in response.json():
-                self._properties = response.json()['users'][0]
-                self._security_properties = self._properties.get('securityAssociations', {}).get(
-                    'associations', {})
+            if response.json() and "users" in response.json():
+                self._properties = response.json()["users"][0]
+                self._security_properties = self._properties.get("securityAssociations", {}).get(
+                    "associations", {}
+                )
                 self._security_associations = SecurityAssociation.fetch_security_association(
-                    security_dict=self._security_properties)
-                if 'enableUser' in self._properties:
-                    self._user_status = self._properties['enableUser']
+                    security_dict=self._security_properties
+                )
+                if "enableUser" in self._properties:
+                    self._user_status = self._properties["enableUser"]
 
-                if 'email' in self._properties:
-                    self._email = self._properties['email']
+                if "email" in self._properties:
+                    self._email = self._properties["email"]
 
-                if 'description' in self._properties:
-                    self._description = self._properties['description']
+                if "description" in self._properties:
+                    self._description = self._properties["description"]
 
-                if 'associatedUserGroups' in self._properties:
-                    self._associated_usergroups = self._properties['associatedUserGroups']
+                if "associatedUserGroups" in self._properties:
+                    self._associated_usergroups = self._properties["associatedUserGroups"]
 
-                if 'associatedExternalUserGroups' in self._properties:
-                    self._associated_external_usergroups = self._properties['associatedExternalUserGroups']
+                if "associatedExternalUserGroups" in self._properties:
+                    self._associated_external_usergroups = self._properties[
+                        "associatedExternalUserGroups"
+                    ]
 
-                if 'UPN' in self._properties:
-                    self._upn = self._properties.get('UPN')
+                if "UPN" in self._properties:
+                    self._upn = self._properties.get("UPN")
 
-                if 'numDevices' in self._properties:
-                    self._num_devices = self._properties.get('numDevices')
+                if "numDevices" in self._properties:
+                    self._num_devices = self._properties.get("numDevices")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_v4_user_properties(self) -> None:
         """Gets the properties of this user
@@ -1397,50 +1408,54 @@ class User(object):
         Usage:
             user._get_v4_user_properties()
         """
-        request_url = self._commcell_object._services['V4_USER'] % self._user_id
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', request_url)
+        request_url = self._commcell_object._services["V4_USER"] % self._user_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if flag:
             if response.json():
                 self._properties = response.json()
-                if 'enabled' in self._properties:
-                    self._user_status = self._properties['enabled']
+                if "enabled" in self._properties:
+                    self._user_status = self._properties["enabled"]
 
-                if 'email' in self._properties:
-                    self._email = self._properties['email']
+                if "email" in self._properties:
+                    self._email = self._properties["email"]
 
-                if 'description' in self._properties:
-                    self._description = self._properties['description']
+                if "description" in self._properties:
+                    self._description = self._properties["description"]
 
-                if 'associatedUserGroups' in self._properties:
-                    self._associated_usergroups = self._properties['associatedUserGroups']
+                if "associatedUserGroups" in self._properties:
+                    self._associated_usergroups = self._properties["associatedUserGroups"]
 
-                if 'userPrincipalName' in self._properties:
-                    self._upn = self._properties.get('userPrincipalName')
+                if "userPrincipalName" in self._properties:
+                    self._upn = self._properties.get("userPrincipalName")
 
-                if 'numDevices' in self._properties:
-                    self._num_devices = self._properties.get('numDevices')
+                if "numDevices" in self._properties:
+                    self._num_devices = self._properties.get("numDevices")
 
-                security_associations_url = (self._commcell_object._services['USER_SECURITY_ASSOCIATION'] %
-                                             self._user_id)
+                security_associations_url = (
+                    self._commcell_object._services["USER_SECURITY_ASSOCIATION"] % self._user_id
+                )
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
-                    'GET', security_associations_url)
+                    "GET", security_associations_url
+                )
                 if flag:
                     if response.json():
-                        security_properties = response.json().get('associations', {})
-                        self._security_associations = SecurityAssociation.fetch_security_association(
-                            security_dict=security_properties)
+                        security_properties = response.json().get("associations", {})
+                        self._security_associations = (
+                            SecurityAssociation.fetch_security_association(
+                                security_dict=security_properties
+                            )
+                        )
                     else:
                         self._security_associations = {}
                 else:
                     response_string = self._commcell_object._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _update_v4_user_props(self, properties_dict: Dict, **kwargs: Dict) -> None:
         """Updates the properties of this user
@@ -1469,9 +1484,7 @@ class User(object):
             user._update_user_props({}, new_username="new_user_name")
             ```
         """
-        request_json = {
-            "newName": self.user_name
-        }
+        request_json = {"newName": self.user_name}
         new_username = kwargs.get("new_username", None)
         otp = kwargs.get("otp", None)
         if new_username is not None:
@@ -1485,23 +1498,23 @@ class User(object):
             headers = self._commcell_object._headers.copy()
             headers["otp"] = otp
 
-        request_url = self._commcell_object._services['V4_USER'] % self._user_id
+        request_url = self._commcell_object._services["V4_USER"] % self._user_id
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', request_url, request_json, headers=headers
+            "PUT", request_url, request_json, headers=headers
         )
 
         if flag:
             if response.json():
                 response_json = response.json()
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def _update_user_props(self, properties_dict: Dict, **kwargs: Dict) -> None:
@@ -1531,20 +1544,14 @@ class User(object):
             user._update_user_props({}, new_username="new_user_name")
             ```
         """
-        request_json = {
-            "users": [{
-                "userEntity": {
-                    "userName": self.user_name
-                }
-            }]
-        }
+        request_json = {"users": [{"userEntity": {"userName": self.user_name}}]}
         new_username = kwargs.get("new_username", None)
         otp = kwargs.get("otp", None)
         if new_username is not None:
             if not isinstance(new_username, str):
                 raise SDKException("USER", "101")
             request_json["users"][0]["userEntity"]["userName"] = new_username
-        request_json['users'][0].update(properties_dict)
+        request_json["users"][0].update(properties_dict)
 
         headers = None
         if otp:
@@ -1552,25 +1559,27 @@ class User(object):
             headers["otp"] = otp
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._user, request_json, headers=headers
+            "POST", self._user, request_json, headers=headers
         )
 
         if flag:
             if response.json():
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
-    def _update_usergroup_request(self, request_type: str, usergroups_list: Optional[List[str]] = None) -> None:
+    def _update_usergroup_request(
+        self, request_type: str, usergroups_list: Optional[List[str]] = None
+    ) -> None:
         """Updates the usergroups this user is associated to
 
         Args:
@@ -1603,32 +1612,30 @@ class User(object):
         }
 
         if not isinstance(usergroups_list, list):
-            raise SDKException('USER', '101')
+            raise SDKException("USER", "101")
 
         for usergroup in usergroups_list:
             if not self._commcell_object.user_groups.has_user_group(usergroup):
                 raise SDKException(
-                    'UserGroup', '102', "UserGroup {0} doesn't "
-                    "exists on this commcell".format(usergroup)
+                    "UserGroup", "102", f"UserGroup {usergroup} doesn't exists on this commcell"
                 )
 
         associated_usergroups = []
         if usergroups_list:
             for usergroup in usergroups_list:
-                temp = {
-                    "userGroupName": usergroup
-                }
+                temp = {"userGroupName": usergroup}
                 associated_usergroups.append(temp)
 
         update_usergroup_dict = {
-            "associatedUserGroupsOperationType": update_usergroup_request[
-                request_type.upper()],
-            "associatedUserGroups": associated_usergroups
+            "associatedUserGroupsOperationType": update_usergroup_request[request_type.upper()],
+            "associatedUserGroups": associated_usergroups,
         }
 
         self._update_user_props(update_usergroup_dict)
 
-    def _update_v4_usergroup_request(self, request_type: str, usergroups_list: Optional[List[str]] = None) -> None:
+    def _update_v4_usergroup_request(
+        self, request_type: str, usergroups_list: Optional[List[str]] = None
+    ) -> None:
         """Updates the usergroups this user is associated to
 
         Args:
@@ -1661,26 +1668,23 @@ class User(object):
         }
 
         if not isinstance(usergroups_list, list):
-            raise SDKException('USER', '101')
+            raise SDKException("USER", "101")
 
         for usergroup in usergroups_list:
             if not self._commcell_object.user_groups.has_user_group(usergroup):
                 raise SDKException(
-                    'UserGroup', '102', "UserGroup {0} doesn't "
-                    "exists on this commcell".format(usergroup)
+                    "UserGroup", "102", f"UserGroup {usergroup} doesn't exists on this commcell"
                 )
 
         associated_usergroups = []
         if usergroups_list:
             for usergroup in usergroups_list:
-                temp = {
-                    "name": usergroup
-                }
+                temp = {"name": usergroup}
                 associated_usergroups.append(temp)
 
         update_usergroup_dict = {
             "userGroupOperation": update_usergroup_request[request_type.upper()],
-            "userGroups": associated_usergroups
+            "userGroups": associated_usergroups,
         }
 
         self._update_v4_user_props(update_usergroup_dict)
@@ -1692,7 +1696,7 @@ class User(object):
         Returns:
             str: The display name of the user.
         """
-        return self._properties.get('name', '')
+        return self._properties.get("name", "")
 
     @property
     def full_name(self) -> str:
@@ -1701,7 +1705,7 @@ class User(object):
         Returns:
             str: The full name of the user.
         """
-        return self._properties.get('fullName', '')
+        return self._properties.get("fullName", "")
 
     @property
     def user_name(self) -> str:
@@ -1787,9 +1791,7 @@ class User(object):
             user.email = "user@example.com"
             ```
         """
-        props_dict = {
-            "email": value
-        }
+        props_dict = {"email": value}
         self._update_v4_user_props(props_dict, otp=otp)
 
     @description.setter
@@ -1805,9 +1807,7 @@ class User(object):
             user.description = "This is a test user"
             ```
         """
-        props_dict = {
-            "description": value
-        }
+        props_dict = {"description": value}
         self._update_v4_user_props(props_dict)
 
     @property
@@ -1820,8 +1820,8 @@ class User(object):
         usergroups = []
         if self._associated_usergroups is not None:
             for usergroup in self._associated_usergroups:
-                if not usergroup.get('provider'):
-                    usergroups.append(usergroup.get('name', ''))
+                if not usergroup.get("provider"):
+                    usergroups.append(usergroup.get("name", ""))
         return usergroups
 
     @property
@@ -1834,7 +1834,7 @@ class User(object):
         usergroups = []
         if self._associated_usergroups is not None:
             for usergroup in self._associated_usergroups:
-                provider = usergroup.get('provider')
+                provider = usergroup.get("provider")
                 if provider:
                     usergroups.append(f"{provider['name']}\\{usergroup['name']}")
         return usergroups
@@ -1878,9 +1878,7 @@ class User(object):
             user.status = False
             ```
         """
-        props_dict = {
-            "enabled": value
-        }
+        props_dict = {"enabled": value}
         self._update_v4_user_props(props_dict)
 
     @property
@@ -1888,21 +1886,21 @@ class User(object):
         """
         returns user guid
         """
-        return self._properties.get('GUID')
+        return self._properties.get("GUID")
 
     @property
     def age_password_days(self) -> Optional[int]:
         """
         returns age password days
         """
-        return self._properties.get('agePasswordDays')
+        return self._properties.get("agePasswordDays")
 
     @property
     def user_company_name(self) -> str:
         """
         returns user associated company name
         """
-        return self._properties.get('company', {}).get('name', '').lower()
+        return self._properties.get("company", {}).get("name", "").lower()
 
     @age_password_days.setter
     def age_password_days(self, days: int) -> None:
@@ -1922,14 +1920,14 @@ class User(object):
             ```
         """
         if isinstance(days, int):
-            props_dict = {
-                "agePasswordDays": days
-            }
+            props_dict = {"agePasswordDays": days}
             self._update_user_props(props_dict)
         else:
-            raise SDKException('User', '101')
+            raise SDKException("User", "101")
 
-    def update_user_password(self, new_password: str, logged_in_user_password: str, otp: str = None) -> None:
+    def update_user_password(
+        self, new_password: str, logged_in_user_password: str, otp: str = None
+    ) -> None:
         """updates new passwords of user
 
         Args:
@@ -1948,14 +1946,13 @@ class User(object):
         validation_password = b64encode(logged_in_user_password.encode()).decode()
         props_dict = {
             "password": password,
-            "validationParameters": {
-                "password": validation_password,
-                "passwordOperationType": 2
-            }
+            "validationParameters": {"password": validation_password, "passwordOperationType": 2},
         }
         self._update_user_props(props_dict, otp=otp)
 
-    def update_v4_user_password(self, new_password: str, logged_in_user_password: str, otp: str = None) -> None:
+    def update_v4_user_password(
+        self, new_password: str, logged_in_user_password: str, otp: str = None
+    ) -> None:
         """updates new passwords of user
 
         Args:
@@ -1972,10 +1969,7 @@ class User(object):
         """
         password = b64encode(new_password.encode()).decode()
         validation_password = b64encode(logged_in_user_password.encode()).decode()
-        props_dict = {
-            "newPassword": password,
-            "validationPassword": validation_password
-        }
+        props_dict = {"newPassword": password, "validationPassword": validation_password}
         self._update_v4_user_props(props_dict, otp=otp)
 
     def add_usergroups(self, usergroups_list: List[str]) -> None:
@@ -1990,7 +1984,7 @@ class User(object):
             user.add_usergroups(['usergroup1', 'usergroup2'])
             ```
         """
-        self._update_v4_usergroup_request('UPDATE', usergroups_list)
+        self._update_v4_usergroup_request("UPDATE", usergroups_list)
 
     def remove_usergroups(self, usergroups_list: List[str]) -> None:
         """DELETE the specified usergroups to this commcell user
@@ -2004,7 +1998,7 @@ class User(object):
             user.remove_usergroups(['usergroup1', 'usergroup2'])
             ```
         """
-        self._update_v4_usergroup_request('DELETE', usergroups_list)
+        self._update_v4_usergroup_request("DELETE", usergroups_list)
 
     def overwrite_usergroups(self, usergroups_list: List[str]) -> None:
         """OVERWRITE the specified usergroups to this commcell user
@@ -2018,7 +2012,7 @@ class User(object):
             user.overwrite_usergroups(['usergroup1', 'usergroup2'])
             ```
         """
-        self._update_v4_usergroup_request('OVERWRITE', usergroups_list)
+        self._update_v4_usergroup_request("OVERWRITE", usergroups_list)
 
     def refresh(self) -> None:
         """Refresh the properties of the User."""
@@ -2083,12 +2077,13 @@ class User(object):
         sec_request = {}
         if entity_dictionary:
             sec_request = SecurityAssociation._security_association_json(
-                entity_dictionary=entity_dictionary)
+                entity_dictionary=entity_dictionary
+            )
 
         request_json = {
             "securityAssociations": {
                 "associationsOperationType": update_user_request[request_type.upper()],
-                "associations": sec_request
+                "associations": sec_request,
             }
         }
         self._update_user_props(request_json)
@@ -2109,20 +2104,18 @@ class User(object):
         """
 
         if self._commcell_object.users.has_user(self.user_name):
-            get_otp = self._commcell_object._services['OTP'] % (self.user_id)
+            get_otp = self._commcell_object._services["OTP"] % (self.user_id)
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_otp
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", get_otp)
         if flag:
             if response.json():
-                if 'value' in response.json():
-                    return response.json()['value']
+                if "value" in response.json():
+                    return response.json()["value"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_tfa_status(self) -> None:
         """
@@ -2132,26 +2125,27 @@ class User(object):
             SDKException:
                 if response is not successful
         """
-        url = self._commcell_object._services['TFA_STATUS_OF_USER'] % self._user_name
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', url=url
-        )
+        url = self._commcell_object._services["TFA_STATUS_OF_USER"] % self._user_name
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", url=url)
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                if response.json().get('errorCode') != 0:
-                    raise SDKException('User',
-                                       '102',
-                                       "Failed to get two factor authentication "
-                                       "status. error={0}".format(response.json().get('errorMessage')))
-            if response.json() and 'twoFactorInfo' in response.json():
-                info = response.json().get('twoFactorInfo')
-                self._tfa_status = info.get('isTwoFactorAuthenticationEnabled', False)
+            if response.json() and "errorCode" in response.json():
+                if response.json().get("errorCode") != 0:
+                    raise SDKException(
+                        "User",
+                        "102",
+                        "Failed to get two factor authentication status. error={0}".format(
+                            response.json().get("errorMessage")
+                        ),
+                    )
+            if response.json() and "twoFactorInfo" in response.json():
+                info = response.json().get("twoFactorInfo")
+                self._tfa_status = info.get("isTwoFactorAuthenticationEnabled", False)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def is_tfa_enabled(self) -> bool:
@@ -2183,10 +2177,10 @@ class User(object):
             }
         """
         lock_info = dict()
-        lock_data = self._properties.get('lockInfo', {})
-        lock_info['isAccountLocked'] = lock_data.get('isLocked', False)
-        lock_info['lockStartTime'] = lock_data.get('startTime', 0)
-        lock_info['lockEndTime'] = lock_data.get('endTime', 0)
+        lock_data = self._properties.get("lockInfo", {})
+        lock_info["isAccountLocked"] = lock_data.get("isLocked", False)
+        lock_info["lockStartTime"] = lock_data.get("startTime", 0)
+        lock_info["lockEndTime"] = lock_data.get("endTime", 0)
         return lock_info
 
     def unlock(self) -> tuple[str, str]:
@@ -2206,20 +2200,23 @@ class User(object):
         Usage:
             status, status_code = user.unlock()
         """
-        payload = {"lockedAccounts": [{"user": {"userName": self._user_name, "userId": self._user_id}}]}
-        service = self._commcell_object._services['UNLOCK']
+        payload = {
+            "lockedAccounts": [{"user": {"userName": self._user_name, "userId": self._user_id}}]
+        }
+        service = self._commcell_object._services["UNLOCK"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', service, payload
+            "POST", service, payload
         )
         if flag:
-            if response and response.json() and 'lockedAccounts' in response.json():
-                return response.json().get('lockedAccounts')[0].get('status'), response.json().get('lockedAccounts')[0].get('statusCode')
+            if response and response.json() and "lockedAccounts" in response.json():
+                return response.json().get("lockedAccounts")[0].get("status"), response.json().get(
+                    "lockedAccounts"
+                )[0].get("statusCode")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
+            raise SDKException("Response", "101", response_string)
 
     def reset_tenant_password(self, token: str, password: str) -> bool:
         """
@@ -2242,42 +2239,46 @@ class User(object):
             success = user.reset_tenant_password(token='some_token', password='new_password')
         """
         headers = self._commcell_object._headers.copy()
-        del headers['Authtoken']
-        headers['Reset-Password-token'] = token
-        payload = (f'<App_UpdateUserPropertiesRequest><processinginstructioninfo><formatFlags skipIdToNameConversion='
-                   f'"1"/></processinginstructioninfo><users removeOtherActiveSessions="1" password = "{password}">'
-                   f'<userEntity userId="{str(self._user_id)}" /><validationParameters passwordOperationType="1" '
-                   f'password="{password}"/></users></App_UpdateUserPropertiesRequest>')
-        service = self._commcell_object._services['RESET_TENANT_PASSWORD']
+        del headers["Authtoken"]
+        headers["Reset-Password-token"] = token
+        payload = (
+            f"<App_UpdateUserPropertiesRequest><processinginstructioninfo><formatFlags skipIdToNameConversion="
+            f'"1"/></processinginstructioninfo><users removeOtherActiveSessions="1" password = "{password}">'
+            f'<userEntity userId="{str(self._user_id)}" /><validationParameters passwordOperationType="1" '
+            f'password="{password}"/></users></App_UpdateUserPropertiesRequest>'
+        )
+        service = self._commcell_object._services["RESET_TENANT_PASSWORD"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', service, payload, headers=headers
+            "POST", service, payload, headers=headers
         )
         if flag:
             if response and response.json():
                 response_data = response.json()
-                error_code = response_data['response'][0].get('errorCode', -1)
-                error_string = response_data['response'][0].get('errorString', '')
+                error_code = response_data["response"][0].get("errorCode", -1)
+                error_string = response_data["response"][0].get("errorString", "")
 
                 # Check if there's an error
                 if error_code != 0 or error_string:
-                    raise SDKException('User', '102', f'Error Code:'
-                                                      f'{error_code}, Error String: {error_string}')
+                    raise SDKException(
+                        "User", "102", f"Error Code:{error_code}, Error String: {error_string}"
+                    )
                 return True
             else:
-                raise SDKException('Response', '102', 'Empty response or invalid JSON format.')
+                raise SDKException("Response", "102", "Empty response or invalid JSON format.")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-
-    def create_access_token(self,
-                            token_name: str,
-                            token_type: int = None,
-                            renewable_until_time: int = None,
-                            token_expiry_time: int = None,
-                            api_endpoints: list = None,
-                            service_account_id: int = None,
-                            ip_allowlist: list = None) -> dict:
+    def create_access_token(
+        self,
+        token_name: str,
+        token_type: int = None,
+        renewable_until_time: int = None,
+        token_expiry_time: int = None,
+        api_endpoints: list = None,
+        service_account_id: int = None,
+        ip_allowlist: list = None,
+    ) -> dict:
         """
         Creates v4 Access token for the given User
 
@@ -2326,11 +2327,11 @@ class User(object):
         """
         # Validate inputs for custom token type
         if token_type == 3 and (not api_endpoints or len(api_endpoints) == 0):
-            raise SDKException('User', '105', "API endpoints must be provided for custom token type")
+            raise SDKException(
+                "User", "105", "API endpoints must be provided for custom token type"
+            )
 
-        payload = {
-                "tokenName": token_name
-        }
+        payload = {"tokenName": token_name}
 
         if service_account_id:
             payload["userId"] = service_account_id
@@ -2351,29 +2352,30 @@ class User(object):
             payload["allowedIPs"] = ip_allowlist
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_ACCESS_TOKEN'], payload
+            "POST", self._commcell_object._services["CREATE_ACCESS_TOKEN"], payload
         )
         if flag:
             if response.json():
-                error_code = response.json()['error']['errorCode']
+                error_code = response.json()["error"]["errorCode"]
                 if error_code != 0:
-                    error_string = response.json()['error'].get('errorMessage')
-                    raise SDKException('User', '104', error_string)
+                    error_string = response.json()["error"].get("errorMessage")
+                    raise SDKException("User", "104", error_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return response.json()["tokenInfo"]
 
-
-    def edit_access_token(self,
-                          access_token_id: int,
-                          token_name: str = None,
-                          token_type: int = None,
-                          renewable_until_time: int = None,
-                          token_expiry_time: int = None,
-                          api_endpoints: list = None,
-                          ip_allowlist: list = None) -> dict:
+    def edit_access_token(
+        self,
+        access_token_id: int,
+        token_name: str = None,
+        token_type: int = None,
+        renewable_until_time: int = None,
+        token_expiry_time: int = None,
+        api_endpoints: list = None,
+        ip_allowlist: list = None,
+    ) -> dict:
         """
         update v4 Access token for the given token ID
 
@@ -2419,12 +2421,18 @@ class User(object):
             updated_token_info = user.edit_access_token(access_token_id=789, ip_allowlist=['192.168.1.1', '10.0.0.0/24'])
         """
 
-        if not any([token_name, renewable_until_time, token_expiry_time, token_type, ip_allowlist]):
-            raise SDKException('User', '105', "At least one input is required for update token operation")
+        if not any(
+            [token_name, renewable_until_time, token_expiry_time, token_type, ip_allowlist]
+        ):
+            raise SDKException(
+                "User", "105", "At least one input is required for update token operation"
+            )
 
         # Validate inputs for custom token type
         if token_type == 3 and (not api_endpoints or len(api_endpoints) == 0):
-            raise SDKException('User', '105', "API endpoints must be provided for custom token type")
+            raise SDKException(
+                "User", "105", "API endpoints must be provided for custom token type"
+            )
 
         payload = {}
         if token_name:
@@ -2445,21 +2453,24 @@ class User(object):
         if ip_allowlist:
             payload["allowedIPs"] = ip_allowlist
 
-        update_token_api_url = self._commcell_object._services['UPDATE_ACCESS_TOKEN'] % access_token_id
+        update_token_api_url = (
+            self._commcell_object._services["UPDATE_ACCESS_TOKEN"] % access_token_id
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', update_token_api_url, payload)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "PUT", update_token_api_url, payload
+        )
         if flag:
             if response.json():
-                error_code = response.json()['error']['errorCode']
+                error_code = response.json()["error"]["errorCode"]
                 if error_code != 0:
-                    error_string = response.json()['error'].get('errorMessage')
-                    raise SDKException('User', '106', error_string)
+                    error_string = response.json()["error"].get("errorMessage")
+                    raise SDKException("User", "106", error_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return response.json()["tokenInfo"]
-
 
     def delete_access_token(self, access_token_id: int) -> dict:
         """
@@ -2479,21 +2490,24 @@ class User(object):
         Usage:
             result = user.delete_access_token(access_token_id=123)
         """
-        revoke_token_api_url = self._commcell_object._services['REVOKE_ACCESS_TOKEN'] % access_token_id
+        revoke_token_api_url = (
+            self._commcell_object._services["REVOKE_ACCESS_TOKEN"] % access_token_id
+        )
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', revoke_token_api_url)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "DELETE", revoke_token_api_url
+        )
         if flag:
             if response.json():
-                error_code = response.json()['errorCode']
+                error_code = response.json()["errorCode"]
                 if error_code != 0:
-                    error_string = response.json().get('errorMessage')
-                    raise SDKException('User', '107', error_string)
+                    error_string = response.json().get("errorMessage")
+                    raise SDKException("User", "107", error_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return response.json()
-
 
     def get_access_tokens(self, user_id: int = None) -> dict:
         """
@@ -2516,20 +2530,21 @@ class User(object):
             tokens = user.get_access_tokens(user_id=123)
         """
         target_user_id = user_id if user_id is not None else self._user_id
-        get_tokens_api_url = self._commcell_object._services['GET_ACCESS_TOKENS'] % target_user_id
-        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', get_tokens_api_url)
+        get_tokens_api_url = self._commcell_object._services["GET_ACCESS_TOKENS"] % target_user_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "GET", get_tokens_api_url
+        )
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode')
+                error_code = response.json().get("errorCode")
                 if error_code and error_code != 0:
-                    error_string = response.json().get('errorMessage')
-                    raise SDKException('User', '108', error_string)
+                    error_string = response.json().get("errorMessage")
+                    raise SDKException("User", "108", error_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return response.json()
-
 
     def renew_access_token(self, access_token: str, refresh_token: str) -> dict:
         """
@@ -2550,24 +2565,22 @@ class User(object):
         Usage:
             renewed_token = user.renew_access_token(access_token='old_access_token', refresh_token='old_refresh_token')
         """
-        renew_token_api_url = self._commcell_object._services['RENEW_TOKEN']
-        payload = {
-            "accessToken" : access_token,
-            "refreshToken" : refresh_token
-        }
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', renew_token_api_url, payload)
+        renew_token_api_url = self._commcell_object._services["RENEW_TOKEN"]
+        payload = {"accessToken": access_token, "refreshToken": refresh_token}
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", renew_token_api_url, payload
+        )
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode')
+                error_code = response.json().get("errorCode")
                 if error_code and error_code != 0:
-                    error_string = response.json().get('errorMessage')
-                    raise SDKException('User', '109', error_string)
+                    error_string = response.json().get("errorMessage")
+                    raise SDKException("User", "109", error_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         return response.json()
-
 
     @property
     def additional_settings(self):
@@ -2596,14 +2609,16 @@ class User(object):
         Usage:
             user.generate_otp()
         """
-        generate_otp_url = self._commcell_object._services['GENERATE_OTP']
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', generate_otp_url)
+        generate_otp_url = self._commcell_object._services["GENERATE_OTP"]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", generate_otp_url
+        )
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode')
+                error_code = response.json().get("errorCode")
                 if error_code and error_code != 1133:
-                    error_string = response.json().get('errorMessage')
-                    raise SDKException('Response', '102', error_string)
+                    error_string = response.json().get("errorMessage")
+                    raise SDKException("Response", "102", error_string)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)

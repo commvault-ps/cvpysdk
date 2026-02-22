@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -40,46 +38,40 @@ LNDbSubclient:
     backup()                            --  run a backup job for the subclient
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import json
-
-from ..subclient import Subclient
 from ..exception import SDKException
+from ..subclient import Subclient
 
 
 class LNDbSubclient(Subclient):
     """Derived class from Subclient Base class, representing a LNDB subclient,
-        and to perform operations on that subclient."""
+    and to perform operations on that subclient."""
 
     def _get_subclient_properties(self):
         """Gets the subclient  related properties of LN DB subclient."""
-        super(LNDbSubclient, self)._get_subclient_properties()
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
-        if 'proxyClient' in self._subclient_properties:
-            self._proxyClient = self._subclient_properties['proxyClient']
-        if 'subClientEntity' in self._subclient_properties:
-            self._subClientEntity = self._subclient_properties['subClientEntity']
-        if 'commonProperties' in self._subclient_properties:
-            self._commonProperties = self._subclient_properties['commonProperties']
+        super()._get_subclient_properties()
+        if "content" in self._subclient_properties:
+            self._content = self._subclient_properties["content"]
+        if "proxyClient" in self._subclient_properties:
+            self._proxyClient = self._subclient_properties["proxyClient"]
+        if "subClientEntity" in self._subclient_properties:
+            self._subClientEntity = self._subclient_properties["subClientEntity"]
+        if "commonProperties" in self._subclient_properties:
+            self._commonProperties = self._subclient_properties["commonProperties"]
 
     def _get_subclient_properties_json(self):
         """Get the all subclient related properties of this subclient.
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
         """
 
         subclient_json = {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "subClientEntity": self._subClientEntity,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+                "content": self._content,
+                "commonProperties": self._commonProperties,
+                "contentOperationType": 1,
+            }
         }
         return subclient_json
 
@@ -87,8 +79,8 @@ class LNDbSubclient(Subclient):
     def content(self):
         """Gets the appropriate content from the Subclient relevant to the user.
 
-            Returns:
-                list - list of content associated with the subclient
+        Returns:
+            list - list of content associated with the subclient
         """
         return self._content
 
@@ -109,120 +101,123 @@ class LNDbSubclient(Subclient):
             for database in subclient_content:
                 if database == {}:
                     continue
-                elif 'lotusNotesDBContent' in database:
+                elif "lotusNotesDBContent" in database:
                     content.append(database)
                 else:
                     temp_content_dict = {}
                     temp_content_dict = {
                         "lotusNotesDBContent": {
-                            "dbiid1": database['dbiid1'],
-                            "dbiid2": database['dbiid2'],
-                            "dbiid3": database['dbiid3'],
-                            "dbiid4": database['dbiid4'],
-                            "relativePath": database['relativePath'],
-                            "databaseTitle": database['databaseTitle']
+                            "dbiid1": database["dbiid1"],
+                            "dbiid2": database["dbiid2"],
+                            "dbiid3": database["dbiid3"],
+                            "dbiid4": database["dbiid4"],
+                            "relativePath": database["relativePath"],
+                            "databaseTitle": database["databaseTitle"],
                         }
                     }
                     if temp_content_dict != {}:
                         content.append(temp_content_dict)
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException("Subclient", "102", f"{err} not given in content")
 
         self._set_subclient_properties("_content", content)
 
     def restore_in_place(
-            self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None,
-            lndb_restore_options=None):
+        self,
+        paths,
+        overwrite=True,
+        restore_data_and_acl=True,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        common_options_dict=None,
+        lndb_restore_options=None,
+    ):
         """Restores the files/folders specified in the input paths list to the same location.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        Args:
+            paths                   (list)  --  list of full paths of files/folders to restore
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
+            overwrite               (bool)  --  unconditional overwrite files during restore
 
-                    default: True
+                default: True
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
+            restore_data_and_acl    (bool)  --  restore data and ACL files
 
-                    default: True
+                default: True
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
+            copy_precedence         (int)   --  copy precedence value of storage policy copy
 
-                    default: None
+                default: None
 
-                from_time           (str)       --  time to retore the contents after
+            from_time           (str)       --  time to retore the contents after
 
-                        format: YYYY-MM-DD HH:MM:SS
+                    format: YYYY-MM-DD HH:MM:SS
 
-                    default: None
+                default: None
 
-                to_time           (str)         --  time to retore the contents before
+            to_time           (str)         --  time to retore the contents before
 
-                        format: YYYY-MM-DD HH:MM:SS
+                    format: YYYY-MM-DD HH:MM:SS
 
-                    default: None
+                default: None
 
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
+            common_options_dict (dict)          -- dictionary for all the common options
+                options:
+                    unconditionalOverwrite              :   overwrite the files during restore
+                    even if they exist
 
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
+                    recoverWait                         :   Specifies whether this restore
+                    operation must wait until resources become available if a database recovery
+                    is already taking place
 
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
+                    recoverZap                          :   Specifies whether the IBM Domino
+                    must change the DBIID associated with the restored database
 
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
+                    recoverZapReplica                   :   Specifies whether the restore
+                    operation changes the replica id of the restored database
 
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
+                    recoverZapIfNecessary               :   Specifies whether the IBM Domino
+                    can change the DBIID associated with the restored database if necessary
 
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-
-                    Disaster Recovery special options:
-                        skipErrorsAndContinue               :   enables a data recovery operation
-                        to continue despite media errors
-
-                        disasterRecovery                    :   run disaster recovery
-
-                lndb_restore_options    (dict)          -- dictionary for all options specific
-                to an lndb restore
-                    options:
-                        disableReplication      :   disable relpication on database
-
-                        disableBackgroundAgents :   disable background agents
+                    doNotReplayTransactLogs             :   option to skip restoring or
+                    replaying logs
 
 
-            Returns:
-                object  -   instance of the Job class for this restore job
+                Disaster Recovery special options:
+                    skipErrorsAndContinue               :   enables a data recovery operation
+                    to continue despite media errors
 
-            Raises:
-                SDKException:
-                    if paths is not a list
+                    disasterRecovery                    :   run disaster recovery
 
-                    if failed to initialize job
+            lndb_restore_options    (dict)          -- dictionary for all options specific
+            to an lndb restore
+                options:
+                    disableReplication      :   disable relpication on database
 
-                    if response is empty
+                    disableBackgroundAgents :   disable background agents
 
-                    if response is not success
+
+        Returns:
+            object  -   instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
 
         """
-        if not (isinstance(paths, list) and
-                isinstance(overwrite, bool) and
-                isinstance(restore_data_and_acl, bool)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(paths, list)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Subclient", "101")
 
         if common_options_dict is None:
             common_options_dict = {}
@@ -233,7 +228,7 @@ class LNDbSubclient(Subclient):
         paths = self._filter_paths(paths)
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
@@ -245,116 +240,119 @@ class LNDbSubclient(Subclient):
             from_time=from_time,
             to_time=to_time,
             common_options_dict=common_options_dict,
-            lndb_restore_options=lndb_restore_options
+            lndb_restore_options=lndb_restore_options,
         )
 
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None,
-            lndb_restore_options=None):
+        self,
+        client,
+        destination_path,
+        paths,
+        overwrite=True,
+        restore_data_and_acl=True,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        common_options_dict=None,
+        lndb_restore_options=None,
+    ):
         """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+        at the specified destionation location.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        Args:
+            client                (str/object) --  either the name of the client or
+            the instance of the Client
 
-                destination_path      (str)        --  full path of the restore location on client
+            destination_path      (str)        --  full path of the restore location on client
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+            paths                 (list)       --  list of full paths of
+            files/folders to restore
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+            overwrite             (bool)       --  unconditional overwrite files during restore
 
-                    default: True
+                default: True
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
+            restore_data_and_acl  (bool)       --  restore data and ACL files
 
-                    default: True
+                default: True
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
+            copy_precedence         (int)   --  copy precedence value of storage policy copy
 
-                    default: None
+                default: None
 
-                from_time           (str)       --  time to retore the contents after
+            from_time           (str)       --  time to retore the contents after
 
-                        format: YYYY-MM-DD HH:MM:SS
+                    format: YYYY-MM-DD HH:MM:SS
 
-                    default: None
+                default: None
 
-                to_time           (str)         --  time to retore the contents before
+            to_time           (str)         --  time to retore the contents before
 
-                        format: YYYY-MM-DD HH:MM:SS
+                    format: YYYY-MM-DD HH:MM:SS
 
-                    default: None
+                default: None
 
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
+            common_options_dict (dict)          -- dictionary for all the common options
+                options:
+                    unconditionalOverwrite              :   overwrite the files during restore
+                    even if they exist
 
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
+                    recoverWait                         :   Specifies whether this restore
+                    operation must wait until resources become available if a database recovery
+                    is already taking place
 
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
+                    recoverZap                          :   Specifies whether the IBM Domino
+                    must change the DBIID associated with the restored database
 
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
+                    recoverZapReplica                   :   Specifies whether the restore
+                    operation changes the replica id of the restored database
 
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
+                    recoverZapIfNecessary               :   Specifies whether the IBM Domino
+                    can change the DBIID associated with the restored database if necessary
 
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
+                    doNotReplayTransactLogs             :   option to skip restoring or
+                    replaying logs
 
 
-                    Disaster Recovery special options:
-                        skipErrorsAndContinue               :   enables a data recovery operation
-                        to continue despite media errors
+                Disaster Recovery special options:
+                    skipErrorsAndContinue               :   enables a data recovery operation
+                    to continue despite media errors
 
-                        disasterRecovery                    :   run disaster recovery
+                    disasterRecovery                    :   run disaster recovery
 
-                lndb_restore_options    (dict)          -- dictionary for all options specific
-                to an lndb restore
-                    options:
-                        disableReplication      :   disable relpication on database
+            lndb_restore_options    (dict)          -- dictionary for all options specific
+            to an lndb restore
+                options:
+                    disableReplication      :   disable relpication on database
 
-                        disableBackgroundAgents :   disable background agents
+                    disableBackgroundAgents :   disable background agents
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
+        Raises:
+            SDKException:
+                if client is not a string or Client instance
 
-                    if destination_path is not a string
+                if destination_path is not a string
 
-                    if paths is not a list
+                if paths is not a list
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
 
-        if not (isinstance(paths, list) and
-                isinstance(overwrite, bool) and
-                isinstance(restore_data_and_acl, bool)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(paths, list)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Subclient", "101")
 
         if common_options_dict is None:
             common_options_dict = {}
@@ -365,7 +363,7 @@ class LNDbSubclient(Subclient):
         paths = self._filter_paths(paths)
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
@@ -379,41 +377,43 @@ class LNDbSubclient(Subclient):
             from_time=from_time,
             to_time=to_time,
             common_options_dict=common_options_dict,
-            lndb_restore_options=lndb_restore_options)
+            lndb_restore_options=lndb_restore_options,
+        )
 
         return self._process_restore_response(request_json)
 
-    def backup(self,
-               backup_level="Incremental",
-               incremental_backup=False,
-               incremental_level='BEFORE_SYNTH',
-               schedule_pattern=None):
-
+    def backup(
+        self,
+        backup_level="Incremental",
+        incremental_backup=False,
+        incremental_level="BEFORE_SYNTH",
+        schedule_pattern=None,
+    ):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
-                    Args:
-                        backup_level        (str)   --  level of backup the user wish to run
+        Args:
+            backup_level        (str)   --  level of backup the user wish to run
 
-                            Full / Incremental / Differential / Synthetic_full
+                Full / Incremental / Differential / Synthetic_full
 
-                        incremental_backup  (bool)  --  run incremental backup
+            incremental_backup  (bool)  --  run incremental backup
 
-                            only applicable in case of Synthetic_full backup
+                only applicable in case of Synthetic_full backup
 
-                        incremental_level   (str)   --  run incremental backup before/after
-                        synthetic full
+            incremental_level   (str)   --  run incremental backup before/after
+            synthetic full
 
-                            BEFORE_SYNTH / AFTER_SYNTH
+                BEFORE_SYNTH / AFTER_SYNTH
 
-                            only applicable in case of Synthetic_full backup
+                only applicable in case of Synthetic_full backup
 
-                        schedule_pattern (dict) -- scheduling options to be included for the task
+            schedule_pattern (dict) -- scheduling options to be included for the task
 
-                            Please refer schedules.schedulePattern.createSchedule()
-                                                                    doc for the types of Jsons
+                Please refer schedules.schedulePattern.createSchedule()
+                                                        doc for the types of Jsons
 
-                    Returns:
-                        dict    -   JSON request to pass to the API
+        Returns:
+            dict    -   JSON request to pass to the API
 
         """
 
@@ -422,19 +422,20 @@ class LNDbSubclient(Subclient):
                 backup_level,
                 incremental_backup,
                 incremental_level,
-                schedule_pattern=schedule_pattern)
+                schedule_pattern=schedule_pattern,
+            )
 
-            backup_service = self._services['CREATE_TASK']
+            backup_service = self._services["CREATE_TASK"]
 
             flag, response = self._commcell_object.make_request(
-                'POST', backup_service, request_json
+                "POST", backup_service, request_json
             )
 
         else:
-            return super(LNDbSubclient, self).backup(
+            return super().backup(
                 backup_level=backup_level,
                 incremental_backup=incremental_backup,
-                incremental_level=incremental_level)
+                incremental_level=incremental_level,
+            )
 
         return self._process_backup_response(flag, response)
-

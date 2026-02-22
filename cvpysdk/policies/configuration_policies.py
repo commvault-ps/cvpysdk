@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -95,8 +93,7 @@ ContentIndexingPolicy Attributes:
 
 """
 
-from __future__ import unicode_literals
-from typing import TYPE_CHECKING, Optional, List, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from ..exception import SDKException
 from ..job import Job
@@ -104,7 +101,8 @@ from ..job import Job
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
-class ConfigurationPolicies(object):
+
+class ConfigurationPolicies:
     """Class for getting all the Configuration policies associated with the commcell.
 
     Attributes:
@@ -123,7 +121,7 @@ class ConfigurationPolicies(object):
         >>> config_policies = ConfigurationPolicies(commcell)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the ConfigurationPolicies class.
 
         Args:
@@ -139,9 +137,9 @@ class ConfigurationPolicies(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
-        self._POLICY = self._services['GET_CONFIGURATION_POLICIES']
-        self._POLICY_FS = self._services['GET_CONFIGURATION_POLICIES_FS']
-        self._CREATE_TASK = self._services['CREATE_TASK']
+        self._POLICY = self._services["GET_CONFIGURATION_POLICIES"]
+        self._POLICY_FS = self._services["GET_CONFIGURATION_POLICIES_FS"]
+        self._CREATE_TASK = self._services["CREATE_TASK"]
         self._policies = None
         self._ci_policies = None
         self.refresh()
@@ -156,29 +154,29 @@ class ConfigurationPolicies(object):
 
     def _get_policies(self) -> dict:
         """Gets all the Configuration policies associated to the
-            commcell specified by commcell object.
+        commcell specified by commcell object.
 
-            Returns:
-                dict: Consists of all Configuration policies of the commcell
+        Returns:
+            dict: Consists of all Configuration policies of the commcell
 
-                    {
-                        "configuration_policy1_name": configuration_policy1_id,
+                {
+                    "configuration_policy1_name": configuration_policy1_id,
 
-                        "configuration_policy2_name": configuration_policy2_id
-                    }
+                    "configuration_policy2_name": configuration_policy2_id
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._POLICY)
+        flag, response = self._cvpysdk_object.make_request("GET", self._POLICY)
 
         if flag:
-            if response.json() and 'policies' in response.json():
-                policies = response.json()['policies']
+            if response.json() and "policies" in response.json():
+                policies = response.json()["policies"]
 
                 if policies == []:
                     return {}
@@ -186,10 +184,11 @@ class ConfigurationPolicies(object):
                 policies_dict = {}
 
                 for policy in policies:
-                    temp_name = policy['policyEntity']['policyName'].lower()
-                    temp_id = str(policy['policyEntity']['policyId']).lower()
-                    temp_policytype = str(policy['detail']['emailPolicy']
-                                          ['emailPolicyType']).lower()
+                    temp_name = policy["policyEntity"]["policyName"].lower()
+                    temp_id = str(policy["policyEntity"]["policyId"]).lower()
+                    temp_policytype = str(
+                        policy["detail"]["emailPolicy"]["emailPolicyType"]
+                    ).lower()
                     policies_dict[temp_name] = [temp_id, temp_policytype]
 
                 return policies_dict
@@ -197,64 +196,66 @@ class ConfigurationPolicies(object):
                 return {}
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def has_policy(self, policy_name: str) -> bool:
         """Checks if a Configuration policy exists in the commcell with
-            the input Configuration policy name.
+        the input Configuration policy name.
 
-            Args:
-                policy_name (str): Name of the Configuration policy
+        Args:
+            policy_name (str): Name of the Configuration policy
 
-            Returns:
-                bool: Boolean output whether the Configuration policy exists in the commcell
-                or not
+        Returns:
+            bool: Boolean output whether the Configuration policy exists in the commcell
+            or not
 
-            Raises:
-                SDKException:
-                    if type of the configuration policy name argument is not string
+        Raises:
+            SDKException:
+                if type of the configuration policy name argument is not string
 
         """
         if not isinstance(policy_name, str):
-            raise SDKException('ConfigurationPolicies', '101')
+            raise SDKException("ConfigurationPolicies", "101")
 
-        return (self._policies and policy_name.lower() in self._policies) or \
-               (self._ci_policies and policy_name.lower() in self._ci_policies)
+        return (self._policies and policy_name.lower() in self._policies) or (
+            self._ci_policies and policy_name.lower() in self._ci_policies
+        )
 
     def _get_ci_policies(self) -> dict:
         """Gets all the Content Indexing policies associated to the commcell specified by commcell object.
 
-            Returns:
-                 dict: Consists of all Configuration policies of the commcell
-                            {
-                                "ci_policy1_name": [ci_policy1_id, ci_policy_type],
+        Returns:
+             dict: Consists of all Configuration policies of the commcell
+                        {
+                            "ci_policy1_name": [ci_policy1_id, ci_policy_type],
 
-                                "ci_policy2_name": [ci_policy2_id, ci_policy_type]
-                            }
+                            "ci_policy2_name": [ci_policy2_id, ci_policy_type]
+                        }
 
-            Raises:
-                SDKException:
-                        if response is empty
+        Raises:
+            SDKException:
+                    if response is empty
 
-                        if response is not success
+                    if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._POLICY_FS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._POLICY_FS)
 
         if flag:
             policies_dict = {}
-            if response.json() and 'policies' in response.json():
-                policies = response.json()['policies']
+            if response.json() and "policies" in response.json():
+                policies = response.json()["policies"]
                 for policy in policies:
-                    temp_name = policy['policyEntity']['policyName'].lower()
-                    temp_id = str(policy['policyEntity']['policyId']).lower()
-                    temp_policy_type = str(policy['detail']['filePolicy']
-                                          ['filePolicyType']).lower()
+                    temp_name = policy["policyEntity"]["policyName"].lower()
+                    temp_id = str(policy["policyEntity"]["policyId"]).lower()
+                    temp_policy_type = str(
+                        policy["detail"]["filePolicy"]["filePolicyType"]
+                    ).lower()
                     policies_dict[temp_name] = [temp_id, temp_policy_type]
             return policies_dict
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_policy_id(self, policy_name: str) -> str:
         """Returns the policy ID for the given policy name.
@@ -269,13 +270,13 @@ class ConfigurationPolicies(object):
             SDKException: If the policy name is not a string.
         """
         if not isinstance(policy_name, str):
-            raise SDKException('ConfigurationPolicies', '101')
+            raise SDKException("ConfigurationPolicies", "101")
         if policy_name.lower() in self._policies:
             return self._policies[policy_name.lower()][0]
         if policy_name.lower() in self._ci_policies:
             return self._ci_policies[policy_name.lower()][0]
 
-    def get(self, configuration_policy_name: str, policy_type: str) -> 'ConfigurationPolicy':
+    def get(self, configuration_policy_name: str, policy_type: str) -> "ConfigurationPolicy":
         """Returns a ConfigurationPolicy object of the specified Configuration policy name.
 
         Args:
@@ -297,51 +298,61 @@ class ConfigurationPolicies(object):
             >>> policy = config_policies.get('MyPolicy', 'Archive')
         """
         if not isinstance(configuration_policy_name, str):
-            raise SDKException('ConfigurationPolicies', '101')
+            raise SDKException("ConfigurationPolicies", "101")
 
         if self.has_policy(configuration_policy_name):
             return ConfigurationPolicy(
-                self._commcell_object, configuration_policy_name, self._get_policy_id(
-                    configuration_policy_name)
+                self._commcell_object,
+                configuration_policy_name,
+                self._get_policy_id(configuration_policy_name),
             )
 
         else:
             raise SDKException(
-                'ConfigurationPolicies', '102', 'No policy exists with name: {0}'.format(
-                    configuration_policy_name)
+                "ConfigurationPolicies",
+                "102",
+                f"No policy exists with name: {configuration_policy_name}",
             )
 
-    def get_policy_object(self, policy_type: str, configuration_policy_name: str) -> Union['ArchivePolicy', 'JournalPolicy', 'CleanupPolicy', 'RetentionPolicy', 'ContentIndexingPolicy']:
+    def get_policy_object(
+        self, policy_type: str, configuration_policy_name: str
+    ) -> Union[
+        "ArchivePolicy",
+        "JournalPolicy",
+        "CleanupPolicy",
+        "RetentionPolicy",
+        "ContentIndexingPolicy",
+    ]:
         """Get a Policy object based on policy type
 
-            Args:
-                policy_type                 (str)   --  type of policy to create the object of
+        Args:
+            policy_type                 (str)   --  type of policy to create the object of
 
-                    Valid values are:
+                Valid values are:
 
-                        - Archive
+                    - Archive
 
-                        - Cleanup
+                    - Cleanup
 
-                        - Retention
+                    - Retention
 
-                        - Journal
+                    - Journal
 
-                        - Content Indexing
+                    - Content Indexing
 
-                configuration_policy_name   (str)   --  name of the configuration Policy
+            configuration_policy_name   (str)   --  name of the configuration Policy
 
-            Returns:
-                Union[ArchivePolicy, JournalPolicy, CleanupPolicy, RetentionPolicy, ContentIndexingPolicy]: instance of the appropriate Policy class
+        Returns:
+            Union[ArchivePolicy, JournalPolicy, CleanupPolicy, RetentionPolicy, ContentIndexingPolicy]: instance of the appropriate Policy class
 
-            Raises:
-                SDKException:
-                    If the policy type is not supported.
+        Raises:
+            SDKException:
+                If the policy type is not supported.
 
-            Usage:
-                >>> commcell = Commcell('localhost', 'user', 'password')
-                >>> config_policies = ConfigurationPolicies(commcell)
-                >>> archive_policy = config_policies.get_policy_object('Archive', 'MyArchivePolicy')
+        Usage:
+            >>> commcell = Commcell('localhost', 'user', 'password')
+            >>> config_policies = ConfigurationPolicies(commcell)
+            >>> archive_policy = config_policies.get_policy_object('Archive', 'MyArchivePolicy')
         """
 
         policy_types = {
@@ -349,41 +360,41 @@ class ConfigurationPolicies(object):
             "Journal": JournalPolicy,
             "Cleanup": CleanupPolicy,
             "Retention": RetentionPolicy,
-            "ContentIndexing": ContentIndexingPolicy
+            "ContentIndexing": ContentIndexingPolicy,
         }
 
         try:
             return policy_types[policy_type](self._commcell_object, configuration_policy_name)
         except KeyError as e:
             raise SDKException(
-                'ConfigurationPolicies',
-                '102',
-                'Policy Type {} is not supported'.format(policy_type)
+                "ConfigurationPolicies", "102", f"Policy Type {policy_type} is not supported"
             ) from e
 
-    def run_content_indexing(self, ci_policy_name: str) -> 'Job':
+    def run_content_indexing(self, ci_policy_name: str) -> "Job":
         """Runs Content indexing job from the CI policy level
 
-            Args:
-                ci_policy_name (str): Content indexing policy name
+        Args:
+            ci_policy_name (str): Content indexing policy name
 
-            Returns:
-                Job: Job class object for the CI Job
+        Returns:
+            Job: Job class object for the CI Job
 
-            Raises:
-                SDKException:
-                    No CI policy exists     -   if given policy name does not exist
-                    Failed to run CI job    -   if CI job failed to start
-                    Response was not success
-                    Response received is empty
+        Raises:
+            SDKException:
+                No CI policy exists     -   if given policy name does not exist
+                Failed to run CI job    -   if CI job failed to start
+                Response was not success
+                Response received is empty
 
-            Usage:
-                >>> commcell = Commcell('localhost', 'user', 'password')
-                >>> config_policies = ConfigurationPolicies(commcell)
-                >>> job = config_policies.run_content_indexing('MyCIPolicy')
+        Usage:
+            >>> commcell = Commcell('localhost', 'user', 'password')
+            >>> config_policies = ConfigurationPolicies(commcell)
+            >>> job = config_policies.run_content_indexing('MyCIPolicy')
         """
         if not self.has_policy(ci_policy_name):
-            raise SDKException('ConfigurationPolicies', '102', f'No CI policy exists with name: {ci_policy_name}')
+            raise SDKException(
+                "ConfigurationPolicies", "102", f"No CI policy exists with name: {ci_policy_name}"
+            )
         request_json = {
             "taskInfo": {
                 "task": {
@@ -391,50 +402,48 @@ class ConfigurationPolicies(object):
                     "initiatedFrom": 1,
                     "policyType": 0,
                     "taskId": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 5022
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 5022},
                         "options": {
                             "adminOpts": {
                                 "contentIndexingOption": {
                                     "fileAnalytics": False,
-                                    "subClientBasedAnalytics": False
+                                    "subClientBasedAnalytics": False,
                                 },
                                 "contentIndexingPolicyOption": {
                                     "policyId": int(self._get_policy_id(ci_policy_name)),
                                     "policyName": ci_policy_name,
                                     "policyDetailType": 5,
-                                    "policyType": 2
-                                }
+                                    "policyType": 2,
+                                },
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CREATE_TASK, request_json)
+            "POST", self._CREATE_TASK, request_json
+        )
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'Content Index job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('ConfigurationPolicies', '102', o_str)
-                raise SDKException('ConfigurationPolicies', '102', 'Failed to run the content indexing job')
-            raise SDKException('Response', '102')
+                    o_str = f'Content Index job failed\nError: "{error_message}"'
+                    raise SDKException("ConfigurationPolicies", "102", o_str)
+                raise SDKException(
+                    "ConfigurationPolicies", "102", "Failed to run the content indexing job"
+                )
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def delete(self, configuration_policy_name: str) -> None:
         """Deletes a Configuration policy from the commcell.
@@ -458,41 +467,42 @@ class ConfigurationPolicies(object):
             >>> config_policies.delete('MyPolicy')
         """
         if not isinstance(configuration_policy_name, str):
-            raise SDKException('ConfigurationPolicies', '101')
+            raise SDKException("ConfigurationPolicies", "101")
 
         if self.has_policy(configuration_policy_name):
-            policy_delete_service = self._services['DELETE_CONFIGURATION_POLICY'] % (
-                str(self._get_policy_id(configuration_policy_name)))
-
-            flag, response = self._cvpysdk_object.make_request(
-                'DELETE', policy_delete_service
+            policy_delete_service = self._services["DELETE_CONFIGURATION_POLICY"] % (
+                str(self._get_policy_id(configuration_policy_name))
             )
+
+            flag, response = self._cvpysdk_object.make_request("DELETE", policy_delete_service)
 
             if flag:
                 try:
                     if response.json():
-                        if response.json()['errorCode'] != 0:
-                            error_message = response.json()['errorMessage']
+                        if response.json()["errorCode"] != 0:
+                            error_message = response.json()["errorMessage"]
                             o_str = 'Failed to delete Configuration policy\nError: "{0}"'
 
                             raise SDKException(
-                                'ConfigurationPolicies', '102', o_str.format(error_message))
+                                "ConfigurationPolicies", "102", o_str.format(error_message)
+                            )
                 except ValueError as e:
                     if response.text:
                         self.refresh()
                         return response.text.strip()
                     else:
-                        raise SDKException('Response', '102') from e
+                        raise SDKException("Response", "102") from e
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
             raise SDKException(
-                'ConfigurationPolicies', '102', 'No policy exists with name: {0}'.format(
-                    configuration_policy_name)
+                "ConfigurationPolicies",
+                "102",
+                f"No policy exists with name: {configuration_policy_name}",
             )
 
-    def add_policy(self, policy_object: object) -> 'ConfigurationPolicy':
+    def add_policy(self, policy_object: object) -> "ConfigurationPolicy":
         """Adds a new Configuration Policy to the Commcell.
 
         Args:
@@ -519,32 +529,33 @@ class ConfigurationPolicies(object):
         json = policy_object._initialize_policy_json()
         configuration_policy_name = policy_object.name.lower()
 
-        create_configuration_policy = self._services['CREATE_CONFIGURATION_POLICIES']
+        create_configuration_policy = self._services["CREATE_CONFIGURATION_POLICIES"]
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', create_configuration_policy, json
+            "POST", create_configuration_policy, json
         )
 
         if flag:
             if response.json():
-                if 'policy' in response.json():
+                if "policy" in response.json():
                     # initialize the policies again
                     # so the policies object has all the policies
                     self.refresh()
                     return ConfigurationPolicy(
-                        self._commcell_object, configuration_policy_name,
-                        self._get_policy_id(configuration_policy_name)
+                        self._commcell_object,
+                        configuration_policy_name,
+                        self._get_policy_id(configuration_policy_name),
                     )
-                elif 'error' in response.json():
-                    error_message = response.json()['error']['errorMessage']
+                elif "error" in response.json():
+                    error_message = response.json()["error"]["errorMessage"]
                     o_str = 'Failed to create Configuration policy\nError: "{0}"'
 
-                    raise SDKException('ConfigurationPolicies', '102', o_str.format(error_message))
+                    raise SDKException("ConfigurationPolicies", "102", o_str.format(error_message))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Refresh the Virtual Machine policies.
@@ -555,7 +566,8 @@ class ConfigurationPolicies(object):
         self._policies = self._get_policies()
         self._ci_policies = self._get_ci_policies()
 
-class ConfigurationPolicy(object):
+
+class ConfigurationPolicy:
     """Class for representing a single Configuration Policy.
     Contains method definitions for common operations among all Configuration Policies.
 
@@ -573,7 +585,12 @@ class ConfigurationPolicy(object):
         config_policy = ConfigurationPolicy(commcell_object, 'MyPolicy')
     """
 
-    def __init__(self, commcell_object: 'Commcell', configuration_policy_name: str, configuration_policy_id: int = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        configuration_policy_name: str,
+        configuration_policy_id: int = None,
+    ) -> None:
         """Initialize object of the ConfigurationPolicy class.
 
         Args:
@@ -596,7 +613,7 @@ class ConfigurationPolicy(object):
         else:
             self._configuration_policy_id = self._get_configuration_policy_id()
 
-        self._CONGIGURATION_POLICY = self._services['GET_CONFIGURATION_POLICY'] % (
+        self._CONGIGURATION_POLICY = self._services["GET_CONFIGURATION_POLICY"] % (
             self._configuration_policy_id
         )
 
@@ -637,7 +654,8 @@ class ConfigurationPolicy(object):
         configuration_policies = ConfigurationPolicies(self._commcell_object)
         return configuration_policies._get_policy_id(self._configuration_policy_name)
 
-class ArchivePolicy():
+
+class ArchivePolicy:
     """Class for performing Archive policy operations for a specific archive policy
 
     Attributes:
@@ -677,7 +695,7 @@ class ArchivePolicy():
         _password (str): Password for content index preview (default: "").
     """
 
-    def __init__(self, commcell_object: 'Commcell', archive_policy_name: str) -> None:
+    def __init__(self, commcell_object: "Commcell", archive_policy_name: str) -> None:
         """Initialise the Archive Policy class instance.
 
         Args:
@@ -1317,9 +1335,7 @@ class ArchivePolicy():
         policy_json = {
             "policy": {
                 "policyType": 1,
-                "agentType": {
-                    "appTypeId": 137
-                },
+                "agentType": {"appTypeId": 137},
                 "detail": {
                     "emailPolicy": {
                         "emailPolicyType": 1,
@@ -1344,20 +1360,17 @@ class ArchivePolicy():
                                     "Deleted Items",
                                     "Drafts",
                                     "Inbox",
-                                    "Sent Items"
+                                    "Sent Items",
                                 ]
                             },
                             "excludeFolderFilter": {
-                                "folderPatternsSelected": [
-                                    "Junk Mail",
-                                    "Sync Issues"
-                                ],
+                                "folderPatternsSelected": ["Junk Mail", "Sync Issues"],
                                 "folderPatternsAvailable": [
                                     "Deleted Items",
                                     "Drafts",
                                     "Inbox",
-                                    "Sent Items"
-                                ]
+                                    "Sent Items",
+                                ],
                             },
                             "contentIndexProps": {
                                 "enableContentIndex": self._enable_content_index,
@@ -1370,37 +1383,34 @@ class ArchivePolicy():
                                 "enablePreviewGeneration": self._enable_preview_generation,
                                 "deferredDays": self._deferred_days,
                                 "enableDeferredDays": self._enable_deferred_days,
-                                "pattern": [
-                                    {}
-                                ],
+                                "pattern": [{}],
                                 "previewPathDir": {
                                     "path": self._path,
                                     "userAccount": {
                                         "userName": self._username,
-                                        "password": self._password
-                                    }
-                                }
+                                        "password": self._password,
+                                    },
+                                },
                             },
                             "excludeMessageClassFilter": {
                                 "folderPatternsAvailable": [
                                     "Appointments",
                                     "Contacts",
                                     "Schedules",
-                                    "Tasks"
+                                    "Tasks",
                                 ]
-                            }
-                        }
+                            },
+                        },
                     }
                 },
-                "policyEntity": {
-                    "policyName": self._name
-                }
+                "policyEntity": {"policyName": self._name},
             }
         }
 
         return policy_json
 
-class JournalPolicy():
+
+class JournalPolicy:
     """Class for performing Journal policy operations for a specific journal policy.
 
     Attributes:
@@ -1433,7 +1443,7 @@ class JournalPolicy():
         >>> journal_policy = JournalPolicy(commcell_object, 'MyJournalPolicy')
     """
 
-    def __init__(self, commcell_object: 'Commcell', journal_policy_name: str) -> None:
+    def __init__(self, commcell_object: "Commcell", journal_policy_name: str) -> None:
         """Initialise the Journal Policy class instance.
 
         Args:
@@ -1526,12 +1536,12 @@ class JournalPolicy():
     @delete_archived_messages.setter
     def delete_archived_messages(self, delete_archived_messages: bool) -> None:
         """Sets the delete archived messages option.
-        
+
         Args:
             delete_archived_messages (bool): True to delete archived messages, False otherwise.
 
         Usage:
-            >>> journal_policy.delete_archived_messages = True    
+            >>> journal_policy.delete_archived_messages = True
         """
         self._delete_archived_messages = delete_archived_messages
 
@@ -1574,7 +1584,7 @@ class JournalPolicy():
     @job_messages_protected.setter
     def job_messages_protected(self, job_messages_protected: int) -> None:
         """Sets the job messages protected.
-        
+
         Args:
             job_messages_protected (int): The number of messages protected by a job.
 
@@ -1742,12 +1752,12 @@ class JournalPolicy():
     @enable_content_index.setter
     def enable_content_index(self, enable_content_index: bool) -> None:
         """Enable/Disable ContentIndex
-        
+
         Args:
             enable_content_index (bool): True to enable, False to disable.
 
         Usage:
-            >>> journal_policy.enable_content_index = True        
+            >>> journal_policy.enable_content_index = True
         """
         self._enable_content_index = enable_content_index
 
@@ -1766,12 +1776,12 @@ class JournalPolicy():
     @enable_deferred_days.setter
     def enable_deferred_days(self, enable_deferred_days: bool) -> None:
         """Enable/Disable deferred days
-        
+
         Args:
             enable_deferred_days (bool): True to enable, False to disable.
 
         Usage:
-            >>> journal_policy.enable_deferred_days = True        
+            >>> journal_policy.enable_deferred_days = True
         """
         self._enable_deferred_days = enable_deferred_days
 
@@ -1790,12 +1800,12 @@ class JournalPolicy():
     @enable_preview_generation.setter
     def enable_preview_generation(self, enable_preview_generation: bool) -> None:
         """Enable/Disable preview generation
-        
+
         Args:
             enable_preview_generation (bool): True to enable, False to disable.
 
         Usage:
-            >>> journal_policy.enable_preview_generation = True        
+            >>> journal_policy.enable_preview_generation = True
         """
         self._enable_preview_generation = enable_preview_generation
 
@@ -1814,12 +1824,12 @@ class JournalPolicy():
     @jobs_older_than.setter
     def jobs_older_than(self, jobs_older_than: int) -> None:
         """Sets the number of days for jobs older than this value
-        
+
         Args:
             jobs_older_than (int): Number of days.
 
         Usage:
-            >>> journal_policy.jobs_older_than = 30        
+            >>> journal_policy.jobs_older_than = 30
         """
         self._jobs_older_than = jobs_older_than
 
@@ -1838,12 +1848,12 @@ class JournalPolicy():
     @retention_days_for_ci.setter
     def retention_days_for_ci(self, retention_days_for_ci: int) -> None:
         """Sets the retention days for content index
-        
+
         Args:
             retention_days_for_ci (int): Number of retention days.
 
         Usage:
-            >>> journal_policy.retention_days_for_ci = 365        
+            >>> journal_policy.retention_days_for_ci = 365
         """
         self._retention_days_for_ci = retention_days_for_ci
 
@@ -1862,12 +1872,12 @@ class JournalPolicy():
     @start_time.setter
     def start_time(self, start_time: int) -> None:
         """Sets the start time for content indexing
-        
+
         Args:
             start_time (int): Start time value.
 
         Usage:
-            >>> journal_policy.start_time = 8        
+            >>> journal_policy.start_time = 8
         """
         self._start_time = start_time
 
@@ -1886,12 +1896,12 @@ class JournalPolicy():
     @synchronize_on.setter
     def synchronize_on(self, synchronize_on: bool) -> None:
         """Enable/Disable synchronization for content indexing
-        
+
         Args:
             synchronize_on (bool): True to enable, False to disable.
 
         Usage:
-            >>> journal_policy.synchronize_on = True        
+            >>> journal_policy.synchronize_on = True
         """
         self._synchronize_on = synchronize_on
 
@@ -1910,12 +1920,12 @@ class JournalPolicy():
     @path.setter
     def path(self, path: str) -> None:
         """Sets the path for preview generation
-        
+
         Args:
             path (str): The file system path for preview generation.
 
         Usage:
-            >>> journal_policy.path = "/path/to/preview"        
+            >>> journal_policy.path = "/path/to/preview"
         """
         self._path = path
 
@@ -1934,12 +1944,12 @@ class JournalPolicy():
     @username.setter
     def username(self, username: str) -> None:
         """Sets the username for preview generation path access
-        
+
         Args:
             username (str): Username for accessing the preview path.
 
         Usage:
-            >>> journal_policy.username = "admin"        
+            >>> journal_policy.username = "admin"
         """
         self._username = username
 
@@ -1958,12 +1968,12 @@ class JournalPolicy():
     @password.setter
     def password(self, password: str) -> None:
         """Sets the password for preview generation path access
-        
+
         Args:
             password (str): Password for accessing the preview path.
 
         Usage:
-            >>> journal_policy.password = "secure_password"        
+            >>> journal_policy.password = "secure_password"
         """
         self._password = password
 
@@ -1979,9 +1989,7 @@ class JournalPolicy():
         policy_json = {
             "policy": {
                 "policyType": 1,
-                "agentType": {
-                    "appTypeId": 137
-                },
+                "agentType": {"appTypeId": 137},
                 "detail": {
                     "emailPolicy": {
                         "emailPolicyType": 4,
@@ -1998,24 +2006,21 @@ class JournalPolicy():
                                 "enablePreviewGeneration": self._enable_preview_generation,
                                 "deferredDays": self._deferred_days,
                                 "enableDeferredDays": self._enable_deferred_days,
-                                "pattern": [
-                                    {}
-                                ],
+                                "pattern": [{}],
                                 "previewPathDir": {
                                     "path": self._path,
                                     "userAccount": {
                                         "userName": self._username,
-                                        "password": self._password
-
-                                    }
-                                }
+                                        "password": self._password,
+                                    },
+                                },
                             },
                             "excludeMessageClassFilter": {
                                 "folderPatternsAvailable": [
                                     "Appointments",
                                     "Contacts",
                                     "Schedules",
-                                    "Tasks"
+                                    "Tasks",
                                 ]
                             },
                             "includeFolderFilter": {
@@ -2023,33 +2028,29 @@ class JournalPolicy():
                                     "Deleted Items",
                                     "Drafts",
                                     "Inbox",
-                                    "Sent Items"
+                                    "Sent Items",
                                 ]
                             },
                             "excludeFolderFilter": {
-                                "folderPatternsSelected": [
-                                    "Junk Mail",
-                                    "Sync Issues"
-                                ],
+                                "folderPatternsSelected": ["Junk Mail", "Sync Issues"],
                                 "folderPatternsAvailable": [
                                     "Deleted Items",
                                     "Drafts",
                                     "Inbox",
-                                    "Sent Items"
-                                ]
-                            }
-                        }
+                                    "Sent Items",
+                                ],
+                            },
+                        },
                     }
                 },
-                "policyEntity": {
-                    "policyName": self._name
-                }
+                "policyEntity": {"policyName": self._name},
             }
         }
 
         return policy_json
 
-class CleanupPolicy():
+
+class CleanupPolicy:
     """Class for performing Cleanup policy operations for a specific cleanup policy
 
     Attributes:
@@ -2081,12 +2082,12 @@ class CleanupPolicy():
         _include_folder_filter (str): Filter for including folders (default: "Deleted Items,Drafts,Inbox,Sent Items").
         _exclude_folder_filter (str): Filter for excluding folders (default: "Deleted Items,Drafts,Inbox,Sent Items,Junk Mail,Sync Issues").
         _exclude_message_class_filter (str): Filter for excluding message classes (default: "Appointments,Contacts,Schedules,Tasks").
-    
+
     Usage:
         >>> cleanup_policy = CleanupPolicy(commcell_object, 'MyCleanupPolicy')
     """
 
-    def __init__(self, commcell_object: 'Commcell', cleanup_policy_name: str) -> None:
+    def __init__(self, commcell_object: "Commcell", cleanup_policy_name: str) -> None:
         """Initialise the cleanup Policy class instance.
 
         Args:
@@ -2142,7 +2143,7 @@ class CleanupPolicy():
 
         Args:
             name (str): The new name for the cleanup policy.
-            
+
         Usage:
             >>> cleanup_policy.name = 'NewCleanupPolicy'
         """
@@ -2169,12 +2170,12 @@ class CleanupPolicy():
     @add_recall_link.setter
     def add_recall_link(self, add_recall_link: bool) -> None:
         """Enable/Disable add recall link option
-        
+
         Args:
             add_recall_link (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.add_recall_link = True        
+            >>> cleanup_policy.add_recall_link = True
         """
         self._add_recall_link = add_recall_link
 
@@ -2190,12 +2191,12 @@ class CleanupPolicy():
     @archive_if_size.setter
     def archive_if_size(self, archive_if_size: int) -> None:
         """Sets the archive if size value
-        
+
         Args:
             archive_if_size (int): Size threshold for archiving.
 
         Usage:
-            >>> cleanup_policy.archive_if_size = 90        
+            >>> cleanup_policy.archive_if_size = 90
         """
         self._archive_if_size = archive_if_size
 
@@ -2211,12 +2212,12 @@ class CleanupPolicy():
     @archive_mailbox.setter
     def archive_mailbox(self, archive_mailbox: bool) -> None:
         """Enable/Disable archive mailbox option
-        
+
         Args:
             archive_mailbox (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.archive_mailbox = True        
+            >>> cleanup_policy.archive_mailbox = True
         """
         self._archive_mailbox = archive_mailbox
 
@@ -2232,12 +2233,12 @@ class CleanupPolicy():
     @collect_messages_with_attachments.setter
     def collect_messages_with_attachments(self, collect_messages_with_attachments: bool) -> None:
         """Enable/Disable collecting messages with attachments
-        
+
         Args:
             collect_messages_with_attachments (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.collect_messages_with_attachments = True        
+            >>> cleanup_policy.collect_messages_with_attachments = True
         """
         self._collect_messages_with_attachments = collect_messages_with_attachments
 
@@ -2253,12 +2254,12 @@ class CleanupPolicy():
     @collect_messages_days_after.setter
     def collect_messages_days_after(self, collect_messages_days_after: int) -> None:
         """Sets the number of days after which to collect messages
-        
+
         Args:
             collect_messages_days_after (int): Number of days.
 
         Usage:
-            >>> cleanup_policy.collect_messages_days_after = 30        
+            >>> cleanup_policy.collect_messages_days_after = 30
         """
         self._collect_messages_days_after = collect_messages_days_after
 
@@ -2274,12 +2275,12 @@ class CleanupPolicy():
     @collect_messages_larger_than.setter
     def collect_messages_larger_than(self, collect_messages_larger_than: int) -> None:
         """Sets the size threshold for collecting messages
-        
+
         Args:
             collect_messages_larger_than (int): Size threshold in KB.
 
         Usage:
-            >>> cleanup_policy.collect_messages_larger_than = 1024        
+            >>> cleanup_policy.collect_messages_larger_than = 1024
         """
         self._collect_messages_larger_than = collect_messages_larger_than
 
@@ -2295,12 +2296,12 @@ class CleanupPolicy():
     @create_stubs.setter
     def create_stubs(self, create_stubs: bool) -> None:
         """Enable/Disable creating stubs
-        
+
         Args:
             create_stubs (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.create_stubs = True        
+            >>> cleanup_policy.create_stubs = True
         """
         self._create_stubs = create_stubs
 
@@ -2316,12 +2317,12 @@ class CleanupPolicy():
     @disabled_mailbox.setter
     def disabled_mailbox(self, disabled_mailbox: bool) -> None:
         """Enable/Disable disabled mailbox option
-        
+
         Args:
             disabled_mailbox (bool): True to disable mailbox, False to enable.
 
         Usage:
-            >>> cleanup_policy.disabled_mailbox = True        
+            >>> cleanup_policy.disabled_mailbox = True
         """
         self._disabled_mailbox = disabled_mailbox
 
@@ -2337,12 +2338,12 @@ class CleanupPolicy():
     @enable_message_rules.setter
     def enable_message_rules(self, enable_message_rules: bool) -> None:
         """Enable/Disable message rules
-        
+
         Args:
             enable_message_rules (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.enable_message_rules = True        
+            >>> cleanup_policy.enable_message_rules = True
         """
         self._enable_message_rules = enable_message_rules
 
@@ -2358,12 +2359,12 @@ class CleanupPolicy():
     @leave_message_body.setter
     def leave_message_body(self, leave_message_body: bool) -> None:
         """Enable/Disable leaving the message body
-        
+
         Args:
             leave_message_body (bool): True to leave message body, False otherwise.
 
         Usage:
-            >>> cleanup_policy.leave_message_body = True        
+            >>> cleanup_policy.leave_message_body = True
         """
         self._leave_message_body = leave_message_body
 
@@ -2379,12 +2380,12 @@ class CleanupPolicy():
     @mailbox_quota.setter
     def mailbox_quota(self, mailbox_quota: bool) -> None:
         """Enable/Disable mailbox quota
-        
+
         Args:
             mailbox_quota (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.mailbox_quota = True        
+            >>> cleanup_policy.mailbox_quota = True
         """
         self._mailbox_quota = mailbox_quota
 
@@ -2400,12 +2401,12 @@ class CleanupPolicy():
     @number_of_days_for_source_pruning.setter
     def number_of_days_for_source_pruning(self, number_of_days_for_source_pruning: int) -> None:
         """Sets the number of days for source pruning
-        
+
         Args:
             number_of_days_for_source_pruning (int): Number of days.
 
         Usage:
-            >>> cleanup_policy.number_of_days_for_source_pruning = 730        
+            >>> cleanup_policy.number_of_days_for_source_pruning = 730
         """
         self._number_of_days_for_source_pruning = number_of_days_for_source_pruning
 
@@ -2421,12 +2422,12 @@ class CleanupPolicy():
     @primary_mailbox.setter
     def primary_mailbox(self, primary_mailbox: bool) -> None:
         """Enable/Disable primary mailbox
-        
+
         Args:
             primary_mailbox (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.primary_mailbox = True        
+            >>> cleanup_policy.primary_mailbox = True
         """
         self._primary_mailbox = primary_mailbox
 
@@ -2442,12 +2443,12 @@ class CleanupPolicy():
     @prune_erased_messages_or_stubs.setter
     def prune_erased_messages_or_stubs(self, prune_erased_messages_or_stubs: bool) -> None:
         """Enable/Disable pruning erased messages or stubs
-        
+
         Args:
             prune_erased_messages_or_stubs (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.prune_erased_messages_or_stubs = True        
+            >>> cleanup_policy.prune_erased_messages_or_stubs = True
         """
         self._prune_erased_messages_or_stubs = prune_erased_messages_or_stubs
 
@@ -2463,12 +2464,12 @@ class CleanupPolicy():
     @prune_messages.setter
     def prune_messages(self, prune_messages: bool) -> None:
         """Enable/Disable pruning messages
-        
+
         Args:
             prune_messages (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.prune_messages = True        
+            >>> cleanup_policy.prune_messages = True
         """
         self._prune_messages = prune_messages
 
@@ -2484,12 +2485,12 @@ class CleanupPolicy():
     @prune_stubs.setter
     def prune_stubs(self, prune_stubs: bool) -> None:
         """Enable/Disable pruning stubs
-        
+
         Args:
             prune_stubs (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.prune_stubs = True        
+            >>> cleanup_policy.prune_stubs = True
         """
         self._prune_stubs = prune_stubs
 
@@ -2505,12 +2506,12 @@ class CleanupPolicy():
     @skip_unread_messages.setter
     def skip_unread_messages(self, skip_unread_messages: bool) -> None:
         """Enable/Disable skipping unread messages
-        
+
         Args:
             skip_unread_messages (bool): True to skip unread messages, False otherwise.
 
         Usage:
-            >>> cleanup_policy.skip_unread_messages = True        
+            >>> cleanup_policy.skip_unread_messages = True
         """
         self._skip_unread_messages = skip_unread_messages
 
@@ -2526,12 +2527,12 @@ class CleanupPolicy():
     @stop_archive_if_size.setter
     def stop_archive_if_size(self, stop_archive_if_size: int) -> None:
         """Sets the size threshold to stop archiving
-        
+
         Args:
             stop_archive_if_size (int): Size threshold to stop archiving.
 
         Usage:
-            >>> cleanup_policy.stop_archive_if_size = 75        
+            >>> cleanup_policy.stop_archive_if_size = 75
         """
         self._stop_archive_if_size = stop_archive_if_size
 
@@ -2547,12 +2548,12 @@ class CleanupPolicy():
     @truncate_body.setter
     def truncate_body(self, truncate_body: bool) -> None:
         """Enable/Disable body truncation
-        
+
         Args:
             truncate_body (bool): True to enable truncation, False to disable.
 
         Usage:
-            >>> cleanup_policy.truncate_body = True        
+            >>> cleanup_policy.truncate_body = True
         """
         self._truncate_body = truncate_body
 
@@ -2568,12 +2569,12 @@ class CleanupPolicy():
     @truncate_body_to_bytes.setter
     def truncate_body_to_bytes(self, truncate_body_to_bytes: int) -> None:
         """Sets the number of bytes to truncate the body to
-        
+
         Args:
             truncate_body_to_bytes (int): Number of bytes for truncation.
 
         Usage:
-            >>> cleanup_policy.truncate_body_to_bytes = 1024        
+            >>> cleanup_policy.truncate_body_to_bytes = 1024
         """
         self._truncate_body_to_bytes = truncate_body_to_bytes
 
@@ -2589,12 +2590,12 @@ class CleanupPolicy():
     @used_disk_space.setter
     def used_disk_space(self, used_disk_space: bool) -> None:
         """Enable/Disable considering used disk space
-        
+
         Args:
             used_disk_space (bool): True to enable, False to disable.
 
         Usage:
-            >>> cleanup_policy.used_disk_space = True        
+            >>> cleanup_policy.used_disk_space = True
         """
         self._used_disk_space = used_disk_space
 
@@ -2610,12 +2611,12 @@ class CleanupPolicy():
     @used_disk_space_value.setter
     def used_disk_space_value(self, used_disk_space_value: int) -> None:
         """Sets the used disk space value threshold
-        
+
         Args:
             used_disk_space_value (int): Disk space threshold value.
 
         Usage:
-            >>> cleanup_policy.used_disk_space_value = 50        
+            >>> cleanup_policy.used_disk_space_value = 50
         """
         self._used_disk_space_value = used_disk_space_value
 
@@ -2631,12 +2632,12 @@ class CleanupPolicy():
     @include_folder_filter.setter
     def include_folder_filter(self, include_folder_filter: str) -> None:
         """Sets the filter for including folders
-        
+
         Args:
             include_folder_filter (str): Comma-separated list of folders to include.
 
         Usage:
-            >>> cleanup_policy.include_folder_filter = "Inbox,Sent Items"        
+            >>> cleanup_policy.include_folder_filter = "Inbox,Sent Items"
         """
         self._include_folder_filter = include_folder_filter
 
@@ -2652,12 +2653,12 @@ class CleanupPolicy():
     @exclude_folder_filter.setter
     def exclude_folder_filter(self, exclude_folder_filter: str) -> None:
         """Sets the filter for excluding folders
-        
+
         Args:
             exclude_folder_filter (str): Comma-separated list of folders to exclude.
 
         Usage:
-            >>> cleanup_policy.exclude_folder_filter = "Junk Mail,Spam"        
+            >>> cleanup_policy.exclude_folder_filter = "Junk Mail,Spam"
         """
         self._exclude_folder_filter = exclude_folder_filter
 
@@ -2673,12 +2674,12 @@ class CleanupPolicy():
     @exclude_message_class_filter.setter
     def exclude_message_class_filter(self, exclude_message_class_filter: str) -> None:
         """Sets the filter for excluding message classes
-        
+
         Args:
             exclude_message_class_filter (str): Comma-separated list of message classes to exclude.
 
         Usage:
-            >>> cleanup_policy.exclude_message_class_filter = "Appointments,Tasks"        
+            >>> cleanup_policy.exclude_message_class_filter = "Appointments,Tasks"
         """
         self._exclude_message_class_filter = exclude_message_class_filter
 
@@ -2693,9 +2694,7 @@ class CleanupPolicy():
         policy_json = {
             "policy": {
                 "policyType": 1,
-                "agentType": {
-                    "appTypeId": 137
-                },
+                "agentType": {"appTypeId": 137},
                 "detail": {
                     "emailPolicy": {
                         "emailPolicyType": 2,
@@ -2727,7 +2726,7 @@ class CleanupPolicy():
                                     "Appointments",
                                     "Contacts",
                                     "Schedules",
-                                    "Tasks"
+                                    "Tasks",
                                 ]
                             },
                             "includeFolderFilter": {
@@ -2735,33 +2734,29 @@ class CleanupPolicy():
                                     "Deleted Items",
                                     "Drafts",
                                     "Inbox",
-                                    "Sent Items"
+                                    "Sent Items",
                                 ]
                             },
                             "excludeFolderFilter": {
-                                "folderPatternsSelected": [
-                                    "Junk Mail",
-                                    "Sync Issues"
-                                ],
+                                "folderPatternsSelected": ["Junk Mail", "Sync Issues"],
                                 "folderPatternsAvailable": [
                                     "Deleted Items",
                                     "Drafts",
                                     "Inbox",
-                                    "Sent Items"
-                                ]
-                            }
-                        }
+                                    "Sent Items",
+                                ],
+                            },
+                        },
                     }
                 },
-                "policyEntity": {
-                    "policyName": self._name
-                }
+                "policyEntity": {"policyName": self._name},
             }
         }
 
         return policy_json
 
-class RetentionPolicy():
+
+class RetentionPolicy:
     """Class for performing Retention policy operations for a specific retention policy.
 
     Attributes:
@@ -2777,7 +2772,7 @@ class RetentionPolicy():
         rp = RetentionPolicy(commcell_object, 'MyRetentionPolicy')
     """
 
-    def __init__(self, commcell_object: 'Commcell', retention_policy_name: str) -> None:
+    def __init__(self, commcell_object: "Commcell", retention_policy_name: str) -> None:
         """Initialise the Retention Policy class instance.
 
         Args:
@@ -2844,12 +2839,12 @@ class RetentionPolicy():
     @days_for_media_pruning.setter
     def days_for_media_pruning(self, days_for_media_pruning: int) -> None:
         """Sets the number of days for media pruning
-        
+
         Args:
             days_for_media_pruning (int): Number of days for media pruning.
 
         Usage:
-            >>> retention_policy.days_for_media_pruning = 30        
+            >>> retention_policy.days_for_media_pruning = 30
         """
         self._number_of_days_for_media_pruning = days_for_media_pruning
 
@@ -2868,12 +2863,12 @@ class RetentionPolicy():
     @retention_type.setter
     def retention_type(self, retention_type: int) -> None:
         """Sets the retention type
-        
+
         Args:
             retention_type (int): The retention type value.
 
         Usage:
-            >>> retention_policy.retention_type = 1        
+            >>> retention_policy.retention_type = 1
         """
         self._retention_type = retention_type
 
@@ -2892,12 +2887,12 @@ class RetentionPolicy():
     @exchange_folder_retention.setter
     def exchange_folder_retention(self, exchange_folder_retention: bool) -> None:
         """Enable/Disable exchange folder retention
-        
+
         Args:
             exchange_folder_retention (bool): True to enable, False to disable.
 
         Usage:
-            >>> retention_policy.exchange_folder_retention = True        
+            >>> retention_policy.exchange_folder_retention = True
         """
         self._exchange_folder_retention = exchange_folder_retention
 
@@ -2916,12 +2911,12 @@ class RetentionPolicy():
     @exchange_retention_tags.setter
     def exchange_retention_tags(self, exchange_retention_tags: bool) -> None:
         """Enable/Disable exchange retention tags
-        
+
         Args:
             exchange_retention_tags (bool): True to enable, False to disable.
 
         Usage:
-            >>> retention_policy.exchange_retention_tags = False        
+            >>> retention_policy.exchange_retention_tags = False
         """
         self._exchange_retention_tags = exchange_retention_tags
 
@@ -2934,9 +2929,7 @@ class RetentionPolicy():
         policy_json = {
             "policy": {
                 "policyType": 1,
-                "agentType": {
-                    "appTypeId": 137
-                },
+                "agentType": {"appTypeId": 137},
                 "detail": {
                     "emailPolicy": {
                         "emailPolicyType": 3,
@@ -2945,20 +2938,19 @@ class RetentionPolicy():
                             "type": self.retention_type,
                             "advanceRetentionOption": {
                                 "bExchangeFoldersRetention": self.exchange_folder_retention,
-                                "bExchangeRetentionTags": self.exchange_retention_tags
-                            }
-                        }
+                                "bExchangeRetentionTags": self.exchange_retention_tags,
+                            },
+                        },
                     }
                 },
-                "policyEntity": {
-                    "policyName": self.name
-                }
+                "policyEntity": {"policyName": self.name},
             }
         }
 
         return policy_json
 
-class ContentIndexingPolicy():
+
+class ContentIndexingPolicy:
     """Class for performing Content Indexing policy operations for a specific CI policy.
 
     Attributes:
@@ -2976,7 +2968,7 @@ class ContentIndexingPolicy():
         >>> ci_policy = ContentIndexingPolicy(commcell_object, 'MyCIPolicy')
     """
 
-    def __init__(self, commcell_object: 'Commcell', ci_policy_name: str) -> None:
+    def __init__(self, commcell_object: "Commcell", ci_policy_name: str) -> None:
         """Initialise the Content indexing Policy class instance.
 
         Args:
@@ -2986,12 +2978,18 @@ class ContentIndexingPolicy():
         self._commcell_object = commcell_object
         self._name = ci_policy_name
         self._file_policy_type = 5
-        self._includeDocTypes = "*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg," \
-                                "*.log,*.msg,*.odg,*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt," \
-                                "*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml"
+        self._includeDocTypes = (
+            "*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg,"
+            "*.log,*.msg,*.odg,*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt,"
+            "*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml"
+        )
         self._index_server_name: Optional[str] = None
         self._data_access_node: Optional[str] = None
-        self._exclude_paths: List[str] = ["C:\\Program Files", "C:\\Program Files (x86)", "C:\\Windows"]
+        self._exclude_paths: List[str] = [
+            "C:\\Program Files",
+            "C:\\Program Files (x86)",
+            "C:\\Windows",
+        ]
         self._min_doc_size = 0
         self._max_doc_size = 50
 
@@ -3007,12 +3005,12 @@ class ContentIndexingPolicy():
     @name.setter
     def name(self, value: str) -> None:
         """Sets the name of the Content Indexing policy
-        
+
         Args:
             value (str): The new name for the policy.
 
         Usage:
-            >>> ci_policy.name = "NewPolicyName"        
+            >>> ci_policy.name = "NewPolicyName"
         """
         self._name = value
 
@@ -3028,12 +3026,12 @@ class ContentIndexingPolicy():
     @include_doc_types.setter
     def include_doc_types(self, value: str) -> None:
         """Sets the included document types for content indexing
-        
+
         Args:
             value (str): Comma-separated string of document types to include.
 
         Usage:
-            >>> ci_policy.include_doc_types = "*.pdf,*.doc,*.txt"        
+            >>> ci_policy.include_doc_types = "*.pdf,*.doc,*.txt"
         """
         self._includeDocTypes = value
 
@@ -3049,12 +3047,12 @@ class ContentIndexingPolicy():
     @index_server_name.setter
     def index_server_name(self, value: str) -> None:
         """Sets the index server name for content indexing
-        
+
         Args:
             value (str): The name of the index server.
 
         Usage:
-            >>> ci_policy.index_server_name = "IndexServer1"        
+            >>> ci_policy.index_server_name = "IndexServer1"
         """
         self._index_server_name = value
 
@@ -3070,12 +3068,12 @@ class ContentIndexingPolicy():
     @data_access_node.setter
     def data_access_node(self, value: str) -> None:
         """Sets the data access node for content indexing
-        
+
         Args:
             value (str): The name of the data access node.
 
         Usage:
-            >>> ci_policy.data_access_node = "DataAccessNode1"        
+            >>> ci_policy.data_access_node = "DataAccessNode1"
         """
         self._data_access_node = value
 
@@ -3091,12 +3089,12 @@ class ContentIndexingPolicy():
     @min_doc_size.setter
     def min_doc_size(self, value: int) -> None:
         """Sets the minimum document size for content indexing
-        
+
         Args:
             value (int): Minimum document size in MB.
 
         Usage:
-            >>> ci_policy.min_doc_size = 0        
+            >>> ci_policy.min_doc_size = 0
         """
         self._min_doc_size = value
 
@@ -3112,12 +3110,12 @@ class ContentIndexingPolicy():
     @max_doc_size.setter
     def max_doc_size(self, value: int) -> None:
         """Sets the maximum document size for content indexing
-        
+
         Args:
             value (int): Maximum document size in MB.
 
         Usage:
-            >>> ci_policy.max_doc_size = 50        
+            >>> ci_policy.max_doc_size = 50
         """
         self._max_doc_size = value
 
@@ -3133,12 +3131,12 @@ class ContentIndexingPolicy():
     @exclude_paths.setter
     def exclude_paths(self, value: List[str]) -> None:
         """Sets the paths to exclude from content indexing
-        
+
         Args:
             value (List[str]): List of paths to exclude from indexing.
 
         Usage:
-            >>> ci_policy.exclude_paths = ["C:\\Temp", "C:\\Windows"]        
+            >>> ci_policy.exclude_paths = ["C:\\Temp", "C:\\Windows"]
         """
         self._exclude_paths = value
 
@@ -3154,18 +3152,21 @@ class ContentIndexingPolicy():
         Usage:
             >>> policy_json = self._initialize_policy_json()
         """
-        if not isinstance(self._index_server_name, str) or not isinstance(self._data_access_node, str) \
-            or not isinstance(self._exclude_paths, list) or not isinstance(self._includeDocTypes, str) \
-                or not isinstance(self._name, str) or not isinstance(self._min_doc_size, int) \
-                or not isinstance(self._max_doc_size, int):
-            raise SDKException('ConfigurationPolicies', '101')
+        if (
+            not isinstance(self._index_server_name, str)
+            or not isinstance(self._data_access_node, str)
+            or not isinstance(self._exclude_paths, list)
+            or not isinstance(self._includeDocTypes, str)
+            or not isinstance(self._name, str)
+            or not isinstance(self._min_doc_size, int)
+            or not isinstance(self._max_doc_size, int)
+        ):
+            raise SDKException("ConfigurationPolicies", "101")
         policy_json = {
             "policy": {
                 "policyType": 2,
                 "flags": 0,
-                "agentType": {
-                    "appTypeId": 33
-                },
+                "agentType": {"appTypeId": 33},
                 "detail": {
                     "filePolicy": {
                         "filePolicyType": self._file_policy_type,
@@ -3173,8 +3174,11 @@ class ContentIndexingPolicy():
                             "includeDocTypes": self._includeDocTypes,
                             "copyPrecedence": 1,
                             "minDocSize": self._min_doc_size,
-                            "searchEngineId": int(self._commcell_object.index_servers.
-                                                  get(self._index_server_name).index_server_client_id),
+                            "searchEngineId": int(
+                                self._commcell_object.index_servers.get(
+                                    self._index_server_name
+                                ).index_server_client_id
+                            ),
                             "contentIndexVersionsAfterNumberOfDays": -1,
                             "maxDocSize": self._max_doc_size,
                             "globalFilterFlag": 0,
@@ -3184,18 +3188,19 @@ class ContentIndexingPolicy():
                                 "dataAccessNodes": [
                                     {
                                         "clientName": self._data_access_node,
-                                        "clientId": int(self._commcell_object.clients.
-                                                        get(self._data_access_node).client_id),
-                                        "_type_": 3
+                                        "clientId": int(
+                                            self._commcell_object.clients.get(
+                                                self._data_access_node
+                                            ).client_id
+                                        ),
+                                        "_type_": 3,
                                     }
-                                ]
-                            }
-                        }
+                                ],
+                            },
+                        },
                     }
                 },
-                "policyEntity": {
-                    "policyName": self._name
-                }
+                "policyEntity": {"policyName": self._name},
             }
         }
         return policy_json

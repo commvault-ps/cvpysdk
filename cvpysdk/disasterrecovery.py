@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=W0212,W0201
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -98,22 +97,25 @@ DisasterRecoveryManagement Attributes:
     **run_post_backup_process**             --  set or get run post backup process
 
 """
+
 from base64 import b64encode
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from cvpysdk.policies.storage_policies import StoragePolicy
 from cvpysdk.storage import DiskLibrary
-from .job import Job
-from .exception import SDKException
+
 from .client import Client
 from .constants import AppIDAType
+from .exception import SDKException
+from .job import Job
 
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     import requests
+
     from cvpysdk.commcell import Commcell
 
 
-class DisasterRecovery(object):
+class DisasterRecovery:
     """
     DisasterRecovery class for managing disaster recovery operations on a CommCell.
 
@@ -137,7 +139,7 @@ class DisasterRecovery(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize a DisasterRecovery object with the given Commcell instance.
 
         Args:
@@ -153,8 +155,8 @@ class DisasterRecovery(object):
         self.commcell = commcell
         self.client = Client(self.commcell, self.commcell.commserv_name)
         self.path = self.client.install_directory
-        self._RESTORE = self.commcell._services['RESTORE']
-        self._CREATE_TASK = self.commcell._services['CREATE_TASK']
+        self._RESTORE = self.commcell._services["RESTORE"]
+        self._CREATE_TASK = self.commcell._services["CREATE_TASK"]
         self.advbackup = False
         self._disaster_recovery_management = None
         self.reset_to_defaults()
@@ -197,21 +199,24 @@ class DisasterRecovery(object):
         #ai-gen-doc
         """
 
-        if self._backup_type.lower() not in ['full', 'differential']:
-            raise SDKException('Response', '103')
+        if self._backup_type.lower() not in ["full", "differential"]:
+            raise SDKException("Response", "103")
         backuptypes = {"full": 1, "differential": 3}
         if self.advbackup:
             self._backup_type = backuptypes[self._backup_type.lower()]
             return self._advanced_dr_backup()
-        dr_service = self.commcell._services['DRBACKUP']
-        request_json = {"isCompressionEnabled": self._is_compression_enabled,
-                        "jobType": 1, "backupType": backuptypes[self.backup_type.lower()]}
+        dr_service = self.commcell._services["DRBACKUP"]
+        request_json = {
+            "isCompressionEnabled": self._is_compression_enabled,
+            "jobType": 1,
+            "backupType": backuptypes[self.backup_type.lower()],
+        }
         flag, response = self.commcell._cvpysdk_object.make_request(
-            'POST', dr_service, request_json
+            "POST", dr_service, request_json
         )
         return self._process_drbackup_response(flag, response)
 
-    def _process_drbackup_response(self, flag: str, response: 'requests.Response') -> Job:
+    def _process_drbackup_response(self, flag: str, response: "requests.Response") -> Job:
         """Process the response from a Disaster Recovery (DR) backup operation.
 
         This method handles the results of a DR backup JSON request, validates the response,
@@ -232,28 +237,28 @@ class DisasterRecovery(object):
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self.commcell, response.json()['jobIds'][0])
+                    return Job(self.commcell, response.json()["jobIds"][0])
                 if "errorCode" in response.json():
                     o_str = 'Initializing backup failed\nError: "{0}"'.format(
-                        response.json()['errorMessage']
+                        response.json()["errorMessage"]
                     )
-                    raise SDKException('Response', '102', o_str)
-            raise SDKException('Response', '102')
+                    raise SDKException("Response", "102", o_str)
+            raise SDKException("Response", "102")
         response_string = self.commcell._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def restore_out_of_place(
-            self,
-            client: Union[str, Client],
-            destination_path: str,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: Optional[int] = None,
-            from_time: Optional[str] = None,
-            to_time: Optional[str] = None,
-            fs_options: Optional[Dict[str, Any]] = None,
-            restore_jobs: Optional[List[int]] = None
-        ) -> Job:
+        self,
+        client: Union[str, Client],
+        destination_path: str,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        fs_options: Optional[Dict[str, Any]] = None,
+        restore_jobs: Optional[List[int]] = None,
+    ) -> Job:
         """Restore files or folders out-of-place to a specified client and destination path.
 
         This method initiates a restore operation for the given client, restoring the selected
@@ -300,10 +305,13 @@ class DisasterRecovery(object):
 
         #ai-gen-doc
         """
-        if not ((isinstance(client, (str, Client))
-                 and isinstance(destination_path, str)
-                 and isinstance(overwrite, bool) and isinstance(restore_data_and_acl, bool))):
-            raise SDKException('Response', '101')
+        if not (
+            isinstance(client, (str, Client))
+            and isinstance(destination_path, str)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Response", "101")
 
         if fs_options is None:
             fs_options = {}
@@ -313,14 +321,16 @@ class DisasterRecovery(object):
         elif isinstance(client, str):
             client = Client(self.commcell, client)
         else:
-            raise SDKException('Response', '105')
+            raise SDKException("Response", "105")
 
         agent_obj = client.agents.get("File System")
         drpath = self.path + "\\CommserveDR"
-        destination_path = self._filter_paths([destination_path], True, agent_id=agent_obj.agent_id)
+        destination_path = self._filter_paths(
+            [destination_path], True, agent_id=agent_obj.agent_id
+        )
         drpath = [self._filter_paths([drpath], True, agent_id=agent_obj.agent_id)]
         if not drpath:
-            raise SDKException('Response', '104')
+            raise SDKException("Response", "104")
         instance_obj = agent_obj.instances.get("DefaultInstanceName")
 
         instance_obj._restore_association = {
@@ -331,7 +341,7 @@ class DisasterRecovery(object):
             "clientName": self.commcell.commserv_name,
             "consumeLicense": True,
             "clientSidePackage": True,
-            "subclientName": ""
+            "subclientName": "",
         }
         return instance_obj._restore_out_of_place(
             client,
@@ -343,7 +353,8 @@ class DisasterRecovery(object):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            restore_jobs=restore_jobs)
+            restore_jobs=restore_jobs,
+        )
 
     def _advanced_dr_backup(self) -> Job:
         """Run an advanced Disaster Recovery (DR) backup job using JSON input.
@@ -374,12 +385,9 @@ class DisasterRecovery(object):
                 "taskFlags": {"disabled": False},
                 "policyType": "DATA_PROTECTION",
                 "taskType": "IMMEDIATE",
-                "initiatedFrom": 1
+                "initiatedFrom": 1,
             }
-            self._subtask = {
-                "subTaskType": "ADMIN",
-                "operationType": "DRBACKUP"
-            }
+            self._subtask = {"subTaskType": "ADMIN", "operationType": "DRBACKUP"}
             clientdict = []
             if self._client_list is not None:
                 for client in self._client_list:
@@ -387,7 +395,8 @@ class DisasterRecovery(object):
                         "type": 0,
                         "clientName": client,
                         "clientSidePackage": True,
-                        "consumeLicense": True}
+                        "consumeLicense": True,
+                    }
                     clientdict.append(client)
 
             common_opts = None
@@ -395,64 +404,66 @@ class DisasterRecovery(object):
                 common_opts = {
                     "startUpOpts": {
                         "priority": self.advanced_job_options.get("priority", 66),
-                        "startInSuspendedState": self.advanced_job_options.get("start_in_suspended_state", False),
-                        "startWhenActivityIsLow": self.advanced_job_options.get("start_when_activity_is_low", False),
-                        "useDefaultPriority": self.advanced_job_options.get("use_default_priority", True)
+                        "startInSuspendedState": self.advanced_job_options.get(
+                            "start_in_suspended_state", False
+                        ),
+                        "startWhenActivityIsLow": self.advanced_job_options.get(
+                            "start_when_activity_is_low", False
+                        ),
+                        "useDefaultPriority": self.advanced_job_options.get(
+                            "use_default_priority", True
+                        ),
                     },
                     "jobRetryOpts": {
                         "runningTime": {
                             "enableTotalRunningTime": self.advanced_job_options.get(
-                                "enable_total_running_time", False),
-                            "totalRunningTime": self.advanced_job_options.get("total_running_time", 3600)
+                                "enable_total_running_time", False
+                            ),
+                            "totalRunningTime": self.advanced_job_options.get(
+                                "total_running_time", 3600
+                            ),
                         },
-                        "enableNumberOfRetries": self.advanced_job_options.get("enable_number_of_retries", False),
+                        "enableNumberOfRetries": self.advanced_job_options.get(
+                            "enable_number_of_retries", False
+                        ),
                         "killRunningJobWhenTotalRunningTimeExpires": self.advanced_job_options.get(
-                            "kill_running_job_when_total_running_time_expires", False),
-                        "numberOfRetries": self.advanced_job_options.get("number_of_retries", 0)
+                            "kill_running_job_when_total_running_time_expires", False
+                        ),
+                        "numberOfRetries": self.advanced_job_options.get("number_of_retries", 0),
                     },
-                    "jobDescription": self.advanced_job_options.get("job_description", "")
+                    "jobDescription": self.advanced_job_options.get("job_description", ""),
                 }
 
             self._droptions = {
-                "drbackupType": self._backup_type, "dbName": "commserv",
+                "drbackupType": self._backup_type,
+                "dbName": "commserv",
                 "backupHistoryDataBase": self.is_history_db_enabled,
                 "backupWFEngineDataBase": self.is_workflow_db_enabled,
                 "backupAppStudioDataBase": self.is_appstudio_db_enabled,
                 "backupCVCloudDataBase": self.is_cvcloud_db_enabled,
                 "backupDM2DataBase": self.is_dm2_db_enabled,
                 "enableDatabasesBackupCompression": self.is_compression_enabled,
-                "client": clientdict
-
+                "client": clientdict,
             }
 
             request_json = {
-                "taskInfo":
-                {
+                "taskInfo": {
                     "task": self._task,
-                    "subTasks":
-                    [{
-                        "subTaskOperation": 1,
-                        "subTask": self._subtask,
-                        "options":
+                    "subTasks": [
                         {
-                            "adminOpts":
-                            {
-                                "drBackupOption": self._droptions,
-                                "contentIndexingOption":
-                                {
-                                    "subClientBasedAnalytics": False
-                                }
+                            "subTaskOperation": 1,
+                            "subTask": self._subtask,
+                            "options": {
+                                "adminOpts": {
+                                    "drBackupOption": self._droptions,
+                                    "contentIndexingOption": {"subClientBasedAnalytics": False},
+                                },
+                                "restoreOptions": {
+                                    "virtualServerRstOption": {"isBlockLevelReplication": False}
+                                },
                             },
-                            "restoreOptions":
-                            {
-                                "virtualServerRstOption":
-                                {
-                                    "isBlockLevelReplication": False
-                                }
-                            }
                         }
-                    }
-                    ]
+                    ],
                 }
             }
 
@@ -461,7 +472,7 @@ class DisasterRecovery(object):
 
             return request_json
         except Exception as err:
-            raise SDKException('Response', '101', err)
+            raise SDKException("Response", "101", err)
 
     def _process_createtask_response(self, request_json: dict) -> Job:
         """Execute the CreateTask API for DR backup and parse the response.
@@ -481,25 +492,25 @@ class DisasterRecovery(object):
         #ai-gen-doc
         """
         flag, response = self.commcell._cvpysdk_object.make_request(
-            'POST', self._CREATE_TASK, request_json
+            "POST", self._CREATE_TASK, request_json
         )
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self.commcell, response.json()['jobIds'][0])
+                    return Job(self.commcell, response.json()["jobIds"][0])
                 if "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'DR backup job failed\nError: "{0}"'.format(
-                        error_message)
-                    raise SDKException('Response', '102', o_str)
-                raise SDKException(
-                    'Response', '102', 'Failed to run the DR backup job')
-            raise SDKException('Response', '102')
+                    o_str = f'DR backup job failed\nError: "{error_message}"'
+                    raise SDKException("Response", "102", o_str)
+                raise SDKException("Response", "102", "Failed to run the DR backup job")
+            raise SDKException("Response", "102")
         response_string = self.commcell._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
-    def _filter_paths(self, paths: list, is_single_path: bool = False, agent_id: str = None) -> Union[list, str]:
+    def _filter_paths(
+        self, paths: list, is_single_path: bool = False, agent_id: str = None
+    ) -> Union[list, str]:
         """Filter the provided paths based on the operating system and agent.
 
         Args:
@@ -525,18 +536,18 @@ class DisasterRecovery(object):
         for index, path in enumerate(paths):
             # "if" condition is default i.e. if client is not provided
             if agent_id is None or int(agent_id) == AppIDAType.WINDOWS_FILE_SYSTEM.value:
-                path = path.strip('\\').strip('/')
+                path = path.strip("\\").strip("/")
                 if path:
-                    path = path.replace('/', '\\')
+                    path = path.replace("/", "\\")
                 else:
-                    path = '\\'
+                    path = "\\"
             elif int(agent_id) == AppIDAType.LINUX_FILE_SYSTEM.value:
-                path = path.strip('\\').strip('/')
+                path = path.strip("\\").strip("/")
                 if path:
-                    path = path.replace('\\', '/')
+                    path = path.replace("\\", "/")
                 else:
-                    path = '\\'
-                path = '/' + path
+                    path = "\\"
+                path = "/" + path
             paths[index] = path
 
         if is_single_path:
@@ -576,7 +587,7 @@ class DisasterRecovery(object):
         if isinstance(value, list):
             self._client_list = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def is_compression_enabled(self) -> bool:
@@ -601,7 +612,7 @@ class DisasterRecovery(object):
         """Attempt to set the is_compression_enabled property.
 
         Note:
-            This property is read-only and cannot be set directly. 
+            This property is read-only and cannot be set directly.
             Any attempt to assign a value to this property will have no effect.
 
         Example:
@@ -613,7 +624,7 @@ class DisasterRecovery(object):
         if isinstance(value, bool):
             self._is_compression_enabled = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def backup_type(self) -> str:
@@ -649,7 +660,7 @@ class DisasterRecovery(object):
         if isinstance(value, str):
             self._backup_type = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def is_history_db_enabled(self) -> bool:
@@ -686,7 +697,7 @@ class DisasterRecovery(object):
         if isinstance(value, bool):
             self._is_history_db_enabled = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def is_workflow_db_enabled(self) -> bool:
@@ -723,13 +734,13 @@ class DisasterRecovery(object):
         if isinstance(value, bool):
             self._is_workflow_db_enabled = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def is_appstudio_db_enabled(self) -> bool:
         """Indicate whether the AppStudio workflow database is enabled.
 
-        This property provides a read-only boolean value that specifies if the AppStudio workflow database 
+        This property provides a read-only boolean value that specifies if the AppStudio workflow database
         feature is currently enabled in the DisasterRecovery configuration.
 
         Returns:
@@ -763,13 +774,13 @@ class DisasterRecovery(object):
         if isinstance(value, bool):
             self._is_appstudio_db_enabled = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def is_cvcloud_db_enabled(self) -> bool:
         """Indicate whether the cvclouddb feature is enabled.
 
-        This property provides a read-only boolean value that specifies if the cvclouddb 
+        This property provides a read-only boolean value that specifies if the cvclouddb
         (Commvault Cloud Database) is currently enabled for disaster recovery operations.
 
         Returns:
@@ -803,13 +814,13 @@ class DisasterRecovery(object):
         if isinstance(value, bool):
             self._is_cvcloud_db_enabled = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def is_dm2_db_enabled(self) -> bool:
         """Indicate whether the DM2 database is enabled for disaster recovery.
 
-        This property provides a read-only boolean value that specifies if the DM2 database 
+        This property provides a read-only boolean value that specifies if the DM2 database
         feature is currently enabled in the disaster recovery configuration.
 
         Returns:
@@ -843,10 +854,10 @@ class DisasterRecovery(object):
         if isinstance(value, bool):
             self._is_dm2_db_enabled = value
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
-    def disaster_recovery_management(self) -> 'DisasterRecoveryManagement':
+    def disaster_recovery_management(self) -> "DisasterRecoveryManagement":
         """Get the DisasterRecoveryManagement instance associated with this DisasterRecovery object.
 
         Returns:
@@ -865,7 +876,7 @@ class DisasterRecovery(object):
         return self._disaster_recovery_management
 
 
-class DisasterRecoveryManagement(object):
+class DisasterRecoveryManagement:
     """
     DisasterRecoveryManagement provides a comprehensive interface for managing disaster recovery operations on a CommCell.
 
@@ -888,7 +899,7 @@ class DisasterRecoveryManagement(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize a DisasterRecoveryManagement object.
 
         Args:
@@ -904,7 +915,7 @@ class DisasterRecoveryManagement(object):
         """
         self._commcell = commcell
         self.services = self._commcell._services
-        self._service = self.services['DISASTER_RECOVERY_PROPERTIES']
+        self._service = self.services["DISASTER_RECOVERY_PROPERTIES"]
         self._cvpysdk_object = self._commcell._cvpysdk_object
         self.refresh()
 
@@ -920,23 +931,32 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request(method='GET', url=self._service)
+        flag, response = self._cvpysdk_object.make_request(method="GET", url=self._service)
         if flag:
             if response and response.json():
                 self._settings_dict = response.json()
-                if self._settings_dict.get('errorCode', 0) != 0:
-                    raise SDKException('Job', '102', 'Failed to get dr management properties. \nError: {0}'.format(
-                        self._settings_dict.get('errorMessage', '')))
-                if 'drBackupInfo' in self._settings_dict:
-                    self._prepost_settings = self._settings_dict.get('drBackupInfo').get('prePostProcessSettings', {})
-                    self._export_settings = self._settings_dict.get('drBackupInfo').get('exportSettings', {})
+                if self._settings_dict.get("errorCode", 0) != 0:
+                    raise SDKException(
+                        "Job",
+                        "102",
+                        "Failed to get dr management properties. \nError: {0}".format(
+                            self._settings_dict.get("errorMessage", "")
+                        ),
+                    )
+                if "drBackupInfo" in self._settings_dict:
+                    self._prepost_settings = self._settings_dict.get("drBackupInfo").get(
+                        "prePostProcessSettings", {}
+                    )
+                    self._export_settings = self._settings_dict.get("drBackupInfo").get(
+                        "exportSettings", {}
+                    )
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _set_dr_properties(self) -> None:
         """Send a request to the server to configure disaster recovery (DR) settings.
@@ -950,19 +970,27 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
 
-        flag, response = self._cvpysdk_object.make_request(method='POST', url=self._service,
-                                                           payload=self._settings_dict)
+        flag, response = self._cvpysdk_object.make_request(
+            method="POST", url=self._service, payload=self._settings_dict
+        )
         if flag:
             if response and response.json():
-                if response.json().get('response') and response.json().get('response')[0].get('errorCode') != 0:
-                    raise SDKException('DisasterRecovery', '102', 'Failed to set dr properties. Error: {0}'.format(
-                        response.json().get('response')[0].get('errorString')
-                    ))
+                if (
+                    response.json().get("response")
+                    and response.json().get("response")[0].get("errorCode") != 0
+                ):
+                    raise SDKException(
+                        "DisasterRecovery",
+                        "102",
+                        "Failed to set dr properties. Error: {0}".format(
+                            response.json().get("response")[0].get("errorString")
+                        ),
+                    )
                 self.refresh()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def _get_drbackup_options(self) -> dict:
         """Retrieve the disaster recovery (DR) backup options as a dictionary.
@@ -978,16 +1006,15 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
-            method='GET',
-            url=self.services['DISASTER_RECOVERY_OPTIONS']
+            method="GET", url=self.services["DISASTER_RECOVERY_OPTIONS"]
         )
         if flag:
             if response and response.json():
                 return response.json()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def get_cloud_regions(self) -> dict:
         """Retrieve the available disaster recovery (DR) backup cloud regions.
@@ -1019,16 +1046,15 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
-            method='GET',
-            url=self.services['DRBACKUP_REGIONS']
+            method="GET", url=self.services["DRBACKUP_REGIONS"]
         )
         if flag:
             if response and response.json():
                 return response.json()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def _set_commvault_cloud_upload(self, flag: bool, region: Optional[str] = None) -> None:
         """Set the disaster recovery (DR) settings for Commvault Cloud upload.
@@ -1055,31 +1081,35 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         current_options = self._get_drbackup_options()
-        current_options['properties']['uploadBackupMetadataToCloud'] = flag
+        current_options["properties"]["uploadBackupMetadataToCloud"] = flag
         if flag:
-            current_options['properties']['region'] = region if region else self.get_cloud_regions()['defaultRegion']
+            current_options["properties"]["region"] = (
+                region if region else self.get_cloud_regions()["defaultRegion"]
+            )
 
         flag, response = self._cvpysdk_object.make_request(
-                                    method='POST',
-                                    url=self.services['DISASTER_RECOVERY_OPTIONS'],
-                                    payload=current_options
-                                )
+            method="POST", url=self.services["DISASTER_RECOVERY_OPTIONS"], payload=current_options
+        )
         if flag:
             if response and response.json():
-                if response.json().get('errorCode') != 0:
-                    raise SDKException('DisasterRecovery', '102', 'Failed to set dr properties. Error: {0}'.format(
-                        response.json().get('errorMessage')
-                    ))
+                if response.json().get("errorCode") != 0:
+                    raise SDKException(
+                        "DisasterRecovery",
+                        "102",
+                        "Failed to set dr properties. Error: {0}".format(
+                            response.json().get("errorMessage")
+                        ),
+                    )
                 self.refresh()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def refresh(self) -> None:
         """Refresh the disaster recovery (DR) settings associated with the Commcell.
 
-        This method reloads the DR configuration, ensuring that the latest settings 
+        This method reloads the DR configuration, ensuring that the latest settings
         from the Commcell are applied.
 
         #ai-gen-doc
@@ -1104,10 +1134,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(path, str):
-            self._export_settings['backupMetadataFolder'] = path
+            self._export_settings["backupMetadataFolder"] = path
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     def set_network_dr_path(self, path: str, credential_name: str) -> None:
         """Set the network Disaster Recovery (DR) path using a specified credential.
@@ -1127,17 +1157,19 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(path, str) and isinstance(credential_name, str):
-            self._export_settings['backupMetadataFolder'] = path
+            self._export_settings["backupMetadataFolder"] = path
             dr_backup_credential = {
                 "credentialId": self._commcell.credentials.get(credential_name).credential_id,
-                "credentialName": credential_name
+                "credentialName": credential_name,
             }
-            self._export_settings['drBackupCredential'] = dr_backup_credential
+            self._export_settings["drBackupCredential"] = dr_backup_credential
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
-    def upload_metdata_to_commvault_cloud(self, flag: bool, username: str = None, password: str = None, region: str = None) -> None:
+    def upload_metdata_to_commvault_cloud(
+        self, flag: bool, username: str = None, password: str = None, region: str = None
+    ) -> None:
         """Enable or disable the upload of metadata to Commvault Cloud.
 
         This method configures whether disaster recovery (DR) metadata should be uploaded to Commvault Cloud.
@@ -1165,20 +1197,22 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            self._export_settings['uploadBackupMetadataToCloud'] = flag
+            self._export_settings["uploadBackupMetadataToCloud"] = flag
             if flag:
                 if region and isinstance(region, str):
-                    self._export_settings['region'] = region
+                    self._export_settings["region"] = region
                 else:
-                    raise SDKException('DisasterRecovery', '101')
+                    raise SDKException("DisasterRecovery", "101")
                 if isinstance(username, str) and isinstance(password, str):
-                    self._export_settings['cloudCredentials']['userName'] = username
-                    self._export_settings['cloudCredentials']['password'] = b64encode(password.encode()).decode()
+                    self._export_settings["cloudCredentials"]["userName"] = username
+                    self._export_settings["cloudCredentials"]["password"] = b64encode(
+                        password.encode()
+                    ).decode()
                 else:
-                    raise SDKException('DisasterRecovery', '101')
+                    raise SDKException("DisasterRecovery", "101")
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     def upload_metdata_to_cloud_library(self, flag: bool, libraryname: object = None) -> None:
         """Enable or disable the upload of metadata to a cloud library.
@@ -1199,19 +1233,19 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            self._export_settings['uploadBackupMetadataToCloudLib'] = flag
+            self._export_settings["uploadBackupMetadataToCloudLib"] = flag
             if flag:
                 if isinstance(libraryname, str):
                     cloud_lib_obj = DiskLibrary(self._commcell, library_name=libraryname)
                 elif isinstance(libraryname, DiskLibrary):
                     cloud_lib_obj = libraryname
                 else:
-                    raise SDKException('DisasterRecovery', '101')
-                self._export_settings['cloudLibrary']['libraryName'] = cloud_lib_obj.name
-                self._export_settings['cloudLibrary']['libraryId'] = int(cloud_lib_obj.library_id)
+                    raise SDKException("DisasterRecovery", "101")
+                self._export_settings["cloudLibrary"]["libraryName"] = cloud_lib_obj.name
+                self._export_settings["cloudLibrary"]["libraryId"] = int(cloud_lib_obj.library_id)
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     def impersonate_user(self, flag: bool, username: str, password: str) -> None:
         """Enable or disable the impersonate user option for pre/post scripts.
@@ -1235,16 +1269,18 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            self._prepost_settings['useImpersonateUser'] = flag
+            self._prepost_settings["useImpersonateUser"] = flag
             if flag:
                 if isinstance(username, str) and isinstance(password, str):
-                    self._prepost_settings['impersonateUser']['userName'] = username
-                    self._prepost_settings['impersonateUser']['password'] = b64encode(password.encode()).decode()
+                    self._prepost_settings["impersonateUser"]["userName"] = username
+                    self._prepost_settings["impersonateUser"]["password"] = b64encode(
+                        password.encode()
+                    ).decode()
                 else:
-                    raise SDKException('DisasterRecovery', '101')
+                    raise SDKException("DisasterRecovery", "101")
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def use_impersonate_user(self) -> bool:
@@ -1262,7 +1298,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('useImpersonateUser')
+        return self._prepost_settings.get("useImpersonateUser")
 
     @property
     def region(self) -> str:
@@ -1278,7 +1314,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._get_drbackup_options()['properties']['region']
+        return self._get_drbackup_options()["properties"]["region"]
 
     @property
     def number_of_metadata(self) -> int:
@@ -1294,7 +1330,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('numberOfMetadata')
+        return self._export_settings.get("numberOfMetadata")
 
     @number_of_metadata.setter
     def number_of_metadata(self, value: int) -> None:
@@ -1310,10 +1346,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(value, int):
-            self._export_settings['numberOfMetadata'] = value
+            self._export_settings["numberOfMetadata"] = value
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def use_vss(self) -> bool:
@@ -1331,7 +1367,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('isUseVSS')
+        return self._export_settings.get("isUseVSS")
 
     @use_vss.setter
     def use_vss(self, flag: bool) -> None:
@@ -1348,10 +1384,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            self._export_settings['isUseVSS'] = flag
+            self._export_settings["isUseVSS"] = flag
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def wild_card_settings(self) -> str:
@@ -1367,7 +1403,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('wildCardSetting')
+        return self._export_settings.get("wildCardSetting")
 
     @wild_card_settings.setter
     def wild_card_settings(self, logs: list) -> None:
@@ -1385,12 +1421,12 @@ class DisasterRecoveryManagement(object):
         """
         mandatory = "cvd;SIDBPrune;SIDBEngine;CVMA"
         if isinstance(logs, list):
-            temp = ''
+            temp = ""
             for log in logs:
-                temp = temp + ';' + log
+                temp = temp + ";" + log
         else:
-            raise Exception('Pass log names in list')
-        self._export_settings['wildCardSetting'] = mandatory + temp
+            raise Exception("Pass log names in list")
+        self._export_settings["wildCardSetting"] = mandatory + temp
         self._set_dr_properties()
 
     @property
@@ -1407,7 +1443,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('backupMetadataFolder')
+        return self._export_settings.get("backupMetadataFolder")
 
     @property
     def upload_backup_metadata_to_cloud(self) -> bool:
@@ -1423,7 +1459,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('uploadBackupMetadataToCloud')
+        return self._export_settings.get("uploadBackupMetadataToCloud")
 
     @property
     def upload_backup_metadata_to_cloud_lib(self) -> bool:
@@ -1439,7 +1475,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('uploadBackupMetadataToCloudLib')
+        return self._export_settings.get("uploadBackupMetadataToCloudLib")
 
     @property
     def dr_storage_policy(self) -> str:
@@ -1455,7 +1491,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._export_settings.get('storagePolicy').get('storagePolicyName')
+        return self._export_settings.get("storagePolicy").get("storagePolicyName")
 
     @dr_storage_policy.setter
     def dr_storage_policy(self, storage_policy_object: StoragePolicy) -> None:
@@ -1466,12 +1502,16 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        if isinstance(storage_policy_object, StoragePolicy):        # add str
-            self._export_settings['storagePolicy']['storagePolicyName'] = storage_policy_object.name
-            self._export_settings['storagePolicy']['storagePolicyId'] = int(storage_policy_object.storage_policy_id)
+        if isinstance(storage_policy_object, StoragePolicy):  # add str
+            self._export_settings["storagePolicy"]["storagePolicyName"] = (
+                storage_policy_object.name
+            )
+            self._export_settings["storagePolicy"]["storagePolicyId"] = int(
+                storage_policy_object.storage_policy_id
+            )
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def pre_scan_process(self) -> str:
@@ -1487,7 +1527,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('preScanProcess')
+        return self._prepost_settings.get("preScanProcess")
 
     @pre_scan_process.setter
     def pre_scan_process(self, path: str) -> None:
@@ -1504,10 +1544,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(path, str):
-            self._prepost_settings['preScanProcess'] = path
+            self._prepost_settings["preScanProcess"] = path
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def post_scan_process(self) -> str:
@@ -1523,7 +1563,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('postScanProcess')
+        return self._prepost_settings.get("postScanProcess")
 
     @post_scan_process.setter
     def post_scan_process(self, path: str) -> None:
@@ -1540,10 +1580,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(path, str):
-            self._prepost_settings['postScanProcess'] = path
+            self._prepost_settings["postScanProcess"] = path
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def pre_backup_process(self) -> str:
@@ -1559,7 +1599,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('preBackupProcess')
+        return self._prepost_settings.get("preBackupProcess")
 
     @pre_backup_process.setter
     def pre_backup_process(self, path: str) -> None:
@@ -1576,10 +1616,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(path, str):
-            self._prepost_settings['preBackupProcess'] = path
+            self._prepost_settings["preBackupProcess"] = path
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def post_backup_process(self) -> str:
@@ -1595,7 +1635,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('postBackupProcess')
+        return self._prepost_settings.get("postBackupProcess")
 
     @post_backup_process.setter
     def post_backup_process(self, path: str) -> None:
@@ -1614,10 +1654,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(path, str):
-            self._prepost_settings['postBackupProcess'] = path
+            self._prepost_settings["postBackupProcess"] = path
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def run_post_scan_process(self) -> bool:
@@ -1635,7 +1675,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('runPostScanProcess')
+        return self._prepost_settings.get("runPostScanProcess")
 
     @run_post_scan_process.setter
     def run_post_scan_process(self, flag: bool) -> None:
@@ -1652,10 +1692,10 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            self._prepost_settings['runPostScanProcess'] = flag
+            self._prepost_settings["runPostScanProcess"] = flag
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")
 
     @property
     def run_post_backup_process(self) -> bool:
@@ -1673,7 +1713,7 @@ class DisasterRecoveryManagement(object):
 
         #ai-gen-doc
         """
-        return self._prepost_settings.get('runPostBackupProcess')
+        return self._prepost_settings.get("runPostBackupProcess")
 
     @run_post_backup_process.setter
     def run_post_backup_process(self, flag: bool) -> None:
@@ -1690,7 +1730,7 @@ class DisasterRecoveryManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            self._prepost_settings['runPostBackupProcess'] = flag
+            self._prepost_settings["runPostBackupProcess"] = flag
             self._set_dr_properties()
         else:
-            raise SDKException('DisasterRecovery', '101')
+            raise SDKException("DisasterRecovery", "101")

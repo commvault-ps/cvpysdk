@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -63,21 +62,21 @@ class SharepointInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         time_range_dict = {}
-        if value.get('to_time'):
-            time_range_dict['toTime'] = value.get('to_time')
+        if value.get("to_time"):
+            time_range_dict["toTime"] = value.get("to_time")
         self._browse_restore_json = {
-            "commCellId":  int(self._commcell_object.commcell_id),
+            "commCellId": int(self._commcell_object.commcell_id),
             "showDeletedItems": value.get("showDeletedItems", False),
             "backupset": {
                 "clientName": self._agent_object._client_object.client_name,
                 "appName": self._agent_object.agent_name,
-                "clientId": int(self._instance['clientId']),
-                "backupsetId": int(self._restore_association['backupsetId'])
+                "clientId": int(self._instance["clientId"]),
+                "backupsetId": int(self._restore_association["backupsetId"]),
             },
-            "timeRange": time_range_dict
+            "timeRange": time_range_dict,
         }
 
     def _restore_common_options_json(self, value: dict) -> None:
@@ -89,7 +88,7 @@ class SharepointInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._commonoption_restore_json = {
             "allVersion": True,
@@ -99,7 +98,7 @@ class SharepointInstance(Instance):
             "erExSpdbPathRestore": True,
             "unconditionalOverwrite": value.get("unconditional_overwrite", False),
             "siteReplicationrestore": False,
-            "append": False
+            "append": False,
         }
 
     def _restore_destination_json(self, value: dict) -> None:
@@ -111,14 +110,14 @@ class SharepointInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         self._destination_restore_json = {
             "inPlace": value.get("in_place", True),
             "destClient": {
                 "clientName": value.get("client_name", ""),
-                "clientId": value.get("client_id", -1)
-            }
+                "clientId": value.get("client_id", -1),
+            },
         }
 
     def _restore_json(self, **kwargs) -> dict:
@@ -154,17 +153,17 @@ class SharepointInstance(Instance):
         """
         if kwargs.get("v1", False):
             return self._restore_v1_json(**kwargs)
-        rest_json = super(SharepointInstance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
         rest_json["taskInfo"]["task"]["initiatedFrom"] = 1
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sharePointDocRstOption"] = {}
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]\
-            ["sharePointRstOption"]= {
-                "sharePointDocument": True,
-                "spRestoreToDisk": {
-                    "restoreToDiskPath": "",
-                    "restoreToDisk": False
-                }
-            }
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "sharePointDocRstOption"
+        ] = {}
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "sharePointRstOption"
+        ] = {
+            "sharePointDocument": True,
+            "spRestoreToDisk": {"restoreToDiskPath": "", "restoreToDisk": False},
+        }
         rest_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = {
             "notifyUserOnJobCompletion": False
         }
@@ -213,16 +212,16 @@ class SharepointInstance(Instance):
         if self._restore_association is None:
             self._restore_association = self._instance
 
-        if restore_option.get('copy_precedence') is None:
-            restore_option['copy_precedence'] = 0
+        if restore_option.get("copy_precedence") is None:
+            restore_option["copy_precedence"] = 0
 
-        if restore_option.get('overwrite') is not None:
-            restore_option['unconditional_overwrite'] = restore_option['overwrite']
+        if restore_option.get("overwrite") is not None:
+            restore_option["unconditional_overwrite"] = restore_option["overwrite"]
 
-        if restore_option.get('live_browse'):
-            restore_option['liveBrowse'] = True
+        if restore_option.get("live_browse"):
+            restore_option["liveBrowse"] = True
         else:
-            restore_option['liveBrowse'] = False
+            restore_option["liveBrowse"] = False
 
         # restore_option should use client key for destination client info
         client = restore_option.get("client", self._agent_object._client_object)
@@ -236,7 +235,7 @@ class SharepointInstance(Instance):
         # set time zone
         from_time = restore_option.get("from_time", None)
         to_time = restore_option.get("to_time", None)
-        time_list = ['01/01/1970 00:00:00', '1/1/1970 00:00:00']
+        time_list = ["01/01/1970 00:00:00", "1/1/1970 00:00:00"]
 
         if from_time and from_time not in time_list:
             restore_option["from_time"] = from_time
@@ -250,42 +249,36 @@ class SharepointInstance(Instance):
         self._restore_fileoption_json(restore_option)
         self._restore_common_opts_json(restore_option)
 
-        if not restore_option.get('index_free_restore', False):
+        if not restore_option.get("index_free_restore", False):
             if not restore_option.get("paths"):
-                raise SDKException('Subclient', '104')
+                raise SDKException("Subclient", "104")
 
         request_json = {
             "taskInfo": {
                 "associations": [self._restore_association],
-                "task": {
-                    "taskType": 1,
-                    "initiatedFrom": 1
-                },
-                "subTasks": [{
-                    "subTask": {
-                        "subTaskType": 3,
-                        "operationType": 1001
-                    },
-                    "options": {
-                        "restoreOptions": {
-                            "sharePointDocRstOption": {
-                                "isWorkflowAlertsRestoreOnly": False
+                "task": {"taskType": 1, "initiatedFrom": 1},
+                "subTasks": [
+                    {
+                        "subTask": {"subTaskType": 3, "operationType": 1001},
+                        "options": {
+                            "restoreOptions": {
+                                "sharePointDocRstOption": {"isWorkflowAlertsRestoreOnly": False},
+                                "browseOption": self._browse_restore_json,
+                                "commonOptions": self._commonoption_restore_json,
+                                "destination": self._destination_restore_json,
+                                "fileOption": self._fileoption_restore_json,
+                                "sharePointRstOption": {
+                                    "sharePointDocument": True,
+                                    "spRestoreToDisk": {
+                                        "restoreToDiskPath": "",
+                                        "restoreToDisk": False,
+                                    },
+                                },
                             },
-                            "browseOption": self._browse_restore_json,
-                            "commonOptions": self._commonoption_restore_json,
-                            "destination": self._destination_restore_json,
-                            "fileOption": self._fileoption_restore_json,
-                            "sharePointRstOption": {
-                                "sharePointDocument": True,
-                                "spRestoreToDisk": {
-                                    "restoreToDiskPath": "",
-                                    "restoreToDisk": False
-                                }
-                            },
+                            "commonOpts": self._commonopts_restore_json,
                         },
-                        "commonOpts": self._commonopts_restore_json
                     }
-                }]
+                ],
             }
         }
         return request_json

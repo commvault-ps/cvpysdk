@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -40,10 +38,10 @@ HyperVInstance:
 
 """
 
+from typing import TYPE_CHECKING
 
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -64,7 +62,7 @@ class HyperVInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize a HyperVInstance object for the specified Virtual Server instance.
 
         Args:
@@ -79,7 +77,7 @@ class HyperVInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(HyperVInstance, self).__init__(agent, instance_name, instance_id)
+        super().__init__(agent, instance_name, instance_id)
         self._vendor_id = 2
 
     def _get_instance_properties(self) -> None:
@@ -93,16 +91,17 @@ class HyperVInstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(HyperVInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         self._server_name = []
 
-        if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
-                                                ["associatedClients"]["memberServers"]
+        if "virtualServerInstance" in self._properties:
+            _member_servers = self._properties["virtualServerInstance"]["associatedClients"][
+                "memberServers"
+            ]
             for _each_client in _member_servers:
-                client = _each_client['client']
-                if 'clientName' in client.keys():
-                    self._server_name.append(str(client['clientName']))
+                client = _each_client["client"]
+                if "clientName" in client.keys():
+                    self._server_name.append(str(client["clientName"]))
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient as a dictionary.
@@ -113,17 +112,17 @@ class HyperVInstance(VirtualServerInstance):
         #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}                           
-                    }
-                       }
-               }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": {},
+                },
+            }
+        }
         return instance_json
 
     @property

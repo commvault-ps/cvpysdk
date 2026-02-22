@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -32,12 +30,11 @@ LNDBInstance:
 
 """
 
-from __future__ import unicode_literals
-
-from ..instance import Instance
-from ..exception import SDKException
-
 from typing import TYPE_CHECKING
+
+from ..exception import SDKException
+from ..instance import Instance
+
 if TYPE_CHECKING:
     from ..job import Job
 
@@ -69,8 +66,8 @@ class LNDBInstance(Instance):
         from_time: str = None,
         to_time: str = None,
         common_options_dict: dict = None,
-        lndb_restore_options: dict = None
-    ) -> 'Job':
+        lndb_restore_options: dict = None,
+    ) -> "Job":
         """Restore files or folders to their original location in the LNDB instance.
 
         This method initiates an in-place restore operation for the specified files or folders.
@@ -130,7 +127,7 @@ class LNDBInstance(Instance):
             from_time=from_time,
             to_time=to_time,
             common_options_dict=common_options_dict,
-            lndb_restore_options=lndb_restore_options
+            lndb_restore_options=lndb_restore_options,
         )
 
         return self._process_restore_response(request_json)
@@ -146,8 +143,8 @@ class LNDBInstance(Instance):
         from_time: str = None,
         to_time: str = None,
         common_options_dict: dict = None,
-        lndb_restore_options: dict = None
-    ) -> 'Job':
+        lndb_restore_options: dict = None,
+    ) -> "Job":
         """Restore files or folders to a different client and/or location.
 
         This method restores the specified files or folders (provided in the `paths` list) to the given
@@ -221,7 +218,7 @@ class LNDBInstance(Instance):
             from_time=from_time,
             to_time=to_time,
             common_options_dict=common_options_dict,
-            lndb_restore_options=lndb_restore_options
+            lndb_restore_options=lndb_restore_options,
         )
 
         return self._process_restore_response(request_json)
@@ -236,89 +233,69 @@ class LNDBInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         self._commonoption_restore_json = {
-            "doNotReplayTransactLogs": value.get('common_options_dict').get(
-                'doNotReplayTransactLogs', False
+            "doNotReplayTransactLogs": value.get("common_options_dict").get(
+                "doNotReplayTransactLogs", False
             ),
-            "clusterDBBackedup": value.get('common_options_dict').get(
-                'clusterDBBackedup', False
+            "clusterDBBackedup": value.get("common_options_dict").get("clusterDBBackedup", False),
+            "recoverWait": value.get("common_options_dict").get("recoverWait", False),
+            "restoreToDisk": value.get("common_options_dict").get("restoreToDisk", False),
+            "offlineMiningRestore": value.get("common_options_dict").get(
+                "offlineMiningRestore", False
             ),
-            "recoverWait": value.get('common_options_dict').get(
-                'recoverWait', False
+            "restoreToExchange": value.get("common_options_dict").get("restoreToExchange", False),
+            "recoverZapIfNecessary": value.get("common_options_dict").get(
+                "recoverZapIfNecessary", False
             ),
-            "restoreToDisk": value.get('common_options_dict').get(
-                'restoreToDisk', False
+            "recoverZapReplica": value.get("common_options_dict").get("recoverZapReplica", False),
+            "copyToObjectStore": value.get("common_options_dict").get("copyToObjectStore", False),
+            "onePassRestore": value.get("common_options_dict").get("onePassRestore", False),
+            "recoverZap": value.get("common_options_dict").get("recoverZap", False),
+            "recoverRefreshBackup": value.get("common_options_dict").get(
+                "recoverRefreshBackup", False
             ),
-            "offlineMiningRestore": value.get('common_options_dict').get(
-                'offlineMiningRestore', False
+            "unconditionalOverwrite": value.get("common_options_dict").get(
+                "unconditionalOverwrite", False
             ),
-            "restoreToExchange": value.get('common_options_dict').get(
-                'restoreToExchange', False
+            "syncRestore": value.get("common_options_dict").get("syncRestore", False),
+            "recoverPointInTime": value.get("common_options_dict").get(
+                "recoverPointInTime", False
             ),
-            "recoverZapIfNecessary": value.get('common_options_dict').get(
-                'recoverZapIfNecessary', False
-            ),
-            "recoverZapReplica": value.get('common_options_dict').get(
-                'recoverZapReplica', False
-            ),
-            "copyToObjectStore": value.get('common_options_dict').get(
-                'copyToObjectStore', False
-            ),
-            "onePassRestore": value.get('common_options_dict').get(
-                'onePassRestore', False
-            ),
-            "recoverZap": value.get('common_options_dict').get(
-                'recoverZap', False
-            ),
-            "recoverRefreshBackup": value.get('common_options_dict').get(
-                'recoverRefreshBackup', False
-            ),
-            "unconditionalOverwrite": value.get('common_options_dict').get(
-                'unconditionalOverwrite', False
-            ),
-            "syncRestore": value.get('common_options_dict').get(
-                'syncRestore', False
-            ),
-            "recoverPointInTime": value.get('common_options_dict').get(
-                'recoverPointInTime', False
-            )
         }
 
-        if value.get('common_options_dict').get('disasterRecovery'):
-            self._commonoption_restore_json.update({
-                "restoreDeviceFilesAsRegularFiles": value.get('common_options_dict').get(
-                    'restoreDeviceFilesAsRegularFiles', False
-                ),
-                "isFromBrowseBackup": value.get('common_options_dict').get(
-                    'isFromBrowseBackup', False
-                ),
-                "ignoreNamespaceRequirements": value.get('common_options_dict').get(
-                    'ignoreNamespaceRequirements', False
-                ),
-                "restoreSpaceRestrictions": value.get('common_options_dict').get(
-                    'restoreSpaceRestrictions', False
-                ),
-                "skipErrorsAndContinue": value.get('common_options_dict').get(
-                    'skipErrorsAndContinue', False
-                ),
-                "recoverAllProtectedMails": value.get('common_options_dict').get(
-                    'recoverAllProtectedMails', False
-                ),
-                "validateOnly": value.get('common_options_dict').get(
-                    'validateOnly', False
-                ),
-                "revert": value.get('common_options_dict').get(
-                    'revert', False
-                ),
-                "disasterRecovery": value.get('common_options_dict').get(
-                    'disasterRecovery', True
-                ),
-                "detectRegularExpression": value.get('common_options_dict').get(
-                    'detectRegularExpression', True
-                ),
-            })
+        if value.get("common_options_dict").get("disasterRecovery"):
+            self._commonoption_restore_json.update(
+                {
+                    "restoreDeviceFilesAsRegularFiles": value.get("common_options_dict").get(
+                        "restoreDeviceFilesAsRegularFiles", False
+                    ),
+                    "isFromBrowseBackup": value.get("common_options_dict").get(
+                        "isFromBrowseBackup", False
+                    ),
+                    "ignoreNamespaceRequirements": value.get("common_options_dict").get(
+                        "ignoreNamespaceRequirements", False
+                    ),
+                    "restoreSpaceRestrictions": value.get("common_options_dict").get(
+                        "restoreSpaceRestrictions", False
+                    ),
+                    "skipErrorsAndContinue": value.get("common_options_dict").get(
+                        "skipErrorsAndContinue", False
+                    ),
+                    "recoverAllProtectedMails": value.get("common_options_dict").get(
+                        "recoverAllProtectedMails", False
+                    ),
+                    "validateOnly": value.get("common_options_dict").get("validateOnly", False),
+                    "revert": value.get("common_options_dict").get("revert", False),
+                    "disasterRecovery": value.get("common_options_dict").get(
+                        "disasterRecovery", True
+                    ),
+                    "detectRegularExpression": value.get("common_options_dict").get(
+                        "detectRegularExpression", True
+                    ),
+                }
+            )
 
     def _restore_json(self, **kwargs) -> dict:
         """Generate the JSON request payload for a restore operation based on user-selected options.
@@ -335,35 +312,35 @@ class LNDBInstance(Instance):
         #ai-gen-doc
         """
 
-        restore_json = super(LNDBInstance, self)._restore_json(**kwargs)
+        restore_json = super()._restore_json(**kwargs)
 
-        restore_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-            'lotusNotesDBRestoreOption'] = {
-                "disableReplication": kwargs.get('lndb_restore_options').get(
-                    'disableReplication', False
-                ),
-                "disableBackgroundAgents": kwargs.get('lndb_restore_options').get(
-                    'disableBackgroundAgents', False
-                )
-            }
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "lotusNotesDBRestoreOption"
+        ] = {
+            "disableReplication": kwargs.get("lndb_restore_options").get(
+                "disableReplication", False
+            ),
+            "disableBackgroundAgents": kwargs.get("lndb_restore_options").get(
+                "disableBackgroundAgents", False
+            ),
+        }
 
-        if kwargs.get('common_options_dict').get('disasterRecovery'):
-            restore_json['taskInfo']['subTasks'][0]['options']['commonOpts'] = {
-                'jobDescription': '',
-                'startUpOpts': {
-                    'startInSuspendedState': False,
-                    'useDefaultPriority': True,
-                    'priority': 166
-                }
+        if kwargs.get("common_options_dict").get("disasterRecovery"):
+            restore_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = {
+                "jobDescription": "",
+                "startUpOpts": {
+                    "startInSuspendedState": False,
+                    "useDefaultPriority": True,
+                    "priority": 166,
+                },
             }
-            restore_json['taskInfo']['subTasks'][0]['options']['backupOpts'] = {
-                'backupLevel': 2
+            restore_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = {"backupLevel": 2}
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+                "mediaOption"
+            ]["copyPrecedence"] = {
+                "copyPrecedence": 0,
+                "synchronousCopyPrecedence": 1,
+                "copyPrecedenceApplicable": False,
             }
-            restore_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'browseOption']['mediaOption']['copyPrecedence'] = {
-                    'copyPrecedence': 0,
-                    'synchronousCopyPrecedence': 1,
-                    'copyPrecedenceApplicable': False
-                }
 
         return restore_json

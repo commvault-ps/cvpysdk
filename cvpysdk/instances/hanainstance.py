@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -46,14 +44,12 @@ SAPHANAInstance:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from typing import TYPE_CHECKING, Optional
 
-from ..instance import Instance
 from ..exception import SDKException
+from ..instance import Instance
 from ..job import Job
 
-from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -78,7 +74,7 @@ class SAPHANAInstance(Instance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
         """Initialize a SAPHANAInstance object.
 
         Args:
@@ -88,7 +84,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        super(SAPHANAInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
         self.destination_instances_dict = {}
 
     @property
@@ -100,7 +96,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['saphanaInstance']['spsVersion']
+        return self._properties["saphanaInstance"]["spsVersion"]
 
     @property
     def instance_number(self) -> int:
@@ -111,7 +107,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['saphanaInstance']['dbInstanceNumber']
+        return self._properties["saphanaInstance"]["dbInstanceNumber"]
 
     @property
     def sql_location_directory(self) -> str:
@@ -122,7 +118,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['saphanaInstance']['hdbsqlLocationDirectory']
+        return self._properties["saphanaInstance"]["hdbsqlLocationDirectory"]
 
     @property
     def instance_db_username(self) -> str:
@@ -133,7 +129,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['saphanaInstance']['dbUser']['userName']
+        return self._properties["saphanaInstance"]["dbUser"]["userName"]
 
     @property
     def db_instance_client(self) -> str:
@@ -144,7 +140,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['saphanaInstance']['DBInstances'][0]
+        return self._properties["saphanaInstance"]["DBInstances"][0]
 
     @property
     def hdb_user_storekey(self) -> str:
@@ -155,7 +151,7 @@ class SAPHANAInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['saphanaInstance']['hdbuserstorekey']
+        return self._properties["saphanaInstance"]["hdbuserstorekey"]
 
     def _restore_request_json(
         self,
@@ -171,12 +167,12 @@ class SAPHANAInstance(Instance):
         destination_instance_dir: Optional[str] = None,
         ignore_delta_backups: bool = False,
         no_of_streams: int = 2,
-        catalog_time: Optional[str] = None
+        catalog_time: Optional[str] = None,
     ) -> dict:
         """Construct the JSON request payload for a SAP HANA restore operation.
 
-        This method generates a dictionary representing the restore request, 
-        based on the provided options and parameters. The resulting JSON can 
+        This method generates a dictionary representing the restore request,
+        based on the provided options and parameters. The resulting JSON can
         be sent to the API to initiate a restore operation for a SAP HANA instance.
 
         Args:
@@ -225,13 +221,12 @@ class SAPHANAInstance(Instance):
         else:
             if destination_instance not in self.destination_instances_dict:
                 raise SDKException(
-                    'Instance', '102', 'No Instance exists with name: {0}'.format(
-                        destination_instance
-                    )
+                    "Instance", "102", f"No Instance exists with name: {destination_instance}"
                 )
 
         destination_hana_client = self.destination_instances_dict[destination_instance][
-            'destHANAClient']
+            "destHANAClient"
+        ]
 
         if backup_prefix is None:
             backup_prefix = ""
@@ -246,94 +241,87 @@ class SAPHANAInstance(Instance):
             point_in_time = {}
         else:
             if not isinstance(point_in_time, str):
-                raise SDKException('Instance', 103)
+                raise SDKException("Instance", 103)
 
-            point_in_time = {
-                'time': int(point_in_time)
-            }
+            point_in_time = {"time": int(point_in_time)}
             recover_time = 1
 
         request_json = {
             "taskInfo": {
-                "associations": [{
-                    "clientName": self._agent_object._client_object.client_name,
-                    "appName": self._agent_object.agent_name,
-                    "instanceName": self.instance_name.upper(),
-                    "backupsetName": backupset_name,
-                    "suclientName": ""
-                }],
-                "task": {
-                    "initiatedFrom": 1,
-                    "taskType": 1
-                },
-                "subTasks": [{
-                    "subTask": {
-                        "subTaskType": 3,
-                        "operationType": 1001
-                    },
-                    "options": {
-                        "restoreOptions": {
-                            "hanaOpt": {
-                                "initializeLogArea": initialize_log_area,
-                                "useHardwareRevert": use_hardware_revert,
-                                "cloneEnv": clone_env,
-                                "checkAccess": check_access,
-                                "backupPrefix": backup_prefix,
-                                "destDbName": destination_instance.upper(),
-                                "destPseudoClientName": str(destination_client),
-                                "ignoreDeltaBackups": ignore_delta_backups,
-                                "destClientName": destination_hana_client,
-                                "databases": databases,
-                                "recoverTime": recover_time,
-                                "pointInTime": point_in_time
-                            },
-                            "destination": {
-                                "destinationInstance": {
-                                    "clientName": destination_client,
-                                    "appName": self._agent_object.agent_name,
-                                    "instanceName": destination_instance
-                                },
-                                "destClient": {
-                                    "clientName": destination_hana_client
-                                },
-                                "noOfStreams": no_of_streams
-                            },
-                            "browseOption": {
-                                "backupset": {
-                                    "clientName": self._agent_object._client_object.client_name
-                                }
-                            }
-                        }
+                "associations": [
+                    {
+                        "clientName": self._agent_object._client_object.client_name,
+                        "appName": self._agent_object.agent_name,
+                        "instanceName": self.instance_name.upper(),
+                        "backupsetName": backupset_name,
+                        "suclientName": "",
                     }
-                }]
+                ],
+                "task": {"initiatedFrom": 1, "taskType": 1},
+                "subTasks": [
+                    {
+                        "subTask": {"subTaskType": 3, "operationType": 1001},
+                        "options": {
+                            "restoreOptions": {
+                                "hanaOpt": {
+                                    "initializeLogArea": initialize_log_area,
+                                    "useHardwareRevert": use_hardware_revert,
+                                    "cloneEnv": clone_env,
+                                    "checkAccess": check_access,
+                                    "backupPrefix": backup_prefix,
+                                    "destDbName": destination_instance.upper(),
+                                    "destPseudoClientName": str(destination_client),
+                                    "ignoreDeltaBackups": ignore_delta_backups,
+                                    "destClientName": destination_hana_client,
+                                    "databases": databases,
+                                    "recoverTime": recover_time,
+                                    "pointInTime": point_in_time,
+                                },
+                                "destination": {
+                                    "destinationInstance": {
+                                        "clientName": destination_client,
+                                        "appName": self._agent_object.agent_name,
+                                        "instanceName": destination_instance,
+                                    },
+                                    "destClient": {"clientName": destination_hana_client},
+                                    "noOfStreams": no_of_streams,
+                                },
+                                "browseOption": {
+                                    "backupset": {
+                                        "clientName": self._agent_object._client_object.client_name
+                                    }
+                                },
+                            }
+                        },
+                    }
+                ],
             }
         }
         if catalog_time:
             if not isinstance(catalog_time, str):
-                raise SDKException('Instance', 103)
-            catalog_time = {
-                'time': int(catalog_time)
-            }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'hanaOpt']['catalogPointInTime'] = catalog_time
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'hanaOpt']['catalogRecoverTime'] = 1
+                raise SDKException("Instance", 103)
+            catalog_time = {"time": int(catalog_time)}
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["hanaOpt"][
+                "catalogPointInTime"
+            ] = catalog_time
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["hanaOpt"][
+                "catalogRecoverTime"
+            ] = 1
 
         if destination_instance_dir is not None:
-            instance_dir = {
-                'destinationInstanceDir': destination_instance_dir
-            }
+            instance_dir = {"destinationInstanceDir": destination_instance_dir}
 
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
-                'hanaOpt'].update(instance_dir)
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["hanaOpt"].update(
+                instance_dir
+            )
 
         return request_json
 
     def _get_hana_restore_options(self, destination_client_name: str) -> None:
         """Retrieve HANA destination server options for restore operations.
 
-        This method calls the /GetDestinationsToRestore API to obtain available HANA destination 
-        server options for the specified destination client. The response is parsed and returned 
+        This method calls the /GetDestinationsToRestore API to obtain available HANA destination
+        server options for the specified destination client. The response is parsed and returned
         as a dictionary.
 
         Args:
@@ -343,12 +331,12 @@ class SAPHANAInstance(Instance):
             None
 
         Raises:
-            SDKException: If the API call fails, if no client exists on the Commcell, 
+            SDKException: If the API call fails, if no client exists on the Commcell,
                 if the response is empty, or if the response indicates failure.
 
         #ai-gen-doc
         """
-        webservice = self._commcell_object._services['RESTORE_OPTIONS'] % (
+        webservice = self._commcell_object._services["RESTORE_OPTIONS"] % (
             self._agent_object.agent_id
         )
 
@@ -358,58 +346,60 @@ class SAPHANAInstance(Instance):
 
         if flag:
             if response.json():
-                if 'genericEntityList' in response.json():
-                    generic_entity_list = response.json()['genericEntityList']
+                if "genericEntityList" in response.json():
+                    generic_entity_list = response.json()["genericEntityList"]
 
                     for client_entity in generic_entity_list:
                         clients_dict = {
-                            client_entity['clientName'].lower(): {
-                                "clientId": client_entity['clientId']
+                            client_entity["clientName"].lower(): {
+                                "clientId": client_entity["clientId"]
                             }
                         }
                         destination_clients_dict.update(clients_dict)
-                elif 'error' in response.json():
-                    if 'errorMessage' in response.json()['error']:
-                        error_message = response.json()['error']['errorMessage']
-                        raise SDKException('Client', '102', error_message)
+                elif "error" in response.json():
+                    if "errorMessage" in response.json()["error"]:
+                        error_message = response.json()["error"]["errorMessage"]
+                        raise SDKException("Client", "102", error_message)
                     else:
-                        raise SDKException('Client', '102', 'No client exists on commcell')
+                        raise SDKException("Client", "102", "No client exists on commcell")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-        webservice = self._commcell_object._services['GET_ALL_INSTANCES'] % (
-            destination_clients_dict[destination_client_name]['clientId']
+        webservice = (
+            self._commcell_object._services["GET_ALL_INSTANCES"]
+            % (destination_clients_dict[destination_client_name]["clientId"])
         )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", webservice)
 
         if flag:
             if response.json():
-                if 'instanceProperties' in response.json():
-                    for instance in response.json()['instanceProperties']:
+                if "instanceProperties" in response.json():
+                    for instance in response.json()["instanceProperties"]:
                         instances_dict = {
-                            instance['instance']['instanceName'].lower(): {
-                                "clientId": instance['instance']['clientId'],
-                                "instanceId": instance['instance']['instanceId'],
-                                "destHANAClient": instance['saphanaInstance'][
-                                    'DBInstances'][0]['clientName']
+                            instance["instance"]["instanceName"].lower(): {
+                                "clientId": instance["instance"]["clientId"],
+                                "instanceId": instance["instance"]["instanceId"],
+                                "destHANAClient": instance["saphanaInstance"]["DBInstances"][0][
+                                    "clientName"
+                                ],
                             }
                         }
                         self.destination_instances_dict.update(instances_dict)
-                elif 'error' in response.json():
-                    if 'errorMessage' in response.json()['error']:
-                        error_message = response.json()['error']['errorMessage']
-                        raise SDKException('Instance', '102', error_message)
+                elif "error" in response.json():
+                    if "errorMessage" in response.json()["error"]:
+                        error_message = response.json()["error"]["errorMessage"]
+                        raise SDKException("Instance", "102", error_message)
                     else:
-                        raise SDKException('Instance', '102', 'No Instance exists on commcell')
+                        raise SDKException("Instance", "102", "No Instance exists on commcell")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def restore(
         self,
@@ -425,8 +415,8 @@ class SAPHANAInstance(Instance):
         destination_instance_dir: Optional[str] = None,
         ignore_delta_backups: bool = True,
         no_of_streams: int = 2,
-        catalog_time: Optional[str] = None
-    ) -> 'Job':
+        catalog_time: Optional[str] = None,
+    ) -> "Job":
         """Restore SAP HANA databases to a specified client and instance.
 
         This method initiates a restore operation for SAP HANA databases, allowing for various restore options such as point-in-time recovery, hardware revert, cloning, and more.
@@ -466,7 +456,7 @@ class SAPHANAInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(instance, (str, Instance)):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         request_json = self._restore_request_json(
             pseudo_client,
@@ -481,7 +471,7 @@ class SAPHANAInstance(Instance):
             destination_instance_dir,
             ignore_delta_backups,
             no_of_streams,
-            catalog_time
+            catalog_time,
         )
 
         return self._process_restore_response(request_json)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -106,16 +104,12 @@ DataSource Attributes
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
+from ..exception import SDKException
 from .handler import Handlers
 from .sedstype import SEDS_TYPE_DICT
 
-from ..exception import SDKException
 
-
-class Datasources(object):
+class Datasources:
     """
     Manages and represents all Datasources within a Datacube environment.
 
@@ -154,11 +148,9 @@ class Datasources(object):
         """
         self._datacube_object = datacube_object
         self.commcell_obj = self._datacube_object._commcell_object
-        self._all_datasources = self.commcell_obj._services[
-            'GET_ALL_DATASOURCES']
+        self._all_datasources = self.commcell_obj._services["GET_ALL_DATASOURCES"]
 
-        self._create_datasource = self.commcell_obj._services[
-            'CREATE_DATASOURCE']
+        self._create_datasource = self.commcell_obj._services["CREATE_DATASOURCE"]
 
         self._datasources = None
         self.refresh()
@@ -166,7 +158,7 @@ class Datasources(object):
     def __str__(self) -> str:
         """Return a string representation of all datasources in the datacube.
 
-        This method provides a human-readable summary of all datasources associated 
+        This method provides a human-readable summary of all datasources associated
         with the datacube, typically listing their names or identifiers.
 
         Returns:
@@ -179,11 +171,10 @@ class Datasources(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:30}\n\n'.format(
-            'ID', 'Data Source Name')
+        representation_string = "{:^5}\t{:30}\n\n".format("ID", "Data Source Name")
         for datasource in self._datasources.values():
-            sub_str = '{:^5}\t{:30}\n'.format(
-                datasource['data_source_id'], datasource['data_source_name']
+            sub_str = "{:^5}\t{:30}\n".format(
+                datasource["data_source_id"], datasource["data_source_name"]
             )
             representation_string += sub_str
 
@@ -272,29 +263,28 @@ class Datasources(object):
         for collection in collections:
             core_name = None
             cloud_id = None
-            if 'computedCoreName' in collection:
-                core_name = collection['computedCoreName']
-            if 'cloudId' in collection:
-                cloud_id = collection['cloudId']
-            for datasource in collection['datasources']:
+            if "computedCoreName" in collection:
+                core_name = collection["computedCoreName"]
+            if "cloudId" in collection:
+                cloud_id = collection["cloudId"]
+            for datasource in collection["datasources"]:
                 datasource_dict = {}
                 if core_name:
-                    datasource_dict['computedCoreName'] = core_name
+                    datasource_dict["computedCoreName"] = core_name
                 if cloud_id:
-                    datasource_dict['cloudId'] = cloud_id
-                datasource_dict['data_source_id'] = datasource['datasourceId']
-                datasource_dict['data_source_name'] = datasource['datasourceName']
-                datasource_dict['data_source_type'] = SEDS_TYPE_DICT[
-                    datasource['datasourceType']]
-                if 'coreId' in datasource:
-                    datasource_dict['coreId'] = datasource['coreId']
-                if 'description' in datasource:
-                    datasource_dict['description'] = datasource['description']
-                if 'status' in datasource:
-                    datasource_dict['total_count'] = datasource['status']['totalcount']
-                    if 'state' in datasource['status']:
-                        datasource_dict['state']= datasource['status']['state']
-                _datasources[datasource['datasourceName']] = datasource_dict
+                    datasource_dict["cloudId"] = cloud_id
+                datasource_dict["data_source_id"] = datasource["datasourceId"]
+                datasource_dict["data_source_name"] = datasource["datasourceName"]
+                datasource_dict["data_source_type"] = SEDS_TYPE_DICT[datasource["datasourceType"]]
+                if "coreId" in datasource:
+                    datasource_dict["coreId"] = datasource["coreId"]
+                if "description" in datasource:
+                    datasource_dict["description"] = datasource["description"]
+                if "status" in datasource:
+                    datasource_dict["total_count"] = datasource["status"]["totalcount"]
+                    if "state" in datasource["status"]:
+                        datasource_dict["state"] = datasource["status"]["state"]
+                _datasources[datasource["datasourceName"]] = datasource_dict
         return _datasources
 
     def _get_all_datasources(self) -> dict:
@@ -330,15 +320,15 @@ class Datasources(object):
         #ai-gen-doc
         """
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'GET', self._all_datasources
+            "GET", self._all_datasources
         )
 
         if flag:
-            if response.json() and 'collections' in response.json():
-                collections = response.json()['collections']
+            if response.json() and "collections" in response.json():
+                collections = response.json()["collections"]
                 return self._get_datasources_from_collections(collections)
-            elif 'error' in response.json():
-                raise SDKException('Datacube', '104')
+            elif "error" in response.json():
+                raise SDKException("Datacube", "104")
             else:
                 response = {}
                 return response
@@ -365,11 +355,11 @@ class Datasources(object):
         #ai-gen-doc
         """
         if not isinstance(datasource_name, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         return self._datasources and datasource_name in self._datasources
 
-    def get(self, datasource_name: str) -> 'Datasource':
+    def get(self, datasource_name: str) -> "Datasource":
         """Retrieve a Datasource object by its name.
 
         Args:
@@ -389,21 +379,20 @@ class Datasources(object):
         #ai-gen-doc
         """
         if not isinstance(datasource_name, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         if self.has_datasource(datasource_name):
             datasource = self._datasources[datasource_name]
 
-            return Datasource(
-                self._datacube_object, datasource_name, datasource['data_source_id']
-            )
+            return Datasource(self._datacube_object, datasource_name, datasource["data_source_id"])
 
         raise SDKException(
-            'Datacube', '102', 'No datasource exists with the name: {0}'.format(
-                datasource_name)
+            "Datacube", "102", f"No datasource exists with the name: {datasource_name}"
         )
 
-    def add(self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list) -> None:
+    def add(
+        self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list
+    ) -> None:
         """Add a new datasource to the datacube.
 
         This method registers a new datasource with the specified name, associates it with an analytics engine,
@@ -450,17 +439,20 @@ class Datasources(object):
         """
 
         if not isinstance(datasource_name, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         if not isinstance(analytics_engine, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         if not isinstance(datasource_type, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         engine_index = None
         for engine in self._datacube_object.analytics_engines:
-            if engine["clientName"] == analytics_engine or engine['engineName'] == analytics_engine:
+            if (
+                engine["clientName"] == analytics_engine
+                or engine["engineName"] == analytics_engine
+            ):
                 engine_index = self._datacube_object.analytics_engines.index(engine)
 
         if engine_index is None:
@@ -470,42 +462,39 @@ class Datasources(object):
             "collectionReq": {
                 "collectionName": datasource_name,
                 "ciserver": {
-                    "cloudID": self._datacube_object.analytics_engines[engine_index][
-                        "cloudID"]
-                }
+                    "cloudID": self._datacube_object.analytics_engines[engine_index]["cloudID"]
+                },
             },
             "dataSource": {
                 "description": "",
                 "datasourceType": datasource_type,
                 "attribute": 0,
-                "datasourceName": datasource_name
-
-            }
+                "datasourceName": datasource_name,
+            },
         }
         if input_param is not None:
-            request_json['dataSource']['properties'] = input_param
+            request_json["dataSource"]["properties"] = input_param
 
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'POST', self._create_datasource, request_json
+            "POST", self._create_datasource, request_json
         )
         if flag and response.json():
-            if 'error' in response.json():
-                error_code = response.json()['error']['errorCode']
+            if "error" in response.json():
+                error_code = response.json()["error"]["errorCode"]
                 if error_code == 0:
                     self.refresh()  # reload new list.
                     return
 
-                error_message = response.json()['error']['errLogMessage']
-                o_str = 'Failed to create datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Response', '102', o_str)
-            elif 'collections' in response.json():
+                error_message = response.json()["error"]["errLogMessage"]
+                o_str = f'Failed to create datasource\nError: "{error_message}"'
+                raise SDKException("Response", "102", o_str)
+            elif "collections" in response.json():
                 self.refresh()  # reload new list.
                 return
             else:
-                raise SDKException('Response', '102')
-        response_string = self.commcell_obj._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "102")
+        response_string = self.commcell_obj._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def delete(self, datasource_name: str) -> None:
         """Delete the specified datasource from the data cube.
@@ -525,28 +514,29 @@ class Datasources(object):
         """
 
         if not isinstance(datasource_name, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         if not self.has_datasource(datasource_name):
             raise SDKException(
-                'Datacube', '102', 'No datasource exists with the name: {0}'.format(
-                    datasource_name)
+                "Datacube", "102", f"No datasource exists with the name: {datasource_name}"
             )
 
-        self._delete_datasource = self.commcell_obj._services[
-            'DELETE_DATASOURCE'] % (self.get(datasource_name).datasource_id)
+        self._delete_datasource = self.commcell_obj._services["DELETE_DATASOURCE"] % (
+            self.get(datasource_name).datasource_id
+        )
 
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'POST', self._delete_datasource)
+            "POST", self._delete_datasource
+        )
         if flag:
-            if 'errLogMessage' in response.json():
-                error_message = response.json()['errLogMessage']
-                o_str = 'Failed to delete datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
+            if "errLogMessage" in response.json():
+                error_message = response.json()["errLogMessage"]
+                o_str = f'Failed to delete datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
             else:
                 return True
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def refresh(self) -> None:
         """Reload all datasource information associated with the Datacube.
@@ -563,7 +553,7 @@ class Datasources(object):
         self._datasources = self._get_all_datasources()
 
 
-class Datasource(object):
+class Datasource:
     """
     Class for managing and performing operations on a single datasource.
 
@@ -588,7 +578,9 @@ class Datasource(object):
     #ai-gen-doc
     """
 
-    def __init__(self, datacube_object: object, datasource_name: str, datasource_id: str = None) -> None:
+    def __init__(
+        self, datacube_object: object, datasource_name: str, datasource_id: str = None
+    ) -> None:
         """Initialize a Datasource object.
 
         Args:
@@ -613,34 +605,44 @@ class Datasource(object):
         else:
             self._datasource_id = self._get_datasource_id()
 
-        self._DATASOURCE = self._datacube_object._commcell_object._services['GET_DATASOURCE'] % (
+        self._DATASOURCE = self._datacube_object._commcell_object._services["GET_DATASOURCE"] % (
             self._datasource_id
         )
-        self._crawl_history = self._datacube_object._commcell_object._services['GET_CRAWL_HISTORY'] % (
-            self._datasource_id)
+        self._crawl_history = self._datacube_object._commcell_object._services[
+            "GET_CRAWL_HISTORY"
+        ] % (self._datasource_id)
 
         self._get_datasource_schema = self._datacube_object._commcell_object._services[
-            'GET_DATASOURCE_SCHEMA'] % (self.datasource_id)
+            "GET_DATASOURCE_SCHEMA"
+        ] % (self.datasource_id)
 
         self._delete_datasource_contents = self._datacube_object._commcell_object._services[
-            'DELETE_DATASOURCE_CONTENTS'] % (self.datasource_id)
+            "DELETE_DATASOURCE_CONTENTS"
+        ] % (self.datasource_id)
 
         self._datacube_import_data = self._datacube_object._commcell_object._services[
-            'DATACUBE_IMPORT_DATA'] % ("json", self.datasource_id)
+            "DATACUBE_IMPORT_DATA"
+        ] % ("json", self.datasource_id)
 
         self._update_datasource_schema = self._datacube_object._commcell_object._services[
-            'UPDATE_DATASOURCE_SCHEMA']
+            "UPDATE_DATASOURCE_SCHEMA"
+        ]
 
         self._start_job_datasource = self._datacube_object._commcell_object._services[
-            'START_JOB_DATASOURCE']
+            "START_JOB_DATASOURCE"
+        ]
 
         self._get_status_datasource = self._datacube_object._commcell_object._services[
-            'GET_STATUS_DATASOURCE']
+            "GET_STATUS_DATASOURCE"
+        ]
 
         self._delete_datasource = self._datacube_object._commcell_object._services[
-            'DELETE_DATASOURCE']
+            "DELETE_DATASOURCE"
+        ]
 
-        self._share_datasource = self._datacube_object._commcell_object._services['SHARE_DATASOURCE']
+        self._share_datasource = self._datacube_object._commcell_object._services[
+            "SHARE_DATASOURCE"
+        ]
 
         self.handlers = None
         self._handlers_obj = None
@@ -653,7 +655,7 @@ class Datasource(object):
     def __repr__(self) -> str:
         """Return a string representation of the Datasource instance.
 
-        This method provides a developer-friendly string that can be used to 
+        This method provides a developer-friendly string that can be used to
         inspect the Datasource object, typically for debugging purposes.
 
         Returns:
@@ -666,7 +668,7 @@ class Datasource(object):
 
         #ai-gen-doc
         """
-        return 'Datasource class instance for Commcell'
+        return "Datasource class instance for Commcell"
 
     def _get_datasource_id(self) -> str:
         """Retrieve the unique identifier associated with this datasource.
@@ -701,12 +703,14 @@ class Datasource(object):
 
         #ai-gen-doc
         """
-        data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
-        if 'computedCoreName' in data_source_dict:
-            self._computed_core_name = data_source_dict['computedCoreName']
-        if 'cloudId' in data_source_dict:
-            self._cloud_id = data_source_dict['cloudId']
-        self._data_source_type = data_source_dict['data_source_type']
+        data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(
+            self.datasource_name
+        )
+        if "computedCoreName" in data_source_dict:
+            self._computed_core_name = data_source_dict["computedCoreName"]
+        if "cloudId" in data_source_dict:
+            self._cloud_id = data_source_dict["cloudId"]
+        self._data_source_type = data_source_dict["data_source_type"]
         return data_source_dict
 
     def start_job(self) -> str:
@@ -728,18 +732,19 @@ class Datasource(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._start_job_datasource % (self._datasource_id))
+            "POST", self._start_job_datasource % (self._datasource_id)
+        )
 
         if flag:
-            if 'error' in response.json():
-                error_message = response.json()['error']['errLogMessage']
-                o_str = 'Failed to start job on datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
-            elif response.json() and 'status' in response.json():
-                return response.json()['status']['jobId']
+            if "error" in response.json():
+                error_message = response.json()["error"]["errLogMessage"]
+                o_str = f'Failed to start job on datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
+            elif response.json() and "status" in response.json():
+                return response.json()["status"]["jobId"]
             else:
-                raise SDKException('Datacube', '102', "Status object not found in response")
-        raise SDKException('Response', '101', response.text)
+                raise SDKException("Datacube", "102", "Status object not found in response")
+        raise SDKException("Response", "101", response.text)
 
     def delete_datasource(self) -> bool:
         """Delete the datasource from the system.
@@ -758,16 +763,17 @@ class Datasource(object):
         #ai-gen-doc
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'POST', self._delete_datasource % (self._datasource_id))
+            "POST", self._delete_datasource % (self._datasource_id)
+        )
 
         if flag:
-            if 'errLogMessage' in response.json():
-                error_message = response.json()['errLogMessage']
-                o_str = 'Failed to delete datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
+            if "errLogMessage" in response.json():
+                error_message = response.json()["errLogMessage"]
+                o_str = f'Failed to delete datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
             else:
                 return True
-        raise SDKException('Response', '101', response.text)
+        raise SDKException("Response", "101", response.text)
 
     def get_status(self) -> dict:
         """Retrieve the current status information of the datasource.
@@ -788,18 +794,19 @@ class Datasource(object):
         """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._get_status_datasource % (self._datasource_id))
+            "GET", self._get_status_datasource % (self._datasource_id)
+        )
 
         if flag:
-            if 'error' in response.json():
-                error_message = response.json()['error']['errLogMessage']
-                o_str = 'Failed to Get status on datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
-            elif response.json() and 'status' in response.json():
+            if "error" in response.json():
+                error_message = response.json()["error"]["errLogMessage"]
+                o_str = f'Failed to Get status on datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
+            elif response.json() and "status" in response.json():
                 return response.json()
             else:
-                raise SDKException('Datacube', '102', "Status object not found in response")
-        raise SDKException('Response', '101', response.text)
+                raise SDKException("Datacube", "102", "Status object not found in response")
+        raise SDKException("Response", "101", response.text)
 
     def get_crawl_history(self, last_crawl_history: bool = False) -> list:
         """Retrieve the crawling history for this datasource.
@@ -832,17 +839,15 @@ class Datasource(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._crawl_history
+            "GET", self._crawl_history
         )
 
         if flag:
             if response.json():
                 return response.json()["status"]
-            raise SDKException('Response', '102')
-        response_string = self._commcell_object._update_response_(
-            response.text
-        )
-        raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "102")
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     @property
     def datasource_id(self) -> int:
@@ -971,17 +976,15 @@ class Datasource(object):
         #ai-gen-doc
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'GET', self._get_datasource_schema
+            "GET", self._get_datasource_schema
         )
 
         if flag:
             if response.json():
                 return response.json()["collections"][0]["schema"]
-            raise SDKException('Response', '102')
-        response_string = self._commcell_object._update_response_(
-            response.text
-        )
-        raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "102")
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def update_datasource_schema(self, schema: list[dict[str, str]]) -> None:
         """Update the schema of the data source.
@@ -1023,35 +1026,32 @@ class Datasource(object):
         #ai-gen-doc
         """
         if not isinstance(schema, list):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         for element in schema:
             if not isinstance(element, dict):
-                raise SDKException('Datacube', '101')
+                raise SDKException("Datacube", "101")
 
         request_json = {
             "datasourceId": int(self.datasource_id),
-            "schema": {
-                "schemaFields": schema
-            }
+            "schema": {"schemaFields": schema},
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._update_datasource_schema, request_json
+            "POST", self._update_datasource_schema, request_json
         )
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json()['errorCode']
+            if response.json() and "errorCode" in response.json():
+                error_code = response.json()["errorCode"]
                 if error_code == 0:
                     return
-                error_message = response.json()['errLogMessage']
-                o_str = 'Failed to update schema\nError: "{0}"'.format(error_message)
-                raise SDKException('Response', '102', o_str)
-            raise SDKException('Response', '102')
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+                error_message = response.json()["errLogMessage"]
+                o_str = f'Failed to update schema\nError: "{error_message}"'
+                raise SDKException("Response", "102", o_str)
+            raise SDKException("Response", "102")
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def import_data(self, data: list) -> None:
         """Import or pump the given data into the data source for indexing.
@@ -1074,21 +1074,19 @@ class Datasource(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._datacube_import_data, data
+            "POST", self._datacube_import_data, data
         )
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                error_code = response.json()['errorCode']
+            if response.json() and "errorCode" in response.json():
+                error_code = response.json()["errorCode"]
                 if error_code == 0:
                     return
-                error_message = response.json()['errLogMessage']
-                o_str = 'Failed to import data\nError: "{0}"'.format(error_message)
-                raise SDKException('Response', '102', o_str)
-            raise SDKException('Response', '102')
-        response_string = self._commcell_object._update_response_(
-            response.text
-        )
-        raise SDKException('Response', '101', response_string)
+                error_message = response.json()["errLogMessage"]
+                o_str = f'Failed to import data\nError: "{error_message}"'
+                raise SDKException("Response", "102", o_str)
+            raise SDKException("Response", "102")
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def delete_content(self) -> None:
         """Delete the content of the data source from Data Cube.
@@ -1107,16 +1105,16 @@ class Datasource(object):
         #ai-gen-doc
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'POST', self._delete_datasource_contents
+            "POST", self._delete_datasource_contents
         )
 
         if flag:
-            if response.json() and 'error' in response.json():
-                error_message = response.json()['error']['errLogMessage']
-                o_str = 'Failed to do soft delete on datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
+            if response.json() and "error" in response.json():
+                error_message = response.json()["error"]["errLogMessage"]
+                o_str = f'Failed to do soft delete on datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
             return
-        raise SDKException('Response', '101', response.text)
+        raise SDKException("Response", "101", response.text)
 
     def refresh(self) -> None:
         """Reload the properties of the Datasource object.
@@ -1135,7 +1133,7 @@ class Datasource(object):
         self.handlers = Handlers(self)
 
     @property
-    def ds_handlers(self) -> 'Handlers':
+    def ds_handlers(self) -> "Handlers":
         """Get the Handlers instance associated with this Datasource.
 
         Returns:
@@ -1153,9 +1151,16 @@ class Datasource(object):
                 self._handlers_obj = Handlers(self)
             return self._handlers_obj
         except BaseException:
-            raise SDKException('Datacube', '102', "Failed to init Handlers")
+            raise SDKException("Datacube", "102", "Failed to init Handlers")
 
-    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -> None:
+    def share(
+        self,
+        permission_list: list,
+        operation_type: int,
+        user_id: int,
+        user_name: str,
+        user_type: int,
+    ) -> None:
         """Share the datasource with a specified user or user group.
 
         This method assigns or removes permissions for a user or user group on the datasource,
@@ -1181,15 +1186,10 @@ class Datasource(object):
         """
         category_permission_list = []
         for permission in permission_list:
-            category_permission_list.append({'permissionId': permission, '_type_': 122})
+            category_permission_list.append({"permissionId": permission, "_type_": 122})
         request_json = {
             "entityAssociated": {
-                "entity": [
-                    {
-                        "_type_": 132,
-                        "seaDataSourceId": int(self.datasource_id)
-                    }
-                ]
+                "entity": [{"_type_": 132, "seaDataSourceId": int(self.datasource_id)}]
             },
             "securityAssociations": {
                 "processHiddenPermission": 1,
@@ -1197,33 +1197,30 @@ class Datasource(object):
                 "associations": [
                     {
                         "userOrGroup": [
-                            {
-                                "userId": user_id,
-                                "_type_": user_type,
-                                "userName": user_name
-                            }
+                            {"userId": user_id, "_type_": user_type, "userName": user_name}
                         ],
                         "properties": {
                             "categoryPermission": {
                                 "categoriesPermissionList": category_permission_list
                             }
-                        }
+                        },
                     }
-                ]
-            }
+                ],
+            },
         }
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
-            'POST', self._share_datasource, request_json)
+            "POST", self._share_datasource, request_json
+        )
 
         if flag:
-            if 'response' in response.json():
-                resp = response.json()['response']
+            if "response" in response.json():
+                resp = response.json()["response"]
                 resp = resp[0]
-                if resp.get('errorCode') is not None and resp.get('errorCode') != 0:
-                    error_message = resp['errorString']
-                    o_str = 'Failed to share handler on datasource\nError: "{0}"'.format(error_message)
-                    raise SDKException('Datacube', '102', o_str)
-                elif resp.get('errorCode') is None:
-                    raise SDKException('Datacube', '102', "No errorCode mentioned in response")
+                if resp.get("errorCode") is not None and resp.get("errorCode") != 0:
+                    error_message = resp["errorString"]
+                    o_str = f'Failed to share handler on datasource\nError: "{error_message}"'
+                    raise SDKException("Datacube", "102", o_str)
+                elif resp.get("errorCode") is None:
+                    raise SDKException("Datacube", "102", "No errorCode mentioned in response")
                 return
-        raise SDKException('Response', '101', response.text)
+        raise SDKException("Response", "101", response.text)

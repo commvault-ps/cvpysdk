@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-""" File for operating on a amazon instances.
+"""File for operating on a amazon instances.
 
 AmazonRDSInstance, AmazonRedshiftInstance, AmazonDocumentDBInstance, AmazonDynamoDBInstance
 are the classes defined in this file.
@@ -70,9 +68,8 @@ AmazonDynamoDBInstance:
     _restore_json()                 -- Generates Restore json with restore option
 """
 
-from __future__ import unicode_literals
-from .cloud_database_instance import CloudDatabaseInstance
 from ...exception import SDKException
+from .cloud_database_instance import CloudDatabaseInstance
 
 
 class AmazonRDSInstance(CloudDatabaseInstance):
@@ -106,14 +103,9 @@ class AmazonRDSInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        super(
-            AmazonRDSInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
-        self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
+        self._browse_url = self._services["CLOUD_DATABASE_BROWSE"]
 
     def _process_browse_response(self, flag: bool, response: dict) -> dict:
         """Process the response from a browse request for Amazon RDS snapshots.
@@ -137,17 +129,17 @@ class AmazonRDSInstance(CloudDatabaseInstance):
         #ai-gen-doc
         """
         if flag:
-            if response.json() and 'snapList' in response.json():
-                snapshot_list = response.json()['snapList']
+            if response.json() and "snapList" in response.json():
+                snapshot_list = response.json()["snapList"]
             else:
                 raise SDKException(
-                    'Instance',
-                    '102',
-                    "Incorrect response from browse.\nResponse : {0}".format(
-                        response.json()))
+                    "Instance",
+                    "102",
+                    f"Incorrect response from browse.\nResponse : {response.json()}",
+                )
         else:
             o_str = 'Failed to browse content of this instance backups.\nError: "{0}"'
-            raise SDKException('Instance', '102', o_str.format(response))
+            raise SDKException("Instance", "102", o_str.format(response))
         return snapshot_list
 
     def _restore_json(self, **kwargs: dict) -> dict:
@@ -180,9 +172,7 @@ class AmazonRDSInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        restore_json = super(
-            AmazonRDSInstance,
-            self)._restore_json(**kwargs)
+        restore_json = super()._restore_json(**kwargs)
 
         restore_options = {}
         if kwargs.get("restore_options"):
@@ -196,39 +186,46 @@ class AmazonRDSInstance(CloudDatabaseInstance):
         # Populate Redshift restore options
         rds_restore_json = {
             "rdsRestoreOptions": {
-                "sourceSnap": {
-                    "snapShotName": restore_options['source']
-                },
-                "targetDbName": restore_options['destination']
+                "sourceSnap": {"snapShotName": restore_options["source"]},
+                "targetDbName": restore_options["destination"],
             }
         }
 
-        rds_restore_json['rdsRestoreOptions']['isMultiAZ'] = \
-            restore_options.get('options', {}).get('isMultiAZ', False)
+        rds_restore_json["rdsRestoreOptions"]["isMultiAZ"] = restore_options.get(
+            "options", {}
+        ).get("isMultiAZ", False)
 
-        rds_restore_json['rdsRestoreOptions']['publicallyAccess'] = \
-            restore_options.get('options', {}).get('publicallyAccess', True)
+        rds_restore_json["rdsRestoreOptions"]["publicallyAccess"] = restore_options.get(
+            "options", {}
+        ).get("publicallyAccess", True)
 
-        rds_restore_json['rdsRestoreOptions']['copyTagsToSnapshot'] = \
-            restore_options.get('options', {}).get('copyTagsToSnapshot', False)
+        rds_restore_json["rdsRestoreOptions"]["copyTagsToSnapshot"] = restore_options.get(
+            "options", {}
+        ).get("copyTagsToSnapshot", False)
 
-        rds_restore_json['rdsRestoreOptions']['enableDeletionProtection'] = \
-            restore_options.get('options', {}).get('enableDeletionProtection', False)
+        rds_restore_json["rdsRestoreOptions"]["enableDeletionProtection"] = restore_options.get(
+            "options", {}
+        ).get("enableDeletionProtection", False)
 
-        rds_restore_json['rdsRestoreOptions']['targetParameterGroupName'] = \
-            restore_options.get('options', {}).get('targetParameterGroupName', '')
+        rds_restore_json["rdsRestoreOptions"]["targetParameterGroupName"] = restore_options.get(
+            "options", {}
+        ).get("targetParameterGroupName", "")
 
-        rds_restore_json['rdsRestoreOptions']['targetSecurityGroupValue'] = \
-            restore_options.get('options', {}).get('targetSubnetGroup', '')
+        rds_restore_json["rdsRestoreOptions"]["targetSecurityGroupValue"] = restore_options.get(
+            "options", {}
+        ).get("targetSubnetGroup", "")
 
-        rds_restore_json['rdsRestoreOptions']['targetDBInstanceClass'] = \
-            restore_options.get('options', {}).get('targetDBInstanceClass', '')
+        rds_restore_json["rdsRestoreOptions"]["targetDBInstanceClass"] = restore_options.get(
+            "options", {}
+        ).get("targetDBInstanceClass", "")
 
-        rds_restore_json['rdsRestoreOptions']['targetPort'] = \
-            restore_options.get('options', {}).get('targetPort', 0)
+        rds_restore_json["rdsRestoreOptions"]["targetPort"] = restore_options.get(
+            "options", {}
+        ).get("targetPort", 0)
 
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = \
-            rds_restore_json
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = rds_restore_json
 
         return restore_json
 
@@ -265,14 +262,9 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        super(
-            AmazonRedshiftInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
-        self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
+        self._browse_url = self._services["CLOUD_DATABASE_BROWSE"]
 
     def _process_browse_response(self, flag: bool, response: dict) -> dict:
         """Process the response from a browse request to Amazon Redshift.
@@ -293,17 +285,17 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
         #ai-gen-doc
         """
         if flag:
-            if response.json() and 'snapList' in response.json():
-                snapshot_list = response.json()['snapList']
+            if response.json() and "snapList" in response.json():
+                snapshot_list = response.json()["snapList"]
             else:
                 raise SDKException(
-                    'Instance',
-                    '102',
-                    "Incorrect response from browse.\nResponse : {0}".format(
-                        response.json()))
+                    "Instance",
+                    "102",
+                    f"Incorrect response from browse.\nResponse : {response.json()}",
+                )
         else:
             o_str = 'Failed to browse content of this instance backups.\nError: "{0}"'
-            raise SDKException('Instance', '102', o_str.format(response))
+            raise SDKException("Instance", "102", o_str.format(response))
         return snapshot_list
 
     def _restore_json(self, **kwargs: dict) -> dict:
@@ -360,9 +352,7 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        restore_json = super(
-            AmazonRedshiftInstance,
-            self)._restore_json(**kwargs)
+        restore_json = super()._restore_json(**kwargs)
 
         restore_options = {}
         if kwargs.get("restore_options"):
@@ -376,43 +366,54 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
         # Populate Redshift restore options
         redshift_restore_json = {
             "redshiftRestoreOption": {
-                "targetInstanceId": restore_options['destination'],
-                "restoreSnapshotId": restore_options['source']
+                "targetInstanceId": restore_options["destination"],
+                "restoreSnapshotId": restore_options["source"],
             }
         }
 
-        redshift_restore_json['redshiftRestoreOption']['allowVersionUpgrade'] = \
-            restore_options.get('options', {}).get('allowVersionUpgrade', True)
+        redshift_restore_json["redshiftRestoreOption"]["allowVersionUpgrade"] = (
+            restore_options.get("options", {}).get("allowVersionUpgrade", True)
+        )
 
-        redshift_restore_json['redshiftRestoreOption']['publicallyAccessible'] = \
-            restore_options.get('options', {}).get('publicallyAccessible', True)
+        redshift_restore_json["redshiftRestoreOption"]["publicallyAccessible"] = (
+            restore_options.get("options", {}).get("publicallyAccessible", True)
+        )
 
-        redshift_restore_json['redshiftRestoreOption']['restoreTags'] = \
-            restore_options.get('options', {}).get('restoreTags', False)
+        redshift_restore_json["redshiftRestoreOption"]["restoreTags"] = restore_options.get(
+            "options", {}
+        ).get("restoreTags", False)
 
-        redshift_restore_json['redshiftRestoreOption']['enableDeletionProtection'] = \
-            restore_options.get('options', {}).get('enableDeletionProtection', False)
+        redshift_restore_json["redshiftRestoreOption"]["enableDeletionProtection"] = (
+            restore_options.get("options", {}).get("enableDeletionProtection", False)
+        )
 
-        redshift_restore_json['redshiftRestoreOption']['availabilityZone'] = \
-            restore_options.get('options', {}).get('availabilityZone', '')
+        redshift_restore_json["redshiftRestoreOption"]["availabilityZone"] = restore_options.get(
+            "options", {}
+        ).get("availabilityZone", "")
 
-        redshift_restore_json['redshiftRestoreOption']['targetParameterGroupName'] = \
-            restore_options.get('options', {}).get('targetParameterGroupName', '')
+        redshift_restore_json["redshiftRestoreOption"]["targetParameterGroupName"] = (
+            restore_options.get("options", {}).get("targetParameterGroupName", "")
+        )
 
-        redshift_restore_json['redshiftRestoreOption']['targetSubnetGroup'] = \
-            restore_options.get('options', {}).get('targetSubnetGroup', '')
+        redshift_restore_json["redshiftRestoreOption"]["targetSubnetGroup"] = restore_options.get(
+            "options", {}
+        ).get("targetSubnetGroup", "")
 
-        redshift_restore_json['redshiftRestoreOption']['nodeType'] = \
-            restore_options.get('options', {}).get('nodeType', '')
+        redshift_restore_json["redshiftRestoreOption"]["nodeType"] = restore_options.get(
+            "options", {}
+        ).get("nodeType", "")
 
-        redshift_restore_json['redshiftRestoreOption']['targetPort'] = \
-            restore_options.get('options', {}).get('targetPort', 0)
+        redshift_restore_json["redshiftRestoreOption"]["targetPort"] = restore_options.get(
+            "options", {}
+        ).get("targetPort", 0)
 
-        redshift_restore_json['redshiftRestoreOption']['numberOfNodes'] = \
-            restore_options.get('options', {}).get('numberOfNodes', 1)
+        redshift_restore_json["redshiftRestoreOption"]["numberOfNodes"] = restore_options.get(
+            "options", {}
+        ).get("numberOfNodes", 1)
 
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = \
-            redshift_restore_json
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = redshift_restore_json
 
         return restore_json
 
@@ -449,14 +450,9 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        super(
-            AmazonDocumentDBInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
-        self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
+        self._browse_url = self._services["CLOUD_DATABASE_BROWSE"]
 
     def _process_browse_response(self, flag: bool, response: dict) -> dict:
         """Process the response from a browse request for Amazon DocumentDB snapshots.
@@ -480,17 +476,17 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
         #ai-gen-doc
         """
         if flag:
-            if response.json() and 'snapList' in response.json():
-                snapshot_list = response.json()['snapList']
+            if response.json() and "snapList" in response.json():
+                snapshot_list = response.json()["snapList"]
             else:
                 raise SDKException(
-                    'Instance',
-                    '102',
-                    "Incorrect response from browse.\nResponse : {0}".format(
-                        response.json()))
+                    "Instance",
+                    "102",
+                    f"Incorrect response from browse.\nResponse : {response.json()}",
+                )
         else:
             o_str = 'Failed to browse content of this instance backups.\nError: "{0}"'
-            raise SDKException('Instance', '102', o_str.format(response))
+            raise SDKException("Instance", "102", o_str.format(response))
         return snapshot_list
 
     def _restore_json(self, **kwargs: dict) -> dict:
@@ -534,9 +530,7 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        restore_json = super(
-            AmazonDocumentDBInstance,
-            self)._restore_json(**kwargs)
+        restore_json = super()._restore_json(**kwargs)
 
         restore_options = {}
         if kwargs.get("restore_options"):
@@ -550,36 +544,45 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
         # Populate DocumentDB restore options
         documentdb_restore_option = {
             "documentDBRestoreOptions": {
-                "targetInstanceId": restore_options['destination'],
-                "restoreSnapshotId": restore_options['source']
+                "targetInstanceId": restore_options["destination"],
+                "restoreSnapshotId": restore_options["source"],
             }
         }
 
-        documentdb_restore_option['documentDBRestoreOptions']['restoreTags'] = \
-            restore_options.get('options', {}).get('restoreTags', False)
+        documentdb_restore_option["documentDBRestoreOptions"]["restoreTags"] = restore_options.get(
+            "options", {}
+        ).get("restoreTags", False)
 
-        documentdb_restore_option['documentDBRestoreOptions']['enableDeletionProtection'] = \
-            restore_options.get('options', {}).get('enableDeletionProtection', False)
+        documentdb_restore_option["documentDBRestoreOptions"]["enableDeletionProtection"] = (
+            restore_options.get("options", {}).get("enableDeletionProtection", False)
+        )
 
-        documentdb_restore_option['documentDBRestoreOptions']['availabilityZone'] = \
-            restore_options.get('options', {}).get('availabilityZone', '')
+        documentdb_restore_option["documentDBRestoreOptions"]["availabilityZone"] = (
+            restore_options.get("options", {}).get("availabilityZone", "")
+        )
 
-        documentdb_restore_option['documentDBRestoreOptions']['targetSubnetGroup'] = \
-            restore_options.get('options', {}).get('targetSubnetGroup', '')
+        documentdb_restore_option["documentDBRestoreOptions"]["targetSubnetGroup"] = (
+            restore_options.get("options", {}).get("targetSubnetGroup", "")
+        )
 
-        documentdb_restore_option['documentDBRestoreOptions']['targetInstanceClass'] = \
-            restore_options.get('options', {}).get('targetInstanceClass', '')
+        documentdb_restore_option["documentDBRestoreOptions"]["targetInstanceClass"] = (
+            restore_options.get("options", {}).get("targetInstanceClass", "")
+        )
 
-        documentdb_restore_option['documentDBRestoreOptions']['targetPort'] = \
-            restore_options.get('options', {}).get('targetPort', 0)
+        documentdb_restore_option["documentDBRestoreOptions"]["targetPort"] = restore_options.get(
+            "options", {}
+        ).get("targetPort", 0)
 
-        documentdb_restore_option['documentDBRestoreOptions']['numberOfNodes'] = \
-            restore_options.get('options', {}).get('numberOfNodes', 1)
+        documentdb_restore_option["documentDBRestoreOptions"]["numberOfNodes"] = (
+            restore_options.get("options", {}).get("numberOfNodes", 1)
+        )
 
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = \
-            documentdb_restore_option
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = documentdb_restore_option
 
         return restore_json
+
 
 class AmazonDynamoDBInstance(CloudDatabaseInstance):
     """
@@ -599,8 +602,8 @@ class AmazonDynamoDBInstance(CloudDatabaseInstance):
     def _restore_json(self, **kwargs: dict) -> dict:
         """Construct the JSON request payload for a DynamoDB instance restore operation.
 
-        This method generates the JSON structure required by the API based on the options 
-        provided by the user for restoring a DynamoDB instance. The options should include 
+        This method generates the JSON structure required by the API based on the options
+        provided by the user for restoring a DynamoDB instance. The options should include
         details such as destination, source, and restore-specific parameters.
 
         Common required parameters for DynamoDB instance cluster restore:
@@ -636,48 +639,46 @@ class AmazonDynamoDBInstance(CloudDatabaseInstance):
 
         #ai-gen-doc
         """
-        restore_json = super(
-            AmazonDynamoDBInstance,
-            self)._restore_json(**kwargs)
+        restore_json = super()._restore_json(**kwargs)
 
         restore_options = {}
-        if kwargs.get('options'):
-            restore_options = kwargs['options']
+        if kwargs.get("options"):
+            restore_options = kwargs["options"]
             for key in kwargs:
-                if not key == 'options':
+                if not key == "options":
                     restore_options[key] = kwargs[key]
         else:
             restore_options.update(kwargs)
 
-        source_backupset_id = int(self.backupsets.all_backupsets['defaultbackupset']['id'])
+        source_backupset_id = int(self.backupsets.all_backupsets["defaultbackupset"]["id"])
         dynamodb_restore_option = {
             "dynamoDbRestoreOptions": {
-                'tempWriteThroughput': restore_options.get('adjust_write_capacity', ''),
-                'overwrite': restore_options.get('overwrite', False),
-                'destinationTableList': restore_options.get('table_map', [])
+                "tempWriteThroughput": restore_options.get("adjust_write_capacity", ""),
+                "overwrite": restore_options.get("overwrite", False),
+                "destinationTableList": restore_options.get("table_map", []),
             }
         }
-        destination_restore_json = (
-            {
-                "noOfStreams": restore_options.get("number_of_streams", 2),
-                "destClient": {
-                    "clientName": restore_options.get("destination_client", "")
-                },
-                "destinationInstance": {
-                    "clientName": restore_options.get("destination_client", ""),
-                    "instanceName": restore_options.get("destination_instance", ""),
-                    "appName": self._instance['appName']
-                }
-
-            })
-        restore_json['taskInfo']['associations'][0]['backupsetId'] = source_backupset_id
-        restore_json['taskInfo']['subTasks'][0]['options'][
-            "restoreOptions"]["destination"] = destination_restore_json
-        restore_json['taskInfo']['subTasks'][0]['options'][
-            'restoreOptions']['cloudAppsRestoreOptions'] = dynamodb_restore_option
-        restore_json['taskInfo']['subTasks'][0]['options'][
-            'restoreOptions']['fileOption']['sourceItem'] = restore_options.get("paths", "")
-        restore_json['taskInfo']['subTasks'][0]['options'][
-            'restoreOptions']['cloudAppsRestoreOptions']['instanceType'] = 22
+        destination_restore_json = {
+            "noOfStreams": restore_options.get("number_of_streams", 2),
+            "destClient": {"clientName": restore_options.get("destination_client", "")},
+            "destinationInstance": {
+                "clientName": restore_options.get("destination_client", ""),
+                "instanceName": restore_options.get("destination_instance", ""),
+                "appName": self._instance["appName"],
+            },
+        }
+        restore_json["taskInfo"]["associations"][0]["backupsetId"] = source_backupset_id
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = (
+            destination_restore_json
+        )
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = dynamodb_restore_option
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"][
+            "sourceItem"
+        ] = restore_options.get("paths", "")
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ]["instanceType"] = 22
 
         return restore_json

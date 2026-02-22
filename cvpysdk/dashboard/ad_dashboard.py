@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -57,7 +56,8 @@ AdDashboard Attributes
 
 from cvpysdk.exception import SDKException
 
-class AdDashboard(object):
+
+class AdDashboard:
     """
     AD Dashboard management class for monitoring and retrieving Active Directory details.
 
@@ -83,7 +83,7 @@ class AdDashboard(object):
         """Initialize an instance of the AdDashboard class.
 
         Args:
-            commcell_object: An instance of the Commcell class used to establish a connection 
+            commcell_object: An instance of the Commcell class used to establish a connection
                 and interact with the Commcell environment.
 
         Example:
@@ -122,14 +122,18 @@ class AdDashboard(object):
 
         #ai-gen-doc
         """
-        configured = self._services['ADDASHBOARD'] + '?slaNumberOfDays=1'
-        flag, response = self._cvpysdk_object.make_request(method='GET', url=configured)
+        configured = self._services["ADDASHBOARD"] + "?slaNumberOfDays=1"
+        flag, response = self._cvpysdk_object.make_request(method="GET", url=configured)
         if flag and response:
             self.dashboard_response = response.json()
         elif not flag:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
         else:
-            raise SDKException('Response', '102', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "102", self._commcell_object._update_response_(response.text)
+            )
 
     def get_ad_apps_details(self) -> dict:
         """Retrieve the Active Directory (AD) application listing details from the Commcell.
@@ -153,15 +157,19 @@ class AdDashboard(object):
 
         #ai-gen-doc
         """
-        configured = self._services['ADAPPS']
-        flag, response = self._cvpysdk_object.make_request(method='GET', url=configured)
+        configured = self._services["ADAPPS"]
+        flag, response = self._cvpysdk_object.make_request(method="GET", url=configured)
 
         if flag and response:
             self.apps_response = response.json()
         elif not flag:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
         else:
-            raise SDKException('Response', '102', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "102", self._commcell_object._update_response_(response.text)
+            )
 
     def _configured(self) -> dict:
         """Check if both Active Directory (AD) and Azure AD are configured.
@@ -180,19 +188,29 @@ class AdDashboard(object):
 
         #ai-gen-doc
         """
-        configure_dict = {"adconfigure": self.dashboard_response.get('agentSummary', [{}])[0].get('isConfigured', None),
-                          "aadconfigure": self.dashboard_response.get('agentSummary', [{}])[1].get('isConfigured',None),
-                          "apps_adconfigure": False,
-                          "apps_aadconfigure": False}
-        for i in range(self.apps_response.get('totalADClients', None)):
-            if self.apps_response.get('adClients', [{}])[i].get('isConfigured') and \
-                    self.apps_response.get('adClients', [{}])[i].get('appTypeId') == 41:
+        configure_dict = {
+            "adconfigure": self.dashboard_response.get("agentSummary", [{}])[0].get(
+                "isConfigured", None
+            ),
+            "aadconfigure": self.dashboard_response.get("agentSummary", [{}])[1].get(
+                "isConfigured", None
+            ),
+            "apps_adconfigure": False,
+            "apps_aadconfigure": False,
+        }
+        for i in range(self.apps_response.get("totalADClients", None)):
+            if (
+                self.apps_response.get("adClients", [{}])[i].get("isConfigured")
+                and self.apps_response.get("adClients", [{}])[i].get("appTypeId") == 41
+            ):
                 configure_dict["apps_adconfigure"] = True
                 break
 
-        for i in range(self.apps_response.get('totalADClients', None)):
-            if self.apps_response.get('adClients', [{}])[i].get('isConfigured') and \
-                    self.apps_response.get('adClients', [{}])[i].get('appTypeId') == 139:
+        for i in range(self.apps_response.get("totalADClients", None)):
+            if (
+                self.apps_response.get("adClients", [{}])[i].get("isConfigured")
+                and self.apps_response.get("adClients", [{}])[i].get("appTypeId") == 139
+            ):
                 configure_dict["apps_aadconfigure"] = True
                 break
 
@@ -213,7 +231,7 @@ class AdDashboard(object):
 
         #ai-gen-doc
         """
-        configure_dict=self._configured()
+        configure_dict = self._configured()
         return configure_dict
 
     def _get_domains_and_tenants(self) -> dict:
@@ -234,23 +252,31 @@ class AdDashboard(object):
         #ai-gen-doc
         """
         domains_and_tenants_dict = {
-            "total_entities": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'totalEntities'),
-            "domain_controllers": self.dashboard_response.get('agentSummary', [{}])[0].get('slaSummary', {}).get(
-                'totalEntities'),
-            "tenants": self.dashboard_response.get('agentSummary', [{}])[1].get('slaSummary', {}).get('totalEntities'),
+            "total_entities": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("totalEntities"),
+            "domain_controllers": self.dashboard_response.get("agentSummary", [{}])[0]
+            .get("slaSummary", {})
+            .get("totalEntities"),
+            "tenants": self.dashboard_response.get("agentSummary", [{}])[1]
+            .get("slaSummary", {})
+            .get("totalEntities"),
             "apps_totalentities": 0,
             "apps_domain_controllers": 0,
-            "apps_tenants": 0
-            }
-        for i in range(len(self.apps_response['adClients'])):
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 41 and \
-                    self.apps_response.get('adClients', [])[i].get('slaStatus') != "EXCLUDED_SLA":
+            "apps_tenants": 0,
+        }
+        for i in range(len(self.apps_response["adClients"])):
+            if (
+                self.apps_response.get("adClients", [])[i].get("appTypeId") == 41
+                and self.apps_response.get("adClients", [])[i].get("slaStatus") != "EXCLUDED_SLA"
+            ):
                 domains_and_tenants_dict["apps_domain_controllers"] += 1
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 139 and \
-                    self.apps_response.get('adClients', [])[i].get('slaStatus') != "EXCLUDED_SLA":
+            if (
+                self.apps_response.get("adClients", [])[i].get("appTypeId") == 139
+                and self.apps_response.get("adClients", [])[i].get("slaStatus") != "EXCLUDED_SLA"
+            ):
                 domains_and_tenants_dict["apps_tenants"] += 1
-            if self.apps_response.get('adClients', [])[i].get('slaStatus') != "EXCLUDED_SLA":
+            if self.apps_response.get("adClients", [])[i].get("slaStatus") != "EXCLUDED_SLA":
                 domains_and_tenants_dict["apps_totalentities"] += 1
         return domains_and_tenants_dict
 
@@ -286,47 +312,84 @@ class AdDashboard(object):
         #ai-gen-doc
         """
         backup_health_dict = {
-            "recently_backedup": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'totalEntities', 0) - self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'slaNotMetEntities', 0),
-            "recently_backedup_per": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'slaMetPercentage', 0),
-            "recently_not_backedup": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'slaNotMetEntities', 0) - self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'neverBackedupEntities', 0),
-            "recently_not_backedup_per": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'slaNotMetProcessedAtleastOncePercentage', 0),
-            "never_backedup": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'neverBackedupEntities', 0),
-            "never_backedup_per": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
-                'neverBackedupPercentage', 0),
+            "recently_backedup": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("totalEntities", 0)
+            - self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("slaNotMetEntities", 0),
+            "recently_backedup_per": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("slaMetPercentage", 0),
+            "recently_not_backedup": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("slaNotMetEntities", 0)
+            - self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("neverBackedupEntities", 0),
+            "recently_not_backedup_per": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("slaNotMetProcessedAtleastOncePercentage", 0),
+            "never_backedup": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("neverBackedupEntities", 0),
+            "never_backedup_per": self.dashboard_response.get("solutionSummary", {})
+            .get("slaSummary", {})
+            .get("neverBackedupPercentage", 0),
             "apps_recently_backedup": 0,
             "apps_recently_not_backedup": 0,
             "apps_never_backedup": 0,
             "apps_totalentities": 0,
             "apps_recently_backedup_per": 0,
             "apps_recently_not_backedup_per": 0,
-            "apps_never_backedup_per": 0
-            }
-        for i in range(len(self.apps_response['adClients'])):
-            if self.apps_response.get('adClients', [])[i].get('slaStatus') == "MET_SLA":
+            "apps_never_backedup_per": 0,
+        }
+        for i in range(len(self.apps_response["adClients"])):
+            if self.apps_response.get("adClients", [])[i].get("slaStatus") == "MET_SLA":
                 backup_health_dict["apps_recently_backedup"] += 1
-            if self.apps_response.get('adClients', [])[i].get('slaStatus') == "MISSED_SLA" and \
-                    self.apps_response.get('adClients', [])[i].get('numberOfItems') != 0:
+            if (
+                self.apps_response.get("adClients", [])[i].get("slaStatus") == "MISSED_SLA"
+                and self.apps_response.get("adClients", [])[i].get("numberOfItems") != 0
+            ):
                 backup_health_dict["apps_recently_not_backedup"] += 1
-            if self.apps_response.get('adClients', [])[i].get('slaStatus') == "MISSED_SLA" and \
-                    self.apps_response.get('adClients', [])[i].get('numberOfItems') == 0:
+            if (
+                self.apps_response.get("adClients", [])[i].get("slaStatus") == "MISSED_SLA"
+                and self.apps_response.get("adClients", [])[i].get("numberOfItems") == 0
+            ):
                 backup_health_dict["apps_never_backedup"] += 1
-            if self.apps_response.get('adClients', [])[i].get('slaStatus') != "EXCLUDED_SLA":
+            if self.apps_response.get("adClients", [])[i].get("slaStatus") != "EXCLUDED_SLA":
                 backup_health_dict["apps_totalentities"] += 1
 
-        backup_health_dict["apps_recently_backedup_per"] = (
-            round(((backup_health_dict["apps_recently_backedup"] / backup_health_dict["apps_totalentities"]) * 100), 2))
-        backup_health_dict["apps_recently_not_backedup_per"] = (
-            round(((backup_health_dict["apps_recently_not_backedup"] / backup_health_dict["apps_totalentities"]) * 100),
-                  2))
-        backup_health_dict["apps_never_backedup_per"] = (
-            round(((backup_health_dict["apps_never_backedup"] / backup_health_dict["apps_totalentities"]) * 100), 2))
+        backup_health_dict["apps_recently_backedup_per"] = round(
+            (
+                (
+                    backup_health_dict["apps_recently_backedup"]
+                    / backup_health_dict["apps_totalentities"]
+                )
+                * 100
+            ),
+            2,
+        )
+        backup_health_dict["apps_recently_not_backedup_per"] = round(
+            (
+                (
+                    backup_health_dict["apps_recently_not_backedup"]
+                    / backup_health_dict["apps_totalentities"]
+                )
+                * 100
+            ),
+            2,
+        )
+        backup_health_dict["apps_never_backedup_per"] = round(
+            (
+                (
+                    backup_health_dict["apps_never_backedup"]
+                    / backup_health_dict["apps_totalentities"]
+                )
+                * 100
+            ),
+            2,
+        )
 
         return backup_health_dict
 
@@ -347,7 +410,6 @@ class AdDashboard(object):
         """
         return self._get_backup_health()
 
-
     def _get_data_distribution(self) -> dict:
         """Retrieve the data distribution panel details.
 
@@ -362,23 +424,45 @@ class AdDashboard(object):
 
         #ai-gen-doc
         """
-        data_distribution_dict = {"backup_size": round((((self.dashboard_response.get('agentSummary', [{}])[0].get('applicationSize', 0) +
-                                                          self.dashboard_response.get('agentSummary', [{}])[1].get('applicationSize',0))
-                                                         / 1024) / 1024), 2),
-                                  "backup_obj": (
-                                              self.dashboard_response.get('agentSummary', [{}])[0].get('numberOfItems', 0) +
-                                              self.dashboard_response.get('agentSummary', [{}])[1].get('numberOfItems',0)),
-                                  "apps_backup_size": 0,
-                                  "apps_backup_obj": 0,
-                                  }
+        data_distribution_dict = {
+            "backup_size": round(
+                (
+                    (
+                        (
+                            self.dashboard_response.get("agentSummary", [{}])[0].get(
+                                "applicationSize", 0
+                            )
+                            + self.dashboard_response.get("agentSummary", [{}])[1].get(
+                                "applicationSize", 0
+                            )
+                        )
+                        / 1024
+                    )
+                    / 1024
+                ),
+                2,
+            ),
+            "backup_obj": (
+                self.dashboard_response.get("agentSummary", [{}])[0].get("numberOfItems", 0)
+                + self.dashboard_response.get("agentSummary", [{}])[1].get("numberOfItems", 0)
+            ),
+            "apps_backup_size": 0,
+            "apps_backup_obj": 0,
+        }
 
-        for i in range(len(self.apps_response['adClients'])):
-            data_distribution_dict["apps_backup_size"] += self.apps_response.get('adClients', [{}])[i].get('applicationSize', None)
+        for i in range(len(self.apps_response["adClients"])):
+            data_distribution_dict["apps_backup_size"] += self.apps_response.get(
+                "adClients", [{}]
+            )[i].get("applicationSize", None)
 
-        data_distribution_dict["apps_backup_size"] = round(((data_distribution_dict["apps_backup_size"] / 1024) / 1024), 2)
+        data_distribution_dict["apps_backup_size"] = round(
+            ((data_distribution_dict["apps_backup_size"] / 1024) / 1024), 2
+        )
 
-        for i in range(len(self.apps_response['adClients'])):
-            data_distribution_dict["apps_backup_obj"] += self.apps_response.get('adClients', [{}])[i].get('numberOfItems', None)
+        for i in range(len(self.apps_response["adClients"])):
+            data_distribution_dict["apps_backup_obj"] += self.apps_response.get("adClients", [{}])[
+                i
+            ].get("numberOfItems", None)
 
         return data_distribution_dict
 
@@ -414,69 +498,164 @@ class AdDashboard(object):
         #ai-gen-doc
         """
         application_panel_dict = {
-            "aad_tenant": self.dashboard_response.get('agentSummary', [{}])[1].get('slaSummary', {}).get('totalEntities'),
-            "aad_backup_size": round((((self.dashboard_response.get('agentSummary', [{}])[1].get('applicationSize')) / 1024) / 1024), 2),
-            "aad_backup_obj": self.dashboard_response.get('agentSummary', [{}])[1].get('numberOfItems'),
-            "aad_sla_per": self.dashboard_response.get('agentSummary', [{}])[1].get('slaSummary', {}).get('slaMetPercentage'),
-            "aad_not_sla_per": self.dashboard_response.get('agentSummary', [{}])[1].get('slaSummary', {}).get('slaNotMetProcessedAtleastOncePercentage'),
+            "aad_tenant": self.dashboard_response.get("agentSummary", [{}])[1]
+            .get("slaSummary", {})
+            .get("totalEntities"),
+            "aad_backup_size": round(
+                (
+                    (
+                        (
+                            self.dashboard_response.get("agentSummary", [{}])[1].get(
+                                "applicationSize"
+                            )
+                        )
+                        / 1024
+                    )
+                    / 1024
+                ),
+                2,
+            ),
+            "aad_backup_obj": self.dashboard_response.get("agentSummary", [{}])[1].get(
+                "numberOfItems"
+            ),
+            "aad_sla_per": self.dashboard_response.get("agentSummary", [{}])[1]
+            .get("slaSummary", {})
+            .get("slaMetPercentage"),
+            "aad_not_sla_per": self.dashboard_response.get("agentSummary", [{}])[1]
+            .get("slaSummary", {})
+            .get("slaNotMetProcessedAtleastOncePercentage"),
+            "ad_domains": self.dashboard_response.get("agentSummary", [{}])[0]
+            .get("slaSummary", {})
+            .get("totalEntities"),
+            "ad_backup_size": round(
+                (
+                    (
+                        (
+                            self.dashboard_response.get("agentSummary", [{}])[0].get(
+                                "applicationSize"
+                            )
+                        )
+                        / 1024
+                    )
+                    / 1024
+                ),
+                2,
+            ),
+            "ad_backup_obj": self.dashboard_response.get("agentSummary", [{}])[0].get(
+                "numberOfItems"
+            ),
+            "ad_sla_per": self.dashboard_response.get("agentSummary", [{}])[0]
+            .get("slaSummary", {})
+            .get("slaMetPercentage"),
+            "ad_not_sla_per": self.dashboard_response.get("agentSummary", [{}])[0]
+            .get("slaSummary", {})
+            .get("slaNotMetProcessedAtleastOncePercentage"),
+            "apps_aad_tenant": 0,
+            "apps_aad_backup_size": 0,
+            "apps_aad_backup_obj": 0,
+            "apps_aad_sla_per": 0,
+            "apps_aad_not_sla_per": 0,
+            "apps_ad_domains": 0,
+            "apps_ad_backup_size": 0,
+            "apps_ad_backup_obj": 0,
+            "apps_ad_sla_per": 0,
+            "apps_ad_not_sla_per": 0,
+            "apps_aad_sla": 0,
+            "apps_ad_sla": 0,
+        }
 
-            "ad_domains": self.dashboard_response.get('agentSummary', [{}])[0].get('slaSummary', {}).get('totalEntities'),
-            "ad_backup_size": round((((self.dashboard_response.get('agentSummary', [{}])[0].get('applicationSize')) / 1024) / 1024), 2),
-            "ad_backup_obj": self.dashboard_response.get('agentSummary', [{}])[0].get('numberOfItems'),
-            "ad_sla_per": self.dashboard_response.get('agentSummary', [{}])[0].get('slaSummary', {}).get('slaMetPercentage'),
-            "ad_not_sla_per": self.dashboard_response.get('agentSummary', [{}])[0].get('slaSummary', {}).get('slaNotMetProcessedAtleastOncePercentage'),
-
-            "apps_aad_tenant": 0, "apps_aad_backup_size": 0, "apps_aad_backup_obj": 0,
-            "apps_aad_sla_per": 0,"apps_aad_not_sla_per": 0,
-            "apps_ad_domains": 0, "apps_ad_backup_size": 0, "apps_ad_backup_obj": 0,
-            "apps_ad_sla_per": 0,"apps_ad_not_sla_per": 0,
-            "apps_aad_sla": 0, "apps_ad_sla": 0}
-
-        for i in range(len(self.apps_response['adClients'])):
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 139 and \
-                    self.apps_response.get('adClients', [])[i].get('slaStatus') != "EXCLUDED_SLA":
+        for i in range(len(self.apps_response["adClients"])):
+            if (
+                self.apps_response.get("adClients", [])[i].get("appTypeId") == 139
+                and self.apps_response.get("adClients", [])[i].get("slaStatus") != "EXCLUDED_SLA"
+            ):
                 application_panel_dict["apps_aad_tenant"] += 1
 
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 139:
-                application_panel_dict["apps_aad_backup_size"] += self.apps_response.get('adClients', [{}])[i].get(
-                    'applicationSize')
-                application_panel_dict["apps_aad_backup_obj"] += self.apps_response.get('adClients', [{}])[i].get(
-                    'numberOfItems')
+            if self.apps_response.get("adClients", [])[i].get("appTypeId") == 139:
+                application_panel_dict["apps_aad_backup_size"] += self.apps_response.get(
+                    "adClients", [{}]
+                )[i].get("applicationSize")
+                application_panel_dict["apps_aad_backup_obj"] += self.apps_response.get(
+                    "adClients", [{}]
+                )[i].get("numberOfItems")
 
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 41 and \
-                    self.apps_response.get('adClients', [])[i].get('slaStatus') != "EXCLUDED_SLA":
+            if (
+                self.apps_response.get("adClients", [])[i].get("appTypeId") == 41
+                and self.apps_response.get("adClients", [])[i].get("slaStatus") != "EXCLUDED_SLA"
+            ):
                 application_panel_dict["apps_ad_domains"] += 1
 
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 41:
-                application_panel_dict["apps_ad_backup_size"] += self.apps_response.get('adClients', [{}])[i].get(
-                    'applicationSize')
-                application_panel_dict["apps_ad_backup_obj"] += self.apps_response.get('adClients', [{}])[i].get(
-                    'numberOfItems')
+            if self.apps_response.get("adClients", [])[i].get("appTypeId") == 41:
+                application_panel_dict["apps_ad_backup_size"] += self.apps_response.get(
+                    "adClients", [{}]
+                )[i].get("applicationSize")
+                application_panel_dict["apps_ad_backup_obj"] += self.apps_response.get(
+                    "adClients", [{}]
+                )[i].get("numberOfItems")
 
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 139 and \
-                    self.apps_response.get('adClients', [])[i].get('slaStatus') == "MET_SLA":
+            if (
+                self.apps_response.get("adClients", [])[i].get("appTypeId") == 139
+                and self.apps_response.get("adClients", [])[i].get("slaStatus") == "MET_SLA"
+            ):
                 application_panel_dict["apps_aad_sla"] += 1
 
-            if self.apps_response.get('adClients', [])[i].get('appTypeId') == 41 and \
-                    self.apps_response.get('adClients', [])[i].get('slaStatus') == "MET_SLA":
+            if (
+                self.apps_response.get("adClients", [])[i].get("appTypeId") == 41
+                and self.apps_response.get("adClients", [])[i].get("slaStatus") == "MET_SLA"
+            ):
                 application_panel_dict["apps_ad_sla"] += 1
 
         application_panel_dict["apps_aad_backup_size"] = round(
-            ((application_panel_dict["apps_aad_backup_size"] / 1024) / 1024), 2)
+            ((application_panel_dict["apps_aad_backup_size"] / 1024) / 1024), 2
+        )
         application_panel_dict["apps_ad_backup_size"] = round(
-            ((application_panel_dict["apps_ad_backup_size"] / 1024) / 1024), 2)
+            ((application_panel_dict["apps_ad_backup_size"] / 1024) / 1024), 2
+        )
 
-        application_panel_dict["apps_aad_sla_per"] = (
-            round(((application_panel_dict["apps_aad_sla"] / application_panel_dict["apps_aad_tenant"]) * 100), 2))
-        application_panel_dict["apps_ad_sla_per"] = (
-            round(((application_panel_dict["apps_ad_sla"] / application_panel_dict["apps_ad_domains"]) * 100), 2))
+        application_panel_dict["apps_aad_sla_per"] = round(
+            (
+                (
+                    application_panel_dict["apps_aad_sla"]
+                    / application_panel_dict["apps_aad_tenant"]
+                )
+                * 100
+            ),
+            2,
+        )
+        application_panel_dict["apps_ad_sla_per"] = round(
+            (
+                (application_panel_dict["apps_ad_sla"] / application_panel_dict["apps_ad_domains"])
+                * 100
+            ),
+            2,
+        )
 
-        application_panel_dict["apps_aad_not_sla_per"] = (round((((application_panel_dict["apps_aad_tenant"] -
-                                                                   application_panel_dict["apps_aad_sla"]) /
-                                                                  application_panel_dict["apps_aad_tenant"]) * 100), 2))
-        application_panel_dict["apps_ad_not_sla_per"] = (round((((application_panel_dict["apps_ad_domains"] -
-                                                                  application_panel_dict["apps_ad_sla"]) /
-                                                                 application_panel_dict["apps_ad_domains"]) * 100), 2))
+        application_panel_dict["apps_aad_not_sla_per"] = round(
+            (
+                (
+                    (
+                        application_panel_dict["apps_aad_tenant"]
+                        - application_panel_dict["apps_aad_sla"]
+                    )
+                    / application_panel_dict["apps_aad_tenant"]
+                )
+                * 100
+            ),
+            2,
+        )
+        application_panel_dict["apps_ad_not_sla_per"] = round(
+            (
+                (
+                    (
+                        application_panel_dict["apps_ad_domains"]
+                        - application_panel_dict["apps_ad_sla"]
+                    )
+                    / application_panel_dict["apps_ad_domains"]
+                )
+                * 100
+            ),
+            2,
+        )
 
         return application_panel_dict
 

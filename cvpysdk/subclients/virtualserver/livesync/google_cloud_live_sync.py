@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -29,10 +27,10 @@ GCPLiveSync:
 """
 
 from .vsa_live_sync import VsaLiveSync
-from ....exception import SDKException
 
 
 class GCPLiveSync(VsaLiveSync):
     """Class for configuring and monitoring Google Cloud Platform live sync operations"""
+
     # TODO: Implement methods for Google Cloud Live Sync in next Form
     pass

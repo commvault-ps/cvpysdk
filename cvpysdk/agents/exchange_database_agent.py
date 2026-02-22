@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -42,12 +40,11 @@ Attributes
 
 """
 
-from __future__ import unicode_literals
-
-from typing import Any, Optional, List, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..agent import Agent
 from ..subclient import Subclients
+
 
 class ExchangeDatabaseAgent(Agent):
     """
@@ -69,7 +66,9 @@ class ExchangeDatabaseAgent(Agent):
     #ai-gen-doc
     """
 
-    def __init__(self, client_object: Any, agent_name: str, agent_id: Optional[str] = None) -> None:
+    def __init__(
+        self, client_object: Any, agent_name: str, agent_id: Optional[str] = None
+    ) -> None:
         """Initialize an ExchangeDatabaseAgent instance for a specific client and agent.
 
         Args:
@@ -84,17 +83,15 @@ class ExchangeDatabaseAgent(Agent):
 
         #ai-gen-doc
         """
-        super(ExchangeDatabaseAgent, self).__init__(client_object, agent_name, agent_id)
+        super().__init__(client_object, agent_name, agent_id)
 
-        if self.instances.has_instance('defaultInstance'):
-            self._instance_object = self.instances.get('defaultInstance')
+        if self.instances.has_instance("defaultInstance"):
+            self._instance_object = self.instances.get("defaultInstance")
         else:
-            self._instance_object = self.instances.get(
-                sorted(self.instances.all_instances)[0]
-            )
+            self._instance_object = self.instances.get(sorted(self.instances.all_instances)[0])
 
-        if self._instance_object.backupsets.has_backupset('defaultBackupSet'):
-            self._backupset_object = self._instance_object.backupsets.get('defaultBackupSet')
+        if self._instance_object.backupsets.has_backupset("defaultBackupSet"):
+            self._backupset_object = self._instance_object.backupsets.get("defaultBackupSet")
         else:
             self._backupset_object = self._instance_object.backupsets.get(
                 sorted(self._instance_object.backupsets.all_backupsets)[0]
@@ -103,7 +100,7 @@ class ExchangeDatabaseAgent(Agent):
         self._subclients = None
 
     @property
-    def subclients(self) -> 'Subclients':
+    def subclients(self) -> "Subclients":
         """Get the Subclients instance for the Exchange Database Agent.
 
         This property provides access to the Subclients object, which represents
@@ -263,6 +260,6 @@ class ExchangeDatabaseAgent(Agent):
 
         #ai-gen-doc
         """
-        super(ExchangeDatabaseAgent, self).refresh()
+        super().refresh()
 
         self._subclients = None

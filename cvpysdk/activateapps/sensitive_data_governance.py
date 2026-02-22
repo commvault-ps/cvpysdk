@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -107,29 +105,31 @@ Project Attributes
     **sensitive_files_count**   --  returns the total sensitive files count
 
 """
+
 import copy
 
-from .constants import RequestConstants
-from ..schedules import Schedules
-
 from ..activateapps.constants import EdiscoveryConstants
-
-from ..activateapps.ediscovery_utils import EdiscoveryClients, EdiscoveryClientOperations, EdiscoveryDataSources
-
+from ..activateapps.ediscovery_utils import (
+    EdiscoveryClientOperations,
+    EdiscoveryClients,
+    EdiscoveryDataSources,
+)
 from ..exception import SDKException
+from ..schedules import Schedules
+from .constants import RequestConstants
 
 
-class Projects():
+class Projects:
     """Class for representing all SDG Projects in the commcell."""
 
     def __init__(self, commcell_object):
         """Initializes an instance of the Projects class.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+        Args:
+            commcell_object     (object)    --  instance of the commcell class
 
-            Returns:
-                object  -   instance of the Projects class
+        Returns:
+            object  -   instance of the Projects class
 
         """
         self._commcell_object = commcell_object
@@ -145,34 +145,34 @@ class Projects():
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        Args:
+            response    (object)    --  response class object,
 
-                received upon running an API request, using the `requests` python package
+            received upon running an API request, using the `requests` python package
 
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_all_sdg_projects(self):
         """Returns all the SDG Projects found in the commcell
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    dict        --  Containing SDG Project details
+            dict        --  Containing SDG Project details
 
-                Raises;
+        Raises;
 
-                    SDKException:
+            SDKException:
 
-                            if failed to get SDG Project details
+                    if failed to get SDG Project details
 
-                            if response is empty
+                    if response is empty
 
-                            if response is not success
+                    if response is not success
         """
         return self._ediscovery_clients_obj.get_ediscovery_projects()
 
@@ -183,140 +183,145 @@ class Projects():
     def delete(self, project_name):
         """Deletes project from SDG
 
-                Args:
+        Args:
 
-                    project_name        (str)       --  Name of the project
+            project_name        (str)       --  Name of the project
 
-                Returns:
+        Returns:
 
-                    None
+            None
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if input is not valid
+                    if input is not valid
 
-                            if failed to delete project
+                    if failed to delete project
 
-                            if response is empty or not success
+                    if response is empty or not success
         """
         if not self.has_project(project_name):
-            raise SDKException('SensitiveDataGovernance', '102', "Project doesn't exists in SDG")
-        project_id = self._sdg_projects[project_name.lower()]['clientId']
+            raise SDKException("SensitiveDataGovernance", "102", "Project doesn't exists in SDG")
+        project_id = self._sdg_projects[project_name.lower()]["clientId"]
         self._ediscovery_clients_obj.delete(client_id=project_id)
         self.refresh()
 
     def add(self, project_name, inventory_name, plan_name):
         """Adds project to the SDG
 
-                Args:
+        Args:
 
-                    project_name        (str)       --  Name of the project
+            project_name        (str)       --  Name of the project
 
-                    inventory_name      (str)       --  Name of inventory
+            inventory_name      (str)       --  Name of inventory
 
-                    plan_name           (str)       --  Plan name to associate with this project
+            plan_name           (str)       --  Plan name to associate with this project
 
-                Returns:
+        Returns:
 
-                    obj --  Instance of Project class
+            obj --  Instance of Project class
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if input is not valid
+                    if input is not valid
 
-                            if failed to create project
+                    if failed to create project
 
-                            if response is empty or not success
+                    if response is empty or not success
         """
         client_id = self._ediscovery_clients_obj.add(
-            client_name=project_name,
-            inventory_name=inventory_name,
-            plan_name=plan_name)
+            client_name=project_name, inventory_name=inventory_name, plan_name=plan_name
+        )
         if client_id == 0:
-            raise SDKException('SensitiveDataGovernance', '102', 'Failed to add project to SDG')
+            raise SDKException("SensitiveDataGovernance", "102", "Failed to add project to SDG")
         self.refresh()
-        return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=client_id)
+        return Project(
+            commcell_object=self._commcell_object, project_name=project_name, project_id=client_id
+        )
 
     def has_project(self, project_name):
         """Checks if a project exists in the commcell with the input name for SDG or not
 
-            Args:
-                project_name (str)  --  name of the project
+        Args:
+            project_name (str)  --  name of the project
 
-            Returns:
-                bool - boolean output whether the SDG Project exists in the commcell or not
+        Returns:
+            bool - boolean output whether the SDG Project exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the project name argument is not string
+        Raises:
+            SDKException:
+                if type of the project name argument is not string
 
         """
         if not isinstance(project_name, str):
-            raise SDKException('SensitiveDataGovernance', '101')
+            raise SDKException("SensitiveDataGovernance", "101")
         return self._sdg_projects and project_name.lower() in self._sdg_projects
 
     def get(self, project_name):
         """returns the Project object for given project name
 
-                Args:
+        Args:
 
-                    project_name         (str)       --  Name of the project
+            project_name         (str)       --  Name of the project
 
-                Returns:
+        Returns:
 
-                    obj --  Instance of Project Class
+            obj --  Instance of Project Class
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if failed to find Project in SDG
+                    if failed to find Project in SDG
 
-                            if input is not valid
+                    if input is not valid
 
         """
         if not isinstance(project_name, str):
-            raise SDKException('SensitiveDataGovernance', '101')
+            raise SDKException("SensitiveDataGovernance", "101")
         if not self.has_project(project_name):
-            raise SDKException('SensitiveDataGovernance', '103')
-        project_id = self._sdg_projects[project_name.lower()]['eDiscoveryClient']['clientId']
-        return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=project_id)
+            raise SDKException("SensitiveDataGovernance", "103")
+        project_id = self._sdg_projects[project_name.lower()]["eDiscoveryClient"]["clientId"]
+        return Project(
+            commcell_object=self._commcell_object, project_name=project_name, project_id=project_id
+        )
 
     def search(self, criteria=None, attr_list=None, params=None):
         """Does search on all the projects and returns document details
 
-            Args:
+        Args:
 
-                criteria        (str)      --  containing criteria for query
-                                                    (Default : None - returns all docs)
+            criteria        (str)      --  containing criteria for query
+                                                (Default : None - returns all docs)
 
-                                                    Example :
+                                                Example :
 
-                                                        Size:[10 TO 1024]
-                                                        FileName:09_23*
+                                                    Size:[10 TO 1024]
+                                                    FileName:09_23*
 
-                attr_list       (set)      --  Column names to be returned in results.
-                                                     Acts as 'fl' in query
+            attr_list       (set)      --  Column names to be returned in results.
+                                                 Acts as 'fl' in query
 
-                params          (dict)     --  Any other params which needs to be passed
-                                                   Example : { "start" : "0" }
+            params          (dict)     --  Any other params which needs to be passed
+                                               Example : { "start" : "0" }
 
-            Returns:
+        Returns:
 
-                int,list(dict),dict    --  Containing document count, document details & facet details(if any)
+            int,list(dict),dict    --  Containing document count, document details & facet details(if any)
 
-            Raises:
+        Raises:
 
-                SDKException:
+            SDKException:
 
-                        if failed to perform search
+                    if failed to perform search
 
         """
-        return self._ediscovery_client_ops.search(criteria=criteria, attr_list=attr_list, params=params)
+        return self._ediscovery_client_ops.search(
+            criteria=criteria, attr_list=attr_list, params=params
+        )
 
     def sensitive_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
         """
@@ -332,8 +337,10 @@ class Projects():
         Returns:
             int: Count of sensitive files for the specified application type.
         """
-        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_SENSITIVE_DICT[app_type],
-                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        count, _, _ = self.search(
+            criteria=EdiscoveryConstants.APP_TYPE_SENSITIVE_DICT[app_type],
+            params=RequestConstants.REQUEST_ZERO_ROWS,
+        )
         return count
 
     def total_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
@@ -350,8 +357,10 @@ class Projects():
         Returns:
             int: Total number of files for the specified application type.
         """
-        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_TOTAL_DICT[app_type],
-                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        count, _, _ = self.search(
+            criteria=EdiscoveryConstants.APP_TYPE_TOTAL_DICT[app_type],
+            params=RequestConstants.REQUEST_ZERO_ROWS,
+        )
         return count
 
     @property
@@ -408,8 +417,9 @@ class Projects():
         """
         request_top_entities_facet = copy.deepcopy(RequestConstants.REQUEST_TOP_ENTITIES_FACET)
         request_top_entities_facet["json.facet"] = request_top_entities_facet["json.facet"] % count
-        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
-                                  params=request_top_entities_facet)
+        _, _, stats = self.search(
+            criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS, params=request_top_entities_facet
+        )
         return stats
 
     def get_entity_distribution(self):
@@ -418,9 +428,12 @@ class Projects():
         Returns:
             dict: Statistics or data for the entity distribution.
         """
-        request_entity_dist_facet = copy.deepcopy(RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET)
-        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
-                                  params=request_entity_dist_facet)
+        request_entity_dist_facet = copy.deepcopy(
+            RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET
+        )
+        _, _, stats = self.search(
+            criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS, params=request_entity_dist_facet
+        )
         return stats
 
     def get_entity_sensitivity_counts(self):
@@ -431,17 +444,22 @@ class Projects():
             tuple: (critical_count, high_count, moderate_count, none_count)
         """
         critical, high, moderate = self._entity_manger.get_entity_by_sensitivity()
-        critical_count, _, _ = self.search(criteria=self.get_extracted_solr_query(critical),
-                                           params=RequestConstants.REQUEST_ZERO_ROWS)
+        critical_count, _, _ = self.search(
+            criteria=self.get_extracted_solr_query(critical),
+            params=RequestConstants.REQUEST_ZERO_ROWS,
+        )
         high_count, _, _ = self.search(
             criteria=f"{self.get_extracted_solr_query(high)} AND {self.get_extracted_solr_query(critical, True)}",
-            params=RequestConstants.REQUEST_ZERO_ROWS)
+            params=RequestConstants.REQUEST_ZERO_ROWS,
+        )
         moderate_count, _, _ = self.search(
             criteria=f"{self.get_extracted_solr_query(moderate)} AND {self.get_extracted_solr_query(critical + high, True)}",
-            params=RequestConstants.REQUEST_ZERO_ROWS)
+            params=RequestConstants.REQUEST_ZERO_ROWS,
+        )
         none_count, _, _ = self.search(
             criteria=f"{EdiscoveryConstants.CRITERIA_ALL_DOCS} AND {self.get_extracted_solr_query(critical + high + moderate, True)}",
-            params=RequestConstants.REQUEST_ZERO_ROWS)
+            params=RequestConstants.REQUEST_ZERO_ROWS,
+        )
         return critical_count, high_count, moderate_count, none_count
 
     def get_extracted_solr_query(self, values, is_negation=False):
@@ -459,8 +477,7 @@ class Projects():
             SDKException: If values is not a list.
         """
         if not isinstance(values, list):
-            raise SDKException('SensitiveDataGovernance', '101',
-                               "Values must be a list")
+            raise SDKException("SensitiveDataGovernance", "101", "Values must be a list")
         if not values:
             return ""
 
@@ -470,21 +487,21 @@ class Projects():
         return f"{append_str}(entities_extracted:" + " OR entities_extracted:".join(values) + ")"
 
 
-class Project():
+class Project:
     """Class to represent single SDG Project in the commcell"""
 
     def __init__(self, commcell_object, project_name, project_id=None):
         """Initializes an instance of the Project class.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+        Args:
+            commcell_object     (object)    --  instance of the commcell class
 
-                project_name        (str)       --  name of the project
+            project_name        (str)       --  name of the project
 
-                project_id          (int)       --  project's pseudoclient id
+            project_id          (int)       --  project's pseudoclient id
 
-            Returns:
-                object  -   instance of the Project class
+        Returns:
+            object  -   instance of the Project class
 
         """
         self._commcell_object = commcell_object
@@ -498,7 +515,11 @@ class Project():
         if project_id:
             self._project_id = project_id
         else:
-            self._project_id = self._commcell_object.activate.sensitive_data_governance().get(project_name).project_id
+            self._project_id = (
+                self._commcell_object.activate.sensitive_data_governance()
+                .get(project_name)
+                .project_id
+            )
         self._ediscovery_data_srcs_obj = EdiscoveryDataSources(self._commcell_object, self)
         self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
         self.refresh()
@@ -506,32 +527,32 @@ class Project():
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        Args:
+            response    (object)    --  response class object,
 
-                received upon running an API request, using the `requests` python package
+            received upon running an API request, using the `requests` python package
 
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_project_details(self):
         """gets SDG Project details from the commcell
 
-                Args:
+        Args:
 
-                    None
+            None
 
-                Returns:
+        Returns:
 
-                    dict    --  Containing project details
+            dict    --  Containing project details
 
-                Raises:
+        Raises:
 
-                     Raises;
+             Raises;
 
-                        SDKException:
+                SDKException:
 
-                            if failed to get project details
+                    if failed to get project details
 
         """
         return self._ediscovery_data_srcs_obj.ediscovery_client_props
@@ -539,20 +560,20 @@ class Project():
     def _get_schedule_object(self):
         """returns the schedule object for associated project schedule
 
-            Args:
-                None
+        Args:
+            None
 
-            Returns:
+        Returns:
 
-                obj --  Instance of Schedule class
+            obj --  Instance of Schedule class
 
-                None -- if no schedule exists
+            None -- if no schedule exists
 
-            Raises:
+        Raises:
 
-                SDKException:
+            SDKException:
 
-                        if failed to find schedule details associated with this project
+                    if failed to find schedule details associated with this project
         """
         scd_obj = Schedules(self)
         if scd_obj.has_schedule():
@@ -567,209 +588,228 @@ class Project():
     def add_schedule(self, schedule_name, pattern_json):
         """Creates the schedule and associate it with project
 
-                        Args:
+        Args:
 
-                            schedule_name       (str)       --  Schedule name
+            schedule_name       (str)       --  Schedule name
 
-                            pattern_json        (dict)      --  Schedule pattern dict
-                                                                    (Refer to Create_schedule_pattern in schedule.py)
+            pattern_json        (dict)      --  Schedule pattern dict
+                                                    (Refer to Create_schedule_pattern in schedule.py)
 
-                        Raises:
+        Raises:
 
-                              SDKException:
+              SDKException:
 
-                                    if input is not valid
+                    if input is not valid
 
-                                    if failed to create schedule
+                    if failed to create schedule
 
         """
-        self._ediscovery_client_ops.schedule(schedule_name=schedule_name, pattern_json=pattern_json)
+        self._ediscovery_client_ops.schedule(
+            schedule_name=schedule_name, pattern_json=pattern_json
+        )
         self.refresh()
 
     def delete_schedule(self):
         """Deletes the schedule associated with project
 
-                        Args:
+        Args:
 
-                            None
+            None
 
-                        Raises:
+        Raises:
 
-                              SDKException:
+              SDKException:
 
-                                    if failed to Delete schedule
+                    if failed to Delete schedule
 
         """
         if not self._schedule_obj:
-            raise SDKException('SensitiveDataGovernance', '102', "No schedule is associated to this SDG Project")
+            raise SDKException(
+                "SensitiveDataGovernance", "102", "No schedule is associated to this SDG Project"
+            )
         Schedules(self).delete()
         self.refresh()
 
     def search(self, criteria=None, attr_list=None, params=None):
         """do searches on entire project and returns document details
 
-            Args:
+        Args:
 
-                criteria        (str)      --  containing criteria for query
-                                                    (Default : None - returns all docs)
+            criteria        (str)      --  containing criteria for query
+                                                (Default : None - returns all docs)
 
-                                                    Example :
+                                                Example :
 
-                                                        Size:[10 TO 1024]
-                                                        FileName:09_23*
+                                                    Size:[10 TO 1024]
+                                                    FileName:09_23*
 
-                attr_list       (set)      --  Column names to be returned in results.
-                                                     Acts as 'fl' in query
+            attr_list       (set)      --  Column names to be returned in results.
+                                                 Acts as 'fl' in query
 
-                params          (dict)     --  Any other params which needs to be passed
-                                                   Example : { "start" : "0" }
+            params          (dict)     --  Any other params which needs to be passed
+                                               Example : { "start" : "0" }
 
-            Returns:
+        Returns:
 
-                int,list(dict),dict    --  Containing document count, document details & facet details(if any)
+            int,list(dict),dict    --  Containing document count, document details & facet details(if any)
 
-            Raises:
+        Raises:
 
-                SDKException:
+            SDKException:
 
-                        if failed to perform search
+                    if failed to perform search
 
         """
-        return self._ediscovery_client_ops.search(criteria=criteria, attr_list=attr_list, params=params)
+        return self._ediscovery_client_ops.search(
+            criteria=criteria, attr_list=attr_list, params=params
+        )
 
     def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
         """Shares project with given user or user group in commcell
 
-                Args:
+        Args:
 
-                    user_or_group_name      (str)       --  Name of user or group
+            user_or_group_name      (str)       --  Name of user or group
 
-                    is_user                 (bool)      --  Denotes whether this is user or group name
-                                                                default : True(User)
+            is_user                 (bool)      --  Denotes whether this is user or group name
+                                                        default : True(User)
 
-                    allow_edit_permission   (bool)      --  whether to give edit permission or not to user or group
+            allow_edit_permission   (bool)      --  whether to give edit permission or not to user or group
 
-                    ops_type                (int)       --  Operation type
+            ops_type                (int)       --  Operation type
 
-                                                            Default : 1 (Add)
+                                                    Default : 1 (Add)
 
-                                                            Supported : 1 (Add)
-                                                                        3 (Delete)
+                                                    Supported : 1 (Add)
+                                                                3 (Delete)
 
-                Returns:
+        Returns:
 
-                    None
+            None
 
-                Raises:
+        Raises:
 
-                    SDKException:
+            SDKException:
 
-                            if unable to update security associations
+                    if unable to update security associations
 
-                            if response is empty or not success
+                    if response is empty or not success
         """
         return self._ediscovery_client_ops.share(
             user_or_group_name=user_or_group_name,
             allow_edit_permission=allow_edit_permission,
             is_user=is_user,
-            ops_type=ops_type)
+            ops_type=ops_type,
+        )
 
-    def add_fs_data_source(self, server_name, data_source_name,
-                           source_type=EdiscoveryConstants.SourceType.BACKUP, **kwargs):
+    def add_fs_data_source(
+        self,
+        server_name,
+        data_source_name,
+        source_type=EdiscoveryConstants.SourceType.BACKUP,
+        **kwargs,
+    ):
         """Adds file system data source to project
 
-                Args:
+        Args:
 
-                    server_name         (str)       --  Server name which needs to be added
+            server_name         (str)       --  Server name which needs to be added
 
-                    data_source_name    (str)       --  Name for data source
+            data_source_name    (str)       --  Name for data source
 
-                    source_type         (enum)      --  Source type for crawl (Live source or Backedup)
-                                                                Refer EdiscoveryConstants.SourceType
+            source_type         (enum)      --  Source type for crawl (Live source or Backedup)
+                                                        Refer EdiscoveryConstants.SourceType
 
-                Kwargs Arguments:
+        Kwargs Arguments:
 
-                    crawl_path          (list)      --  File path which needs to be crawl if source type is Live source
+            crawl_path          (list)      --  File path which needs to be crawl if source type is Live source
 
-                    access_node         (str)       --  server name which needs to be used as access node in case
-                                                                if server to be added is not a commvault client
+            access_node         (str)       --  server name which needs to be used as access node in case
+                                                        if server to be added is not a commvault client
 
-                    country_name        (str)       --  country name where server is located (default: USA)
+            country_name        (str)       --  country name where server is located (default: USA)
 
-                    country_code        (str)       --  Country code (ISO 3166 2-letter code)
+            country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    user_name           (str)       --  User name who has access to UNC path
+            user_name           (str)       --  User name who has access to UNC path
 
-                    password            (str)       --  base64 encoded password to access unc path
+            password            (str)       --  base64 encoded password to access unc path
 
-                    enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
+            enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 
-                Returns:
+        Returns:
 
-                    obj     --  Instance of EdiscoveryDataSource class
+            obj     --  Instance of EdiscoveryDataSource class
 
-                Raises:
+        Raises:
 
-                      SDKException:
+              SDKException:
 
-                            if plan/inventory/index server doesn't exists
+                    if plan/inventory/index server doesn't exists
 
-                            if failed to add FS data source
+                    if failed to add FS data source
         """
-        inventory_name = self.project_details['inventoryDataSource']['seaDataSourceName']
-        plan_name = self.project_details['plan']['planName']
+        inventory_name = self.project_details["inventoryDataSource"]["seaDataSourceName"]
+        plan_name = self.project_details["plan"]["planName"]
         return self._ediscovery_data_srcs_obj.add_fs_data_source(
             server_name=server_name,
             data_source_name=data_source_name,
             inventory_name=inventory_name,
             plan_name=plan_name,
             source_type=source_type,
-            **kwargs)
+            **kwargs,
+        )
 
-    def add_o365_sdg_data_source(self, server_name, data_source_name,
-                                 datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
+    def add_o365_sdg_data_source(
+        self,
+        server_name,
+        data_source_name,
+        datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE,
+        **kwargs,
+    ):
         """Adds Office365 SDG data source to a project
 
-                Args:
-                    server_name         (str)       --  Server name which needs to be added
+        Args:
+            server_name         (str)       --  Server name which needs to be added
 
-                    data_source_name    (str)       --  Name for data source
+            data_source_name    (str)       --  Name for data source
 
-                    datasource_type     (str)       --  Type of O365 SDG datasource (Exchange/OneDrive)
+            datasource_type     (str)       --  Type of O365 SDG datasource (Exchange/OneDrive)
 
-                Kwargs Arguments:
+        Kwargs Arguments:
 
-                    country_name        (str)       --  country name where server is located (default: USA)
+            country_name        (str)       --  country name where server is located (default: USA)
 
-                    country_code        (str)       --  Country code (ISO 3166 2-letter code)
+            country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    users               (list)      --  List of users/mailboxes to be added. If empty, all users would be added
+            users               (list)      --  List of users/mailboxes to be added. If empty, all users would be added
 
-                Returns:
+        Returns:
 
-                    obj     --  Instance of EdiscoveryDataSource class
+            obj     --  Instance of EdiscoveryDataSource class
 
-                Raises:
+        Raises:
 
-                      SDKException:
+              SDKException:
 
-                            if plan doesn't exists
+                    if plan doesn't exists
         """
-        plan_name = self.project_details['plan']['planName']
+        plan_name = self.project_details["plan"]["planName"]
         return self._ediscovery_data_srcs_obj.add_o365_sdg_data_source(
             server_name=server_name,
             data_source_name=data_source_name,
             plan_name=plan_name,
             datasource_type=datasource_type,
-            **kwargs)
+            **kwargs,
+        )
 
     @property
     def project_id(self):
         """returns the project psuedoclient id
 
-                Returns:
+        Returns:
 
-                    int --  Pseudoclient id associated with this project
+            int --  Pseudoclient id associated with this project
 
         """
         return self._project_id
@@ -778,9 +818,9 @@ class Project():
     def project_name(self):
         """returns the project name
 
-                Returns:
+        Returns:
 
-                    str --  project name
+            str --  project name
 
         """
         return self._project_name
@@ -789,9 +829,9 @@ class Project():
     def project_details(self):
         """returns the project properties
 
-            Returns:
+        Returns:
 
-                dict    --  Containing project properties
+            dict    --  Containing project properties
 
         """
         return self._project_props
@@ -800,9 +840,9 @@ class Project():
     def data_sources_name(self):
         """returns the associated data sources to this project
 
-            Returns:
+        Returns:
 
-                list --  names of data sources
+            list --  names of data sources
 
         """
         return self._ediscovery_data_srcs_obj.data_sources
@@ -811,9 +851,9 @@ class Project():
     def total_data_sources(self):
         """returns the total number of data sources associated with this project
 
-            Returns:
+        Returns:
 
-                int --  total number of data sources
+            int --  total number of data sources
 
         """
         return len(self._ediscovery_data_srcs_obj.data_sources)
@@ -822,9 +862,9 @@ class Project():
     def data_sources(self):
         """returns the EdiscoveryDataSources object associated to this project
 
-            Returns:
+        Returns:
 
-                obj --  Instance of EdiscoveryDataSources Object
+            obj --  Instance of EdiscoveryDataSources Object
 
         """
         return self._ediscovery_data_srcs_obj
@@ -833,11 +873,11 @@ class Project():
     def schedule(self):
         """returns the schedule object for associated schedule
 
-                Returns:
+        Returns:
 
-                    obj     --  Instance of Schedule Class if schedule exists
+            obj     --  Instance of Schedule Class if schedule exists
 
-                    None    --  If no schedule exists
+            None    --  If no schedule exists
 
         """
         return self._schedule_obj
@@ -846,11 +886,12 @@ class Project():
     def sensitive_files_count(self):
         """returns the total sensitive files count on this project
 
-            Returns:
+        Returns:
 
-                int --  Sensitive files count
+            int --  Sensitive files count
 
         """
-        count, _, _ = self.search(criteria=EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS,
-                                  params={"rows":"0"})
+        count, _, _ = self.search(
+            criteria=EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS, params={"rows": "0"}
+        )
         return count

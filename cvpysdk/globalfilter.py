@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -60,7 +58,7 @@ GlobalFilter:
 from .exception import SDKException
 
 
-class GlobalFilters(object):
+class GlobalFilters:
     """
     Class for managing global filters within a CommCell environment.
 
@@ -94,9 +92,9 @@ class GlobalFilters(object):
         self._commcell_object = commcell_object
 
         self._global_filter_dict = {
-            "WINDOWS": 'windowsGlobalFilters',
-            "UNIX": 'unixGlobalFilters',
-            "NAS":  'nasGlobalFilters'
+            "WINDOWS": "windowsGlobalFilters",
+            "UNIX": "unixGlobalFilters",
+            "NAS": "nasGlobalFilters",
         }
 
     def __repr__(self) -> str:
@@ -112,12 +110,10 @@ class GlobalFilters(object):
 
         #ai-gen-doc
         """
-        o_str = "GlobalFilter class instance for CommServ '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        o_str = f"GlobalFilter class instance for CommServ '{self._commcell_object.commserv_name}'"
         return o_str
 
-    def get(self, filter_name: str) -> 'GlobalFilter':
+    def get(self, filter_name: str) -> "GlobalFilter":
         """Retrieve the global filter agent object for the specified filter name.
 
         Args:
@@ -138,21 +134,19 @@ class GlobalFilters(object):
         #ai-gen-doc
         """
         if not isinstance(filter_name, str):
-            raise SDKException('GlobalFilter', '101')
+            raise SDKException("GlobalFilter", "101")
 
         if filter_name.upper() not in self._global_filter_dict:
-            raise SDKException(
-                'GlobalFilter', '102', 'Invalid Global Filter name {0}'.format(filter_name)
-            )
+            raise SDKException("GlobalFilter", "102", f"Invalid Global Filter name {filter_name}")
 
         return GlobalFilter(
             self._commcell_object,
             filter_name.upper(),
-            self._global_filter_dict[filter_name.upper()]
+            self._global_filter_dict[filter_name.upper()],
         )
 
 
-class GlobalFilter(object):
+class GlobalFilter:
     """
     Represents a global filter for a particular agent within a CommCell environment.
 
@@ -192,7 +186,7 @@ class GlobalFilter(object):
         self._filter_name = filter_name
         self._filter_key = filter_key
         self._commcell_object = commcell_object
-        self._GLOBAL_FILTER = self._commcell_object._services['GLOBAL_FILTER']
+        self._GLOBAL_FILTER = self._commcell_object._services["GLOBAL_FILTER"]
         self._content = []
 
         self.refresh()
@@ -200,7 +194,7 @@ class GlobalFilter(object):
     def __repr__(self) -> str:
         """Return a string representation of the GlobalFilter instance.
 
-        This method provides a developer-friendly string that can be used to 
+        This method provides a developer-friendly string that can be used to
         identify the GlobalFilter object during debugging or logging.
 
         Returns:
@@ -212,7 +206,7 @@ class GlobalFilter(object):
             <GlobalFilter object at 0x7f8b2c1d2e80>
         #ai-gen-doc
         """
-        return "Global Filter object for: {0}".format(self._filter_name)
+        return f"Global Filter object for: {self._filter_name}"
 
     def _get_global_filters(self) -> dict:
         """Retrieve the global filters associated with this Commcell.
@@ -228,7 +222,7 @@ class GlobalFilter(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._GLOBAL_FILTER
+            "GET", self._GLOBAL_FILTER
         )
 
         if flag:
@@ -238,7 +232,7 @@ class GlobalFilter(object):
                 return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _initialize_global_filters(self) -> None:
         """Initialize the global filters for the GlobalFilter instance.
@@ -280,41 +274,32 @@ class GlobalFilter(object):
 
         #ai-gen-doc
         """
-        op_dict = {
-            "ADD": 1,
-            "OVERWRITE": 1,
-            "DELETE": 3
-        }
+        op_dict = {"ADD": 1, "OVERWRITE": 1, "DELETE": 3}
 
-        request_json = {
-            self._filter_key: {
-                "opType": op_dict[op_type],
-                "filters": filters_list
-            }
-        }
+        request_json = {self._filter_key: {"opType": op_dict[op_type], "filters": filters_list}}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._GLOBAL_FILTER, request_json
+            "POST", self._GLOBAL_FILTER, request_json
         )
 
         self.refresh()
 
         if flag:
-            if response.json() and 'error' in response.json():
-                if 'errorCode' in response.json()['error']:
-                    error_code = int(response.json()['error']['errorCode'])
+            if response.json() and "error" in response.json():
+                if "errorCode" in response.json()["error"]:
+                    error_code = int(response.json()["error"]["errorCode"])
 
                     if error_code != 0:
                         raise SDKException(
-                            'GlobalFilter', '102', 'Failed to update global filters'
+                            "GlobalFilter", "102", "Failed to update global filters"
                         )
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def content(self) -> str:
@@ -351,21 +336,21 @@ class GlobalFilter(object):
         #ai-gen-doc
         """
         if not isinstance(filters_list, list):
-            raise SDKException('GlobalFilter', '101')
+            raise SDKException("GlobalFilter", "101")
 
         self._update("ADD", filters_list + self.content)
 
     def overwrite(self, filters_list: list) -> None:
         """Overwrite the existing global filters list with a new list of filters.
 
-        Replaces the current set of global filters with the provided list. This operation 
+        Replaces the current set of global filters with the provided list. This operation
         will remove all existing filters and set the filters list to the new values.
 
         Args:
             filters_list: A list of filters to replace the existing global filters.
 
         Raises:
-            SDKException: 
+            SDKException:
                 If the input data type is invalid.
                 If the update of global filter content fails.
                 If the response received is empty.
@@ -380,7 +365,7 @@ class GlobalFilter(object):
         #ai-gen-doc
         """
         if not isinstance(filters_list, list):
-            raise SDKException('GlobalFilter', '101')
+            raise SDKException("GlobalFilter", "101")
 
         self._update("OVERWRITE", filters_list)
 

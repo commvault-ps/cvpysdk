@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -80,8 +78,5 @@ class System:
         #ai-gen-doc
         """
         self._commcell_object._set_gxglobalparam_value(
-            {
-                "name": "Gui timeout",
-                "value": str(value)
-            }
+            {"name": "Gui timeout", "value": str(value)}
         )

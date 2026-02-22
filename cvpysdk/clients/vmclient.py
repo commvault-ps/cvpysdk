@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -35,10 +33,12 @@ full_vm_restore_out_of_place()          --  Performs out of place full vm restor
 
 import copy
 from typing import Any, Dict, Optional
+
 from cvpysdk.commcell import Commcell
-from ..job import Job
-from ..exception import SDKException
+
 from ..client import Client
+from ..job import Job
+
 
 class VMClient(Client):
     """
@@ -58,7 +58,9 @@ class VMClient(Client):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', client_name: str, client_id: Optional[str] = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", client_name: str, client_id: Optional[str] = None
+    ) -> None:
         """Initialize a VMClient instance with Commcell connection and client details.
 
         Args:
@@ -73,7 +75,7 @@ class VMClient(Client):
 
         #ai-gen-doc
         """
-        super(VMClient, self).__init__(commcell_object, client_name, client_id)
+        super().__init__(commcell_object, client_name, client_id)
 
     def _return_parent_subclient(self) -> Optional[Any]:
         """Retrieve the parent subclient for a VSA client if it is backed up.
@@ -94,13 +96,19 @@ class VMClient(Client):
 
         #ai-gen-doc
         """
-        _subclient_entity = copy.deepcopy(self.properties.get('vmStatusInfo', {}).get('vsaSubClientEntity'))
+        _subclient_entity = copy.deepcopy(
+            self.properties.get("vmStatusInfo", {}).get("vsaSubClientEntity")
+        )
         if _subclient_entity:
-            _parent_client = self._commcell_object.clients.get(_subclient_entity.get('clientName'))
-            _parent_agent = _parent_client.agents.get(_subclient_entity.get('appName'))
-            _parent_instance = _parent_agent.instances.get(_subclient_entity.get('instanceName'))
-            _parent_backupset = _parent_instance.backupsets.get(_subclient_entity.get('backupsetName'))
-            _parent_subclient = _parent_backupset.subclients.get(_subclient_entity.get('subclientName'))
+            _parent_client = self._commcell_object.clients.get(_subclient_entity.get("clientName"))
+            _parent_agent = _parent_client.agents.get(_subclient_entity.get("appName"))
+            _parent_instance = _parent_agent.instances.get(_subclient_entity.get("instanceName"))
+            _parent_backupset = _parent_instance.backupsets.get(
+                _subclient_entity.get("backupsetName")
+            )
+            _parent_subclient = _parent_backupset.subclients.get(
+                _subclient_entity.get("subclientName")
+            )
             return _parent_subclient
         else:
             return None
@@ -143,13 +151,15 @@ class VMClient(Client):
         if _child_jobs:
             _child_job = None
             for _job in _child_jobs:
-                if self.vm_guid == _job['GUID']:
-                    _child_job = _job['jobID']
+                if self.vm_guid == _job["GUID"]:
+                    _child_job = _job["jobID"]
                     break
             if not _child_job:
                 return None
             _child_job_obj = Job(self._commcell_object, _child_job)
-            return _child_job_obj.details.get('jobDetail', {}).get('generalInfo', {}).get('subclient')
+            return (
+                _child_job_obj.details.get("jobDetail", {}).get("generalInfo", {}).get("subclient")
+            )
         else:
             return None
 
@@ -184,15 +194,18 @@ class VMClient(Client):
         """
         if self.vm_guid:
             _sub_client_obj = self._return_parent_subclient()
-            kwargs.pop('vm_to_restore', None)
-            if self.properties.get('clientProps', {}).get('isIndexingV2VSA'):
-                _child_details = self._child_job_subclient_details(self.properties['vmStatusInfo']['vmBackupJob'])
-                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                          v2_details=_child_details,
-                                                                          **kwargs)
+            kwargs.pop("vm_to_restore", None)
+            if self.properties.get("clientProps", {}).get("isIndexingV2VSA"):
+                _child_details = self._child_job_subclient_details(
+                    self.properties["vmStatusInfo"]["vmBackupJob"]
+                )
+                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(
+                    vm_to_restore=self.name, v2_details=_child_details, **kwargs
+                )
             else:
-                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                          **kwargs)
+                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(
+                    vm_to_restore=self.name, **kwargs
+                )
             return vm_restore_job
         else:
             return None
@@ -231,15 +244,18 @@ class VMClient(Client):
         """
         if self.vm_guid:
             _sub_client_obj = self._return_parent_subclient()
-            kwargs.pop('vm_to_restore', None)
-            if self.properties.get('clientProps', {}).get('isIndexingV2VSA'):
-                _child_details = self._child_job_subclient_details(self.properties['vmStatusInfo']['vmBackupJob'])
-                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                              v2_details=_child_details,
-                                                                              **kwargs)
+            kwargs.pop("vm_to_restore", None)
+            if self.properties.get("clientProps", {}).get("isIndexingV2VSA"):
+                _child_details = self._child_job_subclient_details(
+                    self.properties["vmStatusInfo"]["vmBackupJob"]
+                )
+                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(
+                    vm_to_restore=self.name, v2_details=_child_details, **kwargs
+                )
             else:
-                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                              **kwargs)
+                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(
+                    vm_to_restore=self.name, **kwargs
+                )
             return vm_restore_job
         else:
             return None

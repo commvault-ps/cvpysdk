@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -95,7 +93,7 @@ Store:
     config_only_move_partition()    - performs config-only ddb move operation on specified substore
 
     move_partition()            - performs normal ddb move operation on specified substore
-    
+
     add_partition()     -       Adding a partition to this store
 
 Attributes
@@ -145,8 +143,6 @@ Substore:
 
     mark_for_recovery()         - marks a substore for recovery
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from enum import Enum
 
@@ -161,17 +157,17 @@ class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE = 16777216
 
 
-class DeduplicationEngines(object):
+class DeduplicationEngines:
     """Class for getting all the deduplication engines associated with the commcell."""
 
     def __init__(self, commcell_object):
         """Initialize object of the DeduplicationEngines class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object)  --  instance of the Commcell class
 
-            Returns:
-                object - instance of the StoragePolicies class
+        Returns:
+            object - instance of the StoragePolicies class
         """
         self._commcell_object = commcell_object
 
@@ -181,12 +177,12 @@ class DeduplicationEngines(object):
     def __str__(self):
         """Representation string consisting of all deduplication engines of the commcell.
 
-            Returns:
-                str - string of all the deduplication associated with the commcell
+        Returns:
+            str - string of all the deduplication associated with the commcell
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Deduplication engine')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Deduplication engine")
         for index, engine in enumerate(self._engines):
-            sub_str = '{:^5}\t{}/{}\n'.format(index + 1, engine[0], engine[1])
+            sub_str = f"{index + 1:^5}\t{engine[0]}/{engine[1]}\n"
             representation_string += sub_str
         return representation_string.strip()
 
@@ -207,28 +203,19 @@ class DeduplicationEngines(object):
         """
         request_json = {
             "EVGui_DDBEnginesReq": {
-                "filterOptions": {
-                    "propertyLevel": 1
-                },
-                "storagepolicy": {
-                    "storagePolicyId": 0
-                },
-                "spCopy": {
-                    "copyId": 0,
-                    "storagePolicyId": 0
-                },
-                "store": {
-                    "type": 115
-                },
-                "flags": 0
+                "filterOptions": {"propertyLevel": 1},
+                "storagepolicy": {"storagePolicyId": 0},
+                "spCopy": {"copyId": 0, "storagePolicyId": 0},
+                "store": {"type": 115},
+                "flags": 0,
             }
         }
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
-            if response and response.json() and 'engines' in response.json():
-                engines = response.json()['engines']
+            if response and response.json() and "engines" in response.json():
+                engines = response.json()["engines"]
 
                 if engines == []:
                     return {}
@@ -236,15 +223,15 @@ class DeduplicationEngines(object):
                 engines_dict = {}
 
                 for engine in engines:
-                    temp_sp_name = engine['sp']['name'].lower()
-                    temp_sp_id = str(engine['sp']['id']).lower()
-                    temp_copy_name = engine['copy']['name'].lower()
-                    temp_copy_id = str(engine['copy']['id']).lower()
+                    temp_sp_name = engine["sp"]["name"].lower()
+                    temp_sp_id = str(engine["sp"]["id"]).lower()
+                    temp_copy_name = engine["copy"]["name"].lower()
+                    temp_copy_id = str(engine["copy"]["id"]).lower()
                     engines_dict[(temp_sp_name, temp_copy_name)] = [temp_sp_id, temp_copy_id]
                 return engines_dict
             return {}
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     @property
     def all_engines(self):
@@ -258,23 +245,23 @@ class DeduplicationEngines(object):
     def has_engine(self, storage_policy_name, copy_name):
         """Checks if a deduplication engine exists in the commcell with the input storage policy and copy name.
 
-            Args:
-                storage_policy_name (str)  --  name of the storage policy
+        Args:
+            storage_policy_name (str)  --  name of the storage policy
 
-                copy_name (str)  --  name of the storage policy copy
+            copy_name (str)  --  name of the storage policy copy
 
-            Returns:
-                bool - boolean output whether the deduplication engine exists in the commcell or not
+        Returns:
+            bool - boolean output whether the deduplication engine exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the storage policy and copy name arguments are not string
+        Raises:
+            SDKException:
+                if type of the storage policy and copy name arguments are not string
         """
-        
+
         self.refresh()
-        
+
         if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
 
     def get(self, storage_policy_name, copy_name):
@@ -296,24 +283,26 @@ class DeduplicationEngines(object):
                 if no engine exists with given storage policy and copy name
         """
         if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         storage_policy_name = storage_policy_name.lower()
         copy_name = copy_name.lower()
 
         if self.has_engine(storage_policy_name, copy_name):
-            return DeduplicationEngine(
-                self._commcell_object, storage_policy_name, copy_name
-            )
+            return DeduplicationEngine(self._commcell_object, storage_policy_name, copy_name)
         raise SDKException(
-            'Storage', '102', f'No dedupe engine exists with name: {storage_policy_name}/{copy_name}'
+            "Storage",
+            "102",
+            f"No dedupe engine exists with name: {storage_policy_name}/{copy_name}",
         )
 
 
-class DeduplicationEngine(object):
+class DeduplicationEngine:
     """Class to get all stores associated for deduplication engine"""
 
-    def __init__(self, commcell_object, storage_policy_name, copy_name, storage_policy_id=None, copy_id=None):
+    def __init__(
+        self, commcell_object, storage_policy_name, copy_name, storage_policy_id=None, copy_id=None
+    ):
         """Initialise the DeduplicationEngine class instance.
 
         Args:
@@ -336,7 +325,7 @@ class DeduplicationEngine(object):
             self._initialize_policy_and_copy_id()
         else:
             if not isinstance(storage_policy_id, int) and not isinstance(copy_id, int):
-                raise SDKException('Storage', '101')
+                raise SDKException("Storage", "101")
             self._storage_policy_id = storage_policy_id
             self._copy_id = copy_id
         self.refresh()
@@ -344,28 +333,32 @@ class DeduplicationEngine(object):
     def __str__(self):
         """Representation string consisting of deduplication engine.
 
-            Returns:
-                str - string of all the stores associated with the deduplication engine
+        Returns:
+            str - string of all the stores associated with the deduplication engine
         """
-        representation_string = '{:^5}\t{:^20}\t{}\n\n'.format('Store ID.', 'Store', 'Sealed Status')
+        representation_string = "{:^5}\t{:^20}\t{}\n\n".format(
+            "Store ID.", "Store", "Sealed Status"
+        )
 
         for store_id in self._stores:
-            status = 'sealed' if self._stores[store_id]['sealedTime'] else 'active'
-            sub_str = '{:^5}\t{:20}\t{}\n'.format(store_id, self._stores[store_id]['storeName'], status)
+            status = "sealed" if self._stores[store_id]["sealedTime"] else "active"
+            sub_str = "{:^5}\t{:20}\t{}\n".format(
+                store_id, self._stores[store_id]["storeName"], status
+            )
             representation_string += sub_str
 
         return representation_string.strip()
 
     def __repr__(self):
         """Representation string for the instance of the DeduplicationEngine class."""
-        return "DeduplicationEngine class instance for Engine: '{0}/{1}'".format(
-            self._storage_policy_name, self._copy_name
-        )
+        return f"DeduplicationEngine class instance for Engine: '{self._storage_policy_name}/{self._copy_name}'"
 
     def _initialize_policy_and_copy_id(self):
         """initializes the variables for storage policy and copy id"""
         deduplication_engines = DeduplicationEngines(self._commcell_object)
-        policy_and_copy_id = deduplication_engines._engines[(self._storage_policy_name, self._copy_name)]
+        policy_and_copy_id = deduplication_engines._engines[
+            (self._storage_policy_name, self._copy_name)
+        ]
         self._storage_policy_id = policy_and_copy_id[0]
         self._copy_id = policy_and_copy_id[1]
 
@@ -384,32 +377,23 @@ class DeduplicationEngine(object):
         """
         request_json = {
             "EVGui_DDBEnginesReq": {
-                "filterOptions": {
-                    "propertyLevel": 20
-                },
-                "storagepolicy": {
-                    "storagePolicyId": self.storage_policy_id
-                },
-                "spCopy": {
-                    "copyId": self.copy_id,
-                    "storagePolicyId": self.storage_policy_id
-                },
-                "store": {
-                    "type": 115
-                },
-                "flags": 0
+                "filterOptions": {"propertyLevel": 20},
+                "storagepolicy": {"storagePolicyId": self.storage_policy_id},
+                "spCopy": {"copyId": self.copy_id, "storagePolicyId": self.storage_policy_id},
+                "store": {"type": 115},
+                "flags": 0,
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
             if response and response.json():
                 return response.json()
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def _initialize_engine_properties(self):
         """initializes deduplication engine properties"""
@@ -418,11 +402,11 @@ class DeduplicationEngine(object):
 
     def _initialize_stores(self):
         """initializes all the stores presnet in deduplication engine"""
-        for store in self._engine_properties.get('engines'):
-            temp_sp_name = store['sp']['name'].lower()
-            temp_copy_name = store['copy']['name'].lower()
+        for store in self._engine_properties.get("engines"):
+            temp_sp_name = store["sp"]["name"].lower()
+            temp_copy_name = store["copy"]["name"].lower()
             if (temp_sp_name, temp_copy_name) == (self._storage_policy_name, self._copy_name):
-                self._stores[store['storeId']] = store
+                self._stores[store["storeId"]] = store
 
     def refresh(self):
         """refreshes all the deduplication engine properties"""
@@ -433,8 +417,8 @@ class DeduplicationEngine(object):
         """returns list of all stores present in deduplication engines"""
         stores = []
         for store_id in self._stores:
-            status = 'sealed' if self._stores[store_id]['sealedTime'] else 'active'
-            stores.append([store_id, self._stores[store_id]['storeName'], status])
+            status = "sealed" if self._stores[store_id]["sealedTime"] else "active"
+            stores.append([store_id, self._stores[store_id]["storeName"], status])
         return stores
 
     @property
@@ -460,7 +444,7 @@ class DeduplicationEngine(object):
                 if type of the store id argument is not int
         """
         if not isinstance(store_id, int):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         return self._stores and store_id in self._stores
 
     def get(self, store_id):
@@ -479,16 +463,16 @@ class DeduplicationEngine(object):
             if no store exists with given store id
         """
         if not isinstance(store_id, int):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if self.has_store(store_id):
-            return Store(self._commcell_object, self._storage_policy_name, self._copy_name, store_id)
-        raise SDKException(
-            'Storage', '102', f'No store exists with id: {store_id}'
-        )
+            return Store(
+                self._commcell_object, self._storage_policy_name, self._copy_name, store_id
+            )
+        raise SDKException("Storage", "102", f"No store exists with id: {store_id}")
 
 
-class Store(object):
+class Store:
     """Class for performing deduplication store level operations for deduplication engine"""
 
     def __init__(self, commcell_object, storage_policy_name, copy_name, store_id):
@@ -517,29 +501,34 @@ class Store(object):
     def __str__(self):
         """Representation string consisting of deduplication store.
 
-            Returns:
-                str - string of all the substores associated with the deduplication store
+        Returns:
+            str - string of all the substores associated with the deduplication store
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('SubStore ID.', 'SubStoreList')
+        representation_string = "{:^5}\t{:^20}\n\n".format("SubStore ID.", "SubStoreList")
 
         for substore_id in self._substores:
-            sub_str = '{:^5}\t[{}]{}\n'.format(substore_id, self._substores[substore_id]['MediaAgent']['name'],
-                                               self._substores[substore_id]['Path'])
+            sub_str = "{:^5}\t[{}]{}\n".format(
+                substore_id,
+                self._substores[substore_id]["MediaAgent"]["name"],
+                self._substores[substore_id]["Path"],
+            )
             representation_string += sub_str
 
         return representation_string.strip()
 
     def __repr__(self):
         """Representation string for the instance of the Store class."""
-        return "Store class instance for Deduplication Store ID: '{0}'".format(self._store_id)
+        return f"Store class instance for Deduplication Store ID: '{self._store_id}'"
 
     def _initialize_store_properties(self):
         """initializes the deduplication store proerties"""
-        deduplication_engine = DeduplicationEngine(self._commcell_object, self._storage_policy_name, self._copy_name)
+        deduplication_engine = DeduplicationEngine(
+            self._commcell_object, self._storage_policy_name, self._copy_name
+        )
         self._store_properties = deduplication_engine._stores[self._store_id]
-        self._extended_flags = self._store_properties['storeExtendedFlags']
-        self._dedupe_flags = self._store_properties['dedupeFlags']
-        self._store_flags = self._store_properties['storeFlags']
+        self._extended_flags = self._store_properties["storeExtendedFlags"]
+        self._dedupe_flags = self._store_properties["dedupeFlags"]
+        self._store_flags = self._store_properties["storeFlags"]
         self._initialize_substores()
 
     def _get_substores(self):
@@ -555,28 +544,23 @@ class Store(object):
 
                     if response is not success
         """
-        request_json = {
-            "EVGui_SubStoreListReq": {
-                "commcellId": 2,
-                "storeId": self.store_id
-            }
-        }
+        request_json = {"EVGui_SubStoreListReq": {"commcellId": 2, "storeId": self.store_id}}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
             if response.json():
                 return response.json()
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def _initialize_substores(self):
         """initialisez all the substores present in a deduplication store"""
         substre_raw = self._get_substores()
-        for substore in substre_raw.get('subStoreList'):
-            self._substores[substore['subStoreId']] = substore
+        for substore in substre_raw.get("subStoreList"):
+            self._substores[substore["subStoreId"]] = substore
 
     def refresh(self):
         """refreshes all the deduplication store properties"""
@@ -595,7 +579,7 @@ class Store(object):
         payload = None
 
         if not isinstance(path, str):
-            raise SDKException("Storage","101")
+            raise SDKException("Storage", "101")
 
         if not isinstance(media_agent, str) and not isinstance(media_agent, MediaAgent):
             raise SDKException("Storage", "101")
@@ -603,25 +587,30 @@ class Store(object):
         if isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
-        payload = """
-        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15">
-        <SIDBStore SIDBStoreId="{1}"/>
+        payload = f"""
+        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{self.copy_id}" operation="15">
+        <SIDBStore SIDBStoreId="{self._store_id}"/>
         <dedupconfigItem commCellId="0">
-        <maInfoList><clientInfo id="{2}" name="{3}"/>
-        <subStoreList><accessPath path="{4}"/>
+        <maInfoList><clientInfo id="{media_agent.media_agent_id}" name="{media_agent.media_agent_name}"/>
+        <subStoreList><accessPath path="{path}"/>
         </subStoreList></maInfoList></dedupconfigItem>
         </EVGui_ParallelDedupConfigReq>
-        """.format(self.copy_id, self._store_id, media_agent.media_agent_id, media_agent.media_agent_name, path)
+        """
 
         self._commcell_object._qoperation_execute(payload)
-        
+
     @property
     def all_substores(self):
         """returns list of all substores present on a deduplication store"""
         substores = []
         for substore_id in self._substores:
-            substores.append([substore_id, self._substores[substore_id]['Path'],
-                              self._substores[substore_id]['MediaAgent']['name']])
+            substores.append(
+                [
+                    substore_id,
+                    self._substores[substore_id]["Path"],
+                    self._substores[substore_id]["MediaAgent"]["name"],
+                ]
+            )
         return substores
 
     def has_substore(self, substore_id):
@@ -637,7 +626,7 @@ class Store(object):
                 if type of the store id argument is not int
         """
         if not isinstance(substore_id, int):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
         return self._substores and substore_id in self._substores
 
     def get(self, substore_id):
@@ -656,14 +645,17 @@ class Store(object):
             if no substore exists with given substore id
         """
         if not isinstance(substore_id, int):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if self.has_substore(substore_id):
-            return SubStore(self._commcell_object, self._storage_policy_name, self._copy_name, self._store_id,
-                            substore_id)
-        raise SDKException(
-            'Storage', '102', f'No substore exists with id: {substore_id}'
-        )
+            return SubStore(
+                self._commcell_object,
+                self._storage_policy_name,
+                self._copy_name,
+                self._store_id,
+                substore_id,
+            )
+        raise SDKException("Storage", "102", f"No substore exists with id: {substore_id}")
 
     @property
     def store_flags(self):
@@ -674,7 +666,7 @@ class Store(object):
     @property
     def store_name(self):
         """returns the store display name"""
-        return self._store_properties.get('storeName')
+        return self._store_properties.get("storeName")
 
     @property
     def store_id(self):
@@ -684,12 +676,12 @@ class Store(object):
     @property
     def version(self):
         """returns deduplication store version"""
-        return self._store_properties.get('ddbVersion')
+        return self._store_properties.get("ddbVersion")
 
     @property
     def status(self):
         """returns the store display name"""
-        return self._store_properties.get('status')
+        return self._store_properties.get("status")
 
     @property
     def storage_policy_name(self):
@@ -704,7 +696,7 @@ class Store(object):
     @property
     def copy_id(self):
         """returns copy id the store is associated to"""
-        return self._store_properties.get('copy').get('id')
+        return self._store_properties.get("copy").get("id")
 
     @property
     def enable_garbage_collection(self):
@@ -738,17 +730,17 @@ class Store(object):
                     "extendedFlags": self._extended_flags,
                     "flags": new_value,
                     "minObjSizeKB": 50,
-                    "oldestEligibleObjArchiveTime": -1
+                    "oldestEligibleObjArchiveTime": -1,
                 },
                 "appTypeGroupId": 0,
                 "commCellId": 2,
                 "copyId": self.copy_id,
-                "operation": 3
+                "operation": 3,
             }
         }
         output = self._commcell_object.qoperation_execute(request_json)
-        if output['error']['errorString'] != '':
-            raise SDKException('Storage', '102', output['error']['errorString'])
+        if output["error"]["errorString"] != "":
+            raise SDKException("Storage", "102", output["error"]["errorString"])
 
         self.refresh()
 
@@ -773,12 +765,12 @@ class Store(object):
                         "extendedFlags": new_value,
                         "flags": self._store_flags,
                         "minObjSizeKB": 50,
-                        "oldestEligibleObjArchiveTime": -1
+                        "oldestEligibleObjArchiveTime": -1,
                     },
                     "appTypeGroupId": 0,
                     "commCellId": 2,
                     "copyId": self.copy_id,
-                    "operation": 3
+                    "operation": 3,
                 }
             }
             self._commcell_object.qoperation_execute(request_json)
@@ -798,7 +790,6 @@ class Store(object):
               value (bool) -- value to enable journal pruning
         """
         if not self._extended_flags & 8 and value or self.version == -1:
-
             if value:
                 new_value = self._extended_flags | 8
             else:
@@ -813,29 +804,27 @@ class Store(object):
                         "extendedFlags": new_value,
                         "flags": self._store_flags,
                         "minObjSizeKB": 50,
-                        "oldestEligibleObjArchiveTime": -1
+                        "oldestEligibleObjArchiveTime": -1,
                     },
                     "appTypeGroupId": 0,
                     "commCellId": 2,
                     "copyId": self.copy_id,
-                    "operation": 3
+                    "operation": 3,
                 }
             }
             self._commcell_object.qoperation_execute(request_json)
             self.refresh()
         elif self._extended_flags & 8 and value:
-            raise SDKException("Response", '500', "Journal pruning is already enabled.")
+            raise SDKException("Response", "500", "Journal pruning is already enabled.")
         else:
-            raise SDKException("Response", '500', "Journal pruning once enabled cannot be disabled.")
+            raise SDKException(
+                "Response", "500", "Journal pruning once enabled cannot be disabled."
+            )
 
     def seal_deduplication_database(self):
-        """ Seals the deduplication database """
+        """Seals the deduplication database"""
 
-        request_json = {
-                        "App_SealSIDBStoreReq":{
-                                "SidbStoreId": self.store_id
-                            }
-                        }
+        request_json = {"App_SealSIDBStoreReq": {"SidbStoreId": self.store_id}}
         self._commcell_object._qoperation_execute(request_json)
 
     def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
@@ -863,12 +852,12 @@ class Store(object):
         self.refresh()
         substore_list = ""
         for substore in self.all_substores:
-            if self._substores.get(substore[0]).get('status') == 1:
+            if self._substores.get(substore[0]).get("status") == 1:
                 substore_list += f"<SubStoreIdList val='{substore[0]}' />"
 
         if not substore_list:
-            o_str = 'No substore is eligible for recon.'
-            raise SDKException('Storage', '102', o_str)
+            o_str = "No substore is eligible for recon."
+            raise SDKException("Storage", "102", o_str)
 
         request_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <TMMsg_CreateTaskReq>
@@ -913,23 +902,29 @@ class Store(object):
                   </taskInfo>
                 </TMMsg_CreateTaskReq>"""
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_xml
         )
         if flag:
             if response and response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'DDB recon job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
-                raise SDKException('Storage', '112')
-            raise SDKException('Response', '102')
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'DDB recon job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
+                raise SDKException("Storage", "112")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max",
-                               defragmentation=True):
+    def run_space_reclaimation(
+        self,
+        level=3,
+        clean_orphan_data=False,
+        use_scalable_resource=True,
+        num_streams="max",
+        defragmentation=True,
+    ):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -961,13 +956,13 @@ class Store(object):
                 if response in not success
         """
         if not (isinstance(level, int)) and level not in range(1, 4):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if not isinstance(use_scalable_resource, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         if not isinstance(defragmentation, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         use_max_streams = "true"
         max_num_of_streams = 0
@@ -975,34 +970,24 @@ class Store(object):
             max_num_of_streams = int(num_streams)
             use_max_streams = "false"
 
-        level_map = {
-            1: 80,
-            2: 60,
-            3: 40,
-            4: 20
-        }
+        level_map = {1: 80, 2: 60, 3: 40, 4: 20}
         clean_orphan_data = str(clean_orphan_data).lower()
         request_json = {
             "TMMsg_CreateTaskReq": {
                 "taskInfo": {
                     "task": {
-                        "taskFlags": {
-                            "disabled": "false"
-                        },
+                        "taskFlags": {"disabled": "false"},
                         "policyType": "DATA_PROTECTION",
                         "taskType": "IMMEDIATE",
-                        "initiatedFrom": "COMMANDLINE"
+                        "initiatedFrom": "COMMANDLINE",
                     },
                     "associations": {
                         "copyName": self.copy_name,
                         "storagePolicyName": self.storage_policy_name,
-                        "sidbStoreName": self.store_name
+                        "sidbStoreName": self.store_name,
                     },
                     "subTasks": {
-                        "subTask": {
-                            "subTaskType": "ADMIN",
-                            "operationType": "ARCHIVE_CHECK"
-                        },
+                        "subTask": {"subTaskType": "ADMIN", "operationType": "ARCHIVE_CHECK"},
                         "options": {
                             "backupOpts": {
                                 "mediaOpt": {
@@ -1010,10 +995,8 @@ class Store(object):
                                         "useMaximumStreams": use_max_streams,
                                         "maxNumberOfStreams": max_num_of_streams,
                                         "allCopies": "true",
-                                        "mediaAgent": {
-                                            "mediaAgentName": ""
-                                        },
-                                        "useScallableResourceManagement": f"{use_scalable_resource}"
+                                        "mediaAgent": {"mediaAgentName": ""},
+                                        "useScallableResourceManagement": f"{use_scalable_resource}",
                                     }
                                 }
                             },
@@ -1023,34 +1006,40 @@ class Store(object):
                                     "backupLevel": "FULL",
                                     "defragmentationPercentage": level_map.get(level),
                                     "ocl": clean_orphan_data,
-                                    "runDefrag": defragmentation
+                                    "runDefrag": defragmentation,
                                 }
-                            }
+                            },
                         },
-                        "subTaskOperation": "OVERWRITE"
-                    }
+                        "subTaskOperation": "OVERWRITE",
+                    },
                 }
             }
         }
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
+                    error_message = response.json()["errorMessage"]
 
-                    o_str = 'DDB space reclaimation job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
-                raise SDKException('Storage', '113')
-            raise SDKException('Response', '102')
+                    o_str = f'DDB space reclaimation job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
+                raise SDKException("Storage", "113")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
-    def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=True, max_streams=0, total_jobs_to_process=1000):
+    def run_ddb_verification(
+        self,
+        incremental_verification=True,
+        quick_verification=True,
+        use_scalable_resource=True,
+        max_streams=0,
+        total_jobs_to_process=1000,
+    ):
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1082,42 +1071,37 @@ class Store(object):
                 if response in not success
         """
 
-        verification_type = 'INCREMENTAL'
+        verification_type = "INCREMENTAL"
         if not incremental_verification:
-            verification_type = 'FULL'
+            verification_type = "FULL"
 
-        verification_option = 'QUICK_DDB_VERIFICATION'
+        verification_option = "QUICK_DDB_VERIFICATION"
         if not quick_verification:
-            verification_option = 'DDB_AND_DATA_VERIFICATION'
+            verification_option = "DDB_AND_DATA_VERIFICATION"
 
         use_max_streams = True
         if max_streams != 0:
             use_max_streams = False
 
         if not isinstance(use_scalable_resource, bool):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         request_json = {
             "TMMsg_CreateTaskReq": {
                 "taskInfo": {
                     "task": {
-                        "taskFlags": {
-                            "disabled": "false"
-                        },
+                        "taskFlags": {"disabled": "false"},
                         "policyType": "DATA_PROTECTION",
                         "taskType": "IMMEDIATE",
-                        "initiatedFrom": "COMMANDLINE"
+                        "initiatedFrom": "COMMANDLINE",
                     },
                     "associations": {
                         "copyName": self.copy_name,
                         "storagePolicyName": self.storage_policy_name,
-                        "sidbStoreName": self.store_name
+                        "sidbStoreName": self.store_name,
                     },
                     "subTasks": {
-                        "subTask": {
-                            "subTaskType": "ADMIN",
-                            "operationType": "ARCHIVE_CHECK"
-                        },
+                        "subTask": {"subTaskType": "ADMIN", "operationType": "ARCHIVE_CHECK"},
                         "options": {
                             "backupOpts": {
                                 "mediaOpt": {
@@ -1126,40 +1110,38 @@ class Store(object):
                                         "maxNumberOfStreams": f"{max_streams}",
                                         "totalJobsToProcess": total_jobs_to_process,
                                         "allCopies": "true",
-                                        "mediaAgent": {
-                                            "mediaAgentName": ""
-                                        },
-                                        "useScallableResourceManagement": f"{use_scalable_resource}"
+                                        "mediaAgent": {"mediaAgentName": ""},
+                                        "useScallableResourceManagement": f"{use_scalable_resource}",
                                     }
                                 }
                             },
                             "adminOpts": {
                                 "archiveCheckOption": {
                                     "ddbVerificationLevel": verification_option,
-                                    "backupLevel": verification_type
+                                    "backupLevel": verification_type,
                                 }
-                            }
+                            },
                         },
-                        "subTaskOperation": "OVERWRITE"
-                    }
+                        "subTaskOperation": "OVERWRITE",
+                    },
                 }
             }
         }
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
             if response and response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'DDB verification job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
-                raise SDKException('Storage', '108')
-            raise SDKException('Response', '102')
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'DDB verification job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
+                raise SDKException("Storage", "108")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def config_only_move_partition(self, substoreid, dest_path, dest_ma_name):
         """
@@ -1189,25 +1171,25 @@ class Store(object):
                 "storeId": self.store_id,
                 "subStoreId": substoreid,
                 "targetMAId": dest_ma_id,
-                "sourcePath": substore.path
+                "sourcePath": substore.path,
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
 
         if flag:
             if response and response.json():
                 if "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'DDB move job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
                 else:
                     return flag
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def move_partition(self, substoreid, dest_path, dest_ma_name):
         """
@@ -1238,13 +1220,7 @@ class Store(object):
         request_json = {
             "TMMsg_CreateTaskReq": {
                 "taskInfo": {
-                    "associations": [
-                        {
-                            "sidbStoreId": self.store_id,
-                            "_type_": 18,
-                            "appName": ""
-                        }
-                    ],
+                    "associations": [{"sidbStoreId": self.store_id, "_type_": 18, "appName": ""}],
                     "task": {
                         "ownerId": 1,
                         "taskType": 1,
@@ -1253,22 +1229,15 @@ class Store(object):
                         "initiatedFrom": 1,
                         "policyType": 0,
                         "taskId": 0,
-                        "taskFlags": {
-                            "disabled": False
-                        }
+                        "taskFlags": {"disabled": False},
                     },
                     "subTasks": [
                         {
                             "subTaskOperation": 1,
-                            "subTask": {
-                                "subTaskType": 1,
-                                "operationType": 5013
-                            },
+                            "subTask": {"subTaskType": 1, "operationType": 5013},
                             "options": {
                                 "adminOpts": {
-                                    "contentIndexingOption": {
-                                        "subClientBasedAnalytics": False
-                                    },
+                                    "contentIndexingOption": {"subClientBasedAnalytics": False},
                                     "libraryOption": {
                                         "operation": 20,
                                         "ddbMoveOption": {
@@ -1282,51 +1251,47 @@ class Store(object):
                                                     "subStoreId": substoreid,
                                                     "destMediaAgent": {
                                                         "name": dest_ma_name,
-                                                        "id": dest_ma_id
+                                                        "id": dest_ma_id,
                                                     },
                                                     "srcMediaAgent": {
                                                         "name": substore.media_agent,
-                                                        "id": substore.media_agent_id
-                                                    }
+                                                        "id": substore.media_agent_id,
+                                                    },
                                                 }
-                                            ]
-                                        }
-                                    }
+                                            ],
+                                        },
+                                    },
                                 },
                                 "restoreOptions": {
-                                    "virtualServerRstOption": {
-                                        "isBlockLevelReplication": False
-                                    },
-                                    "commonOptions": {
-                                        "syncRestore": False
-                                    }
-                                }
-                            }
+                                    "virtualServerRstOption": {"isBlockLevelReplication": False},
+                                    "commonOptions": {"syncRestore": False},
+                                },
+                            },
                         }
-                    ]
+                    ],
                 }
             }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._commcell_object._services["EXECUTE_QCOMMAND"], request_json
         )
 
         if flag:
             if response and response.json():
                 if "jobIds" in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Storage', '102', o_str)
-                raise SDKException('Storage', '108')
-            raise SDKException('Response', '102')
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'DDB move job failed\nError: "{error_message}"'
+                    raise SDKException("Storage", "102", o_str)
+                raise SDKException("Storage", "108")
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
 
-class SubStore(object):
+class SubStore:
     """Class to performing substore level operations for Deduplication engine"""
 
     def __init__(self, commcell_object, storage_policy_name, copy_name, store_id, substore_id):
@@ -1355,17 +1320,17 @@ class SubStore(object):
 
     def __repr__(self):
         """Representation string for the instance of the SubStore class."""
-        return "SubStore class instance for Deduplication Substore ID: '{0}'".format(
-            self._substore_id
-        )
+        return f"SubStore class instance for Deduplication Substore ID: '{self._substore_id}'"
 
     def _initialize_substore_properties(self):
         """Initialize substore properties for the substore on a deduplication store"""
-        store = Store(self._commcell_object, self._storage_policy_name, self._copy_name, self._store_id)
+        store = Store(
+            self._commcell_object, self._storage_policy_name, self._copy_name, self._store_id
+        )
         self._substore_properties = store._substores[self._substore_id]
-        self._path = self._substore_properties['Path']
-        self._media_agent = self._substore_properties['MediaAgent']['name']
-        self._media_agent_id = self._substore_properties['MediaAgent']['id']
+        self._path = self._substore_properties["Path"]
+        self._media_agent = self._substore_properties["MediaAgent"]["name"]
+        self._media_agent_id = self._substore_properties["MediaAgent"]["id"]
 
     def refresh(self):
         """refresh the properties of a substore"""
@@ -1376,13 +1341,11 @@ class SubStore(object):
         request_json = {
             "EVGui_IdxSIDBSubStoreOpReq": {
                 "info": {
-                    "mediaAgent": {
-                        "name": self.media_agent
-                    },
+                    "mediaAgent": {"name": self.media_agent},
                     "SIDBStoreId": self.store_id,
                     "SubStoreId": self.substore_id,
                     "opType": 1,
-                    "path": self.path
+                    "path": self.path,
                 }
             }
         }

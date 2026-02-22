@@ -206,22 +206,23 @@ _Roles Attributes
 
     **roles_data**                      --  returns the list of details of all cloud roles
     """
-import json
 
 import enum
 import http.client as httplib
+import json
 from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from .exception import SDKException
 from .datacube.constants import IndexServerConstants
+from .exception import SDKException
 
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     import requests
+
     from cvpysdk.commcell import Commcell
 
 
-class IndexServers(object):
+class IndexServers:
     """
     Manages all index servers associated with a CommCell environment.
 
@@ -245,7 +246,7 @@ class IndexServers(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize an IndexServers object with the given Commcell connection.
 
         Args:
@@ -277,11 +278,10 @@ class IndexServers(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'IS Name')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "IS Name")
         index = 1
         for index_server in self._all_index_servers:
-            representation_string += '{:^5}\t{:^20}\n'.format(
-                index, index_server['engineName'])
+            representation_string += "{:^5}\t{:^20}\n".format(index, index_server["engineName"])
             index += 1
         return representation_string
 
@@ -308,7 +308,7 @@ class IndexServers(object):
         """
         return len(self._all_index_servers)
 
-    def _response_not_success(self, response: 'requests.Response') -> None:
+    def _response_not_success(self, response: "requests.Response") -> None:
         """Raise an exception if the HTTP response is not successful (status code 200).
 
         This helper method checks the provided response object and raises an SDKException
@@ -322,11 +322,7 @@ class IndexServers(object):
 
         #ai-gen-doc
         """
-        raise SDKException(
-            'Response',
-            '101',
-            self._update_response_(response.text)
-        )
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_index_servers(self) -> None:
         """Retrieve all index servers available on the Commcell.
@@ -340,32 +336,51 @@ class IndexServers(object):
         #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_ALL_INDEX_SERVERS'])
+            "GET", self._services["GET_ALL_INDEX_SERVERS"]
+        )
         if flag:
-            if response.json() and 'listOfCIServer' in response.json():
-                for item in response.json()['listOfCIServer']:
-                    if item['cloudID'] in self._all_index_servers:
+            if response.json() and "listOfCIServer" in response.json():
+                for item in response.json()["listOfCIServer"]:
+                    if item["cloudID"] in self._all_index_servers:
                         # Add only unique roles to list
-                        if 'version' in item and item['version'] not in self._all_index_servers[item['cloudID']]['version']:
-                            self._all_index_servers[item['cloudID']]['version'].append(item['version'])
+                        if (
+                            "version" in item
+                            and item["version"]
+                            not in self._all_index_servers[item["cloudID"]]["version"]
+                        ):
+                            self._all_index_servers[item["cloudID"]]["version"].append(
+                                item["version"]
+                            )
                         # check whether we have populated node details earlier. if not, add it to
                         # exisitng respective fields
-                        if item['clientName'] not in self._all_index_servers[item['cloudID']]['clientName']:
-
-                            self._all_index_servers[item['cloudID']]['clientId'].append(item['clientId'])
-                            self._all_index_servers[item['cloudID']]['clientName'].append(item['clientName'])
-                            self._all_index_servers[item['cloudID']]['hostName'].append(item['hostName'])
-                            self._all_index_servers[item['cloudID']]['cIServerURL'].append(item['cIServerURL'])
-                            self._all_index_servers[item['cloudID']]['basePort'].append(item['basePort'])
+                        if (
+                            item["clientName"]
+                            not in self._all_index_servers[item["cloudID"]]["clientName"]
+                        ):
+                            self._all_index_servers[item["cloudID"]]["clientId"].append(
+                                item["clientId"]
+                            )
+                            self._all_index_servers[item["cloudID"]]["clientName"].append(
+                                item["clientName"]
+                            )
+                            self._all_index_servers[item["cloudID"]]["hostName"].append(
+                                item["hostName"]
+                            )
+                            self._all_index_servers[item["cloudID"]]["cIServerURL"].append(
+                                item["cIServerURL"]
+                            )
+                            self._all_index_servers[item["cloudID"]]["basePort"].append(
+                                item["basePort"]
+                            )
 
                     else:
-                        item['version'] = [item.get('version', '')]
-                        item['clientId'] = [item['clientId']]
-                        item['clientName'] = [item['clientName']]
-                        item['hostName'] = [item['hostName']]
-                        item['cIServerURL'] = [item['cIServerURL']]
-                        item['basePort'] = [item['basePort']]
-                        self._all_index_servers[item['cloudID']] = item
+                        item["version"] = [item.get("version", "")]
+                        item["clientId"] = [item["clientId"]]
+                        item["clientName"] = [item["clientName"]]
+                        item["hostName"] = [item["hostName"]]
+                        item["cIServerURL"] = [item["cIServerURL"]]
+                        item["basePort"] = [item["basePort"]]
+                        self._all_index_servers[item["cloudID"]] = item
             else:
                 self._all_index_servers = {}
         else:
@@ -423,7 +438,7 @@ class IndexServers(object):
     def refresh(self) -> None:
         """Reload the properties and state of the IndexServers class.
 
-        This method refreshes the internal data of the IndexServers instance, ensuring that 
+        This method refreshes the internal data of the IndexServers instance, ensuring that
         any changes made externally are reflected in the current object.
 
         #ai-gen-doc
@@ -436,8 +451,8 @@ class IndexServers(object):
     def update_roles_data(self) -> None:
         """Synchronize all cloud role details with the Commcell.
 
-        This method updates the internal data to reflect the latest cloud roles 
-        information from the Commcell, ensuring that any changes or new roles 
+        This method updates the internal data to reflect the latest cloud roles
+        information from the Commcell, ensuring that any changes or new roles
         are accurately represented.
 
         #ai-gen-doc
@@ -456,9 +471,9 @@ class IndexServers(object):
         #ai-gen-doc
         """
         for index_server in self._all_index_servers:
-            if self._all_index_servers[index_server]['engineName'] == cloud_name:
+            if self._all_index_servers[index_server]["engineName"] == cloud_name:
                 return self._all_index_servers[index_server]
-        raise SDKException('IndexServers', '102')
+        raise SDKException("IndexServers", "102")
 
     def has(self, cloud_name: str) -> bool:
         """Check if an index server with the specified name exists in the Commcell.
@@ -476,12 +491,15 @@ class IndexServers(object):
         """
         if isinstance(cloud_name, str):
             for index_server in self._all_index_servers:
-                if self._all_index_servers[index_server]["engineName"].lower() == cloud_name.lower():
+                if (
+                    self._all_index_servers[index_server]["engineName"].lower()
+                    == cloud_name.lower()
+                ):
                     return True
             return False
-        raise SDKException('IndexServers', '101')
+        raise SDKException("IndexServers", "101")
 
-    def get(self, cloud_data: Union[int, str]) -> 'IndexServer':
+    def get(self, cloud_data: Union[int, str]) -> "IndexServer":
         """Retrieve an IndexServer object by cloud name or cloud ID.
 
         Args:
@@ -499,20 +517,21 @@ class IndexServers(object):
             if cloud_data in self._all_index_servers:
                 return IndexServer(
                     self._commcell_object,
-                    self._all_index_servers[cloud_data]['engineName'],
-                    cloud_data)
-            SDKException('IndexServers', '102')
+                    self._all_index_servers[cloud_data]["engineName"],
+                    cloud_data,
+                )
+            SDKException("IndexServers", "102")
         elif isinstance(cloud_data, str):
             name = cloud_data.lower()
             for itter in self._all_index_servers:
-                if self._all_index_servers[itter]['engineName'].lower(
-                ) == name:
+                if self._all_index_servers[itter]["engineName"].lower() == name:
                     return IndexServer(
                         self._commcell_object,
-                        self._all_index_servers[itter]['engineName'],
-                        self._all_index_servers[itter]['cloudID'])
-            raise SDKException('IndexServers', '102')
-        raise SDKException('IndexServers', '101')
+                        self._all_index_servers[itter]["engineName"],
+                        self._all_index_servers[itter]["cloudID"],
+                    )
+            raise SDKException("IndexServers", "102")
+        raise SDKException("IndexServers", "101")
 
     def create(
         self,
@@ -522,7 +541,7 @@ class IndexServers(object):
         index_server_roles: list,
         index_pool_name: str = None,
         is_cloud: bool = False,
-        cloud_param: list = None
+        cloud_param: list = None,
     ) -> None:
         """Create a new index server within the Commcell environment.
 
@@ -532,7 +551,7 @@ class IndexServers(object):
         Args:
             index_server_name: Name to assign to the new index server.
             index_server_node_names: List of client names to be used as index server nodes.
-            index_directory: List of index directory paths for the index server nodes. 
+            index_directory: List of index directory paths for the index server nodes.
                 - If a single path is provided, it is used for all nodes.
                 - If multiple paths are provided, each path is assigned to the corresponding node.
             index_server_roles: List of role names to assign to the index server.
@@ -559,100 +578,96 @@ class IndexServers(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(index_server_roles, list) and isinstance(index_server_node_names, list)
-                and isinstance(index_server_name, str)):
-            raise SDKException('IndexServers', '101')
+        if not (
+            isinstance(index_server_roles, list)
+            and isinstance(index_server_node_names, list)
+            and isinstance(index_server_name, str)
+        ):
+            raise SDKException("IndexServers", "101")
         if isinstance(index_directory, str):
             index_directory = index_directory.split(",")
         node_count = len(index_server_node_names)
         index_directories_count = len(index_directory)
         if index_directories_count != 1 and index_directories_count != node_count:
-            raise SDKException('IndexServers', '101')
-        cloud_meta_infos = {
-            'REPLICATION': '1',
-            'LANGUAGE': '0'
-        }
+            raise SDKException("IndexServers", "101")
+        cloud_meta_infos = {"REPLICATION": "1", "LANGUAGE": "0"}
         node_meta_infos = {
-            'PORTNO': IndexServerConstants.DEFAULT_SOLR_PORT,
-            'JVMMAXMEMORY': IndexServerConstants.DEFAULT_JVM_MAX_MEMORY
+            "PORTNO": IndexServerConstants.DEFAULT_SOLR_PORT,
+            "JVMMAXMEMORY": IndexServerConstants.DEFAULT_JVM_MAX_MEMORY,
         }
         role_meta_infos = {}
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
-        req_json['cloudInfoEntity'] = {
-            'cloudName': index_server_name,
-            'cloudDisplayName': index_server_name
+        req_json["cloudInfoEntity"] = {
+            "cloudName": index_server_name,
+            "cloudDisplayName": index_server_name,
         }
         if is_cloud:
             index_pool_obj = self._commcell_object.index_pools[index_pool_name]
-            req_json['type'] = 5
-            req_json['solrCloudInfo']['cloudPoolInfo'] = {
-                'cloudId': int(index_pool_obj['pool_id'])
+            req_json["type"] = 5
+            req_json["solrCloudInfo"]["cloudPoolInfo"] = {
+                "cloudId": int(index_pool_obj["pool_id"])
             }
-            cloud_meta_infos['INDEXLOCATION'] = index_directory[0]
+            cloud_meta_infos["INDEXLOCATION"] = index_directory[0]
         for node_name_index in range(len(index_server_node_names)):
             node_name = index_server_node_names[node_name_index]
-            location_index = node_name_index - (node_name_index//index_directories_count)
+            location_index = node_name_index - (node_name_index // index_directories_count)
             node_obj = self._commcell_object.clients[node_name]
             node_data = {
                 "opType": IndexServerConstants.OPERATION_ADD,
                 "nodeClientEntity": {
-                    "hostName": node_obj['hostname'],
-                    "clientId": int(node_obj['id']),
-                    "clientName": node_name
+                    "hostName": node_obj["hostname"],
+                    "clientId": int(node_obj["id"]),
+                    "clientName": node_name,
                 },
-                'nodeMetaInfos': [{
-                    "name": "INDEXLOCATION",
-                    "value": index_directory[location_index]
-                }]
+                "nodeMetaInfos": [
+                    {"name": "INDEXLOCATION", "value": index_directory[location_index]}
+                ],
             }
             for node_info in node_meta_infos:
-                node_data['nodeMetaInfos'].append({
-                    'name': node_info,
-                    'value': str(node_meta_infos[node_info])
-                })
-            req_json['cloudNodes'].append(node_data)
+                node_data["nodeMetaInfos"].append(
+                    {"name": node_info, "value": str(node_meta_infos[node_info])}
+                )
+            req_json["cloudNodes"].append(node_data)
         for role in index_server_roles:
             role_id = self._roles_obj.get_role_id(role)
             if not role_id:
-                raise SDKException('IndexServers', '103')
+                raise SDKException("IndexServers", "103")
             role_data = {
                 "roleId": role_id,
                 "roleName": role,
                 "operationType": IndexServerConstants.OPERATION_ADD,
-                'roleMetaInfos': []
+                "roleMetaInfos": [],
             }
             for role_info in role_meta_infos:
-                role_data['roleMetaInfos'].append({
-                    'name': role_info,
-                    'value': role_meta_infos[role_info]
-                })
-            req_json['solrCloudInfo']['roles'].append(role_data)
+                role_data["roleMetaInfos"].append(
+                    {"name": role_info, "value": role_meta_infos[role_info]}
+                )
+            req_json["solrCloudInfo"]["roles"].append(role_data)
         if cloud_param:
             for param in cloud_param:
-                if param['name'] in cloud_meta_infos:
-                    del cloud_meta_infos[param['name']]
-                req_json['cloudMetaInfos'].append(param)
+                if param["name"] in cloud_meta_infos:
+                    del cloud_meta_infos[param["name"]]
+                req_json["cloudMetaInfos"].append(param)
         for cloud_info in cloud_meta_infos:
-            req_json['cloudMetaInfos'].append({
-                'name': cloud_info,
-                'value': cloud_meta_infos[cloud_info]
-            })
+            req_json["cloudMetaInfos"].append(
+                {"name": cloud_info, "value": cloud_meta_infos[cloud_info]}
+            )
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_CREATE'], req_json)
+            "POST", self._services["CLOUD_CREATE"], req_json
+        )
         if flag:
             if response.json():
-                error_code = response.json()['genericResp']['errorCode']
-                error_string = response.json()['genericResp']['errorMessage']
+                error_code = response.json()["genericResp"]["errorCode"]
+                error_string = response.json()["genericResp"]["errorMessage"]
                 if error_code == 0:
                     self.refresh()
                     self._commcell_object.clients.refresh()
                     self._commcell_object.datacube.refresh_engine()
                 else:
-                    o_str = 'Failed to create Index Server. Error: "{0}"'.format(
-                        error_string)
-                    raise SDKException('IndexServers', '102', o_str)
+                    o_str = f'Failed to create Index Server. Error: "{error_string}"'
+                    raise SDKException("IndexServers", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             self._response_not_success(response)
 
@@ -668,26 +683,29 @@ class IndexServers(object):
         #ai-gen-doc
         """
         if not isinstance(cloud_name, str):
-            raise SDKException('IndexServers', '101')
+            raise SDKException("IndexServers", "101")
         cloud_id = self.get(cloud_name).cloud_id
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
         req_json["opType"] = IndexServerConstants.OPERATION_DELETE
-        req_json['cloudInfoEntity']['cloudId'] = cloud_id
+        req_json["cloudInfoEntity"]["cloudId"] = cloud_id
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_DELETE'], req_json
+            "POST", self._services["CLOUD_DELETE"], req_json
         )
         if flag:
-            if response.json() and 'genericResp' in response.json() \
-                    and 'errorCode' not in response.json()['genericResp']:
+            if (
+                response.json()
+                and "genericResp" in response.json()
+                and "errorCode" not in response.json()["genericResp"]
+            ):
                 self.refresh()
                 self._commcell_object.clients.refresh()
                 self._commcell_object.datacube.refresh_engine()
                 return
-            if response.json() and 'genericResp' in response.json():
+            if response.json() and "genericResp" in response.json():
                 raise SDKException(
-                    'Response', '102', response.json()['genericResp'].get(
-                        'errorMessage', ''))
-            raise SDKException('Response', '102')
+                    "Response", "102", response.json()["genericResp"].get("errorMessage", "")
+                )
+            raise SDKException("Response", "102")
         self._response_not_success(response)
 
     def prune_orphan_datasources(self) -> None:
@@ -701,18 +719,17 @@ class IndexServers(object):
 
         #ai-gen-doc
         """
-        prune_datasource = self._services['PRUNE_DATASOURCE']
+        prune_datasource = self._services["PRUNE_DATASOURCE"]
         request_json = IndexServerConstants.PRUNE_REQUEST_JSON
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', prune_datasource, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", prune_datasource, request_json)
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode', 0)
+                error_code = response.json().get("errorCode", 0)
                 if error_code != 0:
-                    raise SDKException('IndexServers', '104', 'Failed to prune orphan datasources')
+                    raise SDKException("IndexServers", "104", "Failed to prune orphan datasources")
                 return
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "102")
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
 
 class IndexServerOSType(enum.Enum):
@@ -730,12 +747,13 @@ class IndexServerOSType(enum.Enum):
 
     #ai-gen-doc
     """
+
     WINDOWS = "Windows"
     UNIX = "Unix"
     MIXED = "Mixed"
 
 
-class IndexServer(object):
+class IndexServer:
     """
     Class for managing and performing operations on a specific index server.
 
@@ -759,7 +777,7 @@ class IndexServer(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_obj: 'Commcell', name: str, cloud_id: int = None) -> None:
+    def __init__(self, commcell_obj: "Commcell", name: str, cloud_id: int = None) -> None:
         """Initialize an IndexServer class instance.
 
         Args:
@@ -800,8 +818,7 @@ class IndexServer(object):
 
         #ai-gen-doc
         """
-        return 'IndexServer class instance for index server: "{0}"'.format(
-            self._engine_name)
+        return f'IndexServer class instance for index server: "{self._engine_name}"'
 
     def _get_cloud_id(self) -> int:
         """Retrieve the cloud ID associated with the index server.
@@ -821,14 +838,13 @@ class IndexServer(object):
 
         #ai-gen-doc
         """
-        self._properties = self._commcell_obj.index_servers.get_properties(
-            self._engine_name)
+        self._properties = self._commcell_obj.index_servers.get_properties(self._engine_name)
 
     def refresh(self) -> None:
         """Reload the properties of the index server to ensure the latest configuration is available.
 
-        This method refreshes the internal state of the IndexServer object, updating its properties 
-        from the underlying data source. Use this method if you suspect the index server's properties 
+        This method refreshes the internal state of the IndexServer object, updating its properties
+        from the underlying data source. Use this method if you suspect the index server's properties
         have changed, and you want to ensure you are working with the most current information.
 
         #ai-gen-doc
@@ -886,31 +902,29 @@ class IndexServer(object):
         #ai-gen-doc
         """
         json_req = deepcopy(IndexServerConstants.REQUEST_JSON)
-        json_req['opType'] = IndexServerConstants.OPERATION_EDIT
-        json_req['cloudNodes'] = [{
-            "opType": IndexServerConstants.OPERATION_EDIT,
-            "nodeClientEntity": {
-                "clientId": int(self._commcell_obj.clients.get(node_name).client_id)
-            },
-            "nodeMetaInfos": [
-                {
-                    "name": "INDEXLOCATION",
-                    "value": index_location
-                }
-            ]
-        }]
-        json_req['cloudInfoEntity']['cloudId'] = self.cloud_id
+        json_req["opType"] = IndexServerConstants.OPERATION_EDIT
+        json_req["cloudNodes"] = [
+            {
+                "opType": IndexServerConstants.OPERATION_EDIT,
+                "nodeClientEntity": {
+                    "clientId": int(self._commcell_obj.clients.get(node_name).client_id)
+                },
+                "nodeMetaInfos": [{"name": "INDEXLOCATION", "value": index_location}],
+            }
+        ]
+        json_req["cloudInfoEntity"]["cloudId"] = self.cloud_id
         for param in node_params:
-            json_req['cloudNodes'][0]['nodeMetaInfos'].append(param)
+            json_req["cloudNodes"][0]["nodeMetaInfos"].append(param)
         flag, response = self._cvpysdk_object.make_request(
-            "POST", self._services['CLOUD_MODIFY'], json_req)
+            "POST", self._services["CLOUD_MODIFY"], json_req
+        )
         if flag:
             if response.json():
-                if 'cloudId' in response.json():
+                if "cloudId" in response.json():
                     self.refresh()
                     return
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '101')
+            raise SDKException("Response", "102")
+        raise SDKException("Response", "101")
 
     def change_plan(self, plan_name: str) -> None:
         """Modify the plan associated with the index server.
@@ -927,27 +941,23 @@ class IndexServer(object):
         #ai-gen-doc
         """
         if not self._commcell_obj.plans.has_plan(plan_name):
-            raise SDKException(
-                'Plan', '102', f"Plan with name [{plan_name}] doesn't exist")
+            raise SDKException("Plan", "102", f"Plan with name [{plan_name}] doesn't exist")
         request_json = {
             "opType": IndexServerConstants.OPERATION_EDIT,
             "type": 1,
-            "planInfo": {
-                "planId": int(self._commcell_obj.plans.get(plan_name).plan_id)
-            },
-            "cloudInfoEntity": {
-                "cloudId": self.cloud_id
-            }
+            "planInfo": {"planId": int(self._commcell_obj.plans.get(plan_name).plan_id)},
+            "cloudInfoEntity": {"cloudId": self.cloud_id},
         }
         flag, response = self._cvpysdk_object.make_request(
-            "POST", self._services['CLOUD_MODIFY'], request_json)
+            "POST", self._services["CLOUD_MODIFY"], request_json
+        )
         if flag:
             if response.json():
-                if 'cloudId' in response.json():
+                if "cloudId" in response.json():
                     self.refresh()
                     return
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '101')
+            raise SDKException("Response", "102")
+        raise SDKException("Response", "101")
 
     def update_role(self, props: Optional[List[Dict[str, Any]]] = None) -> None:
         """Update the roles assigned to the Index Server.
@@ -985,21 +995,21 @@ class IndexServer(object):
         json_req = {"cloudId": self.cloud_id, "roles": []}
         if props:
             for prop in props:
-                role_id = self._roles_obj.get_role_id(prop['roleName'])
+                role_id = self._roles_obj.get_role_id(prop["roleName"])
                 if not role_id:
-                    raise SDKException('IndexServers', '103')
-                prop['roleId'] = role_id
-                json_req['roles'].append(prop)
+                    raise SDKException("IndexServers", "103")
+                prop["roleId"] = role_id
+                json_req["roles"].append(prop)
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CLOUD_ROLE_UPDATE'], json_req
+            "POST", self._services["CLOUD_ROLE_UPDATE"], json_req
         )
         if flag:
-            if response.json() and 'errorCode' in response.json():
-                if response.json()['errorCode'] == 0:
+            if response.json() and "errorCode" in response.json():
+                if response.json()["errorCode"] == 0:
                     self.refresh()
                     return
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '101')
+            raise SDKException("Response", "102")
+        raise SDKException("Response", "101")
 
     def delete_docs_from_core(self, core_name: str, select_dict: Optional[dict] = None) -> None:
         """Delete documents from the specified Solr core on the index server.
@@ -1027,54 +1037,66 @@ class IndexServer(object):
         #ai-gen-doc
         """
         if not isinstance(core_name, str):
-            raise SDKException('IndexServers', '101')
+            raise SDKException("IndexServers", "101")
         if self.is_cloud:
-            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
-        json_req = {"delete": {"query": self._create_solr_query(select_dict).replace("q=", "").replace("&wt=json", "")}}
+            raise SDKException("IndexServers", "104", "Not implemented for solr cloud")
+        json_req = {
+            "delete": {
+                "query": self._create_solr_query(select_dict)
+                .replace("q=", "")
+                .replace("&wt=json", "")
+            }
+        }
         baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&overwrite=true&wt=json"
         flag, response = self._cvpysdk_object.make_request("POST", baseurl, json_req)
         if flag and response.json():
-            if 'error' in response.json():
-                raise SDKException('IndexServers', '104', f' Failed with error message - '
-                                                          f'{response.json().get("error").get("msg")}')
-            if 'responseHeader' in response.json():
+            if "error" in response.json():
+                raise SDKException(
+                    "IndexServers",
+                    "104",
+                    f" Failed with error message - {response.json().get('error').get('msg')}",
+                )
+            if "responseHeader" in response.json():
                 commitstatus = str(response.json().get("responseHeader").get("status"))
                 if int(commitstatus) != 0:
-                    raise SDKException('IndexServers', '104',
-                                       f"Deleting docs from the core returned bad status - {commitstatus}")
+                    raise SDKException(
+                        "IndexServers",
+                        "104",
+                        f"Deleting docs from the core returned bad status - {commitstatus}",
+                    )
                 return
-        raise SDKException('IndexServers', '111')
+        raise SDKException("IndexServers", "111")
 
     def hard_commit(self, core_name: str) -> None:
         """Perform a hard commit operation for the specified Solr core on the index server.
 
-        This method triggers a hard commit, ensuring that all recent changes to the given Solr core 
+        This method triggers a hard commit, ensuring that all recent changes to the given Solr core
         are flushed and made durable on the index server.
 
         Args:
             core_name: The name of the Solr core to commit.
 
         Raises:
-            SDKException: If the input data is invalid, if the index server is a cloud instance 
+            SDKException: If the input data is invalid, if the index server is a cloud instance
                 (not implemented), if the response is empty, or if the response indicates failure.
 
         #ai-gen-doc
         """
         if not isinstance(core_name, str):
-            raise SDKException('IndexServers', '101')
+            raise SDKException("IndexServers", "101")
         if self.is_cloud:
-            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
+            raise SDKException("IndexServers", "104", "Not implemented for solr cloud")
         baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commit=true"
         flag, response = self._cvpysdk_object.make_request("GET", baseurl)
         if flag and response.json():
-            if 'error' in response.json():
-                raise SDKException('IndexServers', '104', "Hard commit returned error")
-            if 'responseHeader' in response.json():
-                commitstatus = str(response.json()['responseHeader']['status'])
+            if "error" in response.json():
+                raise SDKException("IndexServers", "104", "Hard commit returned error")
+            if "responseHeader" in response.json():
+                commitstatus = str(response.json()["responseHeader"]["status"])
                 if int(commitstatus) != 0:
-                    raise SDKException('IndexServers', '104', "Hard commit returned bad status")
+                    raise SDKException("IndexServers", "104", "Hard commit returned bad status")
                 return
-        raise SDKException('IndexServers', '104', "Something went wrong with hard commit")
+        raise SDKException("IndexServers", "104", "Something went wrong with hard commit")
 
     def get_health_indicators(self, client_name: Optional[str] = None) -> str:
         """Retrieve health indicators for an index server node by client name.
@@ -1097,18 +1119,22 @@ class IndexServer(object):
         response = None
         if self.is_cloud or len(self.client_name) > 1:
             if client_name is None:
-                raise SDKException('IndexServers', '104', 'Client name param missing for solr cloud')
+                raise SDKException(
+                    "IndexServers", "104", "Client name param missing for solr cloud"
+                )
             if client_name not in self.client_name:
-                raise SDKException('IndexServers', '104', 'client name not found in this index server cloud')
+                raise SDKException(
+                    "IndexServers", "104", "client name not found in this index server cloud"
+                )
             server_url = self.server_url[self.client_name.index(client_name)]
         baseurl = f"{server_url}/solr/rest/admin/healthsummary"
-        headers = {
-            'Accept': 'application/xml'
-        }
+        headers = {"Accept": "application/xml"}
         flag, response = self._cvpysdk_object.make_request("GET", headers=headers, url=baseurl)
         if flag:
             return response
-        raise SDKException('IndexServers', '104', "Could not get health summary for [{}]".format(client_name))
+        raise SDKException(
+            "IndexServers", "104", f"Could not get health summary for [{client_name}]"
+        )
 
     def get_all_cores(self, client_name: Optional[str] = None) -> (List, str):
         """Retrieve all core names and their details from the index server.
@@ -1137,31 +1163,37 @@ class IndexServer(object):
         server_url = self.server_url[0]
         if self.is_cloud or len(self.client_name) > 1:
             if client_name is None:
-                raise SDKException('IndexServers', '104', 'Client name param missing for solr cloud')
+                raise SDKException(
+                    "IndexServers", "104", "Client name param missing for solr cloud"
+                )
             if client_name not in self.client_name:
-                raise SDKException('IndexServers', '104', 'client name not found in this index server cloud')
+                raise SDKException(
+                    "IndexServers", "104", "client name not found in this index server cloud"
+                )
             server_url = self.server_url[self.client_name.index(client_name)]
         core_names = []
         baseurl = f"{server_url}/solr/admin/cores"
         flag, response = self._cvpysdk_object.make_request("GET", baseurl)
         if flag and response.json():
-            if 'error' in response.json():
-                raise SDKException('IndexServers', '104', "Unable to get core names from index server")
-            if 'status' in response.json():
-                for core in response.json()['status']:
+            if "error" in response.json():
+                raise SDKException(
+                    "IndexServers", "104", "Unable to get core names from index server"
+                )
+            if "status" in response.json():
+                for core in response.json()["status"]:
                     core_names.append(core)
-                return core_names, response.json()['status']
-        raise SDKException('IndexServers', '104', "Something went wrong while getting core names")
+                return core_names, response.json()["status"]
+        raise SDKException("IndexServers", "104", "Something went wrong while getting core names")
 
     def _create_solr_query(
         self,
         select_dict: Optional[Dict[str, Any]] = None,
         attr_list: Optional[set] = None,
-        op_params: Optional[Dict[str, Any]] = None
+        op_params: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Create a Solr query URL based on the provided parameters.
 
-        This method constructs a Solr query URL using the specified search criteria, 
+        This method constructs a Solr query URL using the specified search criteria,
         result columns, and additional operational parameters.
 
         Args:
@@ -1189,36 +1221,36 @@ class IndexServer(object):
         #ai-gen-doc
         """
         try:
-            search_query = f'q='
+            search_query = "q="
             simple_search = 0
             if select_dict:
                 for key, value in select_dict.items():
                     if isinstance(key, tuple):
                         if isinstance(value, list):
-                            search_query += f'({key[0]}:{str(value[0])}'
+                            search_query += f"({key[0]}:{str(value[0])}"
                             for val in value[1:]:
-                                search_query += f' OR {key[0]}:{str(val)}'
+                                search_query += f" OR {key[0]}:{str(val)}"
                         else:
-                            search_query += f'({key[0]}:{value}'
+                            search_query += f"({key[0]}:{value}"
                         for key_val in key[1:]:
                             if isinstance(value, list):
-                                search_query += f' OR {key_val}:{str(value[0])}'
+                                search_query += f" OR {key_val}:{str(value[0])}"
                                 for val in value[1:]:
-                                    search_query += f' OR {key_val}:{str(val)}'
+                                    search_query += f" OR {key_val}:{str(val)}"
                             else:
-                                search_query += f' OR {key_val}:{value}'
-                        search_query += ') AND '
+                                search_query += f" OR {key_val}:{value}"
+                        search_query += ") AND "
                     elif isinstance(value, list):
-                        search_query += f'({key}:{str(value[0])}'
+                        search_query += f"({key}:{str(value[0])}"
                         for val in value[1:]:
-                            search_query += f' OR {key}:{str(val)}'
+                            search_query += f" OR {key}:{str(val)}"
                         search_query += ") AND "
                     elif key == "keyword":
                         search_query += "(" + value + ")"
                         simple_search = 1
                         break
                     else:
-                        search_query = search_query + f'{key}:{str(value)} AND '
+                        search_query = search_query + f"{key}:{str(value)} AND "
                 if simple_search == 0:
                     search_query = search_query[:-5]
             else:
@@ -1228,26 +1260,28 @@ class IndexServer(object):
             if attr_list:
                 field_query = "&fl="
                 for item in attr_list:
-                    field_query += f'{str(item)},'
+                    field_query += f"{str(item)},"
                 field_query = field_query[:-1]
-            if attr_list and 'content' in attr_list:
+            if attr_list and "content" in attr_list:
                 field_query = f"{field_query}&exclude=false"
 
             ex_query = ""
             if not op_params:
-                op_params = {'wt': "json"}
+                op_params = {"wt": "json"}
             else:
-                op_params['wt'] = "json"
+                op_params["wt"] = "json"
             for key, values in op_params.items():
                 if isinstance(values, list):
                     for value in values:
                         ex_query += self.__form_field_query(key, value)
                 else:
                     ex_query += self.__form_field_query(key, values)
-            final_url = f'{search_query}{field_query}{ex_query}'
+            final_url = f"{search_query}{field_query}{ex_query}"
             return final_url
         except Exception as excp:
-            raise SDKException('IndexServers', '104', f"Something went wrong while creating solr query - {excp}")
+            raise SDKException(
+                "IndexServers", "104", f"Something went wrong while creating solr query - {excp}"
+            )
 
     def execute_solr_query(
         self,
@@ -1255,7 +1289,7 @@ class IndexServer(object):
         solr_client: Optional[str] = None,
         select_dict: Optional[dict] = None,
         attr_list: Optional[set] = None,
-        op_params: Optional[dict] = None
+        op_params: Optional[dict] = None,
     ) -> dict:
         """Execute a Solr query on the specified core or collection.
 
@@ -1298,44 +1332,53 @@ class IndexServer(object):
 
         #ai-gen-doc
         """
-        solr_url = f"solr/{core_name}/select?{self._create_solr_query(select_dict, attr_list, op_params)}"
+        solr_url = (
+            f"solr/{core_name}/select?{self._create_solr_query(select_dict, attr_list, op_params)}"
+        )
         if solr_client is None:
             solr_url = f"{self.server_url[0]}/{solr_url}"
         else:
             if solr_client not in self.client_name:
-                raise SDKException('IndexServers', '104', 'client name not found in this index server')
+                raise SDKException(
+                    "IndexServers", "104", "client name not found in this index server"
+                )
             server_url = self.server_url[self.client_name.index(solr_client)]
             solr_url = f"{server_url}/{solr_url}"
         flag, response = self._cvpysdk_object.make_request("GET", solr_url)
         if flag and response.json():
             return response.json()
         elif response.status_code == httplib.FORBIDDEN:
-            cmd = f"(Invoke-WebRequest -UseBasicParsing -uri \"{solr_url}\").content"
+            cmd = f'(Invoke-WebRequest -UseBasicParsing -uri "{solr_url}").content'
             client_obj = None
             if solr_client:
                 client_obj = self._commcell_obj.clients.get(solr_client)
             else:
                 # if no client is passed, then take first client in index server cloud
                 client_obj = self._commcell_obj.clients.get(self.client_name[0])
-            exit_code, output, error_message = client_obj.execute_script(script_type="PowerShell",
-                                                                         script=cmd)
+            exit_code, output, error_message = client_obj.execute_script(
+                script_type="PowerShell", script=cmd
+            )
             if exit_code != 0:
                 raise SDKException(
-                    'IndexServers',
-                    '104',
-                    f"Something went wrong while querying solr - {exit_code}")
+                    "IndexServers",
+                    "104",
+                    f"Something went wrong while querying solr - {exit_code}",
+                )
             elif error_message:
                 raise SDKException(
-                    'IndexServers',
-                    '104',
-                    f"Something went wrong while querying solr - {error_message}")
+                    "IndexServers",
+                    "104",
+                    f"Something went wrong while querying solr - {error_message}",
+                )
             try:
                 return json.loads(output.strip())
             except Exception:
-                raise SDKException('IndexServers', '104', f"Something went wrong while querying solr - {output}")
-        raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
+                raise SDKException(
+                    "IndexServers", "104", f"Something went wrong while querying solr - {output}"
+                )
+        raise SDKException("IndexServers", "104", "Something went wrong while querying solr")
 
-    def get_index_node(self, node_name: str) -> 'IndexNode':
+    def get_index_node(self, node_name: str) -> "IndexNode":
         """Retrieve the IndexNode object for the specified index server node name.
 
         Args:
@@ -1352,7 +1395,7 @@ class IndexServer(object):
         node_name = node_name.lower()
         if node_name in self.client_name:
             return IndexNode(self._commcell_obj, self.engine_name, node_name)
-        raise SDKException("IndexServers", '104', 'Index server node not found')
+        raise SDKException("IndexServers", "104", "Index server node not found")
 
     def get_plan_info(self) -> dict:
         """Retrieve the plan information associated with the index server.
@@ -1369,8 +1412,12 @@ class IndexServer(object):
         #ai-gen-doc
         """
         client = self._commcell_obj.clients.get(self.engine_name)
-        instance_props = client.properties.get("pseudoClientInfo", {}).get("distributedClusterInstanceProperties", {})
-        plan_details = instance_props.get("clusterConfig", {}).get("cloudInfo", {}).get("planInfo", {})
+        instance_props = client.properties.get("pseudoClientInfo", {}).get(
+            "distributedClusterInstanceProperties", {}
+        )
+        plan_details = (
+            instance_props.get("clusterConfig", {}).get("cloudInfo", {}).get("planInfo", {})
+        )
         return plan_details
 
     def get_os_info(self) -> str:
@@ -1411,9 +1458,9 @@ class IndexServer(object):
         """
         query = None
         if value is None:
-            query = f'&{key}'
+            query = f"&{key}"
         else:
-            query = f'&{key}={str(value)}'
+            query = f"&{key}={str(value)}"
         return query
 
     @property
@@ -1582,8 +1629,8 @@ class IndexServer(object):
         role_disp_name = []
         for role_version in self.roles:
             for role in self.roles_data:
-                if role_version == role['roleVersion']:
-                    role_disp_name.append(role['roleName'])
+                if role_version == role["roleVersion"]:
+                    role_disp_name.append(role["roleName"])
                     break
         return role_disp_name
 
@@ -1640,10 +1687,10 @@ class IndexServer(object):
 
         #ai-gen-doc
         """
-        return f'fsindex_{"".join(letter for letter in self.cloud_name if letter.isalnum())}_multinode'
+        return f"fsindex_{''.join(letter for letter in self.cloud_name if letter.isalnum())}_multinode"
 
 
-class IndexNode(object):
+class IndexNode:
     """
     Represents an Index server node within a CommCell environment.
 
@@ -1662,7 +1709,7 @@ class IndexNode(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_obj: 'Commcell', index_server_name: str, node_name: str) -> None:
+    def __init__(self, commcell_obj: "Commcell", index_server_name: str, node_name: str) -> None:
         """Initialize an IndexNode instance representing a node in an index server.
 
         Args:
@@ -1701,8 +1748,9 @@ class IndexNode(object):
         self.commcell.clients.refresh()
         self.index_node_client = self.commcell.clients.get(self.index_node_name)
         # TODO: Rewrite Index server API logic to access client properties
-        self.index_client_properties = (self.index_node_client.properties.get('pseudoClientInfo', {}).
-                                        get('indexServerProperties', {}))
+        self.index_client_properties = self.index_node_client.properties.get(
+            "pseudoClientInfo", {}
+        ).get("indexServerProperties", {})
 
     @property
     def node_name(self) -> str:
@@ -1768,10 +1816,10 @@ class IndexNode(object):
 
         #ai-gen-doc
         """
-        node_meta_infos = self.index_client_properties['nodeMetaInfos']
+        node_meta_infos = self.index_client_properties["nodeMetaInfos"]
         for info in node_meta_infos:
-            if info['name'] == 'INDEXLOCATION':
-                return info['value']
+            if info["name"] == "INDEXLOCATION":
+                return info["value"]
 
     @property
     def jvm_memory(self) -> Union[str, None]:
@@ -1782,10 +1830,10 @@ class IndexNode(object):
 
         #ai-gen-doc
         """
-        node_meta_infos = self.index_client_properties['nodeMetaInfos']
+        node_meta_infos = self.index_client_properties["nodeMetaInfos"]
         for info in node_meta_infos:
-            if info['name'] == 'JVMMAXMEMORY':
-                return info['value']
+            if info["name"] == "JVMMAXMEMORY":
+                return info["value"]
 
     @solr_port.setter
     def solr_port(self, port_no: str) -> None:
@@ -1797,7 +1845,7 @@ class IndexNode(object):
         #ai-gen-doc
         """
         solr_port_param = deepcopy(IndexServerConstants.SOLR_PORT_META_INFO)
-        solr_port_param['value'] = str(port_no)
+        solr_port_param["value"] = str(port_no)
         cloud_param = [solr_port_param]
         self.index_server.modify(self.index_location, self.index_node_name, cloud_param)
         self.refresh()
@@ -1812,15 +1860,15 @@ class IndexNode(object):
         #ai-gen-doc
         """
         solr_jvm_param = deepcopy(IndexServerConstants.SOLR_JVM_META_INFO)
-        solr_jvm_param['value'] = str(memory)
+        solr_jvm_param["value"] = str(memory)
         solr_port_param = deepcopy(IndexServerConstants.SOLR_PORT_META_INFO)
-        solr_port_param['value'] = str(self.solr_port)
+        solr_port_param["value"] = str(self.solr_port)
         cloud_param = [solr_jvm_param, solr_port_param]
         self.index_server.modify(self.index_location, self.index_node_name, cloud_param)
         self.refresh()
 
 
-class _Roles(object):
+class _Roles:
     """
     Class for managing and operating on cloud roles data.
 
@@ -1841,7 +1889,7 @@ class _Roles(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize the _Roles class with a Commcell connection object.
 
         Args:
@@ -1881,15 +1929,15 @@ class _Roles(object):
         #ai-gen-doc
         """
         flag, response = self.commcell_object._cvpysdk_object.make_request(
-            "GET", self.commcell_object._services['GET_ALL_ROLES']
+            "GET", self.commcell_object._services["GET_ALL_ROLES"]
         )
         if flag:
             if response.json():
-                if 'rolesInfo' in response.json():
-                    self._roles_data = response.json()['rolesInfo']
+                if "rolesInfo" in response.json():
+                    self._roles_data = response.json()["rolesInfo"]
                     return self._roles_data
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '101')
+            raise SDKException("Response", "102")
+        raise SDKException("Response", "101")
 
     def get_role_id(self, role_name: str) -> Optional[int]:
         """Retrieve the ID of a cloud role by its name.
@@ -1903,15 +1951,15 @@ class _Roles(object):
         #ai-gen-doc
         """
         for role_data in self._roles_data:
-            if role_data['roleName'] == role_name:
-                return role_data['roleId']
+            if role_data["roleName"] == role_name:
+                return role_data["roleId"]
         return None
 
     def update_roles_data(self) -> None:
         """Update and synchronize the cloud role data with the Commcell database.
 
-        This method refreshes the internal role data to ensure it matches the current state 
-        of the Commcell database. Use this method to reload role information after changes 
+        This method refreshes the internal role data to ensure it matches the current state
+        of the Commcell database. Use this method to reload role information after changes
         have been made in the Commcell environment.
 
         #ai-gen-doc

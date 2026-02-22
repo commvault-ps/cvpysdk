@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -118,13 +116,21 @@ Classes:
         Properties:
             all_connections         - Get all AWS connections managed by this instance.
 """
+
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from cvpysdk.clouddiscovery import constants as cs
-from typing import Dict, Optional, TYPE_CHECKING, List, Any
-from .constants import AssetProvider, AZURE_CUSTOM, AWS, AZURE, AWS_EXPRESS_CONNECTION_PAYLOAD, \
-    AWS_EXPRESS_CONNECTION_PAYLOAD, AZURE_EXPRESS_CONNECTION_PAYLOAD, AWS_CONNECTION_TYPE_ORG, AzureConfigType
-from .resources import DiscoveredResource
+
 from ..exception import SDKException
+from .constants import (
+    AWS_CONNECTION_TYPE_ORG,
+    AWS_EXPRESS_CONNECTION_PAYLOAD,
+    AZURE_EXPRESS_CONNECTION_PAYLOAD,
+    AssetProvider,
+    AzureConfigType,
+)
+
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
@@ -171,7 +177,7 @@ class Connection(ABC):
 class Connections(ABC):
     """Base class for a generic connection."""
 
-    def __init__(self, commcell: 'Commcell', asset_provider: AssetProvider = None) -> None:
+    def __init__(self, commcell: "Commcell", asset_provider: AssetProvider = None) -> None:
         """
         Initialize the Connections manager.
         Args:
@@ -210,8 +216,15 @@ class Connections(ABC):
         pass
 
     @abstractmethod
-    def add_express_connection(self, connection_name: str, account_id: str, connection_type: str,
-                               regions: list, accounts: list, discoverAllAccounts: bool) -> Connection:
+    def add_express_connection(
+        self,
+        connection_name: str,
+        account_id: str,
+        connection_type: str,
+        regions: list,
+        accounts: list,
+        discoverAllAccounts: bool,
+    ) -> Connection:
         """Add a new express connection."""
         pass
 
@@ -290,7 +303,7 @@ class AzureConnection(Connection):
 class AzureConnections(Connections):
     """Manages multiple Azure connections."""
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize the AzureConnections instance.
 
         Args:
@@ -330,7 +343,9 @@ class AzureConnections(Connections):
         for connection in self.all_connections:
             if connection.connection_name.lower() == connection_name.lower():
                 return connection
-        raise SDKException('Connections', '101', f"No Azure connection exists with the name: {connection_name}")
+        raise SDKException(
+            "Connections", "101", f"No Azure connection exists with the name: {connection_name}"
+        )
 
     def has_connection(self, connection_name: str) -> bool:
         """Check if an Azure connection exists for the given name.
@@ -341,7 +356,10 @@ class AzureConnections(Connections):
         Returns:
             bool: True if the connection exists, False otherwise.
         """
-        return any(connection.connection_name.lower() == connection_name.lower() for connection in self.all_connections)
+        return any(
+            connection.connection_name.lower() == connection_name.lower()
+            for connection in self.all_connections
+        )
 
     def delete_connection(self, connection_name: str) -> bool:
         """Delete an existing Azure connection by name.
@@ -353,40 +371,40 @@ class AzureConnections(Connections):
             bool: True if deletion was successful, False otherwise.
         """
         if not isinstance(connection_name, str):
-            raise SDKException('Connections', '101', "Credential name must be a string for Azure.")
+            raise SDKException("Connections", "101", "Credential name must be a string for Azure.")
         if not self.has_connection(connection_name):
-            raise SDKException('Connections', '103')
+            raise SDKException("Connections", "103")
 
         connection = self.get_connection(connection_name)
         if connection.config_type == AzureConfigType.EXPRESS:
-            url = self._services['RETIRE'] % connection.connection_id
-            flag, response = self._cvpysdk_object.make_request('DELETE', url=url)
-            if flag and response.json() and response.json().get('errorCode') == 0:
+            url = self._services["RETIRE"] % connection.connection_id
+            flag, response = self._cvpysdk_object.make_request("DELETE", url=url)
+            if flag and response.json() and response.json().get("errorCode") == 0:
                 self.refresh()
                 return True
-            raise SDKException('Connections', '102')
+            raise SDKException("Connections", "102")
         else:
             if self.has_connection(connection_name):
                 requests_json = {
                     "credentials": [
                         {
                             "id": self._commcell.credentials.get(connection_name).credential_id,
-                            "operation": "DELETE"
+                            "operation": "DELETE",
                         }
                     ]
                 }
-                request = self._services['CONFIGURE_DISCOVERY']
-                flag, response = self._cvpysdk_object.make_request('PUT', request, requests_json)
+                request = self._services["CONFIGURE_DISCOVERY"]
+                flag, response = self._cvpysdk_object.make_request("PUT", request, requests_json)
                 if flag:
                     if response.json():
-                        if response.json().get('errorCode') == 0:
+                        if response.json().get("errorCode") == 0:
                             self.refresh()
                             return True
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
                 else:
-                    raise SDKException('Response', '101', self._update_response_(response.text))
+                    raise SDKException("Response", "101", self._update_response_(response.text))
             else:
-                raise SDKException('Connections', '103')
+                raise SDKException("Connections", "103")
 
     def refresh(self) -> None:
         """Refresh the Azure connections cache by fetching the latest data."""
@@ -398,36 +416,36 @@ class AzureConnections(Connections):
         Returns:
             List[Dict[str, str]]: A list of dictionaries containing Azure cloud connection details.
         """
-        request = self._services['CONFIGURE_DISCOVERY']
-        flag, response = self._cvpysdk_object.make_request('GET', request)
+        request = self._services["CONFIGURE_DISCOVERY"]
+        flag, response = self._cvpysdk_object.make_request("GET", request)
         if flag:
             if response.json():
-                if response.json().get('errorCode') == 0:
-                    credentials = response.json().get('credentials', [])
+                if response.json().get("errorCode") == 0:
+                    credentials = response.json().get("credentials", [])
                     if not credentials:
                         return []
                     return [
                         AzureConnection(
                             self._commcell,
-                            credential.get('name'),
-                            credential.get('id'),
-                            config_type=credential.get('configType')
+                            credential.get("name"),
+                            credential.get("id"),
+                            config_type=credential.get("configType"),
                         )
                         for credential in credentials
                     ]
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def add_express_connection(
-            self,
-            connection_name: str,
-            credential_id: int,
-            tenant_id: str,
-            tenant_name: str,
-            environment: str = "AzureCloud",
-            discover_all_subscription: bool = True,
-            assign_reader_role: bool = False
+        self,
+        connection_name: str,
+        credential_id: int,
+        tenant_id: str,
+        tenant_name: str,
+        environment: str = "AzureCloud",
+        discover_all_subscription: bool = True,
+        assign_reader_role: bool = False,
     ) -> Connection:
         """Add a new Azure cloud connection with the specified parameters.
 
@@ -464,26 +482,28 @@ class AzureConnections(Connections):
         payload["cloudSpecificConfiguration"]["azure"]["tenantId"] = tenant_id
         payload["cloudSpecificConfiguration"]["azure"]["tenantName"] = tenant_name
         payload["cloudSpecificConfiguration"]["azure"]["environment"] = environment
-        payload["cloudSpecificConfiguration"]["azure"]["discoverAllSubscription"] = discover_all_subscription
+        payload["cloudSpecificConfiguration"]["azure"]["discoverAllSubscription"] = (
+            discover_all_subscription
+        )
         payload["cloudSpecificConfiguration"]["azure"]["assignReaderRole"] = assign_reader_role
 
-        url = self._services['ADD_EXPRESS_CONNECTION']
-        flag, response = self._cvpysdk_object.make_request('POST', url=url, payload=payload)
+        url = self._services["ADD_EXPRESS_CONNECTION"]
+        flag, response = self._cvpysdk_object.make_request("POST", url=url, payload=payload)
 
         if flag:
-            if response.json() and 'id' in response.json():
-                connection_id = response.json().get('id', None)
+            if response.json() and "id" in response.json():
+                connection_id = response.json().get("id", None)
                 return AzureConnection(self._commcell, connection_name, connection_id)
             else:
-                raise SDKException('Connections', '107')
+                raise SDKException("Connections", "107")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def add_custom_connection(
-            self,
-            credential_name: str,
-            config_list: Optional[List[str]] = None,
-            include_all_configs: bool = False,
+        self,
+        credential_name: str,
+        config_list: Optional[List[str]] = None,
+        include_all_configs: bool = False,
     ) -> AzureConnection:
         """Add a new connection with the specified credential and configuration.
 
@@ -506,18 +526,13 @@ class AzureConnections(Connections):
                         Response was not success
         """
         if not isinstance(credential_name, str):
-            raise SDKException('Connections', '101', "Credential name must be a string.")
+            raise SDKException("Connections", "101", "Credential name must be a string.")
         if not config_list and not include_all_configs:
-            raise SDKException('Connections', '101', "Either config_list or include_all_configs must be provided.")
+            raise SDKException(
+                "Connections", "101", "Either config_list or include_all_configs must be provided."
+            )
         cred_id = self._commcell.credentials.get(credential_name).credential_id
-        requests_json = {
-            "credentials": [
-                {
-                    "id": cred_id,
-                    "operation": "ADD"
-                }
-            ]
-        }
+        requests_json = {"credentials": [{"id": cred_id, "operation": "ADD"}]}
 
         if not include_all_configs:
             discovery_criteria = self._get_configs(cred_id)
@@ -533,19 +548,19 @@ class AzureConnections(Connections):
                 }
             ]
 
-        request = self._services['CONFIGURE_DISCOVERY']
-        flag, response = self._cvpysdk_object.make_request(
-            'PUT', request, requests_json
-        )
+        request = self._services["CONFIGURE_DISCOVERY"]
+        flag, response = self._cvpysdk_object.make_request("PUT", request, requests_json)
         if flag:
             if response.json():
-                if response.json().get('errorCode') == 0:
-                    return AzureConnection(self._commcell, credential_name, cred_id, AzureConfigType.CUSTOM)
+                if response.json().get("errorCode") == 0:
+                    return AzureConnection(
+                        self._commcell, credential_name, cred_id, AzureConfigType.CUSTOM
+                    )
                 else:
-                    raise SDKException('Connections', '107')
-            raise SDKException('Response', '102')
+                    raise SDKException("Connections", "107")
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_configs(self, credential_id) -> List[Dict[str, str]]:
         """Get all configuration name-value pairs (regions/subscriptions) for this connection.
@@ -563,18 +578,22 @@ class AzureConnections(Connections):
             >>> print(configs)
             [{'region': 'us-east-1'}, {'region': 'us-west-2'}]
         """
-        url = self._services['CLOUD_DISCOVERY_CRITERIA'] % credential_id
-        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        url = self._services["CLOUD_DISCOVERY_CRITERIA"] % credential_id
+        flag, response = self._cvpysdk_object.make_request("GET", url=url)
         if flag:
             if response.json():
-                if not response.json().get('errorMessage', None):
-                    if response.json().get('discoveryCriteria', {}):
-                        return response.json().get('discoveryCriteria')
+                if not response.json().get("errorMessage", None):
+                    if response.json().get("discoveryCriteria", {}):
+                        return response.json().get("discoveryCriteria")
                     else:
-                        raise SDKException("Connections", "101", "No discovery criteria found for the given connection.")
-            raise SDKException('Response', '102')
+                        raise SDKException(
+                            "Connections",
+                            "101",
+                            "No discovery criteria found for the given connection.",
+                        )
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
 
 # AWS-Specific Classes
@@ -650,7 +669,7 @@ class AWSConnection(Connection):
         Returns:
             A list of accounts in the AWS connection.
         """
-        if not hasattr(self, '_accounts') or not self._accounts:
+        if not hasattr(self, "_accounts") or not self._accounts:
             self._accounts = self._get_aws_org_accounts(self._connection_id) or []
         return self._accounts
 
@@ -690,54 +709,54 @@ class AWSConnection(Connection):
             >>> print(details)
             {'account_id': '123456789012', 'regions': ['us-east-1', 'us-west-2']}
         """
-        url = self._services['GET_AWS_CONNECTION_DETAILS'] % connection_id
-        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        url = self._services["GET_AWS_CONNECTION_DETAILS"] % connection_id
+        flag, response = self._cvpysdk_object.make_request("GET", url=url)
         if flag:
             if response.json():
-                if not response.json().get('errorMessage', None):
+                if not response.json().get("errorMessage", None):
                     return response.json()
                 else:
                     raise SDKException("Connections", "106")
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_aws_org_accounts(self, connection_id) -> Any | None:
         """Get all AWS organization accounts as name-value pairs.
 
-            Args:
-                connection_id (int): The connection ID of the AWS organization.
+        Args:
+            connection_id (int): The connection ID of the AWS organization.
 
-            Returns:
-                List[Dict[str, str]]: A list of dictionaries containing account details.
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries containing account details.
 
-            Raises:
-                SDKException: If the response was not successful.
+        Raises:
+            SDKException: If the response was not successful.
 
-            Example:
-                >>> aws_connection = AWSConnection(commcell)
-                >>> accounts = aws_connection.get_aws_org_accounts(12345)
-                >>> for account in accounts:
-                ...     print(account['accountId'], account['accountName'])
-                123456789012 Account1
-                987654321098 Account2
-            """
-        url = self._services['GET_AWS_ORG_ACCOUNTS'] % connection_id
-        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        Example:
+            >>> aws_connection = AWSConnection(commcell)
+            >>> accounts = aws_connection.get_aws_org_accounts(12345)
+            >>> for account in accounts:
+            ...     print(account['accountId'], account['accountName'])
+            123456789012 Account1
+            987654321098 Account2
+        """
+        url = self._services["GET_AWS_ORG_ACCOUNTS"] % connection_id
+        flag, response = self._cvpysdk_object.make_request("GET", url=url)
         if flag:
             if response.json():
-                self._accounts = response.json().get('accountDetails', [])
+                self._accounts = response.json().get("accountDetails", [])
                 if self._accounts:
                     return self._accounts
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
 
 class AWSConnections(Connections):
     """Manages multiple AWS connections."""
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize the AWSConnections instance.
 
         Args:
@@ -763,9 +782,15 @@ class AWSConnections(Connections):
         self.refresh()
         return self._connections
 
-    def add_express_connection(self, connection_name: str, account_id: str, connection_type: str,
-                               regions: Optional[str] = None, accounts: Optional[list] = None,
-                               discoverAllAccounts: bool = True) -> AWSConnection:
+    def add_express_connection(
+        self,
+        connection_name: str,
+        account_id: str,
+        connection_type: str,
+        regions: Optional[str] = None,
+        accounts: Optional[list] = None,
+        discoverAllAccounts: bool = True,
+    ) -> AWSConnection:
         """
         Add a new AWS cloud connection with the specified parameters.
 
@@ -793,66 +818,65 @@ class AWSConnections(Connections):
         """
         payload = AWS_EXPRESS_CONNECTION_PAYLOAD.copy()
         if not self._validate_aws_cloud_connection(account_id, connection_type):
-            raise SDKException('Connections', '105')
+            raise SDKException("Connections", "105")
         payload["name"] = connection_name
         payload["connectionType"] = connection_type
         payload["cloudSpecificConfiguration"]["aws"]["regions"] = regions
         payload["cloudSpecificConfiguration"]["aws"]["iamRoleAccountId"] = account_id
         if connection_type == AWS_CONNECTION_TYPE_ORG:
             payload["cloudSpecificConfiguration"]["aws"]["organizationConfiguration"] = {
-                "content": {
-                    "discoverAllAccounts": discoverAllAccounts
-                }
+                "content": {"discoverAllAccounts": discoverAllAccounts}
             }
             if accounts:
-                payload["cloudSpecificConfiguration"]["aws"]["organizationConfiguration"]["content"][
-                    "accounts"] = accounts
+                payload["cloudSpecificConfiguration"]["aws"]["organizationConfiguration"][
+                    "content"
+                ]["accounts"] = accounts
 
-        url = self._services['ADD_EXPRESS_CONNECTION']
-        flag, response = self._cvpysdk_object.make_request('POST', url=url, payload=payload)
+        url = self._services["ADD_EXPRESS_CONNECTION"]
+        flag, response = self._cvpysdk_object.make_request("POST", url=url, payload=payload)
 
         if flag:
-            if response.json() and 'id' in response.json():
-                connection_id = response.json().get('id', None)
+            if response.json() and "id" in response.json():
+                connection_id = response.json().get("id", None)
                 self.refresh()
                 return AWSConnection(self._commcell, connection_name, connection_id)
             else:
-                raise SDKException('Connections', '107')
+                raise SDKException("Connections", "107")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _validate_aws_cloud_connection(self, account_id: str, connection_type: str) -> bool:
         """Validate AWS cloud connection for the specified account ID.
 
-            Args:
-                account_id (str): The AWS account ID to validate.
-                connection_type (str): The type of AWS connection.
-                    - "CloudAccountLevel" for single account connections.
-                    - "OrganizationLevel" for organization-level connections.
+        Args:
+            account_id (str): The AWS account ID to validate.
+            connection_type (str): The type of AWS connection.
+                - "CloudAccountLevel" for single account connections.
+                - "OrganizationLevel" for organization-level connections.
 
-            Returns:
-                bool: True if the connection is valid, raises an exception otherwise.
+        Returns:
+            bool: True if the connection is valid, raises an exception otherwise.
 
-            Example:
-                >>> aws_connection = AWSConnection(commcell)
-                >>> is_valid = aws_connection.validate_aws_cloud_connection("123456789012", "CloudAccountLevel")
-                >>> print(is_valid)
-                True
-            """
+        Example:
+            >>> aws_connection = AWSConnection(commcell)
+            >>> is_valid = aws_connection.validate_aws_cloud_connection("123456789012", "CloudAccountLevel")
+            >>> print(is_valid)
+            True
+        """
 
         payload = AWS_EXPRESS_CONNECTION_PAYLOAD.copy()
         payload["connectionType"] = connection_type
         payload["cloudSpecificConfiguration"]["aws"]["iamRoleAccountId"] = account_id
 
-        url = self._services['VALIDATE_AWS_CONNECTION']
-        flag, response = self._cvpysdk_object.make_request('POST', url=url, payload=payload)
+        url = self._services["VALIDATE_AWS_CONNECTION"]
+        flag, response = self._cvpysdk_object.make_request("POST", url=url, payload=payload)
         if flag:
             if response.json():
-                if response.json().get('errorCode') == 0:
+                if response.json().get("errorCode") == 0:
                     return True
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_connection(self, connection_name: str) -> Optional[AWSConnection]:
         """Get an AWS connection by name.
@@ -877,7 +901,10 @@ class AWSConnections(Connections):
         Returns:
             bool: True if the connection exists, False otherwise.
         """
-        return any(connection.connection_name.lower() == connection_name.lower() for connection in self.all_connections)
+        return any(
+            connection.connection_name.lower() == connection_name.lower()
+            for connection in self.all_connections
+        )
 
     def delete_connection(self, connection_name: str) -> bool:
         """Delete an existing AWS connection by name.
@@ -890,49 +917,48 @@ class AWSConnections(Connections):
         """
         connection = self.get_connection(connection_name)
         if connection:
-            url = self._services['RETIRE'] % connection.connection_id
-            flag, response = self._cvpysdk_object.make_request('DELETE', url=url)
-            if flag and response.json().get('errorCode') == 0:
+            url = self._services["RETIRE"] % connection.connection_id
+            flag, response = self._cvpysdk_object.make_request("DELETE", url=url)
+            if flag and response.json().get("errorCode") == 0:
                 self.refresh()
                 return True
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '103')
+            raise SDKException("Response", "102")
+        raise SDKException("Response", "103")
 
     def refresh(self) -> None:
         """Refresh the AWS connections cache by fetching the latest data."""
         self._connections = self._get_all_connections()
         self._commcell.credentials.refresh()
 
-
     def _get_aws_cloud_connections(self) -> List[Dict[str, str]]:
         """Get all AWS cloud connections as name-value pairs.
 
-            This method retrieves all AWS cloud connections available in the system.
+        This method retrieves all AWS cloud connections available in the system.
 
-            Args:
-                None
+        Args:
+            None
 
-            Returns:
-                List[Dict[str, str]]: A list of dictionaries, where each dictionary contains details of an AWS cloud connection.
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, where each dictionary contains details of an AWS cloud connection.
 
-            Example:
-                >>> aws_connection = AWSConnection(commcell)
-                >>> connections = aws_connection.get_aws_cloud_connections()
-                >>> for conn in connections:
-                ...     print(conn['name'], conn['id'])
-                AWS_Connection_1 12345
-                AWS_Connection_2 67890
-            """
+        Example:
+            >>> aws_connection = AWSConnection(commcell)
+            >>> connections = aws_connection.get_aws_cloud_connections()
+            >>> for conn in connections:
+            ...     print(conn['name'], conn['id'])
+            AWS_Connection_1 12345
+            AWS_Connection_2 67890
+        """
 
-        url = self._services['GET_AWS_CLOUD_CONNECTIONS']
-        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        url = self._services["GET_AWS_CLOUD_CONNECTIONS"]
+        flag, response = self._cvpysdk_object.make_request("GET", url=url)
         if flag:
             if response.json():
-                connections = response.json().get('cloudConnections', [])
+                connections = response.json().get("cloudConnections", [])
                 if connections:
                     return connections
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _get_all_connections(self) -> List[AWSConnection]:
         """Retrieve all AWS connections from the backend.
@@ -944,10 +970,5 @@ class AWSConnections(Connections):
         if not connections:
             return []
         return [
-            AWSConnection(
-                self._commcell,
-                conn.get('name'),
-                conn.get('id')
-            )
-            for conn in connections
+            AWSConnection(self._commcell, conn.get("name"), conn.get("id")) for conn in connections
         ]

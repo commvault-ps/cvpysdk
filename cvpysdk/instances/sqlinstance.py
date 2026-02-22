@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -105,16 +103,13 @@ import datetime
 import re
 import threading
 import time
-
 from typing import Any, Dict, List, Optional, Union
 
 from ..constants import SQLDefines
 from ..exception import SDKException
 from ..instance import Instance
 from ..job import Job
-from ..schedules import Schedules
-from ..schedules import Schedule
-from ..schedules import SchedulePattern
+from ..schedules import Schedule, SchedulePattern, Schedules
 
 
 class SQLServerInstance(Instance):
@@ -240,44 +235,58 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
 
-        super(SQLServerInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
         self._ag_group_name = None
         self._ag_primary_replica = None
         self._ag_replicas_list = []
         self._ag_group_listener_list = []
 
-        self._mssql_instance_prop = self._properties.get('mssqlInstance', {})
+        self._mssql_instance_prop = self._properties.get("mssqlInstance", {})
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['INSTANCE'] % self._instance_id + "?propertyLevel=20"
+            "GET",
+            self._commcell_object._services["INSTANCE"] % self._instance_id + "?propertyLevel=20",
         )
 
         if flag:
             if response.json():
-                self._mssql_instance_prop = response.json()['instanceProperties'][0]['mssqlInstance']
+                self._mssql_instance_prop = response.json()["instanceProperties"][0][
+                    "mssqlInstance"
+                ]
 
-        if 'agProperties' in self._mssql_instance_prop:
-            self._ag_group_name = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', {}).get('name')
-            self._ag_primary_replica = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', {}).get('primaryReplicaServerName')
+        if "agProperties" in self._mssql_instance_prop:
+            self._ag_group_name = (
+                self.mssql_instance_prop.get("agProperties", {})
+                .get("availabilityGroup", {})
+                .get("name")
+            )
+            self._ag_primary_replica = (
+                self.mssql_instance_prop.get("agProperties", {})
+                .get("availabilityGroup", {})
+                .get("primaryReplicaServerName")
+            )
 
             listener_list_tmp = []
-            listener_list = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', {}).get('SQLAvailabilityGroupListenerList', {})
+            listener_list = (
+                self.mssql_instance_prop.get("agProperties", {})
+                .get("availabilityGroup", {})
+                .get("SQLAvailabilityGroupListenerList", {})
+            )
             for listener in listener_list:
-                listener_list_tmp.append(listener['availabilityGroupListenerName'])
+                listener_list_tmp.append(listener["availabilityGroupListenerName"])
             self._ag_listener_list = listener_list_tmp
 
             replica_list_tmp = []
-            replica_list = self.mssql_instance_prop.get('agProperties', {}).get('SQLAvailabilityReplicasList', {})
+            replica_list = self.mssql_instance_prop.get("agProperties", {}).get(
+                "SQLAvailabilityReplicasList", {}
+            )
             if replica_list:
-                for replica in replica_list['SQLAvailabilityReplicasList']:
+                for replica in replica_list["SQLAvailabilityReplicasList"]:
                     replica_dict = {
-                        "serverName": replica['name'],
-                        "clientId": replica['replicaClient']['clientId'],
-                        "clientName": replica['replicaClient']['clientName']
+                        "serverName": replica["name"],
+                        "clientId": replica["replicaClient"]["clientId"],
+                        "clientName": replica["replicaClient"]["clientName"],
                     }
                     replica_list_tmp.append(replica_dict)
                 self._ag_replicas_list = replica_list_tmp
@@ -295,7 +304,7 @@ class SQLServerInstance(Instance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "mssqlInstance": self._mssql_instance_prop,
-                "contentOperationType": 1
+                "contentOperationType": 1,
             }
         }
         return instance_json
@@ -314,27 +323,27 @@ class SQLServerInstance(Instance):
         """
         databases_details = []
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['SQL_DATABASE_LIST'] %int(self.instance_id), None
+            "GET",
+            self._commcell_object._services["SQL_DATABASE_LIST"] % int(self.instance_id),
+            None,
         )
         if flag:
             response_json = response.json()
             if "SqlDatabase" in response_json:
-                for database in response_json['SqlDatabase']:
-                    database_name = database['dbName']
-                    database_id = database['dbId']
+                for database in response_json["SqlDatabase"]:
+                    database_name = database["dbName"]
+                    database_id = database["dbId"]
                     backup_time = datetime.datetime.fromtimestamp(
-                        int(database['bkpTime'])
-                    ).strftime('%d-%m-%Y %H:%M:%S')
+                        int(database["bkpTime"])
+                    ).strftime("%d-%m-%Y %H:%M:%S")
 
-                    temp = {
-                        database_name: [database_id, backup_time]
-                    }
+                    temp = {database_name: [database_id, backup_time]}
 
                     databases_details.append(temp)
                 return databases_details
             return None
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def _restore_request_json(
         self,
@@ -348,7 +357,7 @@ class SQLServerInstance(Instance):
         sql_recover_type: str = None,
         undo_path: Optional[str] = None,
         restricted_user: Optional[bool] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> dict:
         """Construct the JSON request payload for a SQL Server restore operation.
 
@@ -405,136 +414,117 @@ class SQLServerInstance(Instance):
 
         if destination_instance not in self.destination_instances_dict:
             raise SDKException(
-                'Instance',
-                '102',
-                'SQL Instance [{0}] not suitable for restore destination or does not exist.'.format(
-                    destination_instance)
+                "Instance",
+                "102",
+                f"SQL Instance [{destination_instance}] not suitable for restore destination or does not exist.",
             )
 
         destination_client_id = int(
-            self.destination_instances_dict[destination_instance]['clientId']
+            self.destination_instances_dict[destination_instance]["clientId"]
         )
 
         destination_instance_id = int(
-            self.destination_instances_dict[destination_instance]['instanceId']
+            self.destination_instances_dict[destination_instance]["instanceId"]
         )
 
-        point_in_time = kwargs.get('point_in_time', None)
-        schedule_pattern = kwargs.get('schedule_pattern', None)
-        hardware_revert = kwargs.get('hardware_revert', False)
-        log_shipping = (
-                kwargs.get('log_shipping', False) and
-                       (sql_recover_type == SQLDefines.STATE_STANDBY or sql_recover_type == SQLDefines.STATE_NORECOVER)
+        point_in_time = kwargs.get("point_in_time", None)
+        schedule_pattern = kwargs.get("schedule_pattern", None)
+        hardware_revert = kwargs.get("hardware_revert", False)
+        log_shipping = kwargs.get("log_shipping", False) and (
+            sql_recover_type == SQLDefines.STATE_STANDBY
+            or sql_recover_type == SQLDefines.STATE_NORECOVER
         )
 
         request_json = {
             "taskInfo": {
-                "associations": [{
-                    "clientName": self._agent_object._client_object.client_name,
-                    "appName": self._agent_object.agent_name,
-                    "instanceName": self.instance_name
-                }],
-                "task": {
-                    "initiatedFrom": 1,
-                    "taskType": 1
-                },
-                "subTasks": [{
-                    "subTask": {
-                        "subTaskType": 3,
-                        "operationType": 1001
-                    },
-                    "options": {
-                        "restoreOptions": {
-                            "sqlServerRstOption": {
-                                "sqlRecoverType": sql_recover_type,
-                                "dropConnectionsToDatabase": drop_connections_to_databse,
-                                "overWrite": overwrite,
-                                "sqlRestoreType": sql_restore_type,
-                                "database": content_to_restore,
-                                "restoreSource": content_to_restore,
-                                "logShippingOnly": log_shipping
-                            },
-                            "commonOptions": {
-                                "revert": hardware_revert
-                            },
-                            "destination": {
-                                "destinationInstance": {
-                                    "clientId": destination_client_id,
-                                    "instanceName": destination_instance,
-                                    "instanceId": destination_instance_id
-                                },
-                                "destClient": {
-                                    "clientId": destination_client_id
-                                }
-                            },
-                            "browseOption": {
-                                "timeZone": {
-                                    "TimeZoneName": self._agent_object._client_object.timezone
-                                }
-                            }
-                        }
+                "associations": [
+                    {
+                        "clientName": self._agent_object._client_object.client_name,
+                        "appName": self._agent_object.agent_name,
+                        "instanceName": self.instance_name,
                     }
-                }]
+                ],
+                "task": {"initiatedFrom": 1, "taskType": 1},
+                "subTasks": [
+                    {
+                        "subTask": {"subTaskType": 3, "operationType": 1001},
+                        "options": {
+                            "restoreOptions": {
+                                "sqlServerRstOption": {
+                                    "sqlRecoverType": sql_recover_type,
+                                    "dropConnectionsToDatabase": drop_connections_to_databse,
+                                    "overWrite": overwrite,
+                                    "sqlRestoreType": sql_restore_type,
+                                    "database": content_to_restore,
+                                    "restoreSource": content_to_restore,
+                                    "logShippingOnly": log_shipping,
+                                },
+                                "commonOptions": {"revert": hardware_revert},
+                                "destination": {
+                                    "destinationInstance": {
+                                        "clientId": destination_client_id,
+                                        "instanceName": destination_instance,
+                                        "instanceId": destination_instance_id,
+                                    },
+                                    "destClient": {"clientId": destination_client_id},
+                                },
+                                "browseOption": {
+                                    "timeZone": {
+                                        "TimeZoneName": self._agent_object._client_object.timezone
+                                    }
+                                },
+                            }
+                        },
+                    }
+                ],
             }
         }
 
         if sql_recover_type == SQLDefines.STATE_STANDBY:
             if undo_path is not None:
-                undo_path_dict = {
-                    "fileOption": {
-                        "mapFiles": {
-                            "renameFilesSuffix": undo_path
-                        }
-                    }
-                }
-                request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(undo_path_dict)
+                undo_path_dict = {"fileOption": {"mapFiles": {"renameFilesSuffix": undo_path}}}
+                request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"].update(
+                    undo_path_dict
+                )
             else:
-                raise SDKException('Instance', '102', 'Failed to set Undo Path for Standby Restore.')
+                raise SDKException(
+                    "Instance", "102", "Failed to set Undo Path for Standby Restore."
+                )
 
         if restore_path is not None:
-            restore_path_dict = {
-                "device":
-                    restore_path
-            }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['sqlServerRstOption']\
-                .update(restore_path_dict)
+            restore_path_dict = {"device": restore_path}
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "sqlServerRstOption"
+            ].update(restore_path_dict)
 
         if restricted_user is not None:
-            restricted_user_dict = {
-                "dbOnly":
-                    restricted_user
-            }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['sqlServerRstOption']\
-                .update(restricted_user_dict)
+            restricted_user_dict = {"dbOnly": restricted_user}
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "sqlServerRstOption"
+            ].update(restricted_user_dict)
 
         if point_in_time:
             to_time = point_in_time
-            pit_dict = {
-                "pointOfTimeRst": True,
-                "pointInTime": {
-                    "time": point_in_time
-                }
-            }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['sqlServerRstOption']\
-                .update(pit_dict)
+            pit_dict = {"pointOfTimeRst": True, "pointInTime": {"time": point_in_time}}
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "sqlServerRstOption"
+            ].update(pit_dict)
 
         if to_time is not None:
             to_time_type = "toTimeValue"
             if isinstance(to_time, int):
                 to_time_type = "toTime"
-            to_time_dict = {
-                "timeRange": {
-                    to_time_type: to_time
-                }
-            }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption'].update(to_time_dict)
+            to_time_dict = {"timeRange": {to_time_type: to_time}}
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "browseOption"
+            ].update(to_time_dict)
 
         if schedule_pattern is not None:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         return request_json
 
-    def _process_restore_response(self, request_json: dict) -> Union['Job', 'Schedule']:
+    def _process_restore_response(self, request_json: dict) -> Union["Job", "Schedule"]:
         """Execute the CreateTask API for a restore operation and process the response.
 
         This method sends the provided JSON request to the CreateTask API to initiate a restore job.
@@ -552,27 +542,27 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['RESTORE'], request_json
+            "POST", self._commcell_object._services["RESTORE"], request_json
         )
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
                     time.sleep(1)
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 elif "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()["taskId"])
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Instance', '102', o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Restore job failed\nError: "{error_message}"'
+                    raise SDKException("Instance", "102", o_str)
                 else:
-                    raise SDKException('Instance', '102', 'Failed to run the restore job')
+                    raise SDKException("Instance", "102", "Failed to run the restore job")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_sql_restore_options(self, content_to_restore: list) -> dict:
         """Retrieve SQL Server restore options using the provided database list.
@@ -596,18 +586,16 @@ class SQLServerInstance(Instance):
         contents_dict = []
 
         for content in content_to_restore:
-            database_dict = {
-                "databaseName": content
-            }
+            database_dict = {"databaseName": content}
             contents_dict.append(database_dict)
 
         request_json = {
             "restoreDbType": 0,
             "sourceInstanceId": int(self.instance_id),
-            "selectedDatabases": contents_dict
+            "selectedDatabases": contents_dict,
         }
 
-        webservice = self._commcell_object._services['SQL_RESTORE_OPTIONS']
+        webservice = self._commcell_object._services["SQL_RESTORE_OPTIONS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             "POST", webservice, request_json
@@ -617,26 +605,26 @@ class SQLServerInstance(Instance):
 
         if flag:
             if response.json():
-                if 'sqlDestinationInstances' in response.json():
-                    for instance in response.json()['sqlDestinationInstances']:
+                if "sqlDestinationInstances" in response.json():
+                    for instance in response.json()["sqlDestinationInstances"]:
                         instances_dict = {
-                            instance['genericEntity']['instanceName'].lower(): {
-                                "instanceId": int(instance['genericEntity']['instanceId']),
-                                "clientId": int(instance['genericEntity']['clientId'])
+                            instance["genericEntity"]["instanceName"].lower(): {
+                                "instanceId": int(instance["genericEntity"]["instanceId"]),
+                                "clientId": int(instance["genericEntity"]["clientId"]),
                             }
                         }
                         self.destination_instances_dict.update(instances_dict)
-                elif 'error' in response.json():
-                    if 'errorMessage' in response.json()['error']:
-                        error_message = response.json()['error']['errorMessage']
-                        raise SDKException('Instance', '102', error_message)
+                elif "error" in response.json():
+                    if "errorMessage" in response.json()["error"]:
+                        error_message = response.json()["error"]["errorMessage"]
+                        raise SDKException("Instance", "102", error_message)
                     else:
-                        raise SDKException('Instance', '102', 'No Instance exists on commcell')
+                        raise SDKException("Instance", "102", "No Instance exists on commcell")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         return response.json()
 
     def _run_backup(self, subclient_name: str, return_list: list) -> None:
@@ -652,13 +640,15 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         try:
-            job = self.subclients.get(subclient_name).backup('Full')
+            job = self.subclients.get(subclient_name).backup("Full")
             if job:
                 return_list.append(job)
         except SDKException as excp:
             return_list.append(excp)
 
-    def _process_browse_request(self, browse_request: dict, get_full_details: bool = False) -> (list, list):
+    def _process_browse_request(
+        self, browse_request: dict, get_full_details: bool = False
+    ) -> (list, list):
         """Execute the SQL Instance Browse API with the provided request and parse the response.
 
         This method sends a JSON request to the server to browse SQL instance contents and returns
@@ -688,34 +678,31 @@ class SQLServerInstance(Instance):
 
         if flag:
             if response.json():
-                if 'sqlDatabase' in response.json():
+                if "sqlDatabase" in response.json():
                     # returns whole dict if requested
                     if get_full_details:
                         return response.json()["sqlDatabase"]
 
-                    for database in response.json()['sqlDatabase']:
-
-                        database_name = database['databaseName']
+                    for database in response.json()["sqlDatabase"]:
+                        database_name = database["databaseName"]
 
                         created_time = datetime.datetime.fromtimestamp(
-                            int(database['createdTime'])
-                        ).strftime('%d-%m-%Y %H:%M:%S')
+                            int(database["createdTime"])
+                        ).strftime("%d-%m-%Y %H:%M:%S")
 
-                        version = database['version']
+                        version = database["version"]
 
-                        temp = {
-                            database_name: [created_time, version]
-                        }
+                        temp = {database_name: [created_time, version]}
 
                         databases.append(database_name)
                         full_result.append(temp)
 
                 return databases, full_result
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _recoverypoint_request_json(
         self,
@@ -724,7 +711,7 @@ class SQLServerInstance(Instance):
         recovery_point_name: Optional[str] = None,
         point_in_time: int = 0,
         destination_instance: Optional[str] = None,
-        snap: bool = False
+        snap: bool = False,
     ) -> Dict[str, Any]:
         """Create and return a request JSON for SQL Server recovery point creation.
 
@@ -755,23 +742,25 @@ class SQLServerInstance(Instance):
 
         # fetching db details
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services["SQL_DATABASES"] % dbname, None
+            "GET", self._commcell_object._services["SQL_DATABASES"] % dbname, None
         )
         if flag:
             response = response.json()
             db_id = response["SqlDatabase"][0]["dbId"]
         else:
-            raise SDKException('Response', 102, "failed to fetch db details")
+            raise SDKException("Response", 102, "failed to fetch db details")
 
         # fetching full database details
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services["SQL_DATABASE_DETAILS"] % (self.instance_id, db_id), None
+            "GET",
+            self._commcell_object._services["SQL_DATABASE_DETAILS"] % (self.instance_id, db_id),
+            None,
         )
         if flag:
             response = response.json()
             db_details = response["SqlDatabase"][0]
         else:
-            raise SDKException('Response', 102, "failed to fetch db details")
+            raise SDKException("Response", 102, "failed to fetch db details")
 
         fullbackup_job = db_details["fBkpJob"]
         if fullbackup_job is None:
@@ -790,21 +779,12 @@ class SQLServerInstance(Instance):
         request_json = {
             "opType": 0,
             "session": {},
-            "queries": [{
-                "type": 0,
-                "queryId": "0"
-            }],
-            "mode": {
-                "mode": 3
-            },
+            "queries": [{"type": 0, "queryId": "0"}],
+            "mode": {"mode": 3},
             "advOptions": {
                 "copyPrecedence": 0,
                 "advConfig": {
-                    "extendedConfig": {
-                        "browseAdvConfigLiveBrowse": {
-                            "useISCSIMount": False
-                        }
-                    },
+                    "extendedConfig": {"browseAdvConfigLiveBrowse": {"useISCSIMount": False}},
                     "applicationMining": {
                         "appType": 81,
                         "agentVersion": 0,
@@ -819,25 +799,18 @@ class SQLServerInstance(Instance):
                                 "clientId": instance.properties["instance"]["clientId"],
                                 "instanceName": instance.instance_name,
                                 "instanceId": int(instance.instance_id),
-                                "applicationId": 81
+                                "applicationId": 81,
                             },
                             "miningJobs": [fullbackup_job],
-                            "client": {
-                                "clientId": self.properties["instance"]["clientId"]
-                            },
+                            "client": {"clientId": self.properties["instance"]["clientId"]},
                             "phyfileRename": physical_files,
                             "logfileRename": logical_files,
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
-            "ma": {
-                "clientId": self.properties["instance"]["clientId"]
-            },
-            "options": {
-                "instantSend": True,
-                "skipIndexRestore": False
-            },
+            "ma": {"clientId": self.properties["instance"]["clientId"]},
+            "options": {"instantSend": True, "skipIndexRestore": False},
             "entity": {
                 "drivePoolId": 0,
                 "subclientId": job.details["jobDetail"]["generalInfo"]["subclient"]["subclientId"],
@@ -845,12 +818,9 @@ class SQLServerInstance(Instance):
                 "libraryId": job.details["jobDetail"]["generalInfo"]["mediaLibrary"]["libraryId"],
                 "backupsetId": job.details["jobDetail"]["generalInfo"]["subclient"]["backupsetId"],
                 "instanceId": int(self.instance_id),
-                "clientId": self.properties["instance"]["clientId"]
+                "clientId": self.properties["instance"]["clientId"],
             },
-            "timeRange": {
-                "fromTime": 0,
-                "toTime": point_in_time
-            }
+            "timeRange": {"fromTime": 0, "toTime": point_in_time},
         }
 
         return request_json
@@ -876,31 +846,37 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['BROWSE'], request_json
+            "POST", self._commcell_object._services["BROWSE"], request_json
         )
 
         if flag:
             response_json = response.json()
             if response_json:
                 if "browseResponses" in response_json:
-                    d = response_json['browseResponses'][0]["browseResult"]["advConfig"]["applicationMining"]["browseInitResp"]
+                    d = response_json["browseResponses"][0]["browseResult"]["advConfig"][
+                        "applicationMining"
+                    ]["browseInitResp"]
                     try:
-                        return Job(self._commcell_object, d["recoveryPointJobID"]), d["recoveryPointID"], d["edbPath"]
+                        return (
+                            Job(self._commcell_object, d["recoveryPointJobID"]),
+                            d["recoveryPointID"],
+                            d["edbPath"],
+                        )
                     except Exception as msg:
                         # server code 102 response is empty or doesn't contain required parameters
-                        raise SDKException('Instance', 102, msg)
+                        raise SDKException("Instance", 102, msg)
 
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    o_str = 'create recovery point job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Instance', '102', o_str)
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'create recovery point job failed\nError: "{error_message}"'
+                    raise SDKException("Instance", "102", o_str)
                 else:
-                    raise SDKException('Instance', '102', 'Failed to run the restore job')
+                    raise SDKException("Instance", "102", "Failed to run the restore job")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _table_level_restore_request_json(
         self,
@@ -909,7 +885,7 @@ class SQLServerInstance(Instance):
         destination_db: str,
         rp_name: str,
         include_child_tables: bool,
-        include_parent_tables: bool
+        include_parent_tables: bool,
     ) -> dict:
         """Create and return a request JSON for performing a table-level restore in SQL Server.
 
@@ -946,22 +922,24 @@ class SQLServerInstance(Instance):
 
         source_item = []
         for table in tables_to_restore:
-            source_item.append('/' + table)
+            source_item.append("/" + table)
 
         request_json = {
             "taskInfo": {
-                "associations": [{
-                    "subclientId": -1,
-                    "copyId": 0,
-                    "applicationId": 81,
-                    "clientName": client_name,
-                    "backupsetId": -1,
-                    "instanceId": instance_id,
-                    "clientId": client_id,
-                    "instanceName": instance_name,
-                    "_type_": 5,
-                    "appName": self._agent_object.agent_name
-                }],
+                "associations": [
+                    {
+                        "subclientId": -1,
+                        "copyId": 0,
+                        "applicationId": 81,
+                        "clientName": client_name,
+                        "backupsetId": -1,
+                        "instanceId": instance_id,
+                        "clientId": client_id,
+                        "instanceName": instance_name,
+                        "_type_": 5,
+                        "appName": self._agent_object.agent_name,
+                    }
+                ],
                 "task": {
                     "ownerId": 1,
                     "taskType": 1,
@@ -970,27 +948,17 @@ class SQLServerInstance(Instance):
                     "initiatedFrom": 1,
                     "policyType": 0,
                     "taskId": 0,
-                    "taskFlags": {
-                        "isEZOperation": False,
-                        "disabled": False
-                    }
+                    "taskFlags": {"isEZOperation": False, "disabled": False},
                 },
                 "subTasks": [
                     {
-                        "subTask": {
-                            "subTaskType": 3,
-                            "operationType": 1001
-                        },
+                        "subTask": {"subTaskType": 3, "operationType": 1001},
                         "options": {
                             "adminOpts": {
-                                "contentIndexingOption": {
-                                    "subClientBasedAnalytics": False
-                                }
+                                "contentIndexingOption": {"subClientBasedAnalytics": False}
                             },
                             "restoreOptions": {
-                                "virtualServerRstOption": {
-                                    "isBlockLevelReplication": False
-                                },
+                                "virtualServerRstOption": {"isBlockLevelReplication": False},
                                 "sqlServerRstOption": {
                                     "cloneEnv": False,
                                     "ffgRestore": False,
@@ -1008,7 +976,7 @@ class SQLServerInstance(Instance):
                                         "clientId": client_id,
                                         "instanceName": instance_name,
                                         "instanceId": instance_id,
-                                        "applicationId": 81
+                                        "applicationId": 81,
                                     },
                                     "sqlArchiveOptions": {
                                         "sourceDBName": src_db,
@@ -1018,10 +986,10 @@ class SQLServerInstance(Instance):
                                                 "clientId": client_id,
                                                 "instanceName": instance_name,
                                                 "instanceId": instance_id,
-                                                "applicationId": 81
-                                            }
-                                        }
-                                    }
+                                                "applicationId": 81,
+                                            },
+                                        },
+                                    },
                                 },
                                 "browseOption": {
                                     "listMedia": False,
@@ -1030,27 +998,13 @@ class SQLServerInstance(Instance):
                                     "commCellId": self._commcell_object.commcell_id,
                                     "mediaOption": {
                                         "useISCSIMount": False,
-                                        "mediaAgent": {
-                                            "mediaAgentId": 0,
-                                            "_type_": 11
-                                        },
-                                        "library": {
-                                            "_type_": 9,
-                                            "libraryId": 0
-                                        },
-                                        "copyPrecedence": {
-                                            "copyPrecedenceApplicable": False
-                                        },
-                                        "drivePool": {
-                                            "_type_": 47,
-                                            "drivePoolId": 0
-                                        }
+                                        "mediaAgent": {"mediaAgentId": 0, "_type_": 11},
+                                        "library": {"_type_": 9, "libraryId": 0},
+                                        "copyPrecedence": {"copyPrecedenceApplicable": False},
+                                        "drivePool": {"_type_": 47, "drivePoolId": 0},
                                     },
-                                    "backupset": {
-                                        "backupsetId": -1,
-                                        "clientId": client_id
-                                    },
-                                    "timeRange": {}
+                                    "backupset": {"backupsetId": -1, "clientId": client_id},
+                                    "timeRange": {},
                                 },
                                 "commonOptions": {
                                     "clusterDBBackedup": False,
@@ -1058,37 +1012,35 @@ class SQLServerInstance(Instance):
                                     "isDBArchiveRestore": True,
                                     "copyToObjectStore": False,
                                     "onePassRestore": False,
-                                    "syncRestore": False
+                                    "syncRestore": False,
                                 },
                                 "destination": {
                                     "destClient": {
                                         "clientId": client_id,
-                                        "clientName": client_name
+                                        "clientName": client_name,
                                     }
                                 },
                                 "fileOption": {
                                     "sourceItem": source_item,
                                     "browseFilters": [
                                         "<?xml version='1.0' encoding='UTF-8'?>"
-                                        "<databrowse_Query type=\"0\" queryId=\"0\" />"
-                                    ]
+                                        '<databrowse_Query type="0" queryId="0" />'
+                                    ],
                                 },
-                                "dbDataMaskingOptions": {
-                                    "isStandalone": False
-                                }
+                                "dbDataMaskingOptions": {"isStandalone": False},
                             },
                             "commonOpts": {
                                 "notifyUserOnJobCompletion": False,
                                 "perfJobOpts": {
                                     "rstPerfJobOpts": {
                                         "mediaReadSpeed": False,
-                                        "pipelineTransmittingSpeed": False
+                                        "pipelineTransmittingSpeed": False,
                                     }
-                                }
-                            }
-                        }
+                                },
+                            },
+                        },
                     }
-                ]
+                ],
             }
         }
         return request_json
@@ -1106,9 +1058,9 @@ class SQLServerInstance(Instance):
         """
 
         instance_id = int(self.instance_id)
-        client_id = int(self.properties['instance']['clientId'])
+        client_id = int(self.properties["instance"]["clientId"])
 
-        webservice = self._commcell_object._services['SQL_AG_GROUPS']
+        webservice = self._commcell_object._services["SQL_AG_GROUPS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             "GET", webservice % (client_id, instance_id)
@@ -1116,13 +1068,17 @@ class SQLServerInstance(Instance):
 
         if flag:
             if response.json():
-                if 'SQLAvailabilityGroupList' in response.json():
-                    return response.json()['SQLAvailabilityGroupList']
+                if "SQLAvailabilityGroupList" in response.json():
+                    return response.json()["SQLAvailabilityGroupList"]
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Instance', '102', 'No Availability Groups exist for given primary replica '
-                                                      'or SQL services are down on target server.')
+                raise SDKException(
+                    "Instance",
+                    "102",
+                    "No Availability Groups exist for given primary replica "
+                    "or SQL services are down on target server.",
+                )
 
     def _get_ag_group_replicas(self, ag_group_name: str) -> dict:
         """Retrieve the list of replicas for a specified SQL Server Availability Group.
@@ -1140,29 +1096,33 @@ class SQLServerInstance(Instance):
         """
 
         instance_id = int(self.instance_id)
-        client_id = int(self.properties['instance']['clientId'])
+        client_id = int(self.properties["instance"]["clientId"])
 
-        webservice = self._commcell_object._services['SQL_AG_GROUP_REPLICAS']
+        webservice = self._commcell_object._services["SQL_AG_GROUP_REPLICAS"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            "GET", webservice %(client_id, instance_id, ag_group_name)
+            "GET", webservice % (client_id, instance_id, ag_group_name)
         )
 
         if flag:
             if response.json():
-                if 'SQLAvailabilityReplicasList' in response.json():
+                if "SQLAvailabilityReplicasList" in response.json():
                     return response.json()
                 else:
-                    raise SDKException('Instance', '102', 'No replicas exist for given Availability Group '
-                                                          'or SQL services are down on target server.')
+                    raise SDKException(
+                        "Instance",
+                        "102",
+                        "No replicas exist for given Availability Group "
+                        "or SQL services are down on target server.",
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
-    def backup(self) -> List['Job']:
+    def backup(self) -> List["Job"]:
         """Run a full backup job for all subclients in this SQL Server instance.
 
-        This method initiates full backup jobs for each subclient within the backupset 
-        associated with this SQL Server instance. It returns a list of job objects 
+        This method initiates full backup jobs for each subclient within the backupset
+        associated with this SQL Server instance. It returns a list of job objects
         representing the backup jobs that were started.
 
         Returns:
@@ -1177,9 +1137,7 @@ class SQLServerInstance(Instance):
 
         if all_subclients:
             for subclient in all_subclients:
-                thread = threading.Thread(
-                    target=self._run_backup, args=(subclient, return_list)
-                )
+                thread = threading.Thread(target=self._run_backup, args=(subclient, return_list))
                 thread_list.append(thread)
                 thread.start()
 
@@ -1219,8 +1177,10 @@ class SQLServerInstance(Instance):
 
         #ai-gen-doc
         """
-        browse_request = self._commcell_object._services['INSTANCE_BROWSE'] % (
-            self._agent_object._client_object.client_id, "SQL", self.instance_id
+        browse_request = self._commcell_object._services["INSTANCE_BROWSE"] % (
+            self._agent_object._client_object.client_id,
+            "SQL",
+            self.instance_id,
         )
 
         return self._process_browse_request(browse_request, get_full_details=get_full_details)
@@ -1229,16 +1189,16 @@ class SQLServerInstance(Instance):
         self,
         from_date: Optional[Union[str, int]] = None,
         to_date: Optional[Union[str, int]] = None,
-        full_details: Optional[bool] = None
+        full_details: Optional[bool] = None,
     ) -> Union[List[str], Dict[str, Any]]:
         """Retrieve a list of backed up databases for this SQL Server instance within a specified time frame.
 
         Args:
-            from_date: The start date/time for browsing backups. Accepts a string in the format 'dd/MM/YYYY', 
+            from_date: The start date/time for browsing backups. Accepts a string in the format 'dd/MM/YYYY',
                 'dd/MM/YYYY HH:MM:SS', or an integer timestamp. If not specified, defaults to 01/01/1970.
-            to_date: The end date/time for browsing backups. Accepts a string in the format 'dd/MM/YYYY', 
+            to_date: The end date/time for browsing backups. Accepts a string in the format 'dd/MM/YYYY',
                 'dd/MM/YYYY HH:MM:SS', or an integer timestamp. If not specified, defaults to the current date.
-            full_details: If True, returns detailed information for each database, including backup creation time 
+            full_details: If True, returns detailed information for each database, including backup creation time
                 and database version. If False or None, returns only the list of database names.
 
         Returns:
@@ -1254,7 +1214,7 @@ class SQLServerInstance(Instance):
             >>> # Get all backed up databases from 01/01/2023 to 31/01/2023
             >>> db_list = sql_instance.browse_in_time(from_date='01/01/2023', to_date='31/01/2023')
             >>> print(db_list)
-            >>> 
+            >>>
             >>> # Get detailed backup information for all databases in the last week
             >>> import time
             >>> one_week_ago = int(time.time()) - 7*24*60*60
@@ -1268,24 +1228,26 @@ class SQLServerInstance(Instance):
         regex_datetime = regex_date + r"\s+\d{2}:\d{2}:\d{2}"
         if not isinstance(from_date, int):
             if from_date and bool(re.search(regex_datetime, from_date)):
-                from_date = int(time.mktime(time.strptime(from_date, '%d/%m/%Y %H:%M:%S' )))
+                from_date = int(time.mktime(time.strptime(from_date, "%d/%m/%Y %H:%M:%S")))
             elif from_date and bool(re.search(regex_date, from_date)):
-                from_date = int(time.mktime(time.strptime(from_date, '%d/%m/%Y')))
+                from_date = int(time.mktime(time.strptime(from_date, "%d/%m/%Y")))
             else:
                 from_date = 0
         if not isinstance(to_date, int):
             if to_date and bool(re.search(regex_datetime, to_date)):
-                to_date = int(time.mktime(time.strptime(to_date, '%d/%m/%Y %H:%M:%S')))
+                to_date = int(time.mktime(time.strptime(to_date, "%d/%m/%Y %H:%M:%S")))
             elif to_date and bool(re.search(regex_date, to_date)):
-                to_date = int(time.mktime(time.strptime(to_date, '%d/%m/%Y')))
+                to_date = int(time.mktime(time.strptime(to_date, "%d/%m/%Y")))
             else:
                 to_date = int(time.time())
 
-        browse_request = self._commcell_object._services['INSTANCE_BROWSE'] % (
-            self._agent_object._client_object.client_id, "SQL", self.instance_id
+        browse_request = self._commcell_object._services["INSTANCE_BROWSE"] % (
+            self._agent_object._client_object.client_id,
+            "SQL",
+            self.instance_id,
         )
 
-        browse_request += '?fromTime={0}&toTime={1}'.format(from_date, to_date)
+        browse_request += f"?fromTime={from_date}&toTime={to_date}"
 
         return self._process_browse_request(browse_request, full_details)
 
@@ -1295,14 +1257,14 @@ class SQLServerInstance(Instance):
         drop_connections_to_databse: bool = False,
         overwrite: bool = True,
         restore_path: str = None,
-        to_time: 'Union[int, str, None]' = None,
+        to_time: "Union[int, str, None]" = None,
         sql_restore_type: str = SQLDefines.DATABASE_RESTORE,
         sql_recover_type: str = SQLDefines.STATE_RECOVER,
         undo_path: str = None,
         restricted_user: bool = None,
         destination_instance: str = None,
-        **kwargs
-    ) -> 'Union[Job, Schedule]':
+        **kwargs,
+    ) -> "Union[Job, Schedule]":
         """Restore the specified SQL Server databases from backup.
 
         This method initiates a restore operation for the provided list of databases, with options to control
@@ -1357,7 +1319,7 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(content_to_restore, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         if destination_instance is not None:
             destination_instance = destination_instance.lower()
@@ -1373,7 +1335,7 @@ class SQLServerInstance(Instance):
             undo_path=undo_path,
             restricted_user=restricted_user,
             destination_instance=destination_instance,
-            **kwargs
+            **kwargs,
         )
 
         return self._process_restore_response(request_json)
@@ -1384,8 +1346,8 @@ class SQLServerInstance(Instance):
         destination_server: str,
         drop_connections_to_databse: bool = False,
         overwrite: bool = True,
-        restore_path: str = None
-    ) -> 'Job':
+        restore_path: str = None,
+    ) -> "Job":
         """Restore specified SQL Server databases to a destination server.
 
         This method initiates a restore operation for the given list of databases, allowing you to specify
@@ -1419,14 +1381,14 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(content_to_restore, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         request_json = self._restore_request_json(
             content_to_restore,
             drop_connections_to_databse=drop_connections_to_databse,
             overwrite=overwrite,
             restore_path=restore_path,
-            destination_instance=destination_server
+            destination_instance=destination_server,
         )
 
         return self._process_restore_response(request_json)
@@ -1440,14 +1402,14 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services["SQL_CLONES"], None
+            "GET", self._commcell_object._services["SQL_CLONES"], None
         )
         if flag:
             response_json = response.json()
             if "rpObjectList" in response_json:
                 return response_json["total"], response_json["rpObjectList"]
             return 0, None
-        raise SDKException('Response', '102', "failed to get recovery points")
+        raise SDKException("Response", "102", "failed to get recovery points")
 
     def create_recovery_point(
         self,
@@ -1455,7 +1417,7 @@ class SQLServerInstance(Instance):
         new_database_name: Optional[str] = None,
         destination_instance: Optional[str] = None,
         expire_days: int = 1,
-        snap: bool = False
+        snap: bool = False,
     ) -> tuple:
         """Start a granular restore or recovery point job and create an on-demand restore of a SQL Server database.
 
@@ -1489,7 +1451,7 @@ class SQLServerInstance(Instance):
         """
         # write a wrapper over this to allow creating more than one recovery points at a time is neccessary
         if not isinstance(database_name, str):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         if destination_instance is None:
             destination_instance = self.instance_name
@@ -1501,7 +1463,7 @@ class SQLServerInstance(Instance):
             expire_days=expire_days,
             recovery_point_name=new_database_name,
             destination_instance=destination_instance,
-            snap=snap
+            snap=snap,
         )
         return self._process_recovery_point_request(recoverypoint_request)
 
@@ -1512,8 +1474,8 @@ class SQLServerInstance(Instance):
         destination_db_name: str,
         rp_name: str,
         include_child_tables: bool,
-        include_parent_tables: bool
-    ) -> 'Job':
+        include_parent_tables: bool,
+    ) -> "Job":
         """Initiate a table-level restore operation for a SQL Server database.
 
         This method starts a restore job to recover specific tables from a source database to a destination database,
@@ -1545,10 +1507,12 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
 
-        if not (isinstance(src_db_name, str)
-                or isinstance(tables_to_restore, list)
-                or isinstance(destination_db_name, str)):
-            raise SDKException('Instance', '101')
+        if not (
+            isinstance(src_db_name, str)
+            or isinstance(tables_to_restore, list)
+            or isinstance(destination_db_name, str)
+        ):
+            raise SDKException("Instance", "101")
 
         request_json = self._table_level_restore_request_json(
             src_db_name,
@@ -1556,7 +1520,7 @@ class SQLServerInstance(Instance):
             destination_db_name,
             rp_name,
             include_child_tables,
-            include_parent_tables
+            include_parent_tables,
         )
 
         return self._process_restore_response(request_json)
@@ -1570,9 +1534,7 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
 
-        request_json = {
-            "useVss": value
-        }
+        request_json = {"useVss": value}
 
         self._set_instance_properties("_mssql_instance_prop", request_json)
 
@@ -1587,22 +1549,20 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
 
-        request_json = {
-            "vDITimeOut": value
-        }
+        request_json = {"vDITimeOut": value}
 
         self._set_instance_properties("_mssql_instance_prop", request_json)
 
     def impersonation(self, enable: bool, credentials: Optional[str] = None) -> None:
         """Enable or disable impersonation on the SQL Server instance.
 
-        This method sets impersonation for the SQL Server instance using either the local system account 
-        or the provided credentials. If impersonation is enabled and no credentials are specified, 
+        This method sets impersonation for the SQL Server instance using either the local system account
+        or the provided credentials. If impersonation is enabled and no credentials are specified,
         the local system account will be used by default.
 
         Args:
             enable: Set to True to enable impersonation, or False to disable it.
-            credentials: Optional. The name of the credentials to use for impersonation. If not provided 
+            credentials: Optional. The name of the credentials to use for impersonation. If not provided
                 and impersonation is enabled, the local system account will be used.
 
         Example:
@@ -1621,39 +1581,39 @@ class SQLServerInstance(Instance):
             impersonate_json = {
                 "overrideHigherLevelSettings": {
                     "overrideGlobalAuthentication": True,
-                    "useLocalSystemAccount": True
+                    "useLocalSystemAccount": True,
                 }
             }
         elif enable and credentials is not None:
             impersonate_json = {
                 "overrideHigherLevelSettings": {
                     "overrideGlobalAuthentication": True,
-                    "useLocalSystemAccount": False
+                    "useLocalSystemAccount": False,
                 },
-                "MSSQLCredentialinfo": {
-                    "credentialName": credentials
-                }
+                "MSSQLCredentialinfo": {"credentialName": credentials},
             }
         else:
             impersonate_json = {
                 "overrideHigherLevelSettings": {
                     "overrideGlobalAuthentication": True,
-                    "useLocalSystemAccount": False
+                    "useLocalSystemAccount": False,
                 }
             }
 
         self._set_instance_properties("_mssql_instance_prop", impersonate_json)
 
-    def create_sql_ag(self, client_name: str, ag_group_name: str, credentials: Optional[str] = None) -> 'Instance':
+    def create_sql_ag(
+        self, client_name: str, ag_group_name: str, credentials: Optional[str] = None
+    ) -> "Instance":
         """Create a new SQL Availability Group (AG) client and instance.
 
-        This method provisions a new SQL AG client and its associated instance using the specified client name 
+        This method provisions a new SQL AG client and its associated instance using the specified client name
         and availability group name. Optionally, impersonation credentials can be provided.
 
         Args:
             client_name: The name to assign to the new Availability Group client.
             ag_group_name: The name of the Availability Group to create.
-            credentials: Optional. The name of the credentials to use for impersonation. If not provided, 
+            credentials: Optional. The name of the credentials to use for impersonation. If not provided,
                 no impersonation is used.
 
         Returns:
@@ -1668,30 +1628,34 @@ class SQLServerInstance(Instance):
         """
         # If credentials passed, verify it exists
         if credentials:
-            if not credentials in self._commcell_object.credentials.all_credentials:
+            if credentials not in self._commcell_object.credentials.all_credentials:
                 raise SDKException(
-                    'Credential', '102', 'Credential name provided does not exist in the commcell.'
+                    "Credential", "102", "Credential name provided does not exist in the commcell."
                 )
 
         # Get the available AG groups configured on SQL Instance
         ag_groups_resp = self._get_ag_groups()
 
         # Verify the provided AG group exists from available AG groups on primary replica
-        if not any(ag['name'] == ag_group_name for ag in ag_groups_resp):
+        if not any(ag["name"] == ag_group_name for ag in ag_groups_resp):
             raise SDKException(
-                'Instance', '102', 'Availability Group with provided name does not exist for given replica.'
+                "Instance",
+                "102",
+                "Availability Group with provided name does not exist for given replica.",
             )
         for ag_group in ag_groups_resp:
-            if ag_group['name'].lower() == ag_group_name.lower():
-                ag_group_endpointURL = ag_group['endpointURL']
-                ag_group_backupPref = ag_group['backupPreference']
-                ag_primary_replica_server = ag_group['primaryReplicaServerName']
+            if ag_group["name"].lower() == ag_group_name.lower():
+                ag_group_endpointURL = ag_group["endpointURL"]
+                ag_group_backupPref = ag_group["backupPreference"]
+                ag_primary_replica_server = ag_group["primaryReplicaServerName"]
 
                 ag_group_listener_list = []
-                if 'SQLAvailabilityGroupListenerList' in ag_group:
-                    for listener in ag_group['SQLAvailabilityGroupListenerList']:
+                if "SQLAvailabilityGroupListenerList" in ag_group:
+                    for listener in ag_group["SQLAvailabilityGroupListenerList"]:
                         listener_details = {
-                            'availabilityGroupListenerName': listener['availabilityGroupListenerName']
+                            "availabilityGroupListenerName": listener[
+                                "availabilityGroupListenerName"
+                            ]
                         }
                         ag_group_listener_list.append(listener_details)
 
@@ -1704,53 +1668,54 @@ class SQLServerInstance(Instance):
                     "clientType": 20,
                     "mssqlagClientProperties": {
                         "SQLServerInstance": {
-                            "clientId": int(self.properties['instance']['clientId']),
-                            "instanceId": int(self.instance_id)
+                            "clientId": int(self.properties["instance"]["clientId"]),
+                            "instanceId": int(self.instance_id),
                         },
                         "availabilityGroup": {
                             "name": ag_group_name,
                             "primaryReplicaServerName": ag_primary_replica_server,
                             "backupPreference": ag_group_backupPref,
-                            "endpointURL": ag_group_endpointURL
+                            "endpointURL": ag_group_endpointURL,
                         },
                         "SQLAvailabilityReplicasList": ag_group_replicas_resp,
                     },
                 },
-                "entity": {
-                    "clientName": client_name
-                }
+                "entity": {"clientName": client_name},
             }
         }
         if ag_group_listener_list:
-            request_json['App_CreatePseudoClientRequest']['clientInfo']['mssqlagClientProperties']\
-            ['availabilityGroup']['SQLAvailabilityGroupListenerList'] = ag_group_listener_list
+            request_json["App_CreatePseudoClientRequest"]["clientInfo"]["mssqlagClientProperties"][
+                "availabilityGroup"
+            ]["SQLAvailabilityGroupListenerList"] = ag_group_listener_list
 
-        webservice = self._commcell_object._services['EXECUTE_QCOMMAND']
+        webservice = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', webservice, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", webservice, request_json)
 
         if flag:
             if response.json():
-                if 'response' in response.json():
-                    error_code = response.json()['response']['errorCode']
+                if "response" in response.json():
+                    error_code = response.json()["response"]["errorCode"]
 
                     if error_code != 0:
-                        error_string = response.json()['response']['errorString']
-                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        error_string = response.json()["response"]["errorString"]
+                        o_str = f'Failed to create client\nError: "{error_string}"'
 
-                        raise SDKException('Client', '102', o_str)
+                        raise SDKException("Client", "102", o_str)
                     else:
                         self._commcell_object.refresh()
 
                         # Get newly created AG instance
                         ag_client = self._commcell_object.clients.get(
-                            response.json()['response']['entity']['clientName']
+                            response.json()["response"]["entity"]["clientName"]
                         )
                         agent = ag_client.agents.get(self._agent_object.agent_name)
                         if ag_group_listener_list:
-                            ag_instance_name = ag_group_listener_list[0]['availabilityGroupListenerName'] \
-                                               + '/' + ag_group_name
+                            ag_instance_name = (
+                                ag_group_listener_list[0]["availabilityGroupListenerName"]
+                                + "/"
+                                + ag_group_name
+                            )
                         else:
                             ag_instance_name = ag_group_name
                         ag_instance = agent.instances.get(ag_instance_name)
@@ -1758,17 +1723,17 @@ class SQLServerInstance(Instance):
                             ag_instance.impersonation(True, credentials)
 
                         return ag_instance
-                elif 'errorMessage' in response.json():
-                    error_string = response.json()['errorMessage']
-                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                elif "errorMessage" in response.json():
+                    error_string = response.json()["errorMessage"]
+                    o_str = f'Failed to create client\nError: "{error_string}"'
 
-                    raise SDKException('Client', '102', o_str)
+                    raise SDKException("Client", "102", o_str)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def database_details(self, database_name: str) -> Optional[dict]:
         """Retrieve detailed information for a specific SQL Server database.
@@ -1782,13 +1747,15 @@ class SQLServerInstance(Instance):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['SQL_DATABASE'] %(self.instance_id, database_name), None
+            "GET",
+            self._commcell_object._services["SQL_DATABASE"] % (self.instance_id, database_name),
+            None,
         )
         if flag:
             response_json = response.json()
-            if 'SqlDatabase' in response_json:
-                for database in response_json['SqlDatabase']:
-                    if database_name == database['dbName']:
+            if "SqlDatabase" in response_json:
+                for database in response_json["SqlDatabase"]:
+                    if database_name == database["dbName"]:
                         return database
             return None
-        raise SDKException('Response', '102', "Failed to get the database details")
+        raise SDKException("Response", "102", "Failed to get the database details")

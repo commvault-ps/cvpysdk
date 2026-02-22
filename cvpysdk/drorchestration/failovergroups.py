@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -106,7 +104,9 @@ FailoverGroup:
                                                         for approval
 
 """
+
 from enum import Enum
+
 from ..exception import SDKException
 from .replication_pairs import ReplicationPairs
 
@@ -120,7 +120,8 @@ class FailoverGroups:
         TEMPLATES = 2
 
     class FailoverGroupTypes(Enum):
-        """ Enum to map Failover Group Types to integers"""
+        """Enum to map Failover Group Types to integers"""
+
         LIVE_MOUNT = 1
         LIVE_SYNC = 2
         RESTORE = 4
@@ -132,7 +133,8 @@ class FailoverGroups:
         TEST_FAILOVER = 256
 
     class DRReplicationTypes(Enum):
-        """ Enum to map replication types to replication groups/failover groups"""
+        """Enum to map replication types to replication groups/failover groups"""
+
         LIVE_SYNC = 0
         LIVE_SYNC_DIRECT = 1
         LIVE_SYNC_IO = 2
@@ -140,8 +142,8 @@ class FailoverGroups:
 
     def __init__(self, commcell_object):
         """Initialize object of the Failover groups
-            Args:
-                commcell_object (Commcell)  --  instance of the Commcell class
+        Args:
+            commcell_object (Commcell)  --  instance of the Commcell class
         """
         self._commcell_object = commcell_object
         self._services = commcell_object._services
@@ -152,17 +154,19 @@ class FailoverGroups:
 
     def __str__(self):
         """Representation string consisting of all failover groups in a formatted output
-            Returns:
-                str - string of all the failover groups
+        Returns:
+            str - string of all the failover groups
         """
-        representation_string = (f'{"S. No.":^5}\t'
-                                 f'{"Failover Group Id":^20}\t'
-                                 f'{"Failover Group":^20}\n\n')
+        representation_string = (
+            f"{'S. No.':^5}\t{'Failover Group Id':^20}\t{'Failover Group':^20}\n\n"
+        )
 
         for index, failover_group in enumerate(self._failover_groups):
-            sub_str = (f'{index + 1:^5}\t'
-                       f'{self._failover_groups[failover_group]:20}\t'
-                       f'{failover_group:20}\n')
+            sub_str = (
+                f"{index + 1:^5}\t"
+                f"{self._failover_groups[failover_group]:20}\t"
+                f"{failover_group:20}\n"
+            )
             representation_string += sub_str
 
         return representation_string.strip()
@@ -174,45 +178,45 @@ class FailoverGroups:
     def has_failover_group(self, failover_group_name):
         """Checks if failover group exists or not
 
-            Args:
-                failover_group_name (str)  --  name of the failover group
+        Args:
+            failover_group_name (str)  --  name of the failover group
 
-            Returns:
-                bool - boolean output whether failover group exists or not
+        Returns:
+            bool - boolean output whether failover group exists or not
 
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
+        Raises:
+            SDKException:
+                if proper inputs are not provided
         """
         if not isinstance(failover_group_name, str):
-            raise SDKException('FailoverGroup', '101')
+            raise SDKException("FailoverGroup", "101")
 
         return self.failover_groups and failover_group_name.lower() in self.failover_groups
 
     def get(self, failover_group_name):
         """Returns a failover group object of the specified failover group name.
 
-            Args:
-                failover_group_name (str)  --  name of the failover group
+        Args:
+            failover_group_name (str)  --  name of the failover group
 
-            Returns:
-                object - instance of the FailoverGroup class for the given failover group name
+        Returns:
+            object - instance of the FailoverGroup class for the given failover group name
 
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-                    If Failover group doesnt exists with given name
+        Raises:
+            SDKException:
+                if proper inputs are not provided
+                If Failover group doesnt exists with given name
         """
         if not isinstance(failover_group_name, str):
-            raise SDKException('FailoverGroup', '101')
+            raise SDKException("FailoverGroup", "101")
         failover_group_name = failover_group_name.lower()
         if not self.has_failover_group(failover_group_name):
-            raise SDKException('FailoverGroup', '103')
+            raise SDKException("FailoverGroup", "103")
         return FailoverGroup(self._commcell_object, failover_group_name)
 
     @property
     def failover_groups(self):
-        """ return all failover groups
+        """return all failover groups
         Args:
 
         Returns: (dict) All the failover groups in the commcell
@@ -227,56 +231,65 @@ class FailoverGroups:
 
     def _get_failover_groups(self):
         """REST API call for all the failover groups in the commcell.
-            Args:
+        Args:
 
-            Returns:
-                dict - consists of all failover groups
-                    {
-                        "failover_group_name1": {
-                            'id': '1',
-                            'type': LIVE_SYNC,
-                            'operation_type': FAILOVER,
-                            'source_type': REPLICATION
-                        },
-                        "failover_group_name2": {
-                            'id': '2',
-                            'type': SNAP_ARRAY,
-                            'operation_type': TEST_FAILOVER
-                            'source_type': REPLICATION
-                        }
+        Returns:
+            dict - consists of all failover groups
+                {
+                    "failover_group_name1": {
+                        'id': '1',
+                        'type': LIVE_SYNC,
+                        'operation_type': FAILOVER,
+                        'source_type': REPLICATION
+                    },
+                    "failover_group_name2": {
+                        'id': '2',
+                        'type': SNAP_ARRAY,
+                        'operation_type': TEST_FAILOVER
+                        'source_type': REPLICATION
                     }
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
         """
         failover_groups = {}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._services['FAILOVER_GROUPS'])
+            "GET", self._services["FAILOVER_GROUPS"]
+        )
         if flag:
-            if 'vApp' in response.json():
-                for failover_group in response.json().get('vApp', []):
-                    failover_group_id = str(failover_group.get('vAppEntity', {}).get('vAppId'))
-                    failover_group_name = failover_group.get('vAppEntity', {}).get('vAppName', '').lower()
-                    operation_type = self.FailoverGroupTypes(int(failover_group.get('operationType', 16)))
-                    replication_type = self.DRReplicationTypes(int(failover_group.get('replicationType', 0)))
-                    source_type = self.FailoverGroupSourceTypes(int(failover_group.get('source', 1)))
+            if "vApp" in response.json():
+                for failover_group in response.json().get("vApp", []):
+                    failover_group_id = str(failover_group.get("vAppEntity", {}).get("vAppId"))
+                    failover_group_name = (
+                        failover_group.get("vAppEntity", {}).get("vAppName", "").lower()
+                    )
+                    operation_type = self.FailoverGroupTypes(
+                        int(failover_group.get("operationType", 16))
+                    )
+                    replication_type = self.DRReplicationTypes(
+                        int(failover_group.get("replicationType", 0))
+                    )
+                    source_type = self.FailoverGroupSourceTypes(
+                        int(failover_group.get("source", 1))
+                    )
                     failover_groups[failover_group_name] = {
-                        'id': failover_group_id,
-                        'operation_type': operation_type,
-                        'type': replication_type,
-                        'source_type': source_type
+                        "id": failover_group_id,
+                        "operation_type": operation_type,
+                        "type": replication_type,
+                        "source_type": source_type,
                     }
                 return failover_groups
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def refresh(self):
-        """ Refresh the failover groups created in the commcell.
+        """Refresh the failover groups created in the commcell.
         Args:
 
         Returns:
@@ -288,13 +301,13 @@ class FailoverGroups:
 
 
 class FailoverGroup:
-    """ Class for representing a failover group """
+    """Class for representing a failover group"""
 
     def __init__(self, commcell_object, failover_group_name):
         """Initialise the FailoverGroup object for the given group name
-            Args:
-                commcell_object (Commcell)      --  instance of the Commcell class
-                failover_group_name (str)       --  name of the failover group
+        Args:
+            commcell_object (Commcell)      --  instance of the Commcell class
+            failover_group_name (str)       --  name of the failover group
         """
         self._commcell_object = commcell_object
         self._services = commcell_object._services
@@ -315,20 +328,22 @@ class FailoverGroup:
 
     def __repr__(self):
         """String representation of the instance of the failover group"""
-        return f'FailoverGroup class instance for {self._failover_group_name}'
+        return f"FailoverGroup class instance for {self._failover_group_name}"
 
     def __str__(self):
         """Strings showing all VM pairs of the failover group in a formatted output
-            Returns:
-                str - string of all VM pairs
+        Returns:
+            str - string of all VM pairs
         """
-        representation_string = f'{"Pair Id":^5}\t{"Source VM":^20}\t{"Destination VM":^20}\n\n'
+        representation_string = f"{'Pair Id':^5}\t{'Source VM':^20}\t{'Destination VM':^20}\n\n"
 
         for source_vm in self.vm_pairs:
-            sub_str = (f'{self.vm_pairs[source_vm].vm_pair_id:^5}\t'
-                       f'{source_vm:20}\t'
-                       f'{self.vm_pairs[source_vm].destination_vm:20}'
-                       f'\n')
+            sub_str = (
+                f"{self.vm_pairs[source_vm].vm_pair_id:^5}\t"
+                f"{source_vm:20}\t"
+                f"{self.vm_pairs[source_vm].destination_vm:20}"
+                f"\n"
+            )
             representation_string += sub_str
 
         return representation_string.strip()
@@ -339,35 +354,36 @@ class FailoverGroup:
         return fgs_obj.failover_groups.get(self._failover_group_name)
 
     def _get_failover_group_properties(self):
-        """ Gets failover group properties
-            Args:
+        """Gets failover group properties
+        Args:
 
-            Returns: Gets the failover group properties dict
+        Returns: Gets the failover group properties dict
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._services['GET_FAILOVER_GROUP'] % str(self.failover_group_id))
+            "GET", self._services["GET_FAILOVER_GROUP"] % str(self.failover_group_id)
+        )
         if flag:
-            if 'vApp' in response.json():
-                return response.json().get('vApp', [{}])[0]
-            raise SDKException('Response', '102')
+            if "vApp" in response.json():
+                return response.json().get("vApp", [{}])[0]
+            raise SDKException("Response", "102")
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     def refresh(self):
-        """ Refresh the failover group properties """
+        """Refresh the failover group properties"""
         self._failover_group_properties = self._get_failover_group_properties()
         self.replication_pairs.refresh()
 
     @property
     def failover_group_id(self):
         """Returns: (str) The ID of the failover group"""
-        return self._failover_group_dict.get('id')
+        return self._failover_group_dict.get("id")
 
     @property
     def failover_group_name(self):
@@ -377,22 +393,22 @@ class FailoverGroup:
     @property
     def replication_type(self):
         """Returns: (DRReplicationTypes) The type of replication"""
-        return self._failover_group_dict.get('type')
+        return self._failover_group_dict.get("type")
 
     @property
     def group_type(self):
         """Returns: (FailoverGroupTypes) The type of failover group"""
-        return self._failover_group_dict.get('operation_type')
+        return self._failover_group_dict.get("operation_type")
 
     @property
     def source_type(self):
         """Returns: (FailoverGroupSourceTypes) The type of failover group's source"""
-        return self._failover_group_dict.get('source_type')
+        return self._failover_group_dict.get("source_type")
 
     @property
     def is_client_group(self):
         """Returns: (bool) Whether this failover group has a client group or not"""
-        return self._failover_group_properties.get('isClientGroup')
+        return self._failover_group_properties.get("isClientGroup")
 
     @property
     def replication_pairs(self):
@@ -402,8 +418,9 @@ class FailoverGroup:
         """
         if not self._replication_pairs:
             if self.replication_type == FailoverGroups.DRReplicationTypes.LIVE_SYNC:
-                self._replication_pairs = ReplicationPairs(self._commcell_object,
-                                                           failover_group_id=self.failover_group_id)
+                self._replication_pairs = ReplicationPairs(
+                    self._commcell_object, failover_group_id=self.failover_group_id
+                )
         return self._replication_pairs
 
     @property
@@ -422,9 +439,14 @@ class FailoverGroup:
                 }
         """
         replication_pair_objects = {}
-        for replication_pair_id, replication_pair_dict in self.replication_pairs.replication_pairs.items():
-            source_vm_name = replication_pair_dict.get('source_vm')
-            replication_pair_object = self.replication_pairs.get(replication_id=replication_pair_id)
+        for (
+            replication_pair_id,
+            replication_pair_dict,
+        ) in self.replication_pairs.replication_pairs.items():
+            source_vm_name = replication_pair_dict.get("source_vm")
+            replication_pair_object = self.replication_pairs.get(
+                replication_id=replication_pair_id
+            )
             replication_pair_objects[source_vm_name] = replication_pair_object
         return replication_pair_objects
 
@@ -438,7 +460,9 @@ class FailoverGroup:
     def source_client(self):
         """Returns: (Client) The client object for the failover group's source hypervisor"""
         if not self._source_client:
-            client_name = self._failover_group_properties.get('selectedEntities', [{}])[0].get('entityName', '')
+            client_name = self._failover_group_properties.get("selectedEntities", [{}])[0].get(
+                "entityName", ""
+            )
             self._source_client = self._commcell_object.clients.get(client_name)
         return self._source_client
 
@@ -451,7 +475,9 @@ class FailoverGroup:
     def source_instance(self):
         """Returns: (Instance) The instance object for the source hypervisor"""
         if not self._source_instance:
-            instance_id = self._failover_group_properties.get('selectedEntities', [{}])[0].get('instanceId', '')
+            instance_id = self._failover_group_properties.get("selectedEntities", [{}])[0].get(
+                "instanceId", ""
+            )
             for agent_name in self.source_client.agents.all_agents:
                 agent_object = self.source_client.agents.get(agent_name)
                 for instance_name, inst_id in agent_object.instances.all_instances.items():
@@ -476,21 +502,25 @@ class FailoverGroup:
         """Returns: (Instance) The instance object for the destination hypervisor"""
         if not self._destination_client:
             vm_pair = list(self.vm_pairs.values())[0]
-            self._destination_instance = (vm_pair._subclient_object
-                                          ._backupset_object._instance_object)
+            self._destination_instance = (
+                vm_pair._subclient_object._backupset_object._instance_object
+            )
         return self._destination_instance
 
     @property
     def is_approval_required(self):
         """Returns bool:
-            true : if approval set in failover group
-            false: if approval not set in failover group
+        true : if approval set in failover group
+        false: if approval not set in failover group
         """
-        return self._failover_group_properties.get('approvalRequired')
+        return self._failover_group_properties.get("approvalRequired")
 
     @property
     def user_for_approval(self):
         """Returns: user name set in failover group"""
-        user_name = (self._failover_group_properties.get('usersForApproval', [{}])[0]
-                     .get('userEntity', {}).get('userName', ''))
+        user_name = (
+            self._failover_group_properties.get("usersForApproval", [{}])[0]
+            .get("userEntity", {})
+            .get("userName", "")
+        )
         return user_name

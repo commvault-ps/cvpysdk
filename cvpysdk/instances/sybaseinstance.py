@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -87,13 +85,12 @@ SybaseInstance:
 
 """
 
-from __future__ import unicode_literals
 import datetime
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from ..exception import SDKException
 from .dbinstance import DatabaseInstance
 
-from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -123,7 +120,7 @@ class SybaseInstance(DatabaseInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
         """Initialize a SybaseInstance object.
 
         Args:
@@ -136,8 +133,8 @@ class SybaseInstance(DatabaseInstance):
         self._sybase_restore_json = None
         self._commonoption_restore_json = None
         self._destination_restore_json = None
-        super(SybaseInstance, self).__init__(agent_object, instance_name, instance_id)
-        self._is_hadr = len(self._properties.get('sybaseClusterInstance', {})) > 0
+        super().__init__(agent_object, instance_name, instance_id)
+        self._is_hadr = len(self._properties.get("sybaseClusterInstance", {})) > 0
         self._instanceprop = {}  # instance variable to hold instance properties
         self._nodes = self.get_node_properties()
         self._primarynodeprop = self._primary_node_properties()
@@ -152,8 +149,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('sybaseHome')
-        return self._properties.get('sybaseInstance', {}).get('sybaseHome')
+            return self._primarynodeprop.get("sybaseProps", {}).get("sybaseHome")
+        return self._properties.get("sybaseInstance", {}).get("sybaseHome")
 
     @property
     def sybase_instance_name(self) -> str:
@@ -165,8 +162,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('backupServer')[:-3]
-        return self._properties.get('instance', {}).get('instanceName')
+            return self._primarynodeprop.get("sybaseProps", {}).get("backupServer")[:-3]
+        return self._properties.get("instance", {}).get("instanceName")
 
     @property
     def is_discovery_enabled(self) -> bool:
@@ -178,8 +175,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('enableAutoDiscovery')
-        return self._properties.get('sybaseInstance', {}).get('enableAutoDiscovery')
+            return self._primarynodeprop.get("sybaseProps", {}).get("enableAutoDiscovery")
+        return self._properties.get("sybaseInstance", {}).get("enableAutoDiscovery")
 
     @property
     def localadmin_user(self) -> str:
@@ -191,8 +188,16 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('localAdministrator', {}).get('userName')
-        return self._properties.get('sybaseInstance', {}).get('localAdministrator', {}).get('userName')
+            return (
+                self._primarynodeprop.get("sybaseProps", {})
+                .get("localAdministrator", {})
+                .get("userName")
+            )
+        return (
+            self._properties.get("sybaseInstance", {})
+            .get("localAdministrator", {})
+            .get("userName")
+        )
 
     @property
     def sa_user(self) -> str:
@@ -204,8 +209,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('saUser', {}).get('userName')
-        return self._properties.get('sybaseInstance', {}).get('saUser', {}).get('userName')
+            return self._primarynodeprop.get("sybaseProps", {}).get("saUser", {}).get("userName")
+        return self._properties.get("sybaseInstance", {}).get("saUser", {}).get("userName")
 
     @property
     def version(self) -> str:
@@ -216,7 +221,7 @@ class SybaseInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties.get('version')
+        return self._properties.get("version")
 
     @property
     def backup_server(self) -> str:
@@ -228,8 +233,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('backupServer')
-        return self._properties.get('sybaseInstance', {}).get('backupServer')
+            return self._primarynodeprop.get("sybaseProps", {}).get("backupServer")
+        return self._properties.get("sybaseInstance", {}).get("backupServer")
 
     @property
     def sybase_ocs(self) -> str:
@@ -242,8 +247,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('sybaseOCS')
-        return self._properties.get('sybaseInstance', {}).get('sybaseOCS')
+            return self._primarynodeprop.get("sybaseProps", {}).get("sybaseOCS")
+        return self._properties.get("sybaseInstance", {}).get("sybaseOCS")
 
     @property
     def sybase_ase(self) -> str:
@@ -255,8 +260,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('sybaseASE')
-        return self._properties.get('sybaseInstance', {}).get('sybaseASE')
+            return self._primarynodeprop.get("sybaseProps", {}).get("sybaseASE")
+        return self._properties.get("sybaseInstance", {}).get("sybaseASE")
 
     @property
     def sybase_blocksize(self) -> int:
@@ -267,7 +272,7 @@ class SybaseInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties.get('sybaseInstance', {}).get('sybaseBlockSize')
+        return self._properties.get("sybaseInstance", {}).get("sybaseBlockSize")
 
     @property
     def sybase_configfile(self) -> str:
@@ -279,8 +284,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('configFile')
-        return self._properties.get('sybaseInstance', {}).get('configFile')
+            return self._primarynodeprop.get("sybaseProps", {}).get("configFile")
+        return self._properties.get("sybaseInstance", {}).get("configFile")
 
     @property
     def sybase_sharedmemory_directory(self) -> str:
@@ -292,8 +297,8 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._primarynodeprop.get('sybaseProps', {}).get('sharedMemoryDirectory')
-        return self._properties.get('sybaseInstance', {}).get('sharedMemoryDirectory')
+            return self._primarynodeprop.get("sybaseProps", {}).get("sharedMemoryDirectory")
+        return self._properties.get("sybaseInstance", {}).get("sharedMemoryDirectory")
 
     @property
     def is_hadr(self) -> bool:
@@ -317,7 +322,7 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            return self._properties.get('sybaseClusterInstance', {}).get('primaryNodeId')
+            return self._properties.get("sybaseClusterInstance", {}).get("primaryNodeId")
         return None
 
     @property
@@ -329,7 +334,7 @@ class SybaseInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties.get('instance', {}).get('clientName')
+        return self._properties.get("instance", {}).get("clientName")
 
     def _primary_node_properties(self) -> dict:
         """Retrieve the primary node properties for the Sybase instance.
@@ -340,9 +345,9 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            nodes = self._properties.get('sybaseClusterInstance').get('nodes')
+            nodes = self._properties.get("sybaseClusterInstance").get("nodes")
             for node in nodes:
-                if node.get('physicalClient', {}).get('clientId') == self.hadr_primarynode_id:
+                if node.get("physicalClient", {}).get("clientId") == self.hadr_primarynode_id:
                     return node
 
     def get_node_properties(self, clientId: Optional[str] = None) -> dict:
@@ -368,10 +373,10 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if self.is_hadr:
-            nodes = self._properties.get('sybaseClusterInstance').get('nodes')
+            nodes = self._properties.get("sybaseClusterInstance").get("nodes")
             if clientId:
                 for node in nodes:
-                    if node.get('physicalClient', {}).get('clientId') == int(clientId):
+                    if node.get("physicalClient", {}).get("clientId") == int(clientId):
                         return node
             return nodes
 
@@ -385,12 +390,12 @@ class SybaseInstance(DatabaseInstance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._commonoption_restore_json = {
             "indexFreeRestore": value.get("index_free_restore", False),
             "restoreToDisk": value.get("restore_to_disk", False),
-            "sybaseCreateDevices": value.get("sybase_create_device", False)
+            "sybaseCreateDevices": value.get("sybase_create_device", False),
         }
 
     def _restore_destination_json(self, value: dict) -> None:
@@ -412,18 +417,16 @@ class SybaseInstance(DatabaseInstance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._destination_restore_json = {
             "destinationInstance": {
                 "clientName": value.get("destination_client", ""),
                 "instanceName": value.get("destination_instance_name", ""),
-                "appName": "Sybase"
+                "appName": "Sybase",
             },
-            "destClient": {
-                "clientName": value.get("destination_client", "")
-            },
-            "destPath": [value.get("destination_path", "")]
+            "destClient": {"clientName": value.get("destination_client", "")},
+            "destPath": [value.get("destination_path", "")],
         }
 
     def _restore_sybase_option_json(self, value: dict) -> None:
@@ -436,24 +439,20 @@ class SybaseInstance(DatabaseInstance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         if value.get("to_time") is None:
             time_dict = {}
         else:
-            time_dict = {
-                "timeValue": value.get("to_time", "")
-            }
+            time_dict = {"timeValue": value.get("to_time", "")}
         self._sybase_restore_json = {
             "sybaseRecoverType": "STATE_RECOVER",
             "pointofTime": value.get("point_in_time", ""),
-            "destinationServer": {
-                "name": value.get("destination_instance_name", "")
-            },
+            "destinationServer": {"name": value.get("destination_instance_name", "")},
             "pointInTime": time_dict,
             "instanceRestore": value.get("instance_restore", ""),
             "renameDatabases": value.get("rename_databases", ""),
             "restoreType": "POINT_IN_TIME",
-            "sybaseDatabase": value.get("syb_db", "")
+            "sybaseDatabase": value.get("syb_db", ""),
         }
 
     def _restore_json(self, **kwargs) -> dict:
@@ -471,7 +470,7 @@ class SybaseInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        restore_json = super(SybaseInstance, self)._restore_json(**kwargs)
+        restore_json = super()._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
@@ -482,8 +481,9 @@ class SybaseInstance(DatabaseInstance):
             restore_option.update(kwargs)
 
         self._restore_sybase_option_json(restore_option)
-        restore_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["sybaseRstOption"] = self._sybase_restore_json
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"] = (
+            self._sybase_restore_json
+        )
         return restore_json
 
     def _get_sybase_restore_base_json(
@@ -495,7 +495,7 @@ class SybaseInstance(DatabaseInstance):
         timevalue: str = None,
         sybase_create_device: bool = False,
         rename_databases: bool = False,
-        copy_precedence: int = 0
+        copy_precedence: int = 0,
     ) -> dict:
         """Generate the base JSON structure for a Sybase restore operation.
 
@@ -558,7 +558,8 @@ class SybaseInstance(DatabaseInstance):
             rename_databases=rename_databases,
             copy_precedence=copy_precedence,
             copy_precedence_applicable=copy_precedence_applicable,
-            syb_db=syb_db)
+            syb_db=syb_db,
+        )
 
         return basic_sybase_options
 
@@ -567,7 +568,7 @@ class SybaseInstance(DatabaseInstance):
         database_list: set,
         rename_databases: bool,
         sybase_create_device: bool,
-        device_options: dict
+        device_options: dict,
     ) -> List[dict]:
         """Construct database options for each database in the provided list.
 
@@ -606,7 +607,8 @@ class SybaseInstance(DatabaseInstance):
                 if dbname in device_options.keys():
                     dev_opt = device_options[dbname]
                     db_json = self._get_single_database_json(
-                        dbname, dev_opt, rename_databases, sybase_create_device)
+                        dbname, dev_opt, rename_databases, sybase_create_device
+                    )
                 else:
                     db_json = self._get_single_database_json(dbname=dbname)
             db_options.append(db_json)
@@ -621,7 +623,7 @@ class SybaseInstance(DatabaseInstance):
         sybase_create_device: bool = False,
         rename_databases: bool = False,
         device_options: dict = None,
-        copy_precedence: int = 0
+        copy_precedence: int = 0,
     ) -> dict:
         """Construct the restore JSON payload for an individual Sybase database restore operation.
 
@@ -672,14 +674,15 @@ class SybaseInstance(DatabaseInstance):
             timevalue,
             sybase_create_device,
             rename_databases,
-            copy_precedence
+            copy_precedence,
         )
 
         db_options = self._db_option(
             database_list, rename_databases, sybase_create_device, device_options
         )
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "sybaseRstOption"]["sybaseDatabase"] = db_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"][
+            "sybaseDatabase"
+        ] = db_options
         return restore_json
 
     def _get_sybase_full_restore_json(
@@ -691,7 +694,7 @@ class SybaseInstance(DatabaseInstance):
         sybase_create_device: bool = True,
         rename_databases: bool = False,
         device_options: dict = None,
-        copy_precedence: int = 0
+        copy_precedence: int = 0,
     ) -> dict:
         """Create the JSON payload for a full Sybase server restore operation.
 
@@ -737,7 +740,8 @@ class SybaseInstance(DatabaseInstance):
             timevalue,
             sybase_create_device,
             rename_databases,
-            copy_precedence)
+            copy_precedence,
+        )
         db_options = []
         dblist = self._get_server_content()
         device_options_keys = []
@@ -746,14 +750,15 @@ class SybaseInstance(DatabaseInstance):
                 device_options_keys.append(str(key))
 
         if not dblist:
-            raise SDKException(
-                'Instance', '102', 'Database contents of Sybase server is empty'
-            )
+            raise SDKException("Instance", "102", "Database contents of Sybase server is empty")
 
         database_list = dblist
-        db_options = self._db_option(database_list, rename_databases, sybase_create_device, device_options)
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "sybaseRstOption"]["sybaseDatabase"] = db_options
+        db_options = self._db_option(
+            database_list, rename_databases, sybase_create_device, device_options
+        )
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"][
+            "sybaseDatabase"
+        ] = db_options
         return restore_json
 
     def _get_single_database_json(
@@ -761,7 +766,7 @@ class SybaseInstance(DatabaseInstance):
         dbname: str,
         device_options: Optional[dict] = None,
         rename_databases: bool = False,
-        sybase_create_device: bool = False
+        sybase_create_device: bool = False,
     ) -> dict:
         """Construct the JSON payload for restoring a single Sybase database.
 
@@ -792,7 +797,7 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         sybase_db_details = None
-        databasechain = "0:0:{0}:0".format(dbname)
+        databasechain = f"0:0:{dbname}:0"
         dbchain_list = []
         dbchain_list.append(databasechain)
         subclientid = "0"
@@ -804,7 +809,7 @@ class SybaseInstance(DatabaseInstance):
         sybase_db_details = {
             "databaseId": {"name": dbname},
             "associatedSubClientId": 0,
-            "databaseChain": dbchain_list
+            "databaseChain": dbchain_list,
         }
         if device_options is not None:
             if sybase_create_device:
@@ -837,34 +842,24 @@ class SybaseInstance(DatabaseInstance):
 
             # Check to find given device is system device
 
-            system_databases = ['master', 'model', 'sybsystemprocs',
-                                'sybsystemdb', 'tempdb', 'sybmgmtdb', 'dbccdb', 'sybsecurity']
+            system_databases = [
+                "master",
+                "model",
+                "sybsystemprocs",
+                "sybsystemdb",
+                "tempdb",
+                "sybmgmtdb",
+                "dbccdb",
+                "sybsecurity",
+            ]
             if dbname in system_databases:
                 newdatadevicename = "0"
                 newlogdevicename = "0"
                 newdatabasename = dbname
 
-            data_device = "{0}:{1}:{2}:{3}:{4}:{5}:{6}:{7}".format(
-                subclientid,
-                dbid,
-                datadevid,
-                datadevicename,
-                newdatadevicename,
-                newdatadevicepath,
-                size,
-                newdatabasename
-            )
+            data_device = f"{subclientid}:{dbid}:{datadevid}:{datadevicename}:{newdatadevicename}:{newdatadevicepath}:{size}:{newdatabasename}"
 
-            log_device = "{0}:{1}:{2}:{3}:{4}:{5}:{6}:{7}".format(
-                subclientid,
-                dbid,
-                logdevid,
-                logdevicename,
-                newlogdevicename,
-                newlogdevicepath,
-                size,
-                newdatabasename
-            )
+            log_device = f"{subclientid}:{dbid}:{logdevid}:{logdevicename}:{newlogdevicename}:{newlogdevicepath}:{size}:{newdatabasename}"
 
             device.append(data_device)
             device.append(log_device)
@@ -872,7 +867,7 @@ class SybaseInstance(DatabaseInstance):
                 "databaseId": {"name": dbname},
                 "associatedSubClientId": 0,
                 "databaseChain": dbchain_list,
-                "devices": device
+                "devices": device,
             }
 
         return sybase_db_details
@@ -906,7 +901,7 @@ class SybaseInstance(DatabaseInstance):
         timevalue: Optional[str] = None,
         rename_databases: bool = False,
         device_options: Optional[Dict[str, Dict[str, Optional[str]]]] = None,
-        copy_precedence: int = 0
+        copy_precedence: int = 0,
     ) -> object:
         """Perform a full Sybase server restore operation.
 
@@ -920,7 +915,7 @@ class SybaseInstance(DatabaseInstance):
             timevalue: The point-in-time value for the restore, in the format 'YYYY-MM-DD HH:MM:SS'. Required if point_in_time is True.
             rename_databases: Whether to rename databases during the restore. Defaults to False.
             copy_precedence: The copy to restore the data from
-            device_options: A dictionary mapping source database names to their device and rename options. 
+            device_options: A dictionary mapping source database names to their device and rename options.
                 Each value is a dictionary with keys such as:
                     - "datadevicename"
                     - "newdatadevicename"
@@ -998,7 +993,8 @@ class SybaseInstance(DatabaseInstance):
             sybase_create_device,
             rename_databases,
             device_options,
-            copy_precedence)
+            copy_precedence,
+        )
 
         return self._process_restore_response(request_json)
 
@@ -1011,7 +1007,7 @@ class SybaseInstance(DatabaseInstance):
         sybase_create_device: bool = False,
         rename_databases: bool = False,
         device_options: dict = None,
-        copy_precedence: int = 0
+        copy_precedence: int = 0,
     ) -> object:
         """Perform an individual Sybase database restore operation.
 
@@ -1092,7 +1088,7 @@ class SybaseInstance(DatabaseInstance):
             destination_instance_name = self.instance_name
 
         if database_list is None:
-            raise SDKException('Instance', r'102', 'Restore Database List cannot be empty')
+            raise SDKException("Instance", r"102", "Restore Database List cannot be empty")
 
         request_json = self._get_sybase_restore_json(
             destination_client,
@@ -1102,7 +1098,8 @@ class SybaseInstance(DatabaseInstance):
             sybase_create_device,
             rename_databases,
             device_options,
-            copy_precedence)
+            copy_precedence,
+        )
 
         return self._process_restore_response(request_json)
 
@@ -1112,7 +1109,7 @@ class SybaseInstance(DatabaseInstance):
         destination_path: str,
         backup_job_ids: list,
         user_name: str,
-        password: str
+        password: str,
     ) -> object:
         """Perform an application-free restore to disk for a Sybase instance.
 
@@ -1147,13 +1144,9 @@ class SybaseInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not isinstance(backup_job_ids, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         request_json = self._get_restore_to_disk_json(
-            destination_client,
-            destination_path,
-            backup_job_ids,
-            user_name,
-            password
+            destination_client, destination_path, backup_job_ids, user_name, password
         )
         del request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sybaseRstOption"]
         return self._process_restore_response(request_json)

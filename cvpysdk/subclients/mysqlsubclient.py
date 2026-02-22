@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -61,28 +59,27 @@ MYSQLSubclient instance Attributes:
 
 """
 
-from __future__ import unicode_literals
-from ..subclient import Subclient
 from ..exception import SDKException
+from ..subclient import Subclient
 
 
 class MYSQLSubclient(Subclient):
     """Derived class from Subclient Base class, representing a MYSQL subclient,
-        and to perform operations on that subclient."""
+    and to perform operations on that subclient."""
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialise the Subclient object.
 
-            Args:
-                backupset_object (object)  --  instance of the Backupset class
+        Args:
+            backupset_object (object)  --  instance of the Backupset class
 
-                subclient_name   (str)     --  name of the subclient
+            subclient_name   (str)     --  name of the subclient
 
-                subclient_id     (str)     --  id of the subclient
-                    default: None
+            subclient_id     (str)     --  id of the subclient
+                default: None
 
-            Returns:
-                object - instance of the MYSQLSubclient class
+        Returns:
+            object - instance of the MYSQLSubclient class
 
         """
         self.mysql_subclient_prop = None
@@ -90,7 +87,7 @@ class MYSQLSubclient(Subclient):
         self.plan_entity = None
         self.cassandra_props = None
         self.analytics_subclient_prop = None
-        super(MYSQLSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
     @property
     def is_blocklevel_backup_enabled(self):
@@ -103,8 +100,11 @@ class MYSQLSubclient(Subclient):
                     False if block level is not enabled
 
         """
-        return bool(self._subclient_properties.get(
-            'mySqlSubclientProp', {}).get('isUseBlockLevelBackup', False))
+        return bool(
+            self._subclient_properties.get("mySqlSubclientProp", {}).get(
+                "isUseBlockLevelBackup", False
+            )
+        )
 
     @property
     def is_proxy_enabled(self):
@@ -117,9 +117,11 @@ class MYSQLSubclient(Subclient):
                     False if proxy is not enabled
 
         """
-        return self._subclient_properties.get(
-            'mySqlSubclientProp', {}).get('proxySettings', {}).get(
-                'isProxyEnabled', False)
+        return (
+            self._subclient_properties.get("mySqlSubclientProp", {})
+            .get("proxySettings", {})
+            .get("isProxyEnabled", False)
+        )
 
     @property
     def is_failover_to_production(self):
@@ -131,9 +133,11 @@ class MYSQLSubclient(Subclient):
                         False if the flag is not set
 
         """
-        return self._subclient_properties.get(
-            'mySqlSubclientProp', {}).get(
-                'proxySettings', {}).get('isFailOverToProduction', False)
+        return (
+            self._subclient_properties.get("mySqlSubclientProp", {})
+            .get("proxySettings", {})
+            .get("isFailOverToProduction", False)
+        )
 
     @is_failover_to_production.setter
     def is_failover_to_production(self, value):
@@ -153,19 +157,18 @@ class MYSQLSubclient(Subclient):
             self._set_subclient_properties(
                 "_subclient_properties['mySqlSubclientProp']\
                 ['proxySettings']['isFailOverToProduction']",
-                value)
-        else:
-            raise SDKException(
-                'Subclient', '102', 'Expecting a boolean value here'
+                value,
             )
+        else:
+            raise SDKException("Subclient", "102", "Expecting a boolean value here")
 
     def _backup_request_json(
-            self,
-            backup_level,
-            inc_with_data=False,
-            truncate_logs_on_source=False,
-            do_not_truncate_logs=False,
-            schedule_pattern=None
+        self,
+        backup_level,
+        inc_with_data=False,
+        truncate_logs_on_source=False,
+        do_not_truncate_logs=False,
+        schedule_pattern=None,
     ):
         """
         prepares the json for the backup request
@@ -198,73 +201,71 @@ class MYSQLSubclient(Subclient):
                 dict - JSON request to pass to the API
 
         """
-        request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH", schedule_pattern=schedule_pattern)
+        request_json = self._backup_json(
+            backup_level, False, "BEFORE_SYNTH", schedule_pattern=schedule_pattern
+        )
 
         backup_options = {
-            "truncateLogsOnSource":truncate_logs_on_source,
-            "sybaseSkipFullafterLogBkp":False,
-            "notSynthesizeFullFromPrevBackup":False,
-            "incrementalDataWithLogs":inc_with_data,
-            "backupLevel":backup_level,
-            "incLevel":"NONE",
-            "adHocBackup":False,
-            "runIncrementalBackup":False,
-            "doNotTruncateLog":do_not_truncate_logs,
-            "dataOpt":{
-                "skipCatalogPhaseForSnapBackup":True,
-                "createBackupCopyImmediately":True,
-                "useCatalogServer":True,
-                "followMountPoints":False,
-                "enforceTransactionLogUsage":False,
-                "skipConsistencyCheck":False,
-                "createNewIndex":False
+            "truncateLogsOnSource": truncate_logs_on_source,
+            "sybaseSkipFullafterLogBkp": False,
+            "notSynthesizeFullFromPrevBackup": False,
+            "incrementalDataWithLogs": inc_with_data,
+            "backupLevel": backup_level,
+            "incLevel": "NONE",
+            "adHocBackup": False,
+            "runIncrementalBackup": False,
+            "doNotTruncateLog": do_not_truncate_logs,
+            "dataOpt": {
+                "skipCatalogPhaseForSnapBackup": True,
+                "createBackupCopyImmediately": True,
+                "useCatalogServer": True,
+                "followMountPoints": False,
+                "enforceTransactionLogUsage": False,
+                "skipConsistencyCheck": False,
+                "createNewIndex": False,
             },
-            "mediaOpt":{
-
-            }
+            "mediaOpt": {},
         }
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "backupOpts"] = backup_options
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = backup_options
 
         return request_json
 
     def _get_subclient_properties(self):
         """Gets the subclient related properties of MYSQL subclient"""
-        super(MYSQLSubclient, self)._get_subclient_properties()
-        if 'mySqlSubclientProp' in self._subclient_properties:
-            self.mysql_subclient_prop = self._subclient_properties['mySqlSubclientProp']
-        if 'dfsSubclientProp' in self._subclient_properties:
-            self.dfs_subclient_prop = self._subclient_properties['dfsSubclientProp']
-        if 'planEntity' in self._subclient_properties:
-            self.plan_entity = self._subclient_properties['planEntity']
-        if 'cassandraProps' in self._subclient_properties:
-            self.cassandra_props = self._subclient_properties['cassandraProps']
-        if 'content' in self._subclient_properties:
-            self._content = self._subclient_properties['content']
-        if 'analyticsSubclientProp' in self._subclient_properties:
-            self.analytics_subclient_prop = self._subclient_properties['analyticsSubclientProp']
+        super()._get_subclient_properties()
+        if "mySqlSubclientProp" in self._subclient_properties:
+            self.mysql_subclient_prop = self._subclient_properties["mySqlSubclientProp"]
+        if "dfsSubclientProp" in self._subclient_properties:
+            self.dfs_subclient_prop = self._subclient_properties["dfsSubclientProp"]
+        if "planEntity" in self._subclient_properties:
+            self.plan_entity = self._subclient_properties["planEntity"]
+        if "cassandraProps" in self._subclient_properties:
+            self.cassandra_props = self._subclient_properties["cassandraProps"]
+        if "content" in self._subclient_properties:
+            self._content = self._subclient_properties["content"]
+        if "analyticsSubclientProp" in self._subclient_properties:
+            self.analytics_subclient_prop = self._subclient_properties["analyticsSubclientProp"]
 
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
 
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "proxyClient": self._proxyClient,
-                    "mySqlSubclientProp": self.mysql_subclient_prop,
-                    "subClientEntity": self._subClientEntity,
-                    "dfsSubclientProp": self.dfs_subclient_prop,
-                    "planEntity": self.plan_entity,
-                    "cassandraProps": self.cassandra_props,
-                    "content": self._content,
-                    "commonProperties": self._commonProperties,
-                    "analyticsSubclientProp": self.analytics_subclient_prop,
-                    "contentOperationType": 1
-                }
+            "subClientProperties": {
+                "proxyClient": self._proxyClient,
+                "mySqlSubclientProp": self.mysql_subclient_prop,
+                "subClientEntity": self._subClientEntity,
+                "dfsSubclientProp": self.dfs_subclient_prop,
+                "planEntity": self.plan_entity,
+                "cassandraProps": self.cassandra_props,
+                "content": self._content,
+                "commonProperties": self._commonProperties,
+                "analyticsSubclientProp": self.analytics_subclient_prop,
+                "contentOperationType": 1,
+            }
         }
         return subclient_json
 
@@ -272,8 +273,8 @@ class MYSQLSubclient(Subclient):
     def content(self):
         """Returns the appropriate content from the Subclient relevant to the user.
 
-            Returns:
-                list - list of content associated with the subclient
+        Returns:
+            list - list of content associated with the subclient
 
         """
         cont = []
@@ -288,209 +289,206 @@ class MYSQLSubclient(Subclient):
     @content.setter
     def content(self, subclient_content):
         """Creates the list of content JSON to pass to the API to add/update content of a
-            MYSQL Subclient.
+        MYSQL Subclient.
 
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+        Args:
+            subclient_content (list)  --  list of the content to add to the subclient
 
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        Returns:
+            list - list of the appropriate JSON for an agent to send to the POST Subclient API
 
         """
         cont = []
         for mysql_cont in subclient_content:
-            mysql_dict = {
-                "mySQLContent": {
-                    "databaseName": mysql_cont
-                }
-            }
+            mysql_dict = {"mySQLContent": {"databaseName": mysql_cont}}
             cont.append(mysql_dict)
 
         self._set_subclient_properties("_content", cont)
 
-
     def backup(
-            self,
-            backup_level="Differential",
-            inc_with_data=False,
-            truncate_logs_on_source=False,
-            do_not_truncate_logs=False,
-            schedule_pattern=None
+        self,
+        backup_level="Differential",
+        inc_with_data=False,
+        truncate_logs_on_source=False,
+        do_not_truncate_logs=False,
+        schedule_pattern=None,
     ):
         """Runs a backup job for the subclient of the level specified.
 
-            Args:
-                backup_level        (str)   --  level of backup the user wish to run
-                        Full / Incremental / Differential / Synthetic_full
+        Args:
+            backup_level        (str)   --  level of backup the user wish to run
+                    Full / Incremental / Differential / Synthetic_full
 
-                    default: Differential
+                default: Differential
 
-                inc_with_data       (bool)  --  flag to determine if the incremental backup
-                includes data or not
+            inc_with_data       (bool)  --  flag to determine if the incremental backup
+            includes data or not
 
-                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
-                truncated on master client
+            truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+            truncated on master client
 
-                    default: False
+                default: False
 
-                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
-                needs to be truncated or not
+            do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+            needs to be truncated or not
 
-                    default: False
+                default: False
 
-                schedule_pattern (dict) -- scheduling options to be included for the task
+            schedule_pattern (dict) -- scheduling options to be included for the task
 
-                        Please refer schedules.schedulePattern.createSchedule()
-                                                                    doc for the types of Jsons
+                    Please refer schedules.schedulePattern.createSchedule()
+                                                                doc for the types of Jsons
 
-            Returns:
-                object - instance of the Job class for this backup job if its an immediate Job
+        Returns:
+            object - instance of the Job class for this backup job if its an immediate Job
 
-                         instance of the Schedule class for the backup job if its a scheduled Job
+                     instance of the Schedule class for the backup job if its a scheduled Job
 
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
+        Raises:
+            SDKException:
+                if backup level specified is not correct
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
         backup_level = backup_level.lower()
 
-        if backup_level not in ['full', 'incremental', 'differential', 'synthetic_full']:
-            raise SDKException('Subclient', '103')
+        if backup_level not in ["full", "incremental", "differential", "synthetic_full"]:
+            raise SDKException("Subclient", "103")
 
-        if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs or schedule_pattern):
-            return super(MYSQLSubclient, self).backup(backup_level)
+        if not (
+            inc_with_data or truncate_logs_on_source or do_not_truncate_logs or schedule_pattern
+        ):
+            return super().backup(backup_level)
         request_json = self._backup_request_json(
             backup_level,
             inc_with_data,
             truncate_logs_on_source=truncate_logs_on_source,
             do_not_truncate_logs=do_not_truncate_logs,
-            schedule_pattern=schedule_pattern
+            schedule_pattern=schedule_pattern,
         )
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_TASK'], request_json
+            "POST", self._commcell_object._services["CREATE_TASK"], request_json
         )
         return self._process_backup_response(flag, response)
 
     def restore_in_place(
-            self,
-            paths=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None):
+        self,
+        paths=None,
+        staging=None,
+        dest_client_name=None,
+        dest_instance_name=None,
+        data_restore=True,
+        log_restore=False,
+        overwrite=True,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        media_agent=None,
+        table_level_restore=False,
+        clone_env=False,
+        clone_options=None,
+        redirect_enabled=False,
+        redirect_path=None,
+        browse_jobid=None,
+    ):
         """Restores the mysql data/log files specified in the input paths list to the same location.
 
-            Args:
-                paths               (list)  --  list of database/databases to be restored
+        Args:
+            paths               (list)  --  list of database/databases to be restored
 
-                staging             (str)   --  staging location for mysql logs during restores
+            staging             (str)   --  staging location for mysql logs during restores
 
-                dest_client_name    (str)   --  destination client name where files are
-                                                        to be restored
+            dest_client_name    (str)   --  destination client name where files are
+                                                    to be restored
 
-                dest_instance_name  (str)   --  destination mysql instance name of
-                                                        destination client
+            dest_instance_name  (str)   --  destination mysql instance name of
+                                                    destination client
 
-                data_restore        (bool)  --  for data only/data+log restore
+            data_restore        (bool)  --  for data only/data+log restore
 
-                log_restore         (bool)  --  for log only/data+log restore
+            log_restore         (bool)  --  for log only/data+log restore
 
-                overwrite           (bool)  --  unconditional overwrite files during restore
-                    default: True
+            overwrite           (bool)  --  unconditional overwrite files during restore
+                default: True
 
-                copy_precedence     (int)   --  copy precedence value of storage policy copy
-                    default: None
+            copy_precedence     (int)   --  copy precedence value of storage policy copy
+                default: None
 
-                from_time           (str)   --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+            from_time           (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
 
-                    default: None
+                default: None
 
-                to_time             (str)   --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
+            to_time             (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
 
-                    default: None
+                default: None
 
-                media_agent             (str)   --  media agent associated
+            media_agent             (str)   --  media agent associated
 
-                    default: None
+                default: None
 
-                table_level_restore     (bool)  --  Table level restore flag
+            table_level_restore     (bool)  --  Table level restore flag
 
-                    default: False
+                default: False
 
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
+            clone_env               (bool)  --  boolean to specify whether the database
+            should be cloned or not
 
-                    default: False
+                default: False
 
-                clone_options           (dict)  --  clone restore options passed in a dict
+            clone_options           (dict)  --  clone restore options passed in a dict
 
-                    default: None
+                default: None
 
-                    Accepted format: {
-                                        "stagingLocaion": "/gk_snap",
-                                        "forceCleanup": True,
-                                        "port": "5595",
-                                        "libDirectory": "",
-                                        "isInstanceSelected": True,
-                                        "reservationPeriodS": 3600,
-                                        "user": "",
-                                        "binaryDirectory": "/usr/bin"
+                Accepted format: {
+                                    "stagingLocaion": "/gk_snap",
+                                    "forceCleanup": True,
+                                    "port": "5595",
+                                    "libDirectory": "",
+                                    "isInstanceSelected": True,
+                                    "reservationPeriodS": 3600,
+                                    "user": "",
+                                    "binaryDirectory": "/usr/bin"
 
-                                     }
+                                 }
 
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
+            redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+            enabled
 
-                    default: False
+                default: False
 
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
+            redirect_path           (str)   --  Path specified in advanced restore options
+            in order to perform redirect restore
 
-                    default: None
+                default: None
 
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
+            browse_jobid           (int)   --  Browse jobid to browse and restore from
 
-                    default: None
+                default: None
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
-                    if paths is not a list
+        Raises:
+            SDKException:
+                if paths is not a list
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
-        if not (isinstance(paths, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Subclient', '101')
+        if not (isinstance(paths, list) and isinstance(overwrite, bool)):
+            raise SDKException("Subclient", "101")
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         instance_object = self._backupset_object._instance_object
         if dest_client_name is None:
@@ -517,5 +515,5 @@ class MYSQLSubclient(Subclient):
             clone_options=clone_options,
             redirect_enabled=redirect_enabled,
             redirect_path=redirect_path,
-            browse_jobid=browse_jobid
+            browse_jobid=browse_jobid,
         )

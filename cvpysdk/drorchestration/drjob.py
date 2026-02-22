@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -28,9 +26,9 @@ DRJob(Job):
     get_vm_list()                   -- Gets the list of all VMs and their properties
 """
 
+from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJobPhaseToText
 from cvpysdk.exception import SDKException
 from cvpysdk.job import Job
-from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJobPhaseToText
 
 
 class DRJob(Job):
@@ -40,7 +38,7 @@ class DRJob(Job):
         """Initialise the DR job"""
         self._replication_job_stats = None
 
-        service_url = commcell_object._services['DRORCHESTRATION_JOB_STATS']
+        service_url = commcell_object._services["DRORCHESTRATION_JOB_STATS"]
         self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
@@ -95,27 +93,26 @@ class DRJob(Job):
                 }]
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._REPLICATION_STATS)
+            "GET", self._REPLICATION_STATS
+        )
 
         if flag:
-            if response.json() and 'job' in response.json():
-                return response.json()['job'] or []
-            elif response.json() and 'errors' in response.json():
-                errors = response.json().get('errors', [{}])
-                error_list = errors[0].get('errList', [{}])
-                error_code = error_list[0].get('errorCode', 0)
-                error_message = error_list.get('errLogMessage', '').strip()
+            if response.json() and "job" in response.json():
+                return response.json()["job"] or []
+            elif response.json() and "errors" in response.json():
+                errors = response.json().get("errors", [{}])
+                error_list = errors[0].get("errList", [{}])
+                error_code = error_list[0].get("errorCode", 0)
+                error_message = error_list.get("errLogMessage", "").strip()
                 if error_code != 0:
-                    response_string = self._commcell_object._update_response_(
-                        error_message)
-                    raise SDKException('Response', '101', response_string)
+                    response_string = self._commcell_object._update_response_(error_message)
+                    raise SDKException("Response", "101", response_string)
             else:
                 if response.json():
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def _initialize_job_properties(self):
         """Initialises the job properties and then initialises the DR job details"""
@@ -125,8 +122,10 @@ class DRJob(Job):
     def blobs_retained(self):
         """Returns True if blobs to be retained chosen in failover job for Azure destination"""
         task_details_json = self.task_details
-        dr_opts = task_details_json['subTasks'][0]['options']['adminOpts'].get('drOrchestrationOption')
-        blobs_retained = dr_opts.get('retainIntegritySnapshot') if dr_opts else None
+        dr_opts = task_details_json["subTasks"][0]["options"]["adminOpts"].get(
+            "drOrchestrationOption"
+        )
+        blobs_retained = dr_opts.get("retainIntegritySnapshot") if dr_opts else None
         return blobs_retained
 
     def get_phases(self):
@@ -148,19 +147,26 @@ class DRJob(Job):
             return job_stats
         for pair_stats in self._replication_job_stats:
             phases = []
-            for phase in pair_stats.get('phase', []):
-                phases.append({
-                    'phase_name': DRJobPhaseToText[DRJobPhases(phase.get('phase', '')).name]
-                    if phase.get('phase', '') else '',
-                    'phase_status': phase.get('status', 1),
-                    'start_time': phase.get('startTime', {}).get('time', ''),
-                    'end_time': phase.get('endTime', {}).get('time', ''),
-                    'machine_name': phase.get('entity', {}).get('clientName', ''),
-                    'error_message': phase.get('phaseInfo', {}).get('job', [{}])[0].get('failure', {})
-                                     .get('errorMessage', ''),
-                    'job_id': str(phase.get('phaseInfo', {}).get('job', [{}])[0].get('jobid', '')),
-                })
-            job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
+            for phase in pair_stats.get("phase", []):
+                phases.append(
+                    {
+                        "phase_name": DRJobPhaseToText[DRJobPhases(phase.get("phase", "")).name]
+                        if phase.get("phase", "")
+                        else "",
+                        "phase_status": phase.get("status", 1),
+                        "start_time": phase.get("startTime", {}).get("time", ""),
+                        "end_time": phase.get("endTime", {}).get("time", ""),
+                        "machine_name": phase.get("entity", {}).get("clientName", ""),
+                        "error_message": phase.get("phaseInfo", {})
+                        .get("job", [{}])[0]
+                        .get("failure", {})
+                        .get("errorMessage", ""),
+                        "job_id": str(
+                            phase.get("phaseInfo", {}).get("job", [{}])[0].get("jobid", "")
+                        ),
+                    }
+                )
+            job_stats[str(pair_stats.get("client", {}).get("clientName", ""))] = phases
         return job_stats
 
     def get_storagepolicy_restore_vm(self, source):
@@ -171,15 +177,23 @@ class DRJob(Job):
         fetched_value = {}
         phases = self.get_phases().get(source, [])
         for phase in phases:
-            if phase.get('phase_name').name == "RESTORE_VM":
-                values = DRJob(self._commcell_object, phase.get('job_id')).task_details
+            if phase.get("phase_name").name == "RESTORE_VM":
+                values = DRJob(self._commcell_object, phase.get("job_id")).task_details
                 fetched_value = {
-                    'copyId': str(
-                        values.get('subTasks', [])[0].get('options', {}).get('restoreOptions', {}).get(
-                            'storagePolicy', {}).get('copyId')),
-                    'copyName': str(
-                        values.get('subTasks', [])[0].get('options', {}).get('restoreOptions', {}).get(
-                            'storagePolicy', {}).get('copyName'))
+                    "copyId": str(
+                        values.get("subTasks", [])[0]
+                        .get("options", {})
+                        .get("restoreOptions", {})
+                        .get("storagePolicy", {})
+                        .get("copyId")
+                    ),
+                    "copyName": str(
+                        values.get("subTasks", [])[0]
+                        .get("options", {})
+                        .get("restoreOptions", {})
+                        .get("storagePolicy", {})
+                        .get("copyName")
+                    ),
                 }
 
         return fetched_value

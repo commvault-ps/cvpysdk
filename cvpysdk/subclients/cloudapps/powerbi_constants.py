@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -44,5 +42,5 @@ class PowerBiConstants:
         "instanceId": None,
         "subclientId": None,
         "clientId": None,
-        "applicationId": None
+        "applicationId": None,
     }

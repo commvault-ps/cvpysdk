@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -60,17 +58,17 @@ from .organization import Organization
 from .security.user import User
 
 
-class Metallic(object):
+class Metallic:
     """Class for representing Metallic related operations."""
 
     def __init__(self, commcell_object):
         """Intializes object of the Metallic class.
 
-            Args:
-                commcell_object (object) -instance of the commcell class
+        Args:
+            commcell_object (object) -instance of the commcell class
 
-            Returns:
-                object - instance of the Metallic class
+        Returns:
+            object - instance of the Metallic class
         """
 
         self._commcell_object = commcell_object
@@ -83,63 +81,72 @@ class Metallic(object):
     def _metallic_commcell_object(self, cloud_webconsole_hostname, cloud_username, cloud_password):
         """Gets the metallic commcell object.
 
-            Args:
-                cloud_webconsole_hostname (str) -- hostname of the cloud
-                cloud_username (str) -- username of the cloud
-                cloud_password (str) -- password of the cloud
+        Args:
+            cloud_webconsole_hostname (str) -- hostname of the cloud
+            cloud_username (str) -- username of the cloud
+            cloud_password (str) -- password of the cloud
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if inputs are not valid
+                if inputs are not valid
 
-                    if failed to create the object
+                if failed to create the object
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
-        if not (isinstance(cloud_webconsole_hostname, str) and
-                isinstance(cloud_username, str) and
-                isinstance(cloud_password, str)):
-            raise SDKException('Metallic', '101')
+        if not (
+            isinstance(cloud_webconsole_hostname, str)
+            and isinstance(cloud_username, str)
+            and isinstance(cloud_password, str)
+        ):
+            raise SDKException("Metallic", "101")
         from cvpysdk.commcell import Commcell
-        metallic_cell = self._get_eligible_metallic_commcells(cloud_username, cloud_webconsole_hostname)
+
+        metallic_cell = self._get_eligible_metallic_commcells(
+            cloud_username, cloud_webconsole_hostname
+        )
         if (len(metallic_cell)) > 0:
             cloud_webconsole_hostname = metallic_cell[0]
         self._metallic_obj = Commcell(cloud_webconsole_hostname, cloud_username, cloud_password)
 
-    def metallic_subscribe(self, cloud_webconsole_hostname, cloud_username, cloud_password, msp_company_name=None):
+    def metallic_subscribe(
+        self, cloud_webconsole_hostname, cloud_username, cloud_password, msp_company_name=None
+    ):
         """Adds a new Monitoring Policy to the Commcell.
 
-            Args:
-                cloud_webconsole_hostname (str) -- hostname of the cloud
-                cloud_username (str) -- username of the cloud
-                cloud_password (str) -- password of the cloud
-                msp_company_name (str or object) -- name of the company or company object
-                    default: None
+        Args:
+            cloud_webconsole_hostname (str) -- hostname of the cloud
+            cloud_username (str) -- username of the cloud
+            cloud_password (str) -- password of the cloud
+            msp_company_name (str or object) -- name of the company or company object
+                default: None
 
-            Raises:
-                SDKException:
-                    if metallic is already subscribed
+        Raises:
+            SDKException:
+                if metallic is already subscribed
 
-                    if inputs are not valid
+                if inputs are not valid
 
-                    if failed to subscribe to metallic
+                if failed to subscribe to metallic
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
 
         """
-        if not (isinstance(cloud_webconsole_hostname, str) and
-                isinstance(cloud_username, str) and
-                isinstance(cloud_password, str)):
-            raise SDKException('Metallic', '101')
+        if not (
+            isinstance(cloud_webconsole_hostname, str)
+            and isinstance(cloud_username, str)
+            and isinstance(cloud_password, str)
+        ):
+            raise SDKException("Metallic", "101")
         if msp_company_name and not (isinstance(msp_company_name, str)):
-            raise SDKException('Metallic', '101')
+            raise SDKException("Metallic", "101")
         self._metallic_commcell_object(cloud_webconsole_hostname, cloud_username, cloud_password)
         if msp_company_name and not isinstance(msp_company_name, Organization):
             msp_company_name = msp_company_name.lower()
@@ -160,59 +167,61 @@ class Metallic(object):
                             "nameValues": [
                                 {
                                     "name": "RedirectUrl",
-                                    "value": self._commcell_object.commserv_metadata['commserv_redirect_url']
+                                    "value": self._commcell_object.commserv_metadata[
+                                        "commserv_redirect_url"
+                                    ],
                                 },
                                 {
                                     "name": "SP Certificate Data",
-                                    "value": self._commcell_object.commserv_metadata['commserv_certificate']
+                                    "value": self._commcell_object.commserv_metadata[
+                                        "commserv_certificate"
+                                    ],
                                 },
                                 {
                                     "name": "CommcellId",
-                                    "value": str(self._commcell_object.commcell_id)
+                                    "value": str(self._commcell_object.commcell_id),
                                 },
-                                {
-                                    "name": "Enable Sso Redirect",
-                                    "value": "1"
-                                }
+                                {"name": "Enable Sso Redirect", "value": "1"},
                             ]
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
         if msp_company_name:
             test_dict = {
-                'subscriberCompany': {
-                    'GUID': self._commcell_object.organizations.all_organizations_props[msp_company_name]['GUID'],
-                    'providerDomainName': msp_company_obj.organization_name
+                "subscriberCompany": {
+                    "GUID": self._commcell_object.organizations.all_organizations_props[
+                        msp_company_name
+                    ]["GUID"],
+                    "providerDomainName": msp_company_obj.organization_name,
                 }
             }
             request.update(test_dict)
 
         flag, response = self._metallic_obj._cvpysdk_object.make_request(
-            'POST', self._metallic_obj._services['METALLIC_LINKING'], request)
+            "POST", self._metallic_obj._services["METALLIC_LINKING"], request
+        )
 
         if flag:
             if response.json():
-                error_code = response.json()['error']['errorCode']
+                error_code = response.json()["error"]["errorCode"]
                 self._metallic_details = {}
-                if (error_code == 2 or error_code == 0) and 'cloudServiceDetails' in response.json():
-                    self._metallic_details = response.json()['cloudServiceDetails']
+                if (
+                    error_code == 2 or error_code == 0
+                ) and "cloudServiceDetails" in response.json():
+                    self._metallic_details = response.json()["cloudServiceDetails"]
                 if error_code < 0:
-                    error_string = response.json()['errorMessage']
+                    error_string = response.json()["errorMessage"]
                     raise SDKException(
-                        'Metallic',
-                        '102',
-                        'Failed to create TPA\nError: "{0}"'.format(
-                            error_string
-                        )
+                        "Metallic", "102", f'Failed to create TPA\nError: "{error_string}"'
                     )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         if msp_company_name:
             self._cv_metallic_subscribe(msp_company_name)
@@ -222,83 +231,88 @@ class Metallic(object):
     def _cv_metallic_subscribe(self, msp_company_name=None):
         """Subscribing on on-prim or msp side.
 
-            Args:
-                msp_company_name (str) -- name of the company or company object
-                    default: None
+        Args:
+            msp_company_name (str) -- name of the company or company object
+                default: None
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if inputs are not valid
+                if inputs are not valid
 
-                    if failed to subscribe on on-prim or msp side
+                if failed to subscribe on on-prim or msp side
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
 
         """
         if msp_company_name and not (isinstance(msp_company_name, str)):
-            raise SDKException('Metallic', '101')
+            raise SDKException("Metallic", "101")
         if msp_company_name and not isinstance(msp_company_name, Organization):
             msp_company_obj = self._commcell_object.organizations.get(msp_company_name)
-        request = {
-            "opType": 3,
-            "cloudServiceDetails": self._metallic_details
-        }
+        request = {"opType": 3, "cloudServiceDetails": self._metallic_details}
 
         if msp_company_name:
-            request['subscriberCompany'] = {'providerId': int(msp_company_obj.organization_id)}
+            request["subscriberCompany"] = {"providerId": int(msp_company_obj.organization_id)}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CV_METALLIC_LINKING'], request)
+            "POST", self._commcell_object._services["CV_METALLIC_LINKING"], request
+        )
 
         if flag:
             if response and response.json():
-                error_code = response.json().get('error', {}).get('errorCode')
+                error_code = response.json().get("error", {}).get("errorCode")
                 if error_code != 0:
-                    error_string = response.json()['error']['errorString']
+                    error_string = response.json()["error"]["errorString"]
                     raise SDKException(
-                        'Metallic',
-                        '102',
-                        'Failed to update linking details on onprim/msp: "{0}"'.format(
-                            error_string
-                        )
+                        "Metallic",
+                        "102",
+                        f'Failed to update linking details on onprim/msp: "{error_string}"',
                     )
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def is_metallic_registered(self):
         """This function says whether metallic is registered for a user or not.
 
-            Args:
-                username (str) -- name of the user to which we need to check if metallic is registered
+        Args:
+            username (str) -- name of the user to which we need to check if metallic is registered
 
-            Returns:
-                Boolean --  True if metallic is returned in response
-                            False if metallic is not returned in response
+        Returns:
+            Boolean --  True if metallic is returned in response
+                        False if metallic is not returned in response
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
 
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['METALLIC_REGISTERED']
+            "GET", self._commcell_object._services["METALLIC_REGISTERED"]
         )
 
         if flag:
             if response.json():
-                if 'cloudServices' in response.json():
-                    if response.json().get('cloudServices', [])[0].get('cloudService', {}).get('redirectUrl', {}):
-                        self._metallic_web_url = \
-                            response.json().get('cloudServices', [])[0].get('cloudService', {}).get('redirectUrl', {})
+                if "cloudServices" in response.json():
+                    if (
+                        response.json()
+                        .get("cloudServices", [])[0]
+                        .get("cloudService", {})
+                        .get("redirectUrl", {})
+                    ):
+                        self._metallic_web_url = (
+                            response.json()
+                            .get("cloudServices", [])[0]
+                            .get("cloudService", {})
+                            .get("redirectUrl", {})
+                        )
                         self._cloudservices_details = response.json()
                         return True
                 return False
@@ -306,114 +320,119 @@ class Metallic(object):
                 return False
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def metallic_completed_solutions(self):
         """This function returns the completed solutions for metallic.
 
-            Returns:
-                dict of completed solutions
+        Returns:
+            dict of completed solutions
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
 
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['METALLIC_COMPLETED_SETUPS']
+            "GET", self._commcell_object._services["METALLIC_COMPLETED_SETUPS"]
         )
 
         if flag:
-            if response.json() and 'completedSetupsDetails' in response.json():
-                completed_solns = response.json()['completedSetupsDetails'][0]['completedSetups']
+            if response.json() and "completedSetupsDetails" in response.json():
+                completed_solns = response.json()["completedSetupsDetails"][0]["completedSetups"]
                 return completed_solns
             else:
-                raise SDKException('Metallic', '102', 'No metallic solutions are configured')
+                raise SDKException("Metallic", "102", "No metallic solutions are configured")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def metallic_unsubscribe(self):
         """This function is for unsubscribing metallic
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if failed to unsubcribe on metallic
+                if failed to unsubcribe on metallic
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
 
         """
         saml_token_for_user = self._commcell_object.get_saml_token()
         user_obj = User(self._commcell_object, self._commcell_object.commcell_username)
         company_name = user_obj.user_company_name
-        if company_name == 'commcell':
+        if company_name == "commcell":
             company_name = None
         request = {
             "cloudServiceDetails": {
                 "cloudService": {
-                    "redirectUrl": self._metallic_web_url if self.is_metallic_registered() else None,
-                    "appName": self._commcell_object.commserv_guid
+                    "redirectUrl": self._metallic_web_url
+                    if self.is_metallic_registered()
+                    else None,
+                    "appName": self._commcell_object.commserv_guid,
                 }
             }
         }
 
         if company_name:
             test_dict = {
-                'subscriberCompany': {
-                    'GUID': self._commcell_object.organizations.all_organizations_props[company_name]['GUID'],
-                    'providerId': self._commcell_object.organizations.all_organizations[company_name],
-                    'providerDomainName': company_name
+                "subscriberCompany": {
+                    "GUID": self._commcell_object.organizations.all_organizations_props[
+                        company_name
+                    ]["GUID"],
+                    "providerId": self._commcell_object.organizations.all_organizations[
+                        company_name
+                    ],
+                    "providerDomainName": company_name,
                 }
             }
             request.update(test_dict)
 
         url1 = self._metallic_web_url + "/api/CloudService/Unsubscribe"
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            method='POST',
+            method="POST",
             url=url1,
             payload=request,
-            headers={'Authtoken': saml_token_for_user,
-                     'Accept': 'application/json'}
+            headers={"Authtoken": saml_token_for_user, "Accept": "application/json"},
         )
 
         if flag:
-            if response.json() and 'cloudServiceDetails' in response.json():
-                error_code = response.json()['error']['errorCode']
-                error_message = response.json()['error']['errorString']
+            if response.json() and "cloudServiceDetails" in response.json():
+                error_code = response.json()["error"]["errorCode"]
+                error_message = response.json()["error"]["errorString"]
                 if not error_code == 0:
-                    raise SDKException('Metallic', '102', error_message)
+                    raise SDKException("Metallic", "102", error_message)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         self._cv_metallic_unsubscribe(user_obj)
 
     def _cv_metallic_unsubscribe(self, user):
         """This function says whether metallic is registered for a user or not.
 
-            Args:
-                user (str or object) -- username or user object who has rights to unsubscribe on on-prim or msp side
+        Args:
+            user (str or object) -- username or user object who has rights to unsubscribe on on-prim or msp side
 
-            Returns:
-                Boolean --  True if metallic is returned in response
-                            False if metallic is not returned in response
+        Returns:
+            Boolean --  True if metallic is returned in response
+                        False if metallic is not returned in response
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if failed to unsubscribe on on-prim or msp side
+                if failed to unsubscribe on on-prim or msp side
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
 
         """
@@ -421,35 +440,41 @@ class Metallic(object):
         if not isinstance(user, User):
             user = self._commcell_object.users.get(self._commcell_object.commcell_username)
         company_name = user.user_company_name
-        if company_name == 'commcell':
+        if company_name == "commcell":
             company_name = None
         request = {
             "opType": 4,
             "cloudServiceDetails": {
                 "cloudService": {
-                    "redirectUrl": self._metallic_web_url if self.is_metallic_registered() else None
+                    "redirectUrl": self._metallic_web_url
+                    if self.is_metallic_registered()
+                    else None
                 }
-            }
+            },
         }
 
         if company_name:
-            request['subscriberCompany'] = \
-                {'providerId': self._commcell_object.organizations.all_organizations[company_name]}
+            request["subscriberCompany"] = {
+                "providerId": self._commcell_object.organizations.all_organizations[company_name]
+            }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CV_METALLIC_LINKING'], request)
+            "POST", self._commcell_object._services["CV_METALLIC_LINKING"], request
+        )
 
         if flag:
             if response.json():
-                error_code = response.json().get('error', {}).get('errorCode')
-                error_message = response.json().get('error', {}).get('errorString')
+                error_code = response.json().get("error", {}).get("errorCode")
+                error_message = response.json().get("error", {}).get("errorString")
                 if not error_code == 0:
-                    raise SDKException('Metallic', '102', error_message)
+                    raise SDKException("Metallic", "102", error_message)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def _get_eligible_metallic_commcells(self, login_name_or_email=None, cloud_webconsole_hostname=None):
+    def _get_eligible_metallic_commcells(
+        self, login_name_or_email=None, cloud_webconsole_hostname=None
+    ):
         """
         Gets the redirect metallic commcells based on login_name or email provided
 
@@ -475,29 +500,28 @@ class Metallic(object):
         """
 
         login_name_or_email = login_name_or_email.lower()
-        url1 = r'http://{0}/webconsole/api/CloudService/Routing?username={1}'.format(
-            cloud_webconsole_hostname, login_name_or_email)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(method='GET', url=url1)
+        url1 = rf"http://{cloud_webconsole_hostname}/webconsole/api/CloudService/Routing?username={login_name_or_email}"
+        flag, response = self._commcell_object._cvpysdk_object.make_request(method="GET", url=url1)
         if flag:
-            if response.json() and 'cloudServiceCommcells' in response.json():
+            if response.json() and "cloudServiceCommcells" in response.json():
                 cloud_commcell_list = []
-                for ser_comm in response.json()['cloudServiceCommcells']:
-                    cloud_commcell_list.append(ser_comm['url'])
+                for ser_comm in response.json()["cloudServiceCommcells"]:
+                    cloud_commcell_list.append(ser_comm["url"])
                 return cloud_commcell_list
             else:
                 return []
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def cloud_hostname(self):
-        """ Returns cloudhostname"""
+        """Returns cloudhostname"""
         return self._cloud_hostname
 
     @cloud_hostname.setter
     def cloud_hostname(self, value):
-        """ Sets cloud hostname """
+        """Sets cloud hostname"""
         self._cloud_hostname = value
 
     @property

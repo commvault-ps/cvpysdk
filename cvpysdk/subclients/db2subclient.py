@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -51,14 +49,14 @@ Db2Subclient:
     enable_acs_backup()                 -- Enable DB2 ACS snap backup
 
 """
-from __future__ import unicode_literals
-from ..subclient import Subclient
+
 from ..exception import SDKException
+from ..subclient import Subclient
 
 
 class DB2Subclient(Subclient):
     """
-        DB2Subclient is a class to work on DB2 subclients
+    DB2Subclient is a class to work on DB2 subclients
 
     """
 
@@ -74,8 +72,7 @@ class DB2Subclient(Subclient):
             subclient_id      (str)     -- id of the subclient
 
         """
-        super(DB2Subclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
         self._db2_subclient_properties = {}
         self._db2_backup_logfiles = {}
         self._db2_delete_logfiles_after = {}
@@ -83,12 +80,12 @@ class DB2Subclient(Subclient):
     @property
     def db2_use_dedupe_device(self):
         """
-            Getter to fetch dedupe device option
-            Returns:
-             Bool - True if dedupe_device is enabled on the subclient. Else False
+        Getter to fetch dedupe device option
+        Returns:
+         Bool - True if dedupe_device is enabled on the subclient. Else False
 
         """
-        return self._properties.get('db2SubclientProp', {}).get('db2UseDedupeDevice')
+        return self._properties.get("db2SubclientProp", {}).get("db2UseDedupeDevice")
 
     @property
     def db2_delete_log_files_after(self):
@@ -98,7 +95,7 @@ class DB2Subclient(Subclient):
         Bool - True if delete log files option is enabled on the subclient. Else False
 
         """
-        return self._subclient_properties.get('db2SubclientProp', {}).get('db2DeleteLogFilesAfter')
+        return self._subclient_properties.get("db2SubclientProp", {}).get("db2DeleteLogFilesAfter")
 
     @property
     def db2_backup_log_files(self):
@@ -108,7 +105,7 @@ class DB2Subclient(Subclient):
         Bool - True if delete log files option is enabled on the subclient. Else False
 
         """
-        return self._subclient_properties.get('db2SubclientProp', {}).get('db2BackupLogFiles')
+        return self._subclient_properties.get("db2SubclientProp", {}).get("db2BackupLogFiles")
 
     @db2_backup_log_files.setter
     def db2_backup_log_files(self, value):
@@ -119,9 +116,7 @@ class DB2Subclient(Subclient):
             value   (bool)      --  to enable or disable log backup option for db2 subclient
         """
 
-        self._set_subclient_properties(
-            "_db2_subclient_properties['db2BackupLogFiles']", value)
-
+        self._set_subclient_properties("_db2_subclient_properties['db2BackupLogFiles']", value)
 
     @db2_delete_log_files_after.setter
     def db2_delete_log_files_after(self, value):
@@ -133,7 +128,8 @@ class DB2Subclient(Subclient):
         """
 
         self._set_subclient_properties(
-            "_db2_subclient_properties['db2DeleteLogFilesAfter']", value)
+            "_db2_subclient_properties['db2DeleteLogFilesAfter']", value
+        )
 
     @property
     def is_backup_data_enabled(self):
@@ -146,7 +142,7 @@ class DB2Subclient(Subclient):
 
         """
 
-        return self._subclient_properties.get("db2SubclientProp", {}).get('db2BackupData', True)
+        return self._subclient_properties.get("db2SubclientProp", {}).get("db2BackupData", True)
 
     def enable_backupdata(self):
         """
@@ -162,12 +158,12 @@ class DB2Subclient(Subclient):
 
         """
         properties = self.properties
-        properties['db2SubclientProp']["db2BackupData"] = False
-        properties['db2SubclientProp']["skipLogsInBackupImage"] = 0
-        properties['db2SubclientProp']["db2BackupMode"] = 0
-        properties['db2SubclientProp']["db2UseDedupeDevice"] = True
-        properties['db2SubclientProp']["db2DeleteLogFilesAfter"] = False
-        properties['db2SubclientProp']["db2BackupLogFiles"] = True
+        properties["db2SubclientProp"]["db2BackupData"] = False
+        properties["db2SubclientProp"]["skipLogsInBackupImage"] = 0
+        properties["db2SubclientProp"]["db2BackupMode"] = 0
+        properties["db2SubclientProp"]["db2UseDedupeDevice"] = True
+        properties["db2SubclientProp"]["db2DeleteLogFilesAfter"] = False
+        properties["db2SubclientProp"]["db2BackupLogFiles"] = True
         del properties["db2SubclientProp"]["db2BackupType"]
         self.update_properties(properties_dict=properties)
 
@@ -177,7 +173,7 @@ class DB2Subclient(Subclient):
 
         """
         properties = self.properties
-        properties['db2SubclientProp']["enableTableBrowse"] = True
+        properties["db2SubclientProp"]["enableTableBrowse"] = True
         self.update_properties(properties_dict=properties)
 
     def enable_acs_backup(self):
@@ -185,21 +181,21 @@ class DB2Subclient(Subclient):
         To enable DB2 ACS backup
         """
         properties = self.properties
-        properties['commonProperties']["snapCopyInfo"]["useDB2ACSInterface"] = True
+        properties["commonProperties"]["snapCopyInfo"]["useDB2ACSInterface"] = True
         self.update_properties(properties_dict=properties)
 
     @property
     def backup_mode_online(self):
         """
-                Getter to fetch online backup mode is enabled or disabled
+        Getter to fetch online backup mode is enabled or disabled
 
-                Returns:
+        Returns:
 
-                    (bool)      -   boolean value is returned based on the status of data backup option
-                                    0 - online database , 1 - offline database
-                """
+            (bool)      -   boolean value is returned based on the status of data backup option
+                            0 - online database , 1 - offline database
+        """
 
-        return self._subclient_properties.get("db2SubclientProp", {}).get('db2BackupMode', 0)
+        return self._subclient_properties.get("db2SubclientProp", {}).get("db2BackupMode", 0)
 
     @backup_mode_online.setter
     def backup_mode_online(self, value):
@@ -215,49 +211,48 @@ class DB2Subclient(Subclient):
     def _get_subclient_properties(self):
         """Gets the subclient properties of this subclient.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
 
-        super(DB2Subclient, self)._get_subclient_properties()
-        if 'db2SubclientProp' not in self._subclient_properties:
-            self._subclient_properties['db2SubclientProp'] = {}
-        self._db2_subclient_properties = self._subclient_properties['db2SubclientProp']
+        super()._get_subclient_properties()
+        if "db2SubclientProp" not in self._subclient_properties:
+            self._subclient_properties["db2SubclientProp"] = {}
+        self._db2_subclient_properties = self._subclient_properties["db2SubclientProp"]
         self._db2_delete_logfiles_after = self._db2_subclient_properties.get(
-            'db2DeleteLogFilesAfter')
-        self._db2_backup_logfile = self._db2_subclient_properties.get('db2BackupLogFiles')
-        self._subclient_properties.get("db2SubclientProp", {}).get('db2BackupData')
+            "db2DeleteLogFilesAfter"
+        )
+        self._db2_backup_logfile = self._db2_subclient_properties.get("db2BackupLogFiles")
+        self._subclient_properties.get("db2SubclientProp", {}).get("db2BackupData")
 
     def _get_subclient_properties_json(self):
         """returns subclient property json for db2
-                   Returns:
-                        dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
         """
-        '''subclient_json = {
+        """subclient_json = {
             "subClientProperties":{
                 "db2SubclientProp":
                     {
                         "db2BackupData": None
                     }
             }
-        }'''
+        }"""
 
-        subclient_json = {"subClientProperties":
-                          {
-                              "commonProperties": self._commonProperties,
-                              "db2SubclientProp": self._db2_subclient_properties,
-                              "proxyClient": self._proxyClient,
-                              "subClientEntity": self._subClientEntity
-                          }
-                          }
+        subclient_json = {
+            "subClientProperties": {
+                "commonProperties": self._commonProperties,
+                "db2SubclientProp": self._db2_subclient_properties,
+                "proxyClient": self._proxyClient,
+                "subClientEntity": self._subClientEntity,
+            }
+        }
         return subclient_json
 
-    def _db2_backup_request_json(self,
-                                 backup_level,
-                                 **kwargs):
+    def _db2_backup_request_json(self, backup_level, **kwargs):
         """
         Returns the JSON request to pass to the API as per the options selected by the user.
 
@@ -286,21 +281,17 @@ class DB2Subclient(Subclient):
         backup_copy_type = kwargs.get("backup_copy_type", 2)
         db2_options = dict()
         if create_backup_copy_immediately:
-            sub_opt = {"dataOpt":
-                       {
-                           "createBackupCopyImmediately": create_backup_copy_immediately,
-                           "backupCopyType": backup_copy_type
-                       }
-                      }
+            sub_opt = {
+                "dataOpt": {
+                    "createBackupCopyImmediately": create_backup_copy_immediately,
+                    "backupCopyType": backup_copy_type,
+                }
+            }
             db2_options.update(sub_opt)
-        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
-            db2_options
-        )
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(db2_options)
         return request_json
 
-    def db2_backup(self,
-                   backup_level="full",
-                   **kwargs):
+    def db2_backup(self, backup_level="full", **kwargs):
         """
         Performs backup on DB2 subclient
 
@@ -333,21 +324,24 @@ class DB2Subclient(Subclient):
         """
         backup_level = backup_level.lower()
 
-        if backup_level not in ['full', 'incremental', 'differential']:
-            raise SDKException('Subclient', '103')
+        if backup_level not in ["full", "incremental", "differential"]:
+            raise SDKException("Subclient", "103")
 
         create_backup_copy_immediately = kwargs.get("create_backup_copy_immediately", False)
 
         if create_backup_copy_immediately:
-            if backup_level != 'full':
+            if backup_level != "full":
                 raise SDKException(
-                    'Subclient', '102', 'Backup Copy job is not valid for Incremental or Differential')
+                    "Subclient",
+                    "102",
+                    "Backup Copy job is not valid for Incremental or Differential",
+                )
 
         request_json = self._db2_backup_request_json(backup_level, **kwargs)
 
-        backup_service = self._commcell_object._services['CREATE_TASK']
+        backup_service = self._commcell_object._services["CREATE_TASK"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', backup_service, request_json
+            "POST", backup_service, request_json
         )
         return self._process_backup_response(flag, response)

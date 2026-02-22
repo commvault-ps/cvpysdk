@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -38,16 +36,19 @@ XenSubclient:
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
 """
+
 from cvpysdk.exception import SDKException
+
 from ..vssubclient import VirtualServerSubclient
 
 
 class Xen(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient Base class.
-       This represents a Fusion Compute virtual server subclient,
-       and can perform restore operations on only that subclient.
+    This represents a Fusion Compute virtual server subclient,
+    and can perform restore operations on only that subclient.
 
     """
+
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialize the Instance object for the given Virtual Server instance.
         Args
@@ -55,50 +56,50 @@ class Xen(VirtualServerSubclient):
                                          backupset class, subclient name, subclient id
 
         """
-        super(Xen, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
         self.diskExtension = ["none"]
 
     def full_vm_restore_in_place(
-            self,
-            vm_to_restore=None,
-            overwrite=True,
-            power_on=True,
-            proxy_client=None,
-            copy_precedence=0):
+        self,
+        vm_to_restore=None,
+        overwrite=True,
+        power_on=True,
+        proxy_client=None,
+        copy_precedence=0,
+    ):
         """Restores the FULL Virtual machine specified in the input list
-            to the location same as the actual location of the VM in VCenter.
+        to the location same as the actual location of the VM in VCenter.
 
-            Args:
-                vm_to_restore       (list)     --  provide the VM name to
-                                                   restore
-                                                   default: None
+        Args:
+            vm_to_restore       (list)     --  provide the VM name to
+                                               restore
+                                               default: None
 
-                overwrite           (bool)     --  overwrite the existing VM
-                                                   default: True
+            overwrite           (bool)     --  overwrite the existing VM
+                                               default: True
 
-                power_on            (bool)     --  power on the  restored VM
-                                                   default: True
+            power_on            (bool)     --  power on the  restored VM
+                                               default: True
 
 
-                proxy_client          (str)  --  proxy client to be used for restore
-                                                        default: proxy added in subclient
+            proxy_client          (str)  --  proxy client to be used for restore
+                                                    default: proxy added in subclient
 
-                copy_precedence       (int)         --  copy precedence value
-                                                        default: 0
+            copy_precedence       (int)         --  copy precedence value
+                                                    default: 0
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
         restore_option = {}
@@ -112,80 +113,81 @@ class Xen(VirtualServerSubclient):
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             volume_level_restore=1,
             client_name=proxy_client,
-            in_place=True
+            in_place=True,
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
-            self,
-            vm_to_restore=None,
-            destination_client=None,
-            proxy_client=None,
-            new_name=None,
-            xen_server=None,
-            storage=None,
-            overwrite=True,
-            power_on=True,
-            copy_precedence=0,
-            **kwargs):
+        self,
+        vm_to_restore=None,
+        destination_client=None,
+        proxy_client=None,
+        new_name=None,
+        xen_server=None,
+        storage=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        **kwargs,
+    ):
         """Restores the FULL Virtual machine specified in the input list
-            to the provided vcenter client along with the ESX and the datastores.
-            If the provided client name is none then it restores the Full Virtual
-            Machine to the source client and corresponding ESX and datastore.
+        to the provided vcenter client along with the ESX and the datastores.
+        If the provided client name is none then it restores the Full Virtual
+        Machine to the source client and corresponding ESX and datastore.
 
-            Args:
-                vm_to_restore     (list)  --  provide the VM name to restore
-                                              default: None
+        Args:
+            vm_to_restore     (list)  --  provide the VM name to restore
+                                          default: None
 
-                destination_client    (str) -- name of the Pseudo client
-                                                  where the VM should be
-                                                    restored.
+            destination_client    (str) -- name of the Pseudo client
+                                              where the VM should be
+                                                restored.
 
-                new_name          (str) -- new name to be given to the
-                                                    restored VM
+            new_name          (str) -- new name to be given to the
+                                                restored VM
 
-                xen_server          (str) -- destination cluster or  host
-                                                    restores to the source VM
-                                                    esx if this value is not
-                                                    specified
+            xen_server          (str) -- destination cluster or  host
+                                                restores to the source VM
+                                                esx if this value is not
+                                                specified
 
-                storage         (str) -- datastore where the
-                                                  restored VM should be located
-                                                  restores to the source VM
-                                                  datastore if this value is
-                                                  not specified
+            storage         (str) -- datastore where the
+                                              restored VM should be located
+                                              restores to the source VM
+                                              datastore if this value is
+                                              not specified
 
-                overwrite         (bool)       -- overwrite the existing VM
-                                                  default: True
+            overwrite         (bool)       -- overwrite the existing VM
+                                              default: True
 
-                power_on          (bool)       -- power on the  restored VM
-                                                  default: True
+            power_on          (bool)       -- power on the  restored VM
+                                              default: True
 
-                copy_precedence   (int)        -- copy precedence value
-                                                  default: 0
+            copy_precedence   (int)        -- copy precedence value
+                                              default: 0
 
-                proxy_client     (str)  --  proxy client to be used for restore
-                                                        default: proxy added in subclient
+            proxy_client     (str)  --  proxy client to be used for restore
+                                                    default: proxy added in subclient
 
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
         restore_option = {}
-        extra_options = ['v2_details']
+        extra_options = ["v2_details"]
 
         for key in extra_options:
             restore_option[key] = kwargs[key] if key in kwargs else None
@@ -194,10 +196,9 @@ class Xen(VirtualServerSubclient):
             vm_to_restore = [vm_to_restore]
 
         if new_name:
-            if not(isinstance(vm_to_restore, str) or
-                   isinstance(new_name, str)):
-                raise SDKException('Subclient', '101')
-            restore_option['restore_new_name'] = new_name
+            if not (isinstance(vm_to_restore, str) or isinstance(new_name, str)):
+                raise SDKException("Subclient", "101")
+            restore_option["restore_new_name"] = new_name
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -212,7 +213,7 @@ class Xen(VirtualServerSubclient):
             esx_host=xen_server,
             datastore=storage,
             in_place=False,
-            restore_new_name=new_name
+            restore_new_name=new_name,
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

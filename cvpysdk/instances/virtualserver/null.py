@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -50,6 +48,4 @@ class NullSubclient(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        raise SDKException('Instance', '102',
-                           'Instance: "{0}" is not yet supported'.
-                           format(instance_name))
+        raise SDKException("Instance", "102", f'Instance: "{instance_name}" is not yet supported')

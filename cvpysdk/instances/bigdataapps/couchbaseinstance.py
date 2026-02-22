@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -14,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-""" File for operating on a couchbase instance.
+"""File for operating on a couchbase instance.
 CouchbaseInstance:   Derived class from BigDataAppsInstance Base class, representing a
                         Couchbase instance and to perform operations on that instance
 CouchbaseInstance:
@@ -22,15 +21,15 @@ CouchbaseInstance:
     agent_object, instance name and instance id
     restore()                       -- Submits a restore request based on restore options
 """
-from __future__ import unicode_literals
 
 from typing import TYPE_CHECKING
 
-from ..bigdataappsinstance import BigDataAppsInstance
 from ...exception import SDKException
+from ..bigdataappsinstance import BigDataAppsInstance
 
 if TYPE_CHECKING:
     from ...job import Job
+
 
 class CouchbaseInstance(BigDataAppsInstance):
     """
@@ -47,6 +46,7 @@ class CouchbaseInstance(BigDataAppsInstance):
 
     #ai-gen-doc
     """
+
     def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
         """Initialize a new CouchbaseInstance object.
 
@@ -66,14 +66,9 @@ class CouchbaseInstance(BigDataAppsInstance):
         self._agent_object = agent_object
         self._browse_request = {}
         self._browse_url = None
-        super(
-            CouchbaseInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
-    def restore(self, restore_options: dict) -> 'Job':
+    def restore(self, restore_options: dict) -> "Job":
         """Restore the content of this Couchbase instance using the specified options.
 
         Args:
@@ -116,12 +111,14 @@ class CouchbaseInstance(BigDataAppsInstance):
         #ai-gen-doc
         """
         if not (isinstance(restore_options, dict)):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         request_json = self._restore_json(restore_option=restore_options)
         request_json["taskInfo"]["associations"][0]["subclientId"] = restore_options.get(
-            "subclient_id", -1)
+            "subclient_id", -1
+        )
         request_json["taskInfo"]["associations"][0]["backupsetName"] = restore_options.get(
-            "backupset_name")
+            "backupset_name"
+        )
 
         distributed_restore_json = {
             "distributedRestore": True,
@@ -136,15 +133,11 @@ class CouchbaseInstance(BigDataAppsInstance):
         for node in restore_options.get("accessnodes"):
             client_object = self._commcell_object.clients.get(node)
             client_id = int(client_object.client_id)
-            access_node = {
-                "clientId": client_id,
-                "clientName": client_object.client_name
-            }
+            access_node = {"clientId": client_id, "clientName": client_object.client_name}
             access_nodes.append(access_node)
-        distributed_restore_json["dataAccessNodes"] = {
-            "dataAccessNodes": access_nodes
-        }
+        distributed_restore_json["dataAccessNodes"] = {"dataAccessNodes": access_nodes}
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "distributedAppsRestoreOptions"] = distributed_restore_json
+            "distributedAppsRestoreOptions"
+        ] = distributed_restore_json
         return self._process_restore_response(request_json)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -47,7 +45,7 @@ from typing import Dict, List, Optional, Union
 from ..exception import SDKException
 
 
-class SecurityAssociation(object):
+class SecurityAssociation:
     """Class for managing the security associations roles on the commcell
 
     Description:
@@ -66,7 +64,13 @@ class SecurityAssociation(object):
         >>> security_association = SecurityAssociation(commcell, commcell)
     """
 
-    def __init__(self, commcell_object: 'Commcell', class_object: Optional[Union['Commcell', 'Client', 'StoragePool', 'Plan', 'WorkFlow']] = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        class_object: Optional[
+            Union["Commcell", "Client", "StoragePool", "Plan", "WorkFlow"]
+        ] = None,
+    ) -> None:
         """Initializes the security associations object
 
         Args:
@@ -91,49 +95,36 @@ class SecurityAssociation(object):
             class_object = self._commcell_object
 
         from ..commcell import Commcell
+
         if isinstance(class_object, Commcell):
-            self._entity_list = {
-                "entity": [{
-                    "commCellId": class_object.commcell_id,
-                    "_type_": 1
-                }]
-            }
+            self._entity_list = {"entity": [{"commCellId": class_object.commcell_id, "_type_": 1}]}
 
         from ..client import Client
+
         if isinstance(class_object, Client):
             self._entity_list = {
-                "entity": [{
-                    "clientId": int(class_object.client_id),
-                    "_type_": 3
-                }]
+                "entity": [{"clientId": int(class_object.client_id), "_type_": 3}]
             }
 
         from ..storage_pool import StoragePool
+
         if isinstance(class_object, StoragePool):
             self._entity_list = {
-                "entity": [{
-                    "storagePolicyId": int(class_object.storage_pool_id),
-                    "_type_": 17
-                }]
-            }
-            
-        from ..plan import Plan
-        if isinstance(class_object, Plan):
-            self._entity_list = {
-                "entity": [{
-                    "planId": int(class_object.plan_id),
-                    "_type_": 158
-                }]
+                "entity": [{"storagePolicyId": int(class_object.storage_pool_id), "_type_": 17}]
             }
 
+        from ..plan import Plan
+
+        if isinstance(class_object, Plan):
+            self._entity_list = {"entity": [{"planId": int(class_object.plan_id), "_type_": 158}]}
+
         from ..workflow import WorkFlow
+
         if isinstance(class_object, WorkFlow):
             self._entity_list = {
-                "entity": [{
-                    "workflowId": int(class_object.workflow_id),
-                    "_type_": 83,
-                    "entityType": 83
-                }]
+                "entity": [
+                    {"workflowId": int(class_object.workflow_id), "_type_": 83, "entityType": 83}
+                ]
             }
 
         self._roles = self._get_security_roles()
@@ -147,10 +138,10 @@ class SecurityAssociation(object):
         Usage:
             >>> str(security_association)
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Roles')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Roles")
 
         for index, role in enumerate(self._roles):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, role)
+            sub_str = f"{index + 1:^5}\t{role:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -198,31 +189,16 @@ class SecurityAssociation(object):
                         if each_entity_key == "_type_":
                             association_blob = {
                                 "entities": {
-                                    "entity": [{
-                                        each_entity_key: element,
-                                        "flags": {
-                                            "includeAll": True
-                                        }
-                                    }]
+                                    "entity": [
+                                        {each_entity_key: element, "flags": {"includeAll": True}}
+                                    ]
                                 },
-                                "properties": {
-                                    "role": {
-                                        "roleName": entity_value['role'][0]
-                                    }
-                                }
+                                "properties": {"role": {"roleName": entity_value["role"][0]}},
                             }
                         else:
                             association_blob = {
-                                "entities": {
-                                    "entity": [{
-                                        each_entity_key: element
-                                    }]
-                                },
-                                "properties": {
-                                    "role": {
-                                        "roleName": entity_value['role'][0]
-                                    }
-                                }
+                                "entities": {"entity": [{each_entity_key: element}]},
+                                "properties": {"role": {"roleName": entity_value["role"][0]}},
                             }
                         complete_association.append(association_blob)
         return complete_association
@@ -249,55 +225,56 @@ class SecurityAssociation(object):
         associations = {}
         entity_permissions = {}
         for every_association in security_dict:
-            if 'entity' in every_association['entities']:
-                entities = every_association['entities']['entity']
+            if "entity" in every_association["entities"]:
+                entities = every_association["entities"]["entity"]
                 for entity in entities:
                     for each_key in entity:
-                        if 'Name' in each_key:
-                            if 'externalGroupName' in each_key:
+                        if "Name" in each_key:
+                            if "externalGroupName" in each_key:
                                 associations = entity[each_key]
-                            #if 'providerDomainName' in each_key:
+                                # if 'providerDomainName' in each_key:
                                 # No need to explicitely  check for provider key
                                 if associations:
-                                    ext_group = "{0}\\{1}".format(entity['providerDomainName'],
-                                                                  associations)
+                                    ext_group = "{0}\\{1}".format(
+                                        entity["providerDomainName"], associations
+                                    )
                                     associations = {}
                                 else:
                                     ext_group = entity[each_key]
                                 security_list.append(each_key)
                                 security_list.append(ext_group.lower())
                                 break
-                            elif 'displayName' in each_key:
-                                security_list.append('clientName')
-                                security_list.append(entity['clientName'].lower())
+                            elif "displayName" in each_key:
+                                security_list.append("clientName")
+                                security_list.append(entity["clientName"].lower())
                                 break
                             else:
                                 security_list.append(each_key)
                                 security_list.append(entity[each_key].lower())
                                 break
-                        elif 'flags' in each_key:
-                            security_list.append(entity['_type_'])
-                            security_list.append(entity['flags'])
+                        elif "flags" in each_key:
+                            security_list.append(entity["_type_"])
+                            security_list.append(entity["flags"])
 
-                    if 'role' in every_association['properties']:
-                        role_list = every_association['properties']['role']
+                    if "role" in every_association["properties"]:
+                        role_list = every_association["properties"]["role"]
                         for entity in role_list:
-                            if 'Name' in entity:
+                            if "Name" in entity:
                                 security_list.append(role_list[entity].lower())
-                    if 'categoryPermission' in every_association['properties']:
-                        categories = every_association['properties'][
-                            'categoryPermission']['categoriesPermissionList']
+                    if "categoryPermission" in every_association["properties"]:
+                        categories = every_association["properties"]["categoryPermission"][
+                            "categoriesPermissionList"
+                        ]
                         for key in categories:
                             categories = key
                             for permission in categories:
-                                if 'Name' in permission:
-                                    security_list.append(categories[permission] + str('-invalid'))
-                                    #Not supporting custom permissions as of now.
+                                if "Name" in permission:
+                                    security_list.append(categories[permission] + "-invalid")
+                                    # Not supporting custom permissions as of now.
                     entity_permissions.setdefault(count, security_list)
                     security_list = []
                     count += 1
         return entity_permissions
-
 
     def _get_security_roles(self) -> Dict[str, int]:
         """Returns the list of available roles on this commcell
@@ -313,37 +290,37 @@ class SecurityAssociation(object):
         Usage:
             >>> security_association._get_security_roles()
         """
-        GET_SECURITY_ROLES = self._commcell_object._services['GET_SECURITY_ROLES']
+        GET_SECURITY_ROLES = self._commcell_object._services["GET_SECURITY_ROLES"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', GET_SECURITY_ROLES
+            "GET", GET_SECURITY_ROLES
         )
 
         if flag:
-            if response.json() and 'roleProperties' in response.json():
-                role_props = response.json()['roleProperties']
+            if response.json() and "roleProperties" in response.json():
+                role_props = response.json()["roleProperties"]
 
                 roles = {}
 
                 for role in role_props:
-                    if 'role' in role:
-                        role_name = role['role']['roleName'].lower()
-                        role_id = role['role']['roleId']
+                    if "role" in role:
+                        role_name = role["role"]["roleName"].lower()
+                        role_id = role["role"]["roleId"]
                         roles[role_name] = role_id
 
                 return roles
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _add_security_association(
-            self,
-            association_list: List[dict],
-            user: bool = True,
-            request_type: Optional[str] = None,
-            externalGroup: bool = False
+        self,
+        association_list: List[dict],
+        user: bool = True,
+        request_type: Optional[str] = None,
+        externalGroup: bool = False,
     ) -> None:
         """Adds the security association on the specified class object
 
@@ -375,11 +352,7 @@ class SecurityAssociation(object):
             >>> security_association._add_security_association(association_list, externalGroup=True)
         """
 
-        update_operator_request_type = {
-            "OVERWRITE": 1,
-            "UPDATE": 2,
-            "DELETE": 3
-        }
+        update_operator_request_type = {"OVERWRITE": 1, "UPDATE": 2, "DELETE": 3}
 
         if request_type:
             request_type = request_type.upper()
@@ -387,32 +360,30 @@ class SecurityAssociation(object):
         security_association_list = []
         for association in association_list:
             if not isinstance(association, dict):
-                raise SDKException('Security', '101')
+                raise SDKException("Security", "101")
 
-            if not self.has_role(association['role_name']):
+            if not self.has_role(association["role_name"]):
                 raise SDKException(
-                    'Security', '102', 'Role {0} doesn\'t exist'.format(association['role_name'])
+                    "Security", "102", "Role {0} doesn't exist".format(association["role_name"])
                 )
 
             user_or_group = {}
             if user:
-                user_or_group = {'userName': association['user_name']}
+                user_or_group = {"userName": association["user_name"]}
             elif externalGroup:
-                user_or_group = {'externalGroupName': association['user_name']}
+                user_or_group = {"externalGroupName": association["user_name"]}
             else:
-                user_or_group = {'userGroupName': association['user_name']}  
+                user_or_group = {"userGroupName": association["user_name"]}
 
             temp = {
-                "userOrGroup": [
-                    user_or_group
-                ],
+                "userOrGroup": [user_or_group],
                 "properties": {
                     "role": {
                         "_type_": 120,
-                        "roleId": self._roles[association['role_name'].lower()],
-                        'roleName': association['role_name']
+                        "roleId": self._roles[association["role_name"].lower()],
+                        "roleName": association["role_name"],
                     }
-                }
+                },
             }
             security_association_list.append(temp)
 
@@ -421,36 +392,32 @@ class SecurityAssociation(object):
             "securityAssociations": {
                 "associationsOperationType": update_operator_request_type.get(request_type, 1),
                 "associations": security_association_list,
-                "ownerAssociations": {
-                    "ownersOperationType": 1
-                }
-            }
+                "ownerAssociations": {"ownersOperationType": 1},
+            },
         }
 
-        ADD_SECURITY_ASSOCIATION = self._commcell_object._services['SECURITY_ASSOCIATION']
+        ADD_SECURITY_ASSOCIATION = self._commcell_object._services["SECURITY_ASSOCIATION"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', ADD_SECURITY_ASSOCIATION, request_json
+            "POST", ADD_SECURITY_ASSOCIATION, request_json
         )
 
         if flag:
-            if response.json() and 'response' in response.json():
-                response_json = response.json()['response'][0]
+            if response.json() and "response" in response.json():
+                response_json = response.json()["response"][0]
 
-                error_code = response_json['errorCode']
+                error_code = response_json["errorCode"]
 
                 if error_code != 0:
-                    error_message = response_json['errorString']
+                    error_message = response_json["errorString"]
                     raise SDKException(
-                        'Security',
-                        '102',
-                        'Failed to add associations. \nError: {0}'.format(error_message)
+                        "Security", "102", f"Failed to add associations. \nError: {error_message}"
                     )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def has_role(self, role_name: str) -> bool:
         """Checks if role with specified name exists
@@ -468,6 +435,6 @@ class SecurityAssociation(object):
             >>> security_association.has_role('Role1')
         """
         if not isinstance(role_name, str):
-            raise SDKException('Security', '101')
+            raise SDKException("Security", "101")
 
         return self._roles and role_name.lower() in self._roles

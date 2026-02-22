@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -81,16 +79,15 @@ CleanroomTarget Attributes
     **access_node_client_group** -- Returns the access_node_client_group
 
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
-from typing import Dict, TYPE_CHECKING
 from json.decoder import JSONDecodeError
+from typing import TYPE_CHECKING, Dict
 
 from cvpysdk.exception import SDKException
 
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
+
 
 class CleanroomTargets:
     """
@@ -116,7 +113,7 @@ class CleanroomTargets:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize a new instance of the CleanroomTargets class.
 
         Args:
@@ -135,8 +132,8 @@ class CleanroomTargets:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-        self._RECOVERY_TARGETS_API = self._services['GET_ALL_RECOVERY_TARGETS']
-        self._TARGET_URL = self._services['CREATE_RUNBOOK_TARGET']
+        self._RECOVERY_TARGETS_API = self._services["GET_ALL_RECOVERY_TARGETS"]
+        self._TARGET_URL = self._services["CREATE_RUNBOOK_TARGET"]
 
         self._cleanroom_targets = None
         self.refresh()
@@ -156,13 +153,10 @@ class CleanroomTargets:
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'CleanroomTargets')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "CleanroomTargets")
 
         for index, cleanroom_target in enumerate(self._cleanroom_targets):
-            sub_str = '{:^5}\t{:20}\n'.format(
-                index + 1,
-                cleanroom_target
-            )
+            sub_str = f"{index + 1:^5}\t{cleanroom_target:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -188,20 +182,20 @@ class CleanroomTargets:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGETS_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RECOVERY_TARGETS_API)
         if flag:
-            if response.json() and 'recoveryTargets' in response.json():
+            if response.json() and "recoveryTargets" in response.json():
                 cleanroom_target_dict = {}
-                for cleanroomTarget in response.json()['recoveryTargets']:
-                    if cleanroomTarget['applicationType'] == "CLEAN_ROOM":
-                        temp_name = cleanroomTarget['name'].lower()
-                        cleanroom_target_dict[temp_name] = str(cleanroomTarget['id'])
+                for cleanroomTarget in response.json()["recoveryTargets"]:
+                    if cleanroomTarget["applicationType"] == "CLEAN_ROOM":
+                        temp_name = cleanroomTarget["name"].lower()
+                        cleanroom_target_dict[temp_name] = str(cleanroomTarget["id"])
 
                 return cleanroom_target_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def all_targets(self) -> Dict[str, int]:
@@ -248,11 +242,11 @@ class CleanroomTargets:
         #ai-gen-doc
         """
         if not isinstance(target_name, str):
-            raise SDKException('Target', '101')
+            raise SDKException("Target", "101")
 
         return self._cleanroom_targets and target_name.lower() in self._cleanroom_targets
 
-    def get(self, cleanroom_target_name: str) -> 'CleanroomTarget':
+    def get(self, cleanroom_target_name: str) -> "CleanroomTarget":
         """Retrieve a target object by its name.
 
         Args:
@@ -272,15 +266,20 @@ class CleanroomTargets:
         #ai-gen-doc
         """
         if not isinstance(cleanroom_target_name, str):
-            raise SDKException('Target', '101')
+            raise SDKException("Target", "101")
         else:
             cleanroom_target_name = cleanroom_target_name.lower()
 
             if self.has_cleanroom_target(cleanroom_target_name):
                 return CleanroomTarget(
-                    self._commcell_object, cleanroom_target_name, self.all_targets[cleanroom_target_name])
+                    self._commcell_object,
+                    cleanroom_target_name,
+                    self.all_targets[cleanroom_target_name],
+                )
 
-            raise SDKException('RecoveryTarget', '102', 'No target exists with name: {0}'.format(cleanroom_target_name))
+            raise SDKException(
+                "RecoveryTarget", "102", f"No target exists with name: {cleanroom_target_name}"
+            )
 
     def refresh(self) -> None:
         """Reload the cleanroom targets to ensure the latest information is available.
@@ -329,23 +328,27 @@ class CleanroomTargets:
         #ai-gen-doc
         """
         if not isinstance(payload, dict):
-            raise SDKException('RecoveryTarget', '101', 'Payload must be a dictionary')
-        flag, response = self._cvpysdk_object.make_request('POST', self._TARGET_URL, payload=payload)
+            raise SDKException("RecoveryTarget", "101", "Payload must be a dictionary")
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._TARGET_URL, payload=payload
+        )
 
         if flag:
             try:
                 response_json = response.json()
                 if not response_json:
-                    raise ValueError('Response', '102', 'Empty response received from the server')
+                    raise ValueError("Response", "102", "Empty response received from the server")
 
                 if "id" in response_json:
                     return response_json
                 else:
-                    raise KeyError('Response', '102', 'Target ID not found in the response')
+                    raise KeyError("Response", "102", "Target ID not found in the response")
             except JSONDecodeError:
-                raise ValueError('Response', '102', 'Invalid response received from the server.')
+                raise ValueError("Response", "102", "Invalid response received from the server.")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def populate_payload(self, target: dict, region: dict, node: dict = None) -> dict:
         """Build the payload with the required fields for creating a cleanroom target.
@@ -384,69 +387,69 @@ class CleanroomTargets:
             >>> print(payload)
             #ai-gen-doc
         """
-        if not isinstance(target['target_name'], str):
-            raise SDKException('RecoveryTarget', '101', 'Missing or invalid target name')
-        api_payload = {
-                            "options": {
-                            "region": region if region else {},
-                            "accessNode": {}
-                            }
-                        }
-        #Populate the payload with access node details
-        if node.get('access_node_id') is not None:  #Using existing access node or access node group
+        if not isinstance(target["target_name"], str):
+            raise SDKException("RecoveryTarget", "101", "Missing or invalid target name")
+        api_payload = {"options": {"region": region if region else {}, "accessNode": {}}}
+        # Populate the payload with access node details
+        if (
+            node.get("access_node_id") is not None
+        ):  # Using existing access node or access node group
             access_node_entity = {
-                "id": node.get('access_node_id', 0),
-                "name": node.get('access_node_name', 'string'),
-                "type": node.get('access_node_type', 3)
+                "id": node.get("access_node_id", 0),
+                "name": node.get("access_node_name", "string"),
+                "type": node.get("access_node_type", 3),
             }
-            api_payload['options']['accessNode'].update(access_node_entity)
+            api_payload["options"]["accessNode"].update(access_node_entity)
         if not target:
-            raise SDKException('RecoveryTarget', '101', 'Target payload cannot be empty')
-        elif target.get('target_id') is not None and target.get('target_id') > 0 :  #Using existing target
+            raise SDKException("RecoveryTarget", "101", "Target payload cannot be empty")
+        elif (
+            target.get("target_id") is not None and target.get("target_id") > 0
+        ):  # Using existing target
             target_entity = {
                 "entity": {
-                "id": target.get('target_id', 0),
-                "name": target.get('target_name', 'string')
+                    "id": target.get("target_id", 0),
+                    "name": target.get("target_name", "string"),
                 }
             }
             api_payload.update(target_entity)
         else:
-            options = {
-                        "vendor": target.get('target_vendor', 'AZURE_V2')
-                    }
-            api_payload['options'].update(options)
+            options = {"vendor": target.get("target_vendor", "AZURE_V2")}
+            api_payload["options"].update(options)
             if target.get("target_id") == 0 or target.get("target_id") == "":
-                if target.get("hypervisor_id") is not None:  # Using existing hypervisor to create new target
+                if (
+                    target.get("hypervisor_id") is not None
+                ):  # Using existing hypervisor to create new target
                     existing_hypervisor = {
                         "hypervisor": {
                             "entity": {
-                                "id": target.get('hypervisor_id', 0),
-                                "name": target.get('hypervisor_name', 'string')
+                                "id": target.get("hypervisor_id", 0),
+                                "name": target.get("hypervisor_name", "string"),
                             }
                         }
                     }
-                    access_node_entity = {
-                        "id": 0,
-                        "type": 28
-                    }
-                    api_payload['options'].update(existing_hypervisor)
-                    api_payload['options']['accessNode'].update(access_node_entity)
-                elif target.get("credentials_id") is not None:  #Using existing credentials to create new hypervisor for the target
+                    access_node_entity = {"id": 0, "type": 28}
+                    api_payload["options"].update(existing_hypervisor)
+                    api_payload["options"]["accessNode"].update(access_node_entity)
+                elif (
+                    target.get("credentials_id") is not None
+                ):  # Using existing credentials to create new hypervisor for the target
                     new_hypervisor = {
                         "hypervisor": {
                             "optionsAzure": {
                                 "credentials": {
-                                    "id": target.get('credentials_id', 0),
-                                    "name": target.get('credentials_name', 'string')
+                                    "id": target.get("credentials_id", 0),
+                                    "name": target.get("credentials_name", "string"),
                                 },
-                            "skipCredentialValidation": False,
-                            "subscriptionId": target.get('subscription_id', '<subscription_id>'),
-                            "useManagedIdentity": False
+                                "skipCredentialValidation": False,
+                                "subscriptionId": target.get(
+                                    "subscription_id", "<subscription_id>"
+                                ),
+                                "useManagedIdentity": False,
                             }
                         }
                     }
                     options.update(new_hypervisor)
-                    api_payload['options'].update(options)
+                    api_payload["options"].update(options)
         return api_payload
 
 
@@ -485,7 +488,12 @@ class CleanroomTarget:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', cleanroom_target_name: str, cleanroom_target_id: str = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        cleanroom_target_name: str,
+        cleanroom_target_id: str = None,
+    ) -> None:
         """Initialize a new instance of the CleanroomTarget class.
 
         Args:
@@ -513,8 +521,10 @@ class CleanroomTarget:
         else:
             # Get the target id if target id is not provided
             self._cleanroom_target_id = self._get_cleanroom_target_id()
-        self._RECOVERY_TARGET_API = self._services['GET_RECOVERY_TARGET'] % self._cleanroom_target_id
-        self._RUNBOOK_TARGET_API = self._services['GET_RUNBOOK_TARGET'] % self._cleanroom_target_id
+        self._RECOVERY_TARGET_API = (
+            self._services["GET_RECOVERY_TARGET"] % self._cleanroom_target_id
+        )
+        self._RUNBOOK_TARGET_API = self._services["GET_RUNBOOK_TARGET"] % self._cleanroom_target_id
 
         self._cleanroom_target_properties = None
 
@@ -526,8 +536,8 @@ class CleanroomTarget:
         self._instance = None
         self._users = []
         self._user_groups = []
-        self._vm_prefix = ''
-        self._vm_suffix = ''
+        self._vm_prefix = ""
+        self._vm_suffix = ""
         self._expiration_time = None
 
         self._region = None
@@ -592,11 +602,11 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('DELETE', self._RECOVERY_TARGET_API)
+        flag, response = self._cvpysdk_object.make_request("DELETE", self._RECOVERY_TARGET_API)
         if flag:
             return flag
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _set_policy_type(self, policy_type: str) -> None:
         """Set the policy type for the CleanroomTarget instance.
@@ -641,21 +651,37 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RUNBOOK_TARGET_API)
-        flag_old, response_old = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RUNBOOK_TARGET_API)
+        flag_old, response_old = self._cvpysdk_object.make_request(
+            "GET", self._RECOVERY_TARGET_API
+        )
 
         if flag and flag_old:
             if response.json():
                 self._cleanroom_target_properties = response.json()
                 self._application_type = (
-                    self._cleanroom_target_properties.get("general", {}).get("target", {}).get("applicationType", ""))
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("target", {})
+                    .get("applicationType", "")
+                )
                 self._destination_hypervisor = (
-                    self._cleanroom_target_properties.get("general", {}).get("hypervisor", {}).get("name", ""))
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("hypervisor", {})
+                    .get("name", "")
+                )
                 self._vm_suffix = (
-                    self._cleanroom_target_properties.get("general", {}).get("entityDisplayName", {}).get("suffix", ""))
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("entityDisplayName", {})
+                    .get("suffix", "")
+                )
                 self._vm_prefix = (
-                    self._cleanroom_target_properties.get("general", {}).get("entityDisplayName", {}).get("prefix", ""))
-                access_node = self._cleanroom_target_properties.get("general", {}).get("accessNode", {})
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("entityDisplayName", {})
+                    .get("prefix", "")
+                )
+                access_node = self._cleanroom_target_properties.get("general", {}).get(
+                    "accessNode", {}
+                )
                 node_type = access_node.get("type", "")
 
                 self._access_node = (
@@ -664,188 +690,347 @@ class CleanroomTarget:
                     else {
                         "type": node_type,
                         "name": access_node.get("name", ""),
-                        "id": access_node.get("id", "")
+                        "id": access_node.get("id", ""),
                     }
                     if node_type in ("Client", "Group")
                     else None
                 )
                 self._users = (
-                    self._cleanroom_target_properties.get("general", {}).get('security', {}).get('users', []))
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("security", {})
+                    .get("users", [])
+                )
                 self._user_groups = (
-                    self._cleanroom_target_properties.get("general", {}).get('securityOptions', {}).get('userGroups',
-                                                                                                        []))
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("securityOptions", {})
+                    .get("userGroups", [])
+                )
                 self._instance = (
-                    self._cleanroom_target_properties.get("general", {}).get("target", {}).get("vendor", ""))
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("target", {})
+                    .get("vendor", "")
+                )
                 self._set_policy_type(self._instance)
                 self._is_automatic_site = (
-                    self._cleanroom_target_properties.get("general", {}).get("deployCleanroomResources", {}).get("isEnabled", False)
+                    self._cleanroom_target_properties.get("general", {})
+                    .get("deployCleanroomResources", {})
+                    .get("isEnabled", False)
                 )
                 if response_old.json():
                     self._cleanroom_old_target_properties = response_old.json()
                     if self.policy_type == 1:
-                        self._region = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                                        .get('region', {})
-                                        .get('name', ''))
-                        self._availability_zone = (
-                            self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                                .get('availabilityZone', ''))
-                        self._iam_role = (self._cleanroom_old_target_properties.get('destinationOptions', {})
-                                          .get('iamRole', {}).get('name', ''))
-                        self._encryption_key = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                                                .get('encryptionKey', {}).get('name', ''))
+                        self._region = (
+                            self._cleanroom_old_target_properties.get(
+                                "cloudDestinationOptions", {}
+                            )
+                            .get("region", {})
+                            .get("name", "")
+                        )
+                        self._availability_zone = self._cleanroom_old_target_properties.get(
+                            "cloudDestinationOptions", {}
+                        ).get("availabilityZone", "")
+                        self._iam_role = (
+                            self._cleanroom_old_target_properties.get("destinationOptions", {})
+                            .get("iamRole", {})
+                            .get("name", "")
+                        )
+                        self._encryption_key = (
+                            self._cleanroom_old_target_properties.get(
+                                "cloudDestinationOptions", {}
+                            )
+                            .get("encryptionKey", {})
+                            .get("name", "")
+                        )
 
                         # Get the first instance type, or None if not defined or empty
                         self._instance_type = (
-                                self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                                .get('instanceTypes') or [None]
+                            self._cleanroom_old_target_properties.get(
+                                "cloudDestinationOptions", {}
+                            ).get("instanceTypes")
+                            or [None]
                         )[0]
-                        self._security_group = (self._cleanroom_old_target_properties.get('securityOptions', {})
-                                                .get('securityGroups', [{}])[0]
-                                                .get('name', ''))
-                        self._network_subnet = (self._cleanroom_old_target_properties.get('networkOptions', {})
-                                                .get('networkCard', {})
-                                                .get('network', ''))
-                        self._volume_type = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                                             .get('volumeType', {}))
-                        self._key_pair = (self._cleanroom_old_target_properties.get('cloudDestinationOptions', {})
-                                          .get('keyPair', ''))
+                        self._security_group = (
+                            self._cleanroom_old_target_properties.get("securityOptions", {})
+                            .get("securityGroups", [{}])[0]
+                            .get("name", "")
+                        )
+                        self._network_subnet = (
+                            self._cleanroom_old_target_properties.get("networkOptions", {})
+                            .get("networkCard", {})
+                            .get("network", "")
+                        )
+                        self._volume_type = self._cleanroom_old_target_properties.get(
+                            "cloudDestinationOptions", {}
+                        ).get("volumeType", {})
+                        self._key_pair = self._cleanroom_old_target_properties.get(
+                            "cloudDestinationOptions", {}
+                        ).get("keyPair", "")
 
                 # Parse new AWS properties from recovery section
                 if self._policy_type == 1:
-                    self._region = (self._cleanroom_target_properties.get('recovery', {})
-                                    .get('region', {}).get('guid', ''))
-                    self._availability_zone = (self._cleanroom_target_properties.get('recovery', {})
-                                               .get('availabilityZone', {}).get('guid', ''))
-                    self._key_pair = (self._cleanroom_target_properties.get('recovery', {})
-                                      .get('keyPair', {}).get('name', ''))
-                    self._iam_role = (self._cleanroom_target_properties.get('recovery', {})
-                                      .get('iamRole', {}).get('name', ''))
-                    self._encryption_key = (self._cleanroom_target_properties.get('recovery', {})
-                                            .get('encryptionKey', {}).get('name', ''))
-                    self._volume_type = (self._cleanroom_target_properties.get('recovery', {})
-                                         .get('volumeType', ''))
-                    self._vpc = (self._cleanroom_target_properties.get('recovery', {})
-                                 .get('vpc', {}).get('name', ''))
-                    self._security_groups = (self._cleanroom_target_properties.get('recovery', {})
-                                             .get('securityGroups', []))
-                    self._instance_type = (self._cleanroom_target_properties.get('recovery', {})
-                                           .get('instanceType', {}).get('guid', ''))
-                    self._create_public_ip = (self._cleanroom_target_properties.get('recovery', {})
-                                              .get('createPublicIPAddress', False))
+                    self._region = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("region", {})
+                        .get("guid", "")
+                    )
+                    self._availability_zone = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("availabilityZone", {})
+                        .get("guid", "")
+                    )
+                    self._key_pair = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("keyPair", {})
+                        .get("name", "")
+                    )
+                    self._iam_role = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("iamRole", {})
+                        .get("name", "")
+                    )
+                    self._encryption_key = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("encryptionKey", {})
+                        .get("name", "")
+                    )
+                    self._volume_type = self._cleanroom_target_properties.get("recovery", {}).get(
+                        "volumeType", ""
+                    )
+                    self._vpc = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("vpc", {})
+                        .get("name", "")
+                    )
+                    self._security_groups = self._cleanroom_target_properties.get(
+                        "recovery", {}
+                    ).get("securityGroups", [])
+                    self._instance_type = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("instanceType", {})
+                        .get("guid", "")
+                    )
+                    self._create_public_ip = self._cleanroom_target_properties.get(
+                        "recovery", {}
+                    ).get("createPublicIPAddress", False)
 
                     # Infrastructure network settings
-                    self._maxNoOfAccessNodes = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                .get('maxNoOfAccessNodes', ''))
-                    self._infra_virtual_network = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                   .get('networkSettings', {}).get('virtualNetwork', {})
-                                                   .get('name', ''))
-                    self._infra_security_groups = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                   .get('networkSettings', {}).get('securityGroups', []))
-                    self._infra_create_public_ip = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                    .get('networkSettings', {}).get('infrastructurePublicIPSettings', {})
-                                                    .get('createPublicIPAddress', False))
+                    self._maxNoOfAccessNodes = self._cleanroom_target_properties.get(
+                        "infrastructure", {}
+                    ).get("maxNoOfAccessNodes", "")
+                    self._infra_virtual_network = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("virtualNetwork", {})
+                        .get("name", "")
+                    )
+                    self._infra_security_groups = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("securityGroups", [])
+                    )
+                    self._infra_create_public_ip = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("infrastructurePublicIPSettings", {})
+                        .get("createPublicIPAddress", False)
+                    )
 
                     # Infrastructure network topology settings
-                    self._workload_server_group = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                   .get('networkTopologySettings', {}).get('workloadServerGroup', {})
-                                                   .get('name', ''))
-                    self._infra_server_group_name = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                     .get('networkTopologySettings', {}).get('infrastructureServerGroup', {})
-                                                     .get('name', ''))
-                    self._infra_network_gateway = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                   .get('networkTopologySettings', {}).get('infrastructureNetworkGateway', ''))
+                    self._workload_server_group = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkTopologySettings", {})
+                        .get("workloadServerGroup", {})
+                        .get("name", "")
+                    )
+                    self._infra_server_group_name = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkTopologySettings", {})
+                        .get("infrastructureServerGroup", {})
+                        .get("name", "")
+                    )
+                    self._infra_network_gateway = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkTopologySettings", {})
+                        .get("infrastructureNetworkGateway", "")
+                    )
 
                     # Infrastructure advanced settings
-                    self._infra_iam_role = (self._cleanroom_target_properties.get('infrastructure', {})
-                                            .get('advancedSettings', {}).get('iamRole', {}).get('guid', ''))
-                    self._infra_vm_size = (self._cleanroom_target_properties.get('infrastructure', {})
-                                           .get('advancedSettings', {}).get('vmSize', {}).get('guid', ''))
-                    self._custom_images = (self._cleanroom_target_properties.get('infrastructure', {})
-                                           .get('advancedSettings', {}).get('customImages', []))
+                    self._infra_iam_role = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("advancedSettings", {})
+                        .get("iamRole", {})
+                        .get("guid", "")
+                    )
+                    self._infra_vm_size = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("advancedSettings", {})
+                        .get("vmSize", {})
+                        .get("guid", "")
+                    )
+                    self._custom_images = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("advancedSettings", {})
+                        .get("customImages", [])
+                    )
 
                     # Advanced network address space
-                    self._networkAddressSpace = (self._cleanroom_target_properties.get('advanced', {})
-                                                 .get('networkAddressSpace', {}))
-                    self._endpointSubnet = (self._cleanroom_target_properties.get('advanced', {})
-                                            .get('networkAddressSpace', {}).get('endpointSubnet', ''))
-                    self._publicSubnet = (self._cleanroom_target_properties.get('advanced', {})
-                                          .get('networkAddressSpace', {}).get('publicSubnet', ''))
+                    self._networkAddressSpace = self._cleanroom_target_properties.get(
+                        "advanced", {}
+                    ).get("networkAddressSpace", {})
+                    self._endpointSubnet = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("networkAddressSpace", {})
+                        .get("endpointSubnet", "")
+                    )
+                    self._publicSubnet = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("networkAddressSpace", {})
+                        .get("publicSubnet", "")
+                    )
 
                     # Security group rules
-                    self._recovery_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
-                                                    .get('securityGroupRules', {}).get('recoveredEntity', []))
-                    self._infra_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
-                                                 .get('securityGroupRules', {}).get('infrastructure', []))
+                    self._recovery_SecurityRules = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("securityGroupRules", {})
+                        .get("recoveredEntity", [])
+                    )
+                    self._infra_SecurityRules = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("securityGroupRules", {})
+                        .get("infrastructure", [])
+                    )
 
                 if self._policy_type == 7:
-                    self._region = (self._cleanroom_target_properties.get('recovery', {})
-                                    .get('region', {})
-                                    .get('guid', ''))
-                    self._availability_zone = (self._cleanroom_target_properties.get('recovery', {})
-                                               .get('availabilityZone', {}).get('guid', ''))
-                    self._storage_account = (self._cleanroom_target_properties.get("recovery", {})
-                                             .get("storageAccount", {}).get("guid", ''))
+                    self._region = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("region", {})
+                        .get("guid", "")
+                    )
+                    self._availability_zone = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("availabilityZone", {})
+                        .get("guid", "")
+                    )
+                    self._storage_account = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("storageAccount", {})
+                        .get("guid", "")
+                    )
 
-                    self._vm_size = (self._cleanroom_target_properties.get('recovery', {}).get("vmSize", {})
-                                     .get("guid"))
-                    self._disk_type = (self._cleanroom_target_properties.get('recovery', {})
-                                       .get('storageType').get('guid', ''))
-                    self._virtual_network = (self._cleanroom_target_properties.get('recovery', {})
-                                             .get('virtualNetwork', {})
-                                             .get('name', ''))
-                    self._security_group = (self._cleanroom_target_properties.get('recovery', {})
-                                            .get('securityGroup', {})
-                                            .get('name', ''))
-                    self._resource_group = (self._cleanroom_target_properties.get('recovery', {})
-                                            .get('resourceGroup', {})
-                                            .get('guid', ''))
-                    self._create_public_ip = (self._cleanroom_target_properties.get('recovery', {})
-                                              .get('createPublicIPAddress'))
+                    self._vm_size = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("vmSize", {})
+                        .get("guid")
+                    )
+                    self._disk_type = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("storageType")
+                        .get("guid", "")
+                    )
+                    self._virtual_network = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("virtualNetwork", {})
+                        .get("name", "")
+                    )
+                    self._security_group = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("securityGroup", {})
+                        .get("name", "")
+                    )
+                    self._resource_group = (
+                        self._cleanroom_target_properties.get("recovery", {})
+                        .get("resourceGroup", {})
+                        .get("guid", "")
+                    )
+                    self._create_public_ip = self._cleanroom_target_properties.get(
+                        "recovery", {}
+                    ).get("createPublicIPAddress")
                     # infrastructure network settings
-                    self._maxNoOfAccessNodes = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                .get('maxNoOfAccessNodes', ''))
-                    self._infra_virtual_network = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                   .get('networkSettings', {}).get('virtualNetwork', {})
-                                                   .get('name', ''))
-                    self._infra_security_group = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                  .get('networkSettings', {}).get('securityGroup', {})
-                                                  .get('name', ''))
-                    self._natGatewayPublicIPSettings = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                        .get('networkSettings', {}).get("natGatewayPublicIPSettings",
-                                                                                        {})
-                                                        .get('ipPrefix', {}).get('guid', ""))
-                    self._infraPublicIPprefix = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                 .get('networkSettings', {}).get("infrastructurePublicIPSettings", {})
-                                                 .get('ipPrefix', {}).get('guid', ""))
-                    self._infraPublicIP = (self._cleanroom_target_properties.get('infrastructure', {})
-                                           .get('networkSettings', {}).get("infrastructurePublicIPSettings", {})
-                                           .get('createPublicIPAddress', ""))
+                    self._maxNoOfAccessNodes = self._cleanroom_target_properties.get(
+                        "infrastructure", {}
+                    ).get("maxNoOfAccessNodes", "")
+                    self._infra_virtual_network = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("virtualNetwork", {})
+                        .get("name", "")
+                    )
+                    self._infra_security_group = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("securityGroup", {})
+                        .get("name", "")
+                    )
+                    self._natGatewayPublicIPSettings = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("natGatewayPublicIPSettings", {})
+                        .get("ipPrefix", {})
+                        .get("guid", "")
+                    )
+                    self._infraPublicIPprefix = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("infrastructurePublicIPSettings", {})
+                        .get("ipPrefix", {})
+                        .get("guid", "")
+                    )
+                    self._infraPublicIP = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkSettings", {})
+                        .get("infrastructurePublicIPSettings", {})
+                        .get("createPublicIPAddress", "")
+                    )
                     # infrastructure advanced settings
 
-                    self._infra_server_group_name = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                     .get('networkTopologySettings', {}).get('infrastructureServerGroup', {})
-                                                     .get('name', ''))
-                    self._infra_resourceGroup = (self._cleanroom_target_properties.get('infrastructure', {})
-                                                 .get('advancedSettings', {}).get('resourceGroup', {}).get('name', ''))
-                    self._infra_vm_size = (self._cleanroom_target_properties.get('infrastructure', {})
-                                          .get('advancedSettings', {}).get("vmSize", {}).get('guid', ""))
-                    self._custom_images = (self._cleanroom_target_properties.get('infrastructure', {})
-                                          .get('advancedSettings', {}).get("customImages", [{}]))
+                    self._infra_server_group_name = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("networkTopologySettings", {})
+                        .get("infrastructureServerGroup", {})
+                        .get("name", "")
+                    )
+                    self._infra_resourceGroup = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("advancedSettings", {})
+                        .get("resourceGroup", {})
+                        .get("name", "")
+                    )
+                    self._infra_vm_size = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("advancedSettings", {})
+                        .get("vmSize", {})
+                        .get("guid", "")
+                    )
+                    self._custom_images = (
+                        self._cleanroom_target_properties.get("infrastructure", {})
+                        .get("advancedSettings", {})
+                        .get("customImages", [{}])
+                    )
 
                     # advanced settings
 
-                    self._networkAddressSpace = (
-                        self._cleanroom_target_properties.get('advanced', {}).get("networkAddressSpace", {}))
-                    self._deployBastion = (self._cleanroom_target_properties.get('advanced', {})
-                                           .get("networkAddressSpace", {}).get("deploySecureConnection", ""))
-                    self._recovery_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
-                                                    .get("securityGroupRules", {}).get("recoveredEntity", [{}]))
-                    self._infra_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
-                                                 .get("securityGroupRules", {}).get("infrastructure", [{}]))
+                    self._networkAddressSpace = self._cleanroom_target_properties.get(
+                        "advanced", {}
+                    ).get("networkAddressSpace", {})
+                    self._deployBastion = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("networkAddressSpace", {})
+                        .get("deploySecureConnection", "")
+                    )
+                    self._recovery_SecurityRules = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("securityGroupRules", {})
+                        .get("recoveredEntity", [{}])
+                    )
+                    self._infra_SecurityRules = (
+                        self._cleanroom_target_properties.get("advanced", {})
+                        .get("securityGroupRules", {})
+                        .get("infrastructure", [{}])
+                    )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def cleanroom_target_id(self) -> str:
@@ -1003,7 +1188,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return [user['userName'] for user in self._users]
+        return [user["userName"] for user in self._users]
 
     @property
     def vm_prefix(self) -> str:
@@ -1471,7 +1656,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_vpc', None)
+        return getattr(self, "_vpc", None)
 
     @property
     def security_groups(self) -> list:
@@ -1487,7 +1672,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_security_groups', [])
+        return getattr(self, "_security_groups", [])
 
     @property
     def workload_server_group(self) -> str:
@@ -1503,7 +1688,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_workload_server_group', None)
+        return getattr(self, "_workload_server_group", None)
 
     @property
     def infra_network_gateway(self) -> str:
@@ -1519,7 +1704,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_infra_network_gateway', '')
+        return getattr(self, "_infra_network_gateway", "")
 
     @property
     def infra_iam_role(self) -> str:
@@ -1535,7 +1720,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_infra_iam_role', None)
+        return getattr(self, "_infra_iam_role", None)
 
     @property
     def infra_security_groups(self) -> list:
@@ -1551,7 +1736,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_infra_security_groups', [])
+        return getattr(self, "_infra_security_groups", [])
 
     @property
     def infra_create_public_ip(self) -> bool:
@@ -1567,7 +1752,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_infra_create_public_ip', False)
+        return getattr(self, "_infra_create_public_ip", False)
 
     @property
     def endpoint_subnet(self) -> str:
@@ -1583,7 +1768,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_endpointSubnet', '')
+        return getattr(self, "_endpointSubnet", "")
 
     @property
     def public_subnet(self) -> str:
@@ -1599,7 +1784,7 @@ class CleanroomTarget:
 
         #ai-gen-doc
         """
-        return getattr(self, '_publicSubnet', '')
+        return getattr(self, "_publicSubnet", "")
 
     def refresh(self) -> None:
         """Reload the properties of the cleanroom target.

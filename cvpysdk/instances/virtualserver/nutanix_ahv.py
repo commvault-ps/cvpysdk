@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -38,9 +36,10 @@ nutanixinstance:            Derived class from VirtualServer
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -62,7 +61,7 @@ class nutanixinstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+    def __init__(self, agent: "Agent", name: str, iid: str) -> None:
         """Initialize a nutanixinstance object for the specified Virtual Server instance.
 
         Args:
@@ -80,7 +79,7 @@ class nutanixinstance(VirtualServerInstance):
         self._username = None
         self._server_name = []
         self._vendor_id = 601
-        super(nutanixinstance, self).__init__(agent, name, iid)
+        super().__init__(agent, name, iid)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this Nutanix instance.
@@ -94,19 +93,21 @@ class nutanixinstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(nutanixinstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
         if "vmwareVendor" in self._virtualserverinstance:
-            self._nutanix_cluster = self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['domainName']
+            self._nutanix_cluster = self._virtualserverinstance["vmwareVendor"]["virtualCenter"][
+                "domainName"
+            ]
 
-        if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
-                ["associatedClients"]["memberServers"]
+        if "virtualServerInstance" in self._properties:
+            _member_servers = self._properties["virtualServerInstance"]["associatedClients"][
+                "memberServers"
+            ]
             for _each_client in _member_servers:
-                client = _each_client['client']
-                if 'clientName' in client.keys():
-                    self._server_name.append(str(client['clientName']))
+                client = _each_client["client"]
+                if "clientName" in client.keys():
+                    self._server_name.append(str(client["clientName"]))
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient as a dictionary.
@@ -122,10 +123,10 @@ class nutanixinstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": {},
+                },
             }
         }
         return instance_json

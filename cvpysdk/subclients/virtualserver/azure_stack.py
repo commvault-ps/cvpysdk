@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -49,76 +47,77 @@ class AzureStackSubclient(VirtualServerSubclient):
 
         """
         self.diskExtension = [".vhd", ".avhd"]
-        super(AzureStackSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
-    def full_vm_restore_out_of_place(self,
-                                     vm_to_restore=None,
-                                     resource_group=None,
-                                     storage_account=None,
-                                     proxy_client=None,
-                                     restore_new_name=None,
-                                     overwrite=False,
-                                     power_on=False,
-                                     instance_size=None,
-                                     public_ip=True,
-                                     restore_as_managed=True,
-                                     copy_precedence=0,
-                                     restore_option=None,
-                                     **kwargs):
+    def full_vm_restore_out_of_place(
+        self,
+        vm_to_restore=None,
+        resource_group=None,
+        storage_account=None,
+        proxy_client=None,
+        restore_new_name=None,
+        overwrite=False,
+        power_on=False,
+        instance_size=None,
+        public_ip=True,
+        restore_as_managed=True,
+        copy_precedence=0,
+        restore_option=None,
+        **kwargs,
+    ):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
-            at the specified destination location.
+        at the specified destination location.
 
-            Args:
+        Args:
 
-                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
+            vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
-                resource_group        (str)        -- provide the resource group to restore
+            resource_group        (str)        -- provide the resource group to restore
 
-                storage_account       (str)        -- provide the storage account to restore
+            storage_account       (str)        -- provide the storage account to restore
 
-                proxy_client          (str)        -- provide the proxy client to restore
+            proxy_client          (str)        -- provide the proxy client to restore
 
-                restore_new_name      (str)        -- provide the new restore name
+            restore_new_name      (str)        -- provide the new restore name
 
-                instance_size         (str)        -- provide the instance size of the restore VM
+            instance_size         (str)        -- provide the instance size of the restore VM
 
-                createPublicIP
-                        default:True   (bool)      --  creates the Public IP of the new VM
+            createPublicIP
+                    default:True   (bool)      --  creates the Public IP of the new VM
 
-                restoreAsManagedVM
-                        default:False   (bool)      --  new VM will be restored as unmanaged VM
-
-
-                overwrite
-                        default:False   (bool)      --  overwrite the existing VM
-
-                poweron
-                        default:False   (bool)      --  power on the  restored VM
+            restoreAsManagedVM
+                    default:False   (bool)      --  new VM will be restored as unmanaged VM
 
 
-                restore_option      (dict)     --  complete dictionary with all advanced optio
-                    default: {}
+            overwrite
+                    default:False   (bool)      --  overwrite the existing VM
 
-                **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                     full_vm_restore_out_of_place
-                    eg:
-                    v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+            poweron
+                    default:False   (bool)      --  power on the  restored VM
 
-            Returns:
-                object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
+            restore_option      (dict)     --  complete dictionary with all advanced optio
+                default: {}
 
-                    if destination_path is not a string
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-                    if failed to initialize job
+        Returns:
+            object - instance of the Job class for this restore job
 
-                    if response is empty
+        Raises:
+            SDKException:
 
-                    if response is not success
+                if destination_path is not a string
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
         """
 
         if not restore_option:
@@ -126,50 +125,62 @@ class AzureStackSubclient(VirtualServerSubclient):
         restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         AzureRMSubclient.full_vm_restore_out_of_place(
-            self, vm_to_restore, resource_group, storage_account,
-            proxy_client, restore_new_name, restore_option, overwrite, power_on,
-            instance_size, public_ip, restore_as_managed,
-            copy_precedence)
+            self,
+            vm_to_restore,
+            resource_group,
+            storage_account,
+            proxy_client,
+            restore_new_name,
+            restore_option,
+            overwrite,
+            power_on,
+            instance_size,
+            public_ip,
+            restore_as_managed,
+            copy_precedence,
+        )
 
-    def full_vm_restore_in_place(self,
-                                 vm_to_restore=None,
-                                 overwrite=True,
-                                 power_on=True,
-                                 public_ip=True,
-                                 restore_as_managed=False,
-                                 copy_precedence=0):
+    def full_vm_restore_in_place(
+        self,
+        vm_to_restore=None,
+        overwrite=True,
+        power_on=True,
+        public_ip=True,
+        restore_as_managed=False,
+        copy_precedence=0,
+    ):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
-            to the location same as source .
+        to the location same as source .
 
-            Args:
-                vm_to_restore         (list)       --  provide the of list VM name(s) to restore
+        Args:
+            vm_to_restore         (list)       --  provide the of list VM name(s) to restore
 
-                createPublicIP
-                        default:True   (bool)      --  creates the Public IP of the new VM
+            createPublicIP
+                    default:True   (bool)      --  creates the Public IP of the new VM
 
-                restoreAsManagedVM
-                        default:False   (bool)      --  new VM will be restored as unmanaged VM
+            restoreAsManagedVM
+                    default:False   (bool)      --  new VM will be restored as unmanaged VM
 
-                overwrite
-                        default:true   (bool)      --  overwrite the existing VM
+            overwrite
+                    default:true   (bool)      --  overwrite the existing VM
 
-                poweron
-                        default:true   (bool)      --  power on the  restored VM
+            poweron
+                    default:true   (bool)      --  power on the  restored VM
 
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
 
         AzureRMSubclient.full_vm_restore_in_place(
-            self, overwrite, power_on,
-            public_ip, restore_as_managed, copy_precedence)
+            self, overwrite, power_on, public_ip, restore_as_managed, copy_precedence
+        )

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -37,16 +36,13 @@ SAPOracleSubclient:
 
 
 """
-from __future__ import unicode_literals
 
 from ..subclient import Subclient
-from ..exception import SDKException
-
 
 
 class SAPOracleSubclient(Subclient):
     """Derived class from Subclient Base class, representing a SAP oracle iDa subclient,
-        and to perform operations on that subclient."""
+    and to perform operations on that subclient."""
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """
@@ -56,8 +52,8 @@ class SAPOracleSubclient(Subclient):
             subclient_name    (str)     -- name of the subclient
             subclient_id      (str)     -- id of the subclient
         """
-        super(SAPOracleSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
-        self._subclientprop = {}    # variable to hold subclient properties to be changed
+        super().__init__(backupset_object, subclient_name, subclient_id)
+        self._subclientprop = {}  # variable to hold subclient properties to be changed
 
     @property
     def data_sp(self):
@@ -66,8 +62,9 @@ class SAPOracleSubclient(Subclient):
         Returns:
             string - string representing data storage policy
         """
-        return self._commonProperties['storageDevice']\
-            ['dataBackupStoragePolicy']['storagePolicyName']
+        return self._commonProperties["storageDevice"]["dataBackupStoragePolicy"][
+            "storagePolicyName"
+        ]
 
     @property
     def sapBackupMode(self):
@@ -77,7 +74,7 @@ class SAPOracleSubclient(Subclient):
             string - string representing sapBackupMode
             sapBackupMode--0 means Online Db
         """
-        return self._sapForOracleSubclientProp['sapBackupMode']
+        return self._sapForOracleSubclientProp["sapBackupMode"]
 
     @property
     def sapBackupDevice(self):
@@ -87,51 +84,47 @@ class SAPOracleSubclient(Subclient):
             string - string representing sapBackupDevice
             sapBackupDevice--1 means util_file device
         """
-        return self._sapForOracleSubclientProp['sapBackupDevice']
+        return self._sapForOracleSubclientProp["sapBackupDevice"]
 
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of SAP Oracle subclient.
+        """Gets the subclient  related properties of SAP Oracle subclient."""
+        # subclient_options={}
+        # saporaclesubclient_options={}
 
-        """
-        #subclient_options={}
-        #saporaclesubclient_options={}
-        
         if not bool(self._subclient_properties):
-            super(SAPOracleSubclient, self)._get_subclient_properties()
+            super()._get_subclient_properties()
 
-        if 'sapForOracleSubclientProp' in self._subclient_properties:
-            self._sapForOracleSubclientProp = self._subclient_properties\
-                    ['sapForOracleSubclientProp']
-        self._sapForOracleSubclientProp["sapSelectiveOnlineFull"]=False
-        self._sapForOracleSubclientProp["sapData"]=True
-        self._sapForOracleSubclientProp["sapBackupArchiveLog"]=True
-        self._sapForOracleSubclientProp["sapArchiveDelete"]=True
-        
+        if "sapForOracleSubclientProp" in self._subclient_properties:
+            self._sapForOracleSubclientProp = self._subclient_properties[
+                "sapForOracleSubclientProp"
+            ]
+        self._sapForOracleSubclientProp["sapSelectiveOnlineFull"] = False
+        self._sapForOracleSubclientProp["sapData"] = True
+        self._sapForOracleSubclientProp["sapBackupArchiveLog"] = True
+        self._sapForOracleSubclientProp["sapArchiveDelete"] = True
 
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+             dict - all subclient properties put inside a dict
         """
         subclient_json = {
-            "subClientProperties":
-                {
-                    "subClientEntity": self._subClientEntity,
-                    "commonProperties": self._commonProperties,
-                    "sapForOracleSubclientProp":self._sapForOracleSubclientProp
-                }
+            "subClientProperties": {
+                "subClientEntity": self._subClientEntity,
+                "commonProperties": self._commonProperties,
+                "sapForOracleSubclientProp": self._sapForOracleSubclientProp,
+            }
         }
-        #print (subclient_json)
+        # print (subclient_json)
         return subclient_json
-    
-    def _update_subclient_properties(self):
-        """Gets the subclient  related properties of SAP Oracle subclient.
 
-        """
+    def _update_subclient_properties(self):
+        """Gets the subclient  related properties of SAP Oracle subclient."""
 
         if not bool(self._subclient_properties):
-            super(SAPOracleSubclient, self)._get_subclient_properties()
+            super()._get_subclient_properties()
 
-        if 'sapForOracleSubclientProp' in self._subclient_properties:
-            self._sapForOracleSubclientProp = self._subclient_properties\
-                    ['sapForOracleSubclientProp']
+        if "sapForOracleSubclientProp" in self._subclient_properties:
+            self._sapForOracleSubclientProp = self._subclient_properties[
+                "sapForOracleSubclientProp"
+            ]

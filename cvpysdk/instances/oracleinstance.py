@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -92,26 +90,26 @@ OracleInstance:
     dbid()                              --  Getter for getting DBID of database
 
     restore()                           --  Performs restore on the instance
-    
+
     _restore_db_dump_option_json()       --  setter for the oracle dbdump Restore option in restore JSON
-    
+
     _restore_oracle_option_json()       --  setter for the oracle Restore option in restore JSON
-    
+
     _restore_json()                     --  returns the JSON request to pass to the API as per
     the options selected by the user
-    
+
     restore_in_place()                  --  restore for oracle logical dump
 
 """
-from __future__ import unicode_literals
-from base64 import b64encode
+
 import json
+from base64 import b64encode
+from typing import TYPE_CHECKING, Any
 
 from ..exception import SDKException
 from ..job import Job
 from .dbinstance import DatabaseInstance
 
-from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -142,7 +140,7 @@ class OracleInstance(DatabaseInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
         """Initialize an OracleInstance object.
 
         Args:
@@ -152,18 +150,19 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        super(OracleInstance, self).__init__(
-            agent_object, instance_name, instance_id)
-        self._LIVE_SYNC = self._commcell_object._services['LIVE_SYNC']
+        super().__init__(agent_object, instance_name, instance_id)
+        self._LIVE_SYNC = self._commcell_object._services["LIVE_SYNC"]
         self._dbDump_restore_json = None
         self._oracle_restore_json = None
 
-    def restore_to_disk(self,
-                        destination_client: str,
-                        destination_path: str,
-                        backup_job_ids: list,
-                        user_name: str,
-                        password: str) -> 'Job':
+    def restore_to_disk(
+        self,
+        destination_client: str,
+        destination_path: str,
+        backup_job_ids: list,
+        user_name: str,
+        password: str,
+    ) -> "Job":
         """Perform an application-free restore of Oracle data to disk.
 
         This method restores Oracle backup data to a specified path on a destination client
@@ -197,14 +196,10 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not isinstance(backup_job_ids, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         request_json = self._get_restore_to_disk_json(
-            destination_client,
-            destination_path,
-            backup_job_ids,
-            user_name,
-            password
+            destination_client, destination_path, backup_job_ids, user_name, password
         )
 
         return self._process_restore_response(request_json)
@@ -220,8 +215,8 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        super(OracleInstance, self)._get_instance_properties()
-        self._instanceprop = self._properties['oracleInstance']
+        super()._get_instance_properties()
+        self._instanceprop = self._properties["oracleInstance"]
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all properties related to the Oracle instance as a dictionary.
@@ -232,11 +227,10 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":
-                {
-                    "instance": self._instance,
-                    "oracleInstance": self._instanceprop
-                }
+            "instanceProperties": {
+                "instance": self._instance,
+                "oracleInstance": self._instanceprop,
+            }
         }
         return instance_json
 
@@ -260,7 +254,9 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        self._set_instance_properties("_instanceprop['numberOfArchiveLogBackupStreams']", log_stream)
+        self._set_instance_properties(
+            "_instanceprop['numberOfArchiveLogBackupStreams']", log_stream
+        )
 
     def _restore_common_options_json(self, value: dict) -> None:
         """Set the common options for the restore JSON configuration.
@@ -271,10 +267,10 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         super()._restore_common_options_json(value)
         if value.get("baseline_jobid"):
-            self._commonoption_restore_json = ({
+            self._commonoption_restore_json = {
                 "clusterDBBackedup": value.get("clusterDBBackedup", False),
                 "restoreToDisk": value.get("restoreToDisk", False),
                 "baselineBackup": 1,
@@ -283,8 +279,8 @@ class OracleInstance(DatabaseInstance):
                 "baselineJobId": value.get("baseline_jobid", ""),
                 "copyToObjectStore": value.get("copyToObjectStore", False),
                 "onePassRestore": value.get("onePassRestore", False),
-                "syncRestore": value.get("syncRestore", True)
-            })
+                "syncRestore": value.get("syncRestore", True),
+            }
 
     def _restore_destination_json(self, value: dict) -> None:
         """Set the Oracle destination options in the restore JSON.
@@ -296,19 +292,17 @@ class OracleInstance(DatabaseInstance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
-        self._destination_restore_json = ({
+        self._destination_restore_json = {
             "noOfStreams": value.get("number_of_streams", 2),
-            "destClient": {
-                "clientName": value.get("destination_client", "")
-            },
+            "destClient": {"clientName": value.get("destination_client", "")},
             "destinationInstance": {
                 "clientName": value.get("destination_client", ""),
                 "instanceName": value.get("destination_instance", ""),
-                "appName": value.get("app_name", "Oracle")
-            }
-        })
+                "appName": value.get("app_name", "Oracle"),
+            },
+        }
 
     def _get_live_sync_oracleopt_json(self, **kwargs: dict) -> None:
         """Construct a JSON dictionary with Oracle agent-specific options for configuring live sync.
@@ -347,29 +341,27 @@ class OracleInstance(DatabaseInstance):
             "archiveLog": False,
             "restoreData": True,
             "restoreFrom": 3,
-            "crossmachineRestoreOptions": {
-                "onlineLogDest": ""
-            },
-            "liveSyncOpt": {
-                "restoreInStandby": False
-            }
+            "crossmachineRestoreOptions": {"onlineLogDest": ""},
+            "liveSyncOpt": {"restoreInStandby": False},
         }
-        if kwargs.get('redirect_path', None) is not None:
-            self._oracle_options.update({
-                "renamePathForAllTablespaces": kwargs.get('redirect_path'),
-                "redirectAllItemsSelected": True,
-                "redirectItemsPresent": True
-            })
+        if kwargs.get("redirect_path", None) is not None:
+            self._oracle_options.update(
+                {
+                    "renamePathForAllTablespaces": kwargs.get("redirect_path"),
+                    "redirectAllItemsSelected": True,
+                    "redirectItemsPresent": True,
+                }
+            )
 
     def _live_sync_restore_json(
-            self,
-            dest_client: str,
-            dest_instance: str,
-            baseline_jobid: int,
-            baseline_ref_time: int,
-            schedule_name: str,
-            source_backupset_id: int,
-            **kwargs: dict
+        self,
+        dest_client: str,
+        dest_instance: str,
+        baseline_jobid: int,
+        baseline_ref_time: int,
+        schedule_name: str,
+        source_backupset_id: int,
+        **kwargs: dict,
     ) -> str:
         """Construct the Oracle Live Sync restore JSON payload.
 
@@ -425,30 +417,32 @@ class OracleInstance(DatabaseInstance):
             restore_option.update(restore_json)
 
         self._get_live_sync_oracleopt_json(**kwargs)
-        restore_json['taskInfo']['associations'][0]['subclientId'] = -1
-        restore_json['taskInfo']['associations'][0]['backupsetId'] = source_backupset_id
-        restore_json['taskInfo']['associations'][0]['subclientName'] = ""
-        restore_json['taskInfo']['associations'][0]['backupsetName'] = ""
-        restore_json['taskInfo']['associations'][0]['_type_'] = 5
-        restore_json['taskInfo']['task']['taskType'] = 2
-        restore_json['taskInfo']['subTasks'][0]['subTask']['operationType'] = 1007
-        restore_json['taskInfo']['subTasks'][0]['subTask']['subTaskName'] = schedule_name
-        restore_json['taskInfo']['subTasks'][0]['pattern'] = {
-            "freq_type": 4096
-        }
+        restore_json["taskInfo"]["associations"][0]["subclientId"] = -1
+        restore_json["taskInfo"]["associations"][0]["backupsetId"] = source_backupset_id
+        restore_json["taskInfo"]["associations"][0]["subclientName"] = ""
+        restore_json["taskInfo"]["associations"][0]["backupsetName"] = ""
+        restore_json["taskInfo"]["associations"][0]["_type_"] = 5
+        restore_json["taskInfo"]["task"]["taskType"] = 2
+        restore_json["taskInfo"]["subTasks"][0]["subTask"]["operationType"] = 1007
+        restore_json["taskInfo"]["subTasks"][0]["subTask"]["subTaskName"] = schedule_name
+        restore_json["taskInfo"]["subTasks"][0]["pattern"] = {"freq_type": 4096}
         destinationInstance = {
             "clientName": dest_client,
             "instanceName": dest_instance,
-            "appName": "Oracle"
+            "appName": "Oracle",
         }
-        restore_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["destination"].update({"destinationInstance": destinationInstance})
-        restore_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["oracleOpt"] = self._oracle_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"].update(
+            {"destinationInstance": destinationInstance}
+        )
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = (
+            self._oracle_options
+        )
 
         return restore_json
 
-    def create_live_sync_schedule(self, dest_client: str, dest_instance: str, schedule_name: str, **kwargs) -> 'Job':
+    def create_live_sync_schedule(
+        self, dest_client: str, dest_instance: str, schedule_name: str, **kwargs
+    ) -> "Job":
         """Run a full backup on the source Oracle instance and create a live sync schedule
         for the specified destination Oracle instance.
 
@@ -480,34 +474,41 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        source_backupset_id = int(self.backupsets.get('default').backupset_id)
-        subclient_obj = self.subclients.get('default')
-        baseline_job_object = subclient_obj.backup(backup_level='full')
+        source_backupset_id = int(self.backupsets.get("default").backupset_id)
+        subclient_obj = self.subclients.get("default")
+        baseline_job_object = subclient_obj.backup(backup_level="full")
         if not baseline_job_object.wait_for_completion():
-            raise SDKException('Instance', '102', baseline_job_object.delay_reason)
-        baseline_ref_time = baseline_job_object.summary['jobStartTime']
+            raise SDKException("Instance", "102", baseline_job_object.delay_reason)
+        baseline_ref_time = baseline_job_object.summary["jobStartTime"]
         baseline_jobid = int(baseline_job_object.job_id)
-        request_json = self._live_sync_restore_json(dest_client, dest_instance, baseline_jobid,
-                                                    baseline_ref_time, schedule_name,
-                                                    source_backupset_id, **kwargs)
-        flag, response = self._cvpysdk_object.make_request('POST', self._LIVE_SYNC, request_json)
+        request_json = self._live_sync_restore_json(
+            dest_client,
+            dest_instance,
+            baseline_jobid,
+            baseline_ref_time,
+            schedule_name,
+            source_backupset_id,
+            **kwargs,
+        )
+        flag, response = self._cvpysdk_object.make_request("POST", self._LIVE_SYNC, request_json)
         if flag:
             if response.json():
                 if "taskId" in response.json():
                     return baseline_job_object
                 elif "errorCode" in response.json():
-                    error_message = response.json()['errorMessage']
-                    error_message = 'Live Sync configuration failed\nError: "{0}"'.format(
-                        error_message)
-                    raise SDKException('Instance', '102', error_message)
+                    error_message = response.json()["errorMessage"]
+                    error_message = f'Live Sync configuration failed\nError: "{error_message}"'
+                    raise SDKException("Instance", "102", error_message)
                 else:
-                    raise SDKException('Instance', '102', 'Failed to create schedule')
+                    raise SDKException("Instance", "102", "Failed to create schedule")
             else:
-                raise SDKException('Instance', '102')
+                raise SDKException("Instance", "102")
         else:
-            raise SDKException('Instance', '101', self._update_response_(response.text))
+            raise SDKException("Instance", "101", self._update_response_(response.text))
 
-    def configure_data_masking_policy(self, policy_name: str, table_list_of_dict: list[dict]) -> bool:
+    def configure_data_masking_policy(
+        self, policy_name: str, table_list_of_dict: list[dict]
+    ) -> bool:
         """Configure a data masking policy for Oracle tables with specified rules.
 
         This method sets up a data masking policy using the provided policy name and a list of table masking rules.
@@ -557,32 +558,31 @@ class OracleInstance(DatabaseInstance):
             "policy": {
                 "association": {"instanceId": int(self.instance_id)},
                 "config": {"tables": table_list_of_dict},
-                "policy": {"policyName": policy_name}
-            }
+                "policy": {"policyName": policy_name},
+            },
         }
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['MASKING_POLICY'], request_json
+            "POST", self._services["MASKING_POLICY"], request_json
         )
         if flag:
             if response.json():
-                error_code = response.json()['errorCode']
+                error_code = response.json()["errorCode"]
 
                 if error_code != 0:
-                    error_string = response.json()['errorMessage']
+                    error_string = response.json()["errorMessage"]
                     raise SDKException(
-                        'Instance',
-                        '102',
-                        'Error while creating Data masking policy\nError: "{0}"'.format(
-                            error_string)
+                        "Instance",
+                        "102",
+                        f'Error while creating Data masking policy\nError: "{error_string}"',
                     )
                 else:
                     return True
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_masking_policy_id(self, policy_name: str) -> int:
         """Retrieve the policy ID for a specified data masking policy by name.
@@ -596,8 +596,7 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         instance_id = int(self.instance_id)
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['MASKING_POLICY'])
+        flag, response = self._cvpysdk_object.make_request("GET", self._services["MASKING_POLICY"])
         response_json = response.json()
         policy_list = response_json["policies"]
         policy_id = None
@@ -628,43 +627,37 @@ class OracleInstance(DatabaseInstance):
         source_instance_id = int(self.instance_id)
         policy_id = self.get_masking_policy_id(policy_name)
         if policy_id is None:
-            raise SDKException(
-                'Instance',
-                '106')
+            raise SDKException("Instance", "106")
 
         request_json = {
             "opType": 3,
             "policy": {
                 "association": {"instanceId": source_instance_id},
-                "policy": {"policyId": policy_id, "policyName": policy_name}
-            }
+                "policy": {"policyId": policy_id, "policyName": policy_name},
+            },
         }
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['MASKING_POLICY'], request_json
+            "POST", self._services["MASKING_POLICY"], request_json
         )
         if flag:
             if response.json():
-                error_code = response.json()['errorCode']
+                error_code = response.json()["errorCode"]
 
                 if error_code != 0:
                     raise SDKException(
-                        'Instance',
-                        '102',
-                        'Error while deleting Data masking policy\nError')
+                        "Instance", "102", "Error while deleting Data masking policy\nError"
+                    )
                 else:
                     return True
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def standalone_data_masking(
-            self,
-            policy_name: str,
-            destination_client: str = None,
-            destination_instance: str = None
+        self, policy_name: str, destination_client: str = None, destination_instance: str = None
     ) -> object:
         """Launch a standalone data masking job on the specified Oracle instance.
 
@@ -695,56 +688,53 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if destination_client is None:
-            destination_client = self._properties['instance']['clientName']
+            destination_client = self._properties["instance"]["clientName"]
         if destination_instance is None:
             destination_instance = self.instance_name
-        destination_client_object = self._commcell_object.clients.get(
-            destination_client)
-        destination_agent_object = destination_client_object.agents.get(
-            'oracle')
-        destination_instance_object = destination_agent_object.instances.get(
-            destination_instance)
+        destination_client_object = self._commcell_object.clients.get(destination_client)
+        destination_agent_object = destination_client_object.agents.get("oracle")
+        destination_instance_object = destination_agent_object.instances.get(destination_instance)
         destination_instance_id = int(destination_instance_object.instance_id)
         source_instance_id = int(self.instance_id)
         policy_id = self.get_masking_policy_id(policy_name)
         if policy_id is None:
-            raise SDKException(
-                'Instance',
-                '106')
-        request_json = self._restore_json(paths=r'/')
+            raise SDKException("Instance", "106")
+        request_json = self._restore_json(paths=r"/")
         destination_instance_json = {
             "clientName": destination_client,
             "instanceName": destination_instance,
-            "instanceId": destination_instance_id
+            "instanceId": destination_instance_id,
         }
         data_masking_options = {
             "isStandalone": True,
             "enabled": True,
             "dbDMPolicy": {
-                "association": {
-                    "instanceId": source_instance_id},
-                "policy": {
-                    "policyId": policy_id,
-                    "policyName": policy_name}}}
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["destination"]["destClient"]["clientName"] = destination_client
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["destination"]["destinationInstance"] = destination_instance_json
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["dbDataMaskingOptions"] = data_masking_options
+                "association": {"instanceId": source_instance_id},
+                "policy": {"policyId": policy_id, "policyName": policy_name},
+            },
+        }
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"][
+            "destClient"
+        ]["clientName"] = destination_client
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"][
+            "destinationInstance"
+        ] = destination_instance_json
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "dbDataMaskingOptions"
+        ] = data_masking_options
         del request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"]
         return self._process_restore_response(request_json)
 
     def _get_oracle_restore_json(
-            self,
-            destination_client: str,
-            instance_name: str,
-            tablespaces: list,
-            files: dict,
-            browse_option: dict,
-            common_options: dict,
-            oracle_options: dict,
-            destination: dict = None
+        self,
+        destination_client: str,
+        instance_name: str,
+        tablespaces: list,
+        files: dict,
+        browse_option: dict,
+        common_options: dict,
+        oracle_options: dict,
+        destination: dict = None,
     ) -> dict:
         """Generate and modify the restore JSON for Oracle database restores.
 
@@ -784,42 +774,40 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not isinstance(tablespaces, list):
-            raise SDKException(
-                'Instance',
-                '101', 'Expecting a list for tablespaces')
+            raise SDKException("Instance", "101", "Expecting a list for tablespaces")
         if files is not None:
             if not isinstance(files, dict):
-                raise SDKException(
-                    'Instance',
-                    '101', 'Expecting a dict for files')
+                raise SDKException("Instance", "101", "Expecting a dict for files")
 
-        destination_id = int(self._commcell_object.clients.get(
-            destination_client).client_id)
-        tslist = ["SID: {0} Tablespace: {1}".format(
-            instance_name, ts) for ts in tablespaces]
-        restore_json = self._restore_json(paths=r'/')
+        destination_id = int(self._commcell_object.clients.get(destination_client).client_id)
+        tslist = [f"SID: {instance_name} Tablespace: {ts}" for ts in tablespaces]
+        restore_json = self._restore_json(paths=r"/")
         if common_options is not None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "commonOptions"] = common_options
-        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "oracleOpt"] = oracle_options
+                "commonOptions"
+            ] = common_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = (
+            oracle_options
+        )
         if destination:
             if not isinstance(destination, dict):
-                raise SDKException(
-                    'Instance',
-                    '101', 'Expecting a dict for destination details')
-            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = destination
+                raise SDKException("Instance", "101", "Expecting a dict for destination details")
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = (
+                destination
+            )
         if files is None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
                 "sourceItem": tslist
             }
         else:
-            restore_json["taskInfo"]["subTasks"][0]["options"][
-                "restoreOptions"]["fileOption"] = files
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = (
+                files
+            )
 
         if browse_option is not None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "browseOption"] = browse_option
+                "browseOption"
+            ] = browse_option
         return restore_json
 
     def _get_browse_options(self) -> dict:
@@ -833,13 +821,13 @@ class OracleInstance(DatabaseInstance):
         return {
             "path": "/",
             "entity": {
-                "appName": self._properties['instance']['appName'],
+                "appName": self._properties["instance"]["appName"],
                 "instanceId": int(self.instance_id),
-                "applicationId": int(self._properties['instance']['applicationId']),
-                "clientId": int(self._properties['instance']['clientId']),
-                "instanceName": self._properties['instance']['instanceName'],
-                "clientName": self._properties['instance']['clientName']
-            }
+                "applicationId": int(self._properties["instance"]["applicationId"]),
+                "clientId": int(self._properties["instance"]["clientId"]),
+                "instanceName": self._properties["instance"]["instanceName"],
+                "clientName": self._properties["instance"]["clientName"],
+            },
         }
 
     def _process_browse_response(self, request_json: dict) -> list:
@@ -865,34 +853,32 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        if 'tablespaces' in self._instanceprop:
-            return self._instanceprop['tablespaces']
+        if "tablespaces" in self._instanceprop:
+            return self._instanceprop["tablespaces"]
 
-        browse_service = self._commcell_object._services['ORACLE_INSTANCE_BROWSE'] % (
+        browse_service = self._commcell_object._services["ORACLE_INSTANCE_BROWSE"] % (
             self.instance_id
         )
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', browse_service, request_json
+            "POST", browse_service, request_json
         )
 
         if flag:
             response_data = json.loads(response.text)
             if response_data:
                 if "oracleContent" in response_data:
-                    self._instanceprop['tablespaces'] = response_data["oracleContent"]
-                    return self._instanceprop['tablespaces']
+                    self._instanceprop["tablespaces"] = response_data["oracleContent"]
+                    return self._instanceprop["tablespaces"]
                 elif "errorCode" in response_data:
-                    error_message = response_data['errorMessage']
-                    o_str = 'Browse job failed\nError: "{0}"'.format(
-                        error_message)
-                    raise SDKException('Instance', '102', o_str)
+                    error_message = response_data["errorMessage"]
+                    o_str = f'Browse job failed\nError: "{error_message}"'
+                    raise SDKException("Instance", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def oracle_home(self) -> str:
@@ -903,7 +889,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['oracleHome']
+        return self._properties["oracleInstance"]["oracleHome"]
 
     @property
     def is_catalog_enabled(self) -> bool:
@@ -914,7 +900,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['useCatalogConnect']
+        return self._properties["oracleInstance"]["useCatalogConnect"]
 
     @property
     def catalog_user(self) -> str:
@@ -929,11 +915,11 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not self.is_catalog_enabled:
-            raise SDKException('Instance', r'102', 'Catalog is not enabled.')
+            raise SDKException("Instance", r"102", "Catalog is not enabled.")
         try:
-            return self._properties['oracleInstance']['catalogConnect']['userName']
+            return self._properties["oracleInstance"]["catalogConnect"]["userName"]
         except KeyError as error_str:
-            raise SDKException('Instance', r'102', 'Catalog user not set - {}'.format(error_str))
+            raise SDKException("Instance", r"102", f"Catalog user not set - {error_str}")
 
     @property
     def catalog_db(self) -> str:
@@ -948,11 +934,11 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not self.is_catalog_enabled:
-            raise SDKException('Instance', r'102', 'Catalog is not enabled.')
+            raise SDKException("Instance", r"102", "Catalog is not enabled.")
         try:
-            return self._properties['oracleInstance']['catalogConnect']['domainName']
+            return self._properties["oracleInstance"]["catalogConnect"]["domainName"]
         except KeyError as error_str:
-            raise SDKException('Instance', r'102', 'Catalog database not set - {}'.format(error_str))
+            raise SDKException("Instance", r"102", f"Catalog database not set - {error_str}")
 
     @property
     def os_user(self) -> str:
@@ -963,7 +949,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['oracleUser']['userName']
+        return self._properties["oracleInstance"]["oracleUser"]["userName"]
 
     @property
     def version(self) -> str:
@@ -974,7 +960,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['version']
+        return self._properties["version"]
 
     @property
     def archive_log_dest(self) -> str:
@@ -985,7 +971,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['archiveLogDest']
+        return self._properties["oracleInstance"]["archiveLogDest"]
 
     @property
     def cmd_sp(self) -> str:
@@ -996,8 +982,9 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['oracleStorageDevice'][
-            'commandLineStoragePolicy']['storagePolicyName']
+        return self._properties["oracleInstance"]["oracleStorageDevice"][
+            "commandLineStoragePolicy"
+        ]["storagePolicyName"]
 
     @property
     def log_sp(self) -> str:
@@ -1008,8 +995,9 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['oracleStorageDevice'][
-            'logBackupStoragePolicy']['storagePolicyName']
+        return self._properties["oracleInstance"]["oracleStorageDevice"]["logBackupStoragePolicy"][
+            "storagePolicyName"
+        ]
 
     @property
     def is_autobackup_on(self) -> bool:
@@ -1020,7 +1008,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return True if self._properties['oracleInstance']['ctrlFileAutoBackup'] == 1 else False
+        return True if self._properties["oracleInstance"]["ctrlFileAutoBackup"] == 1 else False
 
     @property
     def db_user(self) -> str:
@@ -1031,7 +1019,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['sqlConnect']['userName']
+        return self._properties["oracleInstance"]["sqlConnect"]["userName"]
 
     @property
     def tns_name(self) -> str:
@@ -1046,9 +1034,9 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         try:
-            return self._properties['oracleInstance']['sqlConnect']['domainName']
+            return self._properties["oracleInstance"]["sqlConnect"]["domainName"]
         except KeyError as error_str:
-            raise SDKException('Instance', r'102', 'Instance TNS Entry not set - {}'.format(error_str))
+            raise SDKException("Instance", r"102", f"Instance TNS Entry not set - {error_str}")
 
     @property
     def dbid(self) -> int:
@@ -1059,7 +1047,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self._properties['oracleInstance']['DBID']
+        return self._properties["oracleInstance"]["DBID"]
 
     @property
     def tablespaces(self) -> list:
@@ -1070,13 +1058,13 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return [ts['tableSpace'] for ts in self.browse()]
+        return [ts["tableSpace"] for ts in self.browse()]
 
     def browse(self, *args: Any, **kwargs: Any) -> Any:
         """Browse Oracle database tablespaces.
 
         This method allows browsing of Oracle database tablespaces associated with the instance.
-        The arguments and keyword arguments can be used to specify browse options such as 
+        The arguments and keyword arguments can be used to specify browse options such as
         filters, levels, or specific tablespaces.
 
         Args:
@@ -1100,12 +1088,12 @@ class OracleInstance(DatabaseInstance):
         """Initiate a backup operation for the Oracle database using the specified subclient.
 
         Args:
-            subclient_name: The name of the subclient to use for the backup operation. 
+            subclient_name: The name of the subclient to use for the backup operation.
                 Defaults to "default" if not specified.
 
         #ai-gen-doc
         """
-        return self.subclients.get(subclient_name).backup(r'full')
+        return self.subclients.get(subclient_name).backup(r"full")
 
     def restore(
         self,
@@ -1116,8 +1104,8 @@ class OracleInstance(DatabaseInstance):
         oracle_options: dict = None,
         tag: str = None,
         destination_instance: str = None,
-        streams: int = 2
-    ) -> 'Job':
+        streams: int = 2,
+    ) -> "Job":
         """Perform a full or partial Oracle database restore using the latest backup or a backup copy.
 
         This method initiates a restore operation for an Oracle database, allowing for both full and partial restores.
@@ -1174,14 +1162,14 @@ class OracleInstance(DatabaseInstance):
             "recover": True,
             "recoverFrom": 3,
             "restoreData": True,
-            "restoreFrom": 3
+            "restoreFrom": 3,
         }
         if oracle_options is None:
             oracle_options = {}
         options.update(oracle_options)
         oracle_options = options.copy()
 
-        if tag and tag.lower() == 'snap':
+        if tag and tag.lower() == "snap":
             opt = {
                 "useSnapRestore": True,
                 "cleanupAuxiliary": True,
@@ -1192,15 +1180,16 @@ class OracleInstance(DatabaseInstance):
 
         try:
             if destination_client is None or destination_instance is None:
-                destination_client = self._properties['instance']['clientName']
-                destination_instance = self._properties['instance']['instanceName']
+                destination_client = self._properties["instance"]["clientName"]
+                destination_instance = self._properties["instance"]["instanceName"]
             destination = {
                 "destination_client": destination_client,
-                "destination_instance": destination_instance
+                "destination_instance": destination_instance,
             }
             if tag and tag.lower() == "rac":
                 stream_allocation = self._get_rac_stream_allocation(
-                    destination_client, destination_instance, streams)
+                    destination_client, destination_instance, streams
+                )
                 oracle_options.update(stream_allocation)
                 destination["app_name"] = "Oracle RAC"
             self._restore_destination_json(destination)
@@ -1209,25 +1198,31 @@ class OracleInstance(DatabaseInstance):
         else:
             # subclient = self.subclients.get(subclient_name)
             if destination_client and destination_instance:
-                options = self._get_oracle_restore_json(destination_client=destination_client,
-                                                        destination=self._destination_restore_json,
-                                                        instance_name=self.instance_name,
-                                                        tablespaces=self.tablespaces,
-                                                        files=files,
-                                                        browse_option=browse_option,
-                                                        common_options=common_options,
-                                                        oracle_options=oracle_options)
+                options = self._get_oracle_restore_json(
+                    destination_client=destination_client,
+                    destination=self._destination_restore_json,
+                    instance_name=self.instance_name,
+                    tablespaces=self.tablespaces,
+                    files=files,
+                    browse_option=browse_option,
+                    common_options=common_options,
+                    oracle_options=oracle_options,
+                )
             else:
-                options = self._get_oracle_restore_json(destination_client=destination_client,
-                                                        instance_name=self.instance_name,
-                                                        tablespaces=self.tablespaces,
-                                                        files=files,
-                                                        browse_option=browse_option,
-                                                        common_options=common_options,
-                                                        oracle_options=oracle_options)
+                options = self._get_oracle_restore_json(
+                    destination_client=destination_client,
+                    instance_name=self.instance_name,
+                    tablespaces=self.tablespaces,
+                    files=files,
+                    browse_option=browse_option,
+                    common_options=common_options,
+                    oracle_options=oracle_options,
+                )
             return self._process_restore_response(options)
 
-    def _get_rac_stream_allocation(self, destination_client: str, destination_instance: str, streams: int) -> dict:
+    def _get_rac_stream_allocation(
+        self, destination_client: str, destination_instance: str, streams: int
+    ) -> dict:
         """Populate the RAC stream allocation settings for Oracle restore options.
 
         This method sets the number of streams to be used for restoring data to a specific
@@ -1250,10 +1245,14 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         destination_client_obj = self._commcell_object.clients.get(destination_client)
-        destination_instance_obj = destination_client_obj.agents.get("Oracle RAC").instances.get(destination_instance)
+        destination_instance_obj = destination_client_obj.agents.get("Oracle RAC").instances.get(
+            destination_instance
+        )
         rac_stream_allocation = {"racDataStreamAllcation": []}
-        for node in destination_instance_obj.properties['oracleRACInstance']['racDBInstance']:
-            rac_stream_allocation["racDataStreamAllcation"].append(f"{node['racDbInstanceId']} {streams}")
+        for node in destination_instance_obj.properties["oracleRACInstance"]["racDBInstance"]:
+            rac_stream_allocation["racDataStreamAllcation"].append(
+                f"{node['racDbInstanceId']} {streams}"
+            )
         return rac_stream_allocation
 
     def _restore_db_dump_option_json(self, value: dict) -> None:
@@ -1265,7 +1264,7 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._db_dump_restore_json = {
             "importToDatabase": True,
@@ -1275,11 +1274,17 @@ class OracleInstance(DatabaseInstance):
             "enabled": True,
             "connectDetails": {
                 "password": b64encode(value.get("db_password", "").encode()).decode(),
-                "domainName": (self._properties.get("oracleInstance", {}).
-                               get("sqlConnect", {}).get("domainName", "")),
-                "userName": (self._properties.get("oracleInstance", {}).
-                             get("sqlConnect", {}).get("userName", ""))
-            }
+                "domainName": (
+                    self._properties.get("oracleInstance", {})
+                    .get("sqlConnect", {})
+                    .get("domainName", "")
+                ),
+                "userName": (
+                    self._properties.get("oracleInstance", {})
+                    .get("sqlConnect", {})
+                    .get("userName", "")
+                ),
+            },
         }
 
     def _restore_oracle_option_json(self, value: dict) -> None:
@@ -1291,7 +1296,7 @@ class OracleInstance(DatabaseInstance):
         #ai-gen-doc
         """
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._oracle_restore_json = {
             "validate": False,
@@ -1310,14 +1315,10 @@ class OracleInstance(DatabaseInstance):
             "archiveLog": False,
             "restoreData": True,
             "restoreFrom": 0,
-            "timeZone": {
-                "TimeZoneName": "(UTC) Coordinated Universal Time"
-            },
+            "timeZone": {"TimeZoneName": "(UTC) Coordinated Universal Time"},
             "recoverTime": {},
-            "sourcePaths": [
-                "//**"
-            ],
-            "restoreTime": {}
+            "sourcePaths": ["//**"],
+            "restoreTime": {},
         }
 
         if value.get("restore_oracle_options_type") == "restore_archivelogs_norecover":
@@ -1361,7 +1362,7 @@ class OracleInstance(DatabaseInstance):
                 "logTarget": "",
                 "restoreData": False,
                 "restoreFrom": 0,
-                "duplicateToSkipReadOnly": False
+                "duplicateToSkipReadOnly": False,
             }
             if value.get("start_lsn", None):
                 self._oracle_restore_json["useStartLSN"] = True
@@ -1387,7 +1388,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        rest_json = super(OracleInstance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
@@ -1399,10 +1400,12 @@ class OracleInstance(DatabaseInstance):
 
         self._restore_db_dump_option_json(restore_option)
         self._restore_oracle_option_json(restore_option)
-        rest_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["dbDumpOptions"] = self._db_dump_restore_json
-        rest_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["oracleOpt"] = self._oracle_restore_json
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["dbDumpOptions"] = (
+            self._db_dump_restore_json
+        )
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = (
+            self._oracle_restore_json
+        )
 
         return rest_json
 
@@ -1416,8 +1419,8 @@ class OracleInstance(DatabaseInstance):
         restore_oracle_options_type: str = None,
         start_lsn: str = None,
         end_lsn: str = None,
-        log_dest: str = None
-    ) -> 'Job':
+        log_dest: str = None,
+    ) -> "Job":
         """Restore Oracle logical dump data or log files to their original location.
 
         This method restores the specified Oracle database or log files, as provided in the `path` list,
@@ -1459,11 +1462,10 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        if not (isinstance(path, list) and
-                isinstance(db_password, str)):
-            raise SDKException('Instance', '101')
+        if not (isinstance(path, list) and isinstance(db_password, str)):
+            raise SDKException("Instance", "101")
         if not path:
-            raise SDKException('Instance', '103')
+            raise SDKException("Instance", "103")
 
         request_json = self._restore_json(
             db_password=db_password,
@@ -1472,7 +1474,9 @@ class OracleInstance(DatabaseInstance):
             destination_instance=dest_instance_name,
             destination_path=dest_path,
             restore_oracle_options_type=restore_oracle_options_type,
-            start_lsn=start_lsn, end_lsn=end_lsn,
-            log_dest=log_dest)
+            start_lsn=start_lsn,
+            end_lsn=end_lsn,
+            log_dest=log_dest,
+        )
 
         return self._process_restore_response(request_json)

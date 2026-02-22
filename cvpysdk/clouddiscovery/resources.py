@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -57,13 +55,26 @@ Classes:
         Properties:
             resources               - Get the list of all discovered resources.
 """
-import json
-from typing import Dict, List, Optional, Union, TYPE_CHECKING
-from datetime import datetime
 
-from .constants import AssetProvider, WorkloadType, AssetType, AssetCVProtectionStatus, FACET_JSON, RESPONSE_FORMAT, \
-    START, ROWS, QUERY, AssetCVProtectedBY, ITEM_STATE, ASSET_SUB_TYPE
+import json
+from datetime import datetime
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
+
 from ..exception import SDKException
+from .constants import (
+    ASSET_SUB_TYPE,
+    FACET_JSON,
+    ITEM_STATE,
+    QUERY,
+    RESPONSE_FORMAT,
+    ROWS,
+    START,
+    AssetCVProtectedBY,
+    AssetCVProtectionStatus,
+    AssetProvider,
+    AssetType,
+    WorkloadType,
+)
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
@@ -71,7 +82,7 @@ if TYPE_CHECKING:
 
 class DiscoveredResource:
     """Represents a single discovered cloud resource.
-    
+
     This class encapsulates all the properties and metadata of a discovered
     cloud resource, including its identification, configuration, and protection status.
     """
@@ -96,7 +107,7 @@ class DiscoveredResource:
         protected_by: Optional[AssetCVProtectedBY] = None,
     ) -> None:
         """Initialize a DiscoveredResource instance.
-        
+
         Args:
             name: The resource name
             asset_provider: The cloud provider type
@@ -145,11 +156,10 @@ class DiscoveredResource:
         self._recovery_points = recovery_points
         self._protected_by = protected_by
 
-
     @property
     def name(self) -> str:
         """Get the resource name.
-        
+
         Returns:
             The resource name
         """
@@ -158,7 +168,7 @@ class DiscoveredResource:
     @property
     def asset_provider(self) -> AssetProvider:
         """Get the asset provider.
-        
+
         Returns:
             The AssetProvider enum value
         """
@@ -167,7 +177,7 @@ class DiscoveredResource:
     @property
     def workload_type(self) -> WorkloadType:
         """Get the workload type (virtual machine, FileStorage, Database).
-        
+
         Returns:
             The WorkloadType enum value
         """
@@ -176,7 +186,7 @@ class DiscoveredResource:
     @property
     def asset_type(self) -> AssetType:
         """Get the specific asset type (EC2, S3, EKS, DocumentDB, etc.).
-        
+
         Returns:
             The AssetType enum value
         """
@@ -185,7 +195,7 @@ class DiscoveredResource:
     @property
     def region(self) -> Optional[str]:
         """Get the cloud region.
-        
+
         Returns:
             The region name or None
         """
@@ -194,7 +204,7 @@ class DiscoveredResource:
     @property
     def resource_group(self) -> Optional[str]:
         """Get the resource group.
-        
+
         Returns:
             The resource group name or None
         """
@@ -203,7 +213,7 @@ class DiscoveredResource:
     @property
     def size(self) -> Optional[str]:
         """Get the resource size specification.
-        
+
         Returns:
             The size specification or None
         """
@@ -212,7 +222,7 @@ class DiscoveredResource:
     @property
     def protection_status(self) -> AssetCVProtectionStatus:
         """Get the Commvault protection status.
-        
+
         Returns:
             The AssetCVProtectionStatus enum value
         """
@@ -221,7 +231,7 @@ class DiscoveredResource:
     @property
     def protection_plan(self) -> Optional[str]:
         """Get the protection plan name.
-        
+
         Returns:
             The protection plan name or None
         """
@@ -230,7 +240,7 @@ class DiscoveredResource:
     @property
     def connection(self) -> Optional[str]:
         """Get the connection identifier.
-        
+
         Returns:
             The connection ID or None
         """
@@ -239,7 +249,7 @@ class DiscoveredResource:
     @property
     def connection_type(self) -> Optional[str]:
         """Get the connection type.
-        
+
         Returns:
             The connection type or None
         """
@@ -248,7 +258,7 @@ class DiscoveredResource:
     @property
     def last_discovered_time(self) -> Optional[datetime]:
         """Get the last discovery timestamp.
-        
+
         Returns:
             The last discovered time or None
         """
@@ -257,7 +267,7 @@ class DiscoveredResource:
     @property
     def tags(self) -> Dict[str, str]:
         """Get the resource tags.
-        
+
         Returns:
             Dictionary of tag key-value pairs
         """
@@ -266,7 +276,7 @@ class DiscoveredResource:
     @property
     def last_backup(self) -> Optional[datetime]:
         """Get the last backup timestamp.
-        
+
         Returns:
             The last backup time or None
         """
@@ -275,7 +285,7 @@ class DiscoveredResource:
     @property
     def recovery_points(self) -> Optional[int]:
         """Get the number of recovery points.
-        
+
         Returns:
             The number of recovery points or None
         """
@@ -293,12 +303,12 @@ class DiscoveredResource:
 
 class DiscoveredResources:
     """Manager class for handling collections of discovered cloud resources.
-    
+
     This class provides methods to manage and query collections of DiscoveredResource
     objects, including resource lookup, filtering, and protection plan assignment.
     """
 
-    def __init__(self, commcell: 'Commcell', asset_provider: AssetProvider) -> None:
+    def __init__(self, commcell: "Commcell", asset_provider: AssetProvider) -> None:
         """
         Initialize the DiscoveredResources manager.
 
@@ -321,9 +331,9 @@ class DiscoveredResources:
         self._update_response_ = self._commcell._update_response_
         self._asset_provider = asset_provider
 
-    def has_resource(self, resource_name: str,
-                     workload_type: WorkloadType,
-                     asset_type: AssetType) -> bool:
+    def has_resource(
+        self, resource_name: str, workload_type: WorkloadType, asset_type: AssetType
+    ) -> bool:
         """Check if a resource exists in the collection.
 
         Args:
@@ -344,10 +354,13 @@ class DiscoveredResources:
         """
         raise NotImplementedError("has_resource method is not yet implemented")
 
-    def get_resource(self, resource_name: str,
-                     asset_provider: AssetProvider,
-                     workload_type: WorkloadType,
-                     asset_type: AssetType) -> DiscoveredResource:
+    def get_resource(
+        self,
+        resource_name: str,
+        asset_provider: AssetProvider,
+        workload_type: WorkloadType,
+        asset_type: AssetType,
+    ) -> DiscoveredResource:
         """returns a resource object for the given resource name.
 
         Args:
@@ -369,11 +382,11 @@ class DiscoveredResources:
         raise NotImplementedError("get_resource method is not yet implemented")
 
     def filter_resources(
-        self, 
+        self,
         asset_provider: Optional[AssetProvider] = None,
         workload_type: Optional[WorkloadType] = None,
         asset_type: Optional[AssetType] = None,
-        protection_status: Optional[AssetCVProtectionStatus] = None
+        protection_status: Optional[AssetCVProtectionStatus] = None,
     ) -> List[DiscoveredResource]:
         """Get discovered resources with optional filtering.
 
@@ -412,10 +425,9 @@ class DiscoveredResources:
 
         return filtered_resources
 
-    def assign_plan(self,
-                    resources: Union[DiscoveredResource, List[DiscoveredResource]],
-                    plan_name: str
-                    ) -> bool:
+    def assign_plan(
+        self, resources: Union[DiscoveredResource, List[DiscoveredResource]], plan_name: str
+    ) -> bool:
         """Assign a protection plan to one or more resources.
 
         Args:
@@ -451,13 +463,13 @@ class DiscoveredResources:
 
     def _get_resources(self) -> List[DiscoveredResource]:
         """Internal method to load resources from the backend.
-        
+
         This is a private method that handles the actual data retrieval
         from the underlying API.
 
         Returns:
             List of DiscoveredResource objects
-        
+
         Raises:
             SDKException:
                         Response was not success
@@ -465,7 +477,7 @@ class DiscoveredResources:
         Example:
             >>> resources = self._get_resources()
         """
-        url = self._services['GET_RESOURCES']
+        url = self._services["GET_RESOURCES"]
         resources = []
         start = START
         rows = ROWS
@@ -480,40 +492,50 @@ class DiscoveredResources:
                     {"key": "fq", "value": ITEM_STATE},
                     {"key": "fq", "value": ASSET_SUB_TYPE},
                     {"key": "fq", "value": f"Provider:{self._asset_provider.value}"},
-                    {"key": "json.facet", "value": json.dumps(FACET_JSON)}
+                    {"key": "json.facet", "value": json.dumps(FACET_JSON)},
                 ]
             }
 
-            flag, response = self._cvpysdk_object.make_request('POST', url, payload)
+            flag, response = self._cvpysdk_object.make_request("POST", url, payload)
             if flag:
                 if response.json():
-                    if not response.json().get('errorMessage', None):
-                        count = response.json().get('facets', {}).get('count', 0)
-                        resources_data = response.json()['response'].get('docs', [])
-                        resources.extend([
-                            DiscoveredResource(
-                                name=resource.get('AssetName'),
-                                asset_provider=self._asset_provider,
-                                workload_type=WorkloadType(resource.get('WorkloadType')),
-                                asset_type=AssetType(resource.get('AssetType')),
-                                region=resource.get('AssetRegion'),
-                                resource_group=resource.get('AssetGroup'),
-                                size=resource.get('AssetSize'),
-                                protection_status=AssetCVProtectionStatus(resource.get('ProtectionStatus')),
-                                protection_plan=resource.get('ProtectionPlan'),
-                                connection=resource.get('Connection'),
-                                connection_type=resource.get('ConnectionType'),
-                                last_discovered_time=datetime.fromisoformat(
-                                    resource.get('LastSyncedAt')) if resource.get('LastSyncedAt') else None,
-                                tags=resource.get('Tags', {}),
-                                last_backup=datetime.fromisoformat(resource.get('LastBackup')) if resource.get(
-                                    'LastBackup') else None,
-                                recovery_points=resource.get('RecoveryPoints'),
-                                protected_by=AssetCVProtectedBY(resource.get('ProtectedBy')[0]) if resource.get(
-                                    'ProtectionStatus') == 4 and resource.get('ProtectedBy') else None
-                            )
-                            for resource in resources_data
-                        ])
+                    if not response.json().get("errorMessage", None):
+                        count = response.json().get("facets", {}).get("count", 0)
+                        resources_data = response.json()["response"].get("docs", [])
+                        resources.extend(
+                            [
+                                DiscoveredResource(
+                                    name=resource.get("AssetName"),
+                                    asset_provider=self._asset_provider,
+                                    workload_type=WorkloadType(resource.get("WorkloadType")),
+                                    asset_type=AssetType(resource.get("AssetType")),
+                                    region=resource.get("AssetRegion"),
+                                    resource_group=resource.get("AssetGroup"),
+                                    size=resource.get("AssetSize"),
+                                    protection_status=AssetCVProtectionStatus(
+                                        resource.get("ProtectionStatus")
+                                    ),
+                                    protection_plan=resource.get("ProtectionPlan"),
+                                    connection=resource.get("Connection"),
+                                    connection_type=resource.get("ConnectionType"),
+                                    last_discovered_time=datetime.fromisoformat(
+                                        resource.get("LastSyncedAt")
+                                    )
+                                    if resource.get("LastSyncedAt")
+                                    else None,
+                                    tags=resource.get("Tags", {}),
+                                    last_backup=datetime.fromisoformat(resource.get("LastBackup"))
+                                    if resource.get("LastBackup")
+                                    else None,
+                                    recovery_points=resource.get("RecoveryPoints"),
+                                    protected_by=AssetCVProtectedBY(resource.get("ProtectedBy")[0])
+                                    if resource.get("ProtectionStatus") == 4
+                                    and resource.get("ProtectedBy")
+                                    else None,
+                                )
+                                for resource in resources_data
+                            ]
+                        )
                         if len(resources_data) < rows or start + rows >= count:
                             break
                         start += rows
@@ -521,9 +543,9 @@ class DiscoveredResources:
                     else:
                         raise SDKException("DISCOVERY", "103")
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
 
         return resources
 
@@ -545,7 +567,7 @@ class DiscoveredResources:
 
     def __len__(self) -> int:
         """Get the number of resources in the collection.
-        
+
         Returns:
             The number of resources
         """
@@ -556,7 +578,7 @@ class DiscoveredResources:
     @property
     def all_resources(self) -> List[DiscoveredResource]:
         """Get the list of all discovered resources.
-        
+
         Returns:
             List of DiscoveredResource objects
 

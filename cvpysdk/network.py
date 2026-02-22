@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -96,14 +94,12 @@ Network:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from typing import Any, Dict
 
 from .exception import SDKException
 
-class Network(object):
+
+class Network:
     """
     Class for performing network related operations on a client or client group.
 
@@ -170,29 +166,22 @@ class Network(object):
         self._keep_alive_seconds = 300
         self.enable_network_settings = None
 
-        self._incoming_connection_type = {
-            0: 'RESTRICTED',
-            1: 'BLOCKED'
-        }
+        self._incoming_connection_type = {0: "RESTRICTED", 1: "BLOCKED"}
 
-        self._firewall_outgoing_route_type = {
-            0: 'DIRECT',
-            1: 'VIA_GATEWAY',
-            2: 'VIA_PROXY'
-        }
+        self._firewall_outgoing_route_type = {0: "DIRECT", 1: "VIA_GATEWAY", 2: "VIA_PROXY"}
 
         self._firewall_outgoing_connection_protocol = {
-            0: 'HTTP',
-            1: 'HTTPS',
-            2: 'HTTPS_AuthOnly',
-            3: 'RAW_PROTOCOL'
+            0: "HTTP",
+            1: "HTTPS",
+            2: "HTTPS_AuthOnly",
+            3: "RAW_PROTOCOL",
         }
 
         self._tppm_type = {
-            2: 'WEB_SERVER_FOR_IIS_SERVER',
-            3: 'COMMSERVE',
-            5: 'REPORTS',
-            6: 'CUSTOM_REPORT_ENGINE'
+            2: "WEB_SERVER_FOR_IIS_SERVER",
+            3: "COMMSERVE",
+            5: "REPORTS",
+            6: "CUSTOM_REPORT_ENGINE",
         }
 
         self._get_network_properties()
@@ -215,58 +204,66 @@ class Network(object):
         #ai-gen-doc
         """
         if self.flag == "CLIENT":
-            network_prop = self._client_object._properties['clientProps']
+            network_prop = self._client_object._properties["clientProps"]
 
         elif self.flag == "CLIENTGROUP":
             network_prop = self._clientgroup_object._properties
 
-        if 'firewallConfiguration' in network_prop:
-            self._config_network_settings = (network_prop['firewallConfiguration'][
-                'configureFirewallSettings'])
+        if "firewallConfiguration" in network_prop:
+            self._config_network_settings = network_prop["firewallConfiguration"][
+                "configureFirewallSettings"
+            ]
 
-            self._is_trivial_config = network_prop['firewallConfiguration']['isTrivialConfig']
+            self._is_trivial_config = network_prop["firewallConfiguration"]["isTrivialConfig"]
 
-            if 'portRange' in network_prop['firewallConfiguration']:
-                self._port_range = network_prop['firewallConfiguration']['portRange']
+            if "portRange" in network_prop["firewallConfiguration"]:
+                self._port_range = network_prop["firewallConfiguration"]["portRange"]
 
-            if 'proxyEntities' in network_prop['firewallConfiguration']:
-                self._proxy_entities = network_prop['firewallConfiguration']['proxyEntities']
+            if "proxyEntities" in network_prop["firewallConfiguration"]:
+                self._proxy_entities = network_prop["firewallConfiguration"]["proxyEntities"]
 
-            if 'firewallOutGoingRoutes' in network_prop['firewallConfiguration']:
-                self._network_outgoing_routes = (network_prop['firewallConfiguration'][
-                    'firewallOutGoingRoutes'])
+            if "firewallOutGoingRoutes" in network_prop["firewallConfiguration"]:
+                self._network_outgoing_routes = network_prop["firewallConfiguration"][
+                    "firewallOutGoingRoutes"
+                ]
 
-            if 'restrictionTo' in network_prop['firewallConfiguration']:
-                self._restriction_to = network_prop['firewallConfiguration']['restrictionTo']
+            if "restrictionTo" in network_prop["firewallConfiguration"]:
+                self._restriction_to = network_prop["firewallConfiguration"]["restrictionTo"]
 
-            if 'firewallOptions' in network_prop['firewallConfiguration']:
-                self._network_options = network_prop['firewallConfiguration']['firewallOptions']
+            if "firewallOptions" in network_prop["firewallConfiguration"]:
+                self._network_options = network_prop["firewallConfiguration"]["firewallOptions"]
 
-            if 'isRoamingClient' in network_prop['firewallConfiguration']:
-                self._is_roaming_client = (network_prop['firewallConfiguration'][
-                    'firewallOptions']['isRoamingClient'])
+            if "isRoamingClient" in network_prop["firewallConfiguration"]:
+                self._is_roaming_client = network_prop["firewallConfiguration"]["firewallOptions"][
+                    "isRoamingClient"
+                ]
 
-            self._tunnel_connection_port = network_prop['firewallConfiguration']['firewallOptions'][
-                'tunnelconnectionPort']
+            self._tunnel_connection_port = network_prop["firewallConfiguration"][
+                "firewallOptions"
+            ]["tunnelconnectionPort"]
 
-            self._force_ssl = network_prop['firewallConfiguration']['firewallOptions']['foreceSSL']
+            self._force_ssl = network_prop["firewallConfiguration"]["firewallOptions"]["foreceSSL"]
 
-            self._tunnel_init_seconds = (network_prop['firewallConfiguration'][
-                'firewallOptions']['tunnelInitSeconds'])
+            self._tunnel_init_seconds = network_prop["firewallConfiguration"]["firewallOptions"][
+                "tunnelInitSeconds"
+            ]
 
-            self._lockdown = network_prop['firewallConfiguration']['firewallOptions']['lockdown']
+            self._lockdown = network_prop["firewallConfiguration"]["firewallOptions"]["lockdown"]
 
-            self._bind_open_ports_only = (network_prop['firewallConfiguration'][
-                'firewallOptions']['bindOpenPortsOnly'])
+            self._bind_open_ports_only = network_prop["firewallConfiguration"]["firewallOptions"][
+                "bindOpenPortsOnly"
+            ]
 
-            self._is_dmz = network_prop['firewallConfiguration']['firewallOptions']['isDMZ']
+            self._is_dmz = network_prop["firewallConfiguration"]["firewallOptions"]["isDMZ"]
 
-            self._keep_alive_seconds = (network_prop['firewallConfiguration'][
-                'firewallOptions']['keepAliveSeconds'])
+            self._keep_alive_seconds = network_prop["firewallConfiguration"]["firewallOptions"][
+                "keepAliveSeconds"
+            ]
 
-            if 'tppm' in self._network_options:
-                self._tppm_settings = (network_prop['firewallConfiguration'][
-                    'firewallOptions']['tppm'])
+            if "tppm" in self._network_options:
+                self._tppm_settings = network_prop["firewallConfiguration"]["firewallOptions"][
+                    "tppm"
+                ]
 
     @property
     def configure_network_settings(self) -> bool:
@@ -613,9 +610,10 @@ class Network(object):
         """
 
         for incoming_connection in self._restriction_to:
-            if incoming_connection['state'] in self._incoming_connection_type.keys():
-                incoming_connection['state'] = (self._incoming_connection_type[
-                    incoming_connection['state']])
+            if incoming_connection["state"] in self._incoming_connection_type.keys():
+                incoming_connection["state"] = self._incoming_connection_type[
+                    incoming_connection["state"]
+                ]
 
         return self._restriction_to
 
@@ -647,30 +645,24 @@ class Network(object):
         #ai-gen-doc
         """
         try:
-
             for incoming_connection in incoming_connections:
-
-                if incoming_connection['isClient']:
+                if incoming_connection["isClient"]:
                     restriction_to_dict = {
-                        "state": incoming_connection['state'],
-                        "entity": {
-                            "clientName": incoming_connection['entity']
-                        }
+                        "state": incoming_connection["state"],
+                        "entity": {"clientName": incoming_connection["entity"]},
                     }
 
                 else:
                     restriction_to_dict = {
-                        "state": incoming_connection['state'],
-                        "entity": {
-                            "clientGroupName": incoming_connection['entity']
-                        }
+                        "state": incoming_connection["state"],
+                        "entity": {"clientGroupName": incoming_connection["entity"]},
                     }
 
                 self._restriction_to.append(restriction_to_dict)
             self.configure_network_settings = True
 
         except KeyError as err:
-            raise SDKException('Client', '102', '{} not given in content'.format(err))
+            raise SDKException("Client", "102", f"{err} not given in content")
 
     @property
     def additional_ports(self) -> list:
@@ -722,17 +714,14 @@ class Network(object):
         try:
             self._tunnel_connection_port = tunnel_port
             for port in ports:
-                additional_port_dict = {
-                    "startPort": port['startPort'],
-                    "endPort": port['endPort']
-                }
+                additional_port_dict = {"startPort": port["startPort"], "endPort": port["endPort"]}
 
                 self._port_range.append(additional_port_dict)
 
             self.configure_network_settings = True
 
         except KeyError as err:
-            raise SDKException('Client', '102', '{} not given in content'.format(err))
+            raise SDKException("Client", "102", f"{err} not given in content")
 
     @property
     def outgoing_routes(self) -> list:
@@ -750,15 +739,24 @@ class Network(object):
         """
 
         for outgoing_route in self._network_outgoing_routes:
-            if (outgoing_route['fireWallOutGoingRouteOptions']['connectionProtocol']
-                    in self._firewall_outgoing_connection_protocol.keys()):
-                (outgoing_route['fireWallOutGoingRouteOptions'][
-                    'connectionProtocol']) = (self._firewall_outgoing_connection_protocol[
-                    outgoing_route['fireWallOutGoingRouteOptions']['connectionProtocol']])
-            if (outgoing_route['fireWallOutGoingRouteOptions']['routeType']
-                    in self._firewall_outgoing_route_type.keys()):
-                outgoing_route['fireWallOutGoingRouteOptions']['routeType'] = (self._firewall_outgoing_route_type[
-                    outgoing_route['fireWallOutGoingRouteOptions']['routeType']])
+            if (
+                outgoing_route["fireWallOutGoingRouteOptions"]["connectionProtocol"]
+                in self._firewall_outgoing_connection_protocol.keys()
+            ):
+                (
+                    outgoing_route["fireWallOutGoingRouteOptions"]["connectionProtocol"]
+                ) = self._firewall_outgoing_connection_protocol[
+                    outgoing_route["fireWallOutGoingRouteOptions"]["connectionProtocol"]
+                ]
+            if (
+                outgoing_route["fireWallOutGoingRouteOptions"]["routeType"]
+                in self._firewall_outgoing_route_type.keys()
+            ):
+                outgoing_route["fireWallOutGoingRouteOptions"]["routeType"] = (
+                    self._firewall_outgoing_route_type[
+                        outgoing_route["fireWallOutGoingRouteOptions"]["routeType"]
+                    ]
+                )
 
         return self._network_outgoing_routes
 
@@ -837,51 +835,43 @@ class Network(object):
         """
 
         try:
-
             for outgoing_route in outgoing_routes:
-                if outgoing_route['isClient']:
-                    remote_entity_dict = {
-                        "clientName": outgoing_route['remoteEntity']
-
-                    }
+                if outgoing_route["isClient"]:
+                    remote_entity_dict = {"clientName": outgoing_route["remoteEntity"]}
 
                 else:
-                    remote_entity_dict = {
+                    remote_entity_dict = {"clientGroupName": outgoing_route["remoteEntity"]}
 
-                        "clientGroupName": outgoing_route['remoteEntity']
-                    }
-
-                if outgoing_route['routeType'] == self._firewall_outgoing_route_type[0]:
+                if outgoing_route["routeType"] == self._firewall_outgoing_route_type[0]:
                     gatewayport = 0
                     gatewayhostname = ""
                     remote_proxy = {}
-                    nstreams = outgoing_route['streams']
-                    force_all_data_traffic = outgoing_route['forceAllDataTraffic']
-                    connection_protocol = outgoing_route.get('connectionProtocol', 2)
+                    nstreams = outgoing_route["streams"]
+                    force_all_data_traffic = outgoing_route["forceAllDataTraffic"]
+                    connection_protocol = outgoing_route.get("connectionProtocol", 2)
 
-                elif outgoing_route['routeType'] == self._firewall_outgoing_route_type[1]:
-                    gatewayport = outgoing_route['gatewayPort']
-                    gatewayhostname = outgoing_route['gatewayHost']
+                elif outgoing_route["routeType"] == self._firewall_outgoing_route_type[1]:
+                    gatewayport = outgoing_route["gatewayPort"]
+                    gatewayhostname = outgoing_route["gatewayHost"]
                     remote_proxy = {}
-                    nstreams = outgoing_route['streams']
-                    force_all_data_traffic = outgoing_route['forceAllDataTraffic']
-                    connection_protocol = outgoing_route.get('connectionProtocol', 2)
+                    nstreams = outgoing_route["streams"]
+                    force_all_data_traffic = outgoing_route["forceAllDataTraffic"]
+                    connection_protocol = outgoing_route.get("connectionProtocol", 2)
 
-                elif outgoing_route['routeType'] == self._firewall_outgoing_route_type[2]:
+                elif outgoing_route["routeType"] == self._firewall_outgoing_route_type[2]:
                     gatewayport = 0
                     gatewayhostname = ""
                     nstreams = 1
                     force_all_data_traffic = False
                     connection_protocol = 2
                     remote_proxy = {
-                        "clientName": outgoing_route['remoteProxy'],
-
+                        "clientName": outgoing_route["remoteProxy"],
                         "clientGroupName": "",
-                        "_type_": 3
+                        "_type_": 3,
                     }
 
                 else:
-                    raise SDKException('Client', '101')
+                    raise SDKException("Client", "101")
 
                 outgoing_routes_dict = {
                     "fireWallOutGoingRouteOptions": {
@@ -890,17 +880,17 @@ class Network(object):
                         "gatewayTunnelPort": gatewayport,
                         "forceAllBackupRestoreDataTraffic": force_all_data_traffic,
                         "gatewayHostname": gatewayhostname,
-                        "routeType": outgoing_route['routeType'],
-                        "remoteProxy": remote_proxy
+                        "routeType": outgoing_route["routeType"],
+                        "remoteProxy": remote_proxy,
                     },
-                    "remoteEntity": remote_entity_dict
+                    "remoteEntity": remote_entity_dict,
                 }
 
                 self._network_outgoing_routes.append(outgoing_routes_dict)
             self.configure_network_settings = True
 
         except KeyError as err:
-            raise SDKException('Client', '102', '{} not given in content'.format(err))
+            raise SDKException("Client", "102", f"{err} not given in content")
 
     @property
     def tppm_settings(self) -> list:
@@ -918,8 +908,8 @@ class Network(object):
         """
 
         for tppm_setting in self._tppm_settings:
-            if tppm_setting['tppmType'] in self._tppm_type.keys():
-                tppm_setting['tppmType'] = self._tppm_type[tppm_setting['tppmType']]
+            if tppm_setting["tppmType"] in self._tppm_type.keys():
+                tppm_setting["tppmType"] = self._tppm_type[tppm_setting["tppmType"]]
 
         return self._tppm_settings
 
@@ -973,31 +963,29 @@ class Network(object):
         """
 
         try:
-
             if self.flag == "CLIENT":
                 for tppm_setting in tppm_settings:
-
-                    if tppm_setting['tppmType'] in self._tppm_type.values():
+                    if tppm_setting["tppmType"] in self._tppm_type.values():
                         tppm_dict = {
                             "enable": True,
-                            "tppmType": tppm_setting['tppmType'],
+                            "tppmType": tppm_setting["tppmType"],
                             "proxyInformation": {
-                                "portNumber": tppm_setting['portNumber'],
+                                "portNumber": tppm_setting["portNumber"],
                                 "proxyEntity": {
-                                    "clientName": tppm_setting['proxyEntity'],
-                                    "_type_": 3
-                                }
-                            }
+                                    "clientName": tppm_setting["proxyEntity"],
+                                    "_type_": 3,
+                                },
+                            },
                         }
                         self._tppm_settings.append(tppm_dict)
 
                     else:
-                        raise SDKException('Client', '101')
+                        raise SDKException("Client", "101")
 
             self.configure_network_settings = True
 
         except KeyError as err:
-            raise SDKException('Client', '102', '{} not given in content'.format(err))
+            raise SDKException("Client", "102", f"{err} not given in content")
 
     def _advanced_network_config(self) -> None:
         """Configure advanced network properties for the client or client group.
@@ -1020,66 +1008,64 @@ class Network(object):
         if self.flag == "CLIENT":
             if not self._config_network_settings:
                 update_networkconfig_dict = {
-                    "firewallConfiguration":
-                        {
-                            "configureFirewallSettings": self._config_network_settings
-                        }
+                    "firewallConfiguration": {
+                        "configureFirewallSettings": self._config_network_settings
+                    }
                 }
 
             else:
                 update_networkconfig_dict = {
-                    "firewallConfiguration":
-                        {
-                            "configureFirewallSettings": self._config_network_settings,
-                            "isTrivialConfig": False,
-                            "portRange": self._port_range,
-                            "proxyEntities": self._proxy_entities,
-                            "firewallOutGoingRoutes": self._network_outgoing_routes,
-                            "restrictionTo": self._restriction_to,
-                            "firewallOptions": {
-                                "isRoamingClient": self._is_roaming_client,
-                                "extendedProperties": "<App_FirewallExtendedProperties "
-                                                      "configureAutomatically=\"0\" "
-                                                      "defaultOutgoingProtocol=\"0\"/>",
-                                "tunnelconnectionPort": self._tunnel_connection_port,
-                                "foreceSSL": self._force_ssl,
-                                "tunnelInitSeconds": self._tunnel_init_seconds,
-                                "lockdown": self._lockdown,
-                                "bindOpenPortsOnly": self._bind_open_ports_only,
-                                "isDMZ": self._is_dmz,
-                                "keepAliveSeconds": self._keep_alive_seconds,
-                                "tppm": self._tppm_settings
-                            }
-                        }
+                    "firewallConfiguration": {
+                        "configureFirewallSettings": self._config_network_settings,
+                        "isTrivialConfig": False,
+                        "portRange": self._port_range,
+                        "proxyEntities": self._proxy_entities,
+                        "firewallOutGoingRoutes": self._network_outgoing_routes,
+                        "restrictionTo": self._restriction_to,
+                        "firewallOptions": {
+                            "isRoamingClient": self._is_roaming_client,
+                            "extendedProperties": "<App_FirewallExtendedProperties "
+                            'configureAutomatically="0" '
+                            'defaultOutgoingProtocol="0"/>',
+                            "tunnelconnectionPort": self._tunnel_connection_port,
+                            "foreceSSL": self._force_ssl,
+                            "tunnelInitSeconds": self._tunnel_init_seconds,
+                            "lockdown": self._lockdown,
+                            "bindOpenPortsOnly": self._bind_open_ports_only,
+                            "isDMZ": self._is_dmz,
+                            "keepAliveSeconds": self._keep_alive_seconds,
+                            "tppm": self._tppm_settings,
+                        },
+                    }
                 }
 
             request_json = self._client_object._update_client_props_json(update_networkconfig_dict)
-            flag, response = (self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._client_object._CLIENT, request_json))
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                "POST", self._client_object._CLIENT, request_json
+            )
 
             if flag:
-                if response.json() and 'response' in response.json():
-                    error_code = response.json()['response'][0]['errorCode']
+                if response.json() and "response" in response.json():
+                    error_code = response.json()["response"][0]["errorCode"]
 
                     if error_code == 0:
                         self._client_object._get_client_properties()
 
-                    elif 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    elif "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
                         self._get_network_properties()
-                        raise SDKException('Client', '102', error_message)
+                        raise SDKException("Client", "102", error_message)
 
                 else:
                     self._get_network_properties()
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
 
             else:
                 response_string = self._commcell_object._update_response_(response.text)
                 self._get_network_properties()
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
 
         elif self.flag == "CLIENTGROUP":
-
             if not self._config_network_settings:
                 request_json = {
                     "clientGroupOperationType": 2,
@@ -1089,9 +1075,8 @@ class Network(object):
                         },
                         "firewallConfiguration": {
                             "configureFirewallSettings": self._config_network_settings,
-
-                        }
-                    }
+                        },
+                    },
                 }
 
             else:
@@ -1100,7 +1085,7 @@ class Network(object):
                     "clientGroupDetail": {
                         "clientGroup": {
                             "clientGroupName": self._clientgroup_object._clientgroup_name
-                            },
+                        },
                         "firewallConfiguration": {
                             "configureFirewallSettings": self._config_network_settings,
                             "isTrivialConfig": False,
@@ -1111,8 +1096,8 @@ class Network(object):
                             "firewallOptions": {
                                 "isRoamingClient": self._is_roaming_client,
                                 "extendedProperties": "<App_FirewallExtendedProperties "
-                                                      "configureAutomatically=\"0\" "
-                                                      "defaultOutgoingProtocol=\"0\"/>",
+                                'configureAutomatically="0" '
+                                'defaultOutgoingProtocol="0"/>',
                                 "tunnelconnectionPort": self._tunnel_connection_port,
                                 "foreceSSL": self._force_ssl,
                                 "tunnelInitSeconds": self._tunnel_init_seconds,
@@ -1120,35 +1105,37 @@ class Network(object):
                                 "bindOpenPortsOnly": self._bind_open_ports_only,
                                 "isDMZ": self._is_dmz,
                                 "keepAliveSeconds": self._keep_alive_seconds,
-                            }
-                        }
-
-                    }}
+                            },
+                        },
+                    },
+                }
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', self._clientgroup_object._CLIENTGROUP, request_json)
+                "POST", self._clientgroup_object._CLIENTGROUP, request_json
+            )
 
             if flag:
                 if response.json():
-                    error_code = str(response.json()['errorCode'])
+                    error_code = str(response.json()["errorCode"])
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
                     else:
                         error_message = ""
 
-                    if error_code == '0':
+                    if error_code == "0":
                         self._clientgroup_object._get_clientgroup_properties()
 
                     else:
                         self._get_network_properties()
-                        raise SDKException('ClientGroup', '102',
-                                           'Client group properties were not updated')
+                        raise SDKException(
+                            "ClientGroup", "102", "Client group properties were not updated"
+                        )
 
                 else:
                     self._get_network_properties()
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
                 self._get_network_properties()
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)

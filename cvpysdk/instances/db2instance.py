@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -56,7 +54,6 @@ DB2Instance instance Attributes:
 
 """
 
-from __future__ import unicode_literals
 from base64 import b64encode
 
 from ..exception import SDKException
@@ -94,7 +91,7 @@ class DB2Instance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('version', '')
+        return self._properties.get("version", "")
 
     @property
     def home_directory(self) -> str:
@@ -105,7 +102,7 @@ class DB2Instance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('db2Instance', {}).get('homeDirectory', '')
+        return self._properties.get("db2Instance", {}).get("homeDirectory", "")
 
     @property
     def user_name(self) -> str:
@@ -116,7 +113,7 @@ class DB2Instance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('db2Instance', {}).get('userAccount', {}).get('userName', '')
+        return self._properties.get("db2Instance", {}).get("userAccount", {}).get("userName", "")
 
     @property
     def data_backup_storage_policy(self) -> str:
@@ -127,8 +124,12 @@ class DB2Instance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('db2Instance', {}).get(
-            'DB2StorageDevice', {}).get('dataBackupStoragePolicy', {}).get('storagePolicyName', '')
+        return (
+            self._properties.get("db2Instance", {})
+            .get("DB2StorageDevice", {})
+            .get("dataBackupStoragePolicy", {})
+            .get("storagePolicyName", "")
+        )
 
     @property
     def command_line_storage_policy(self) -> str:
@@ -139,8 +140,12 @@ class DB2Instance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('db2Instance', {}).get(
-            'DB2StorageDevice', {}).get('commandLineStoragePolicy', {}).get('storagePolicyName', "")
+        return (
+            self._properties.get("db2Instance", {})
+            .get("DB2StorageDevice", {})
+            .get("commandLineStoragePolicy", {})
+            .get("storagePolicyName", "")
+        )
 
     @property
     def log_backup_storage_policy(self) -> str:
@@ -151,8 +156,12 @@ class DB2Instance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('db2Instance', {}).get(
-            'DB2StorageDevice', {}).get('logBackupStoragePolicy', {}).get('storagePolicyName', "")
+        return (
+            self._properties.get("db2Instance", {})
+            .get("DB2StorageDevice", {})
+            .get("logBackupStoragePolicy", {})
+            .get("storagePolicyName", "")
+        )
 
     def _restore_destination_json(self, value: dict) -> None:
         """Set the DB2 destination options in the restore JSON configuration.
@@ -166,18 +175,16 @@ class DB2Instance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._destination_restore_json = {
             "destinationInstance": {
                 "clientName": value.get("dest_client_name", ""),
                 "instanceName": value.get("dest_instance_name", ""),
                 "backupsetName": value.get("dest_backupset_name", ""),
-                "appName": "DB2"
+                "appName": "DB2",
             },
-            "destClient": {
-                "clientName": value.get("dest_client_name", "")
-            }
+            "destClient": {"clientName": value.get("dest_client_name", "")},
         }
 
     def _db2_restore_options_json(self, value: dict) -> dict:
@@ -193,7 +200,7 @@ class DB2Instance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self.db2_options_restore_json = {
             "restoreType": value.get("restore_type", 0),
@@ -227,13 +234,17 @@ class DB2Instance(Instance):
             "useLatestImage": value.get("use_latest_image", True),
             "tableViewRestore": value.get("table_view_restore", False),
             "useLogTarget": value.get("use_log_target", False),
-            "cloneRecovery": value.get("clone_recovery", False)
+            "cloneRecovery": value.get("clone_recovery", False),
         }
 
         if value.get("archive_log_time", False):
             self.db2_options_restore_json["logTimeRange"] = dict()
-            self.db2_options_restore_json["logTimeRange"]["fromTimeValue"] = value.get("from_time_value", 0)
-            self.db2_options_restore_json["logTimeRange"]["toTimeValue"] = value.get("to_time_value", 0)
+            self.db2_options_restore_json["logTimeRange"]["fromTimeValue"] = value.get(
+                "from_time_value", 0
+            )
+            self.db2_options_restore_json["logTimeRange"]["toTimeValue"] = value.get(
+                "to_time_value", 0
+            )
 
         if value.get("archivelog_lsn", False):
             self.db2_options_restore_json["startLSNNum"] = value.get("start_lsn_num", 1)
@@ -256,7 +267,7 @@ class DB2Instance(Instance):
         #ai-gen-doc
         """
 
-        rest_json = super(DB2Instance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
@@ -272,12 +283,8 @@ class DB2Instance(Instance):
         return rest_json
 
     def restore_entire_database(
-        self,
-        dest_client_name: str,
-        dest_instance_name: str,
-        dest_database_name: str,
-        **kwargs
-    ) -> 'Job':
+        self, dest_client_name: str, dest_instance_name: str, dest_database_name: str, **kwargs
+    ) -> "Job":
         """Restore the entire DB2 database to a specified destination.
 
         This method initiates a restore operation for a DB2 database, allowing you to specify
@@ -324,7 +331,7 @@ class DB2Instance(Instance):
         copy_precedence = kwargs.get("copy_precedence", None)
         roll_forward = kwargs.get("roll_forward", True)
         restore_logs = kwargs.get("restore_logs", True)
-        restore_type = kwargs.get("restore_type", 'ENTIREDB')
+        restore_type = kwargs.get("restore_type", "ENTIREDB")
         start_lsn_num = kwargs.get("startLSNNum", 1)
         end_lsn_num = kwargs.get("endLSNNum", 1)
         end_lsn = kwargs.get("endLSN", False)
@@ -361,7 +368,7 @@ class DB2Instance(Instance):
             logtime_start=logtime_start,
             logtime_end=logtime_end,
             from_time_value=from_time_value,
-            to_time_value=to_time_value
+            to_time_value=to_time_value,
         )
 
         return self._process_restore_response(request_json)
@@ -372,8 +379,8 @@ class DB2Instance(Instance):
         dest_instance_name: str,
         dest_backupset_name: str,
         target_path: str,
-        **kwargs: object
-    ) -> 'Job':
+        **kwargs: object,
+    ) -> "Job":
         """Restore DB2 data or log files to a different client, instance, or backupset (out-of-place restore).
 
         This method initiates an out-of-place restore operation for DB2 data or log files, allowing you to restore
@@ -420,21 +427,23 @@ class DB2Instance(Instance):
         #ai-gen-doc
         """
 
-        copy_precedence = kwargs.get('copy_precedence', None)
-        from_time = kwargs.get('from_time', None)
-        to_time = kwargs.get('to_time', None)
-        redirect_enabled = kwargs.get('redirect_enabled', False)
-        redirect_tablespace_path = kwargs.get('redirect_tablespace_path', None)
-        redirect_storage_group_path = kwargs.get('redirect_storage_group_path', None)
-        rollforward = kwargs.get('rollforward', True)
-        restoreArchiveLogs = kwargs.get('restoreArchiveLogs', False)
-        restore_incremental = kwargs.get('restore_incremental', True)
-        restore_data = kwargs.get('restore_data', True)
+        copy_precedence = kwargs.get("copy_precedence", None)
+        from_time = kwargs.get("from_time", None)
+        to_time = kwargs.get("to_time", None)
+        redirect_enabled = kwargs.get("redirect_enabled", False)
+        redirect_tablespace_path = kwargs.get("redirect_tablespace_path", None)
+        redirect_storage_group_path = kwargs.get("redirect_storage_group_path", None)
+        rollforward = kwargs.get("rollforward", True)
+        restoreArchiveLogs = kwargs.get("restoreArchiveLogs", False)
+        restore_incremental = kwargs.get("restore_incremental", True)
+        restore_data = kwargs.get("restore_data", True)
 
         if redirect_enabled:
-            if not (isinstance(redirect_tablespace_path, dict) or isinstance(redirect_tablespace_path, str)) and \
-                    not isinstance(redirect_storage_group_path, dict):
-                raise SDKException('Instance', '101')
+            if not (
+                isinstance(redirect_tablespace_path, dict)
+                or isinstance(redirect_tablespace_path, str)
+            ) and not isinstance(redirect_storage_group_path, dict):
+                raise SDKException("Instance", "101")
 
         request_json = self._restore_json(
             dest_client_name=dest_client_name,
@@ -453,7 +462,8 @@ class DB2Instance(Instance):
             roll_forward=rollforward,
             restore_incremental=restore_incremental,
             storage_path=True,
-            restore_data=restore_data)
+            restore_data=restore_data,
+        )
 
         if redirect_storage_group_path:
             storagePaths = []
@@ -468,27 +478,34 @@ class DB2Instance(Instance):
                     storagePaths = [path[0]]
 
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                "redirectStorageGroups"] = True
+                "redirectStorageGroups"
+            ] = True
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                "storagePaths"] = storagePaths
+                "storagePaths"
+            ] = storagePaths
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                "storageGroupInfo"] = storageGroup
+                "storageGroupInfo"
+            ] = storageGroup
 
         if redirect_tablespace_path:
             if isinstance(redirect_tablespace_path, str):
                 request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                    "redirectAllPaths"] = redirect_tablespace_path
+                    "redirectAllPaths"
+                ] = redirect_tablespace_path
                 request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                    "redirectAllTableSpacesSelected"] = True
+                    "redirectAllTableSpacesSelected"
+                ] = True
                 request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                    "redirectAllTableSpacesValue"] = redirect_tablespace_path
+                    "redirectAllTableSpacesValue"
+                ] = redirect_tablespace_path
             else:
                 redirect_info = []
                 for tablespace, path in redirect_tablespace_path.items():
                     table_string = "%s\t1\t%s\t6\t25600\t1\t1" % (tablespace, path)
                     redirect_info.append(table_string)
                 request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-                    "redirectInfo"] = redirect_info
+                    "redirectInfo"
+                ] = redirect_info
 
         return self._process_restore_response(request_json)
 
@@ -505,13 +522,12 @@ class DB2Instance(Instance):
         tables_path: list,
         user_name: str,
         password: str,
-        **kwargs
-    ) -> 'Job':
-
+        **kwargs,
+    ) -> "Job":
         """Perform a DB2 table-level restore operation.
 
-        This method initiates a table-level restore for a DB2 database, allowing you to restore specific tables 
-        from an auxiliary backupset to a destination client and instance. Additional restore options can be 
+        This method initiates a table-level restore for a DB2 database, allowing you to restore specific tables
+        from an auxiliary backupset to a destination client and instance. Additional restore options can be
         specified using keyword arguments.
 
         Args:
@@ -523,7 +539,7 @@ class DB2Instance(Instance):
             dest_backupset_name: Name of the destination DB2 backupset.
             target_path: Path where the database will be restored.
             staging_path: Path to use for staging during the restore process.
-            tables_path: List of table paths to restore. 
+            tables_path: List of table paths to restore.
                 Example (Unix): ['/+tblview+/instance_name/database_name/schema_name/table_name/**']
                 Example (Windows): ["\\+tblview+\\instance_name\\database_name\\schema_name\\table_name\\**"]
             user_name: Username for the destination DB2 instance.
@@ -568,11 +584,11 @@ class DB2Instance(Instance):
         #ai-gen-doc
         """
 
-        copy_precedence = kwargs.get('copy_precedence', None)
-        from_time = kwargs.get('from_time', None)
-        to_time = kwargs.get('to_time', None)
-        rollforward = kwargs.get('rollforward', True)
-        restoreArchiveLogs = kwargs.get('restoreArchiveLogs', False)
+        copy_precedence = kwargs.get("copy_precedence", None)
+        from_time = kwargs.get("from_time", None)
+        to_time = kwargs.get("to_time", None)
+        rollforward = kwargs.get("rollforward", True)
+        restoreArchiveLogs = kwargs.get("restoreArchiveLogs", False)
 
         request_json = self._restore_json(
             dest_client_name=aux_client_name,
@@ -587,10 +603,12 @@ class DB2Instance(Instance):
             restoreArchiveLogs=restoreArchiveLogs,
             roll_forward=rollforward,
             storage_path=True,
-            table_view_restore=True)
+            table_view_restore=True,
+        )
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-            "storagePaths"] = [target_path]
+            "storagePaths"
+        ] = [target_path]
 
         password = b64encode(password.encode()).decode()
 
@@ -608,26 +626,33 @@ class DB2Instance(Instance):
             "dropTable": kwargs.get("dropTable", False),
             "stagingPath": staging_path,
             "importDbClient": {"clientName": dest_client_name},
-            "importUserInfo": {"userName": user_name, "password": password}
+            "importUserInfo": {"userName": user_name, "password": password},
         }
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-            "storagePaths"] = [target_path]
+            "storagePaths"
+        ] = [target_path]
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-            "databaseTableRstOptions"] = table_json
+            "databaseTableRstOptions"
+        ] = table_json
 
-        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
-            "browseOption"]["backupset"]["backupsetId"] = int(self.backupsets.get(aux_backupset_name).backupset_id)
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+            "backupset"
+        ]["backupsetId"] = int(self.backupsets.get(aux_backupset_name).backupset_id)
 
-        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
-            "browseOption"]["backupset"]["backupsetName"] = aux_backupset_name
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+            "backupset"
+        ]["backupsetName"] = aux_backupset_name
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
-            "restoreArchiveLogs"] = False
+            "restoreArchiveLogs"
+        ] = False
 
-        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
-            "fileOption"]["filterItem"] = tables_path
-        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
-            "fileOption"]["sourceItem"] = tables_path
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"][
+            "filterItem"
+        ] = tables_path
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"][
+            "sourceItem"
+        ] = tables_path
         return self._process_restore_response(request_json)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -61,10 +59,11 @@ SalesforceInstance Attributes:
                                         as access node
 
 """
-from __future__ import unicode_literals
+
 from base64 import b64encode
-from ..cainstance import CloudAppsInstance
+
 from ...exception import SDKException
+from ..cainstance import CloudAppsInstance
 
 
 class SalesforceInstance(CloudAppsInstance):
@@ -103,7 +102,7 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        return 'SALESFORCE'
+        return "SALESFORCE"
 
     @property
     def organization_id(self) -> str:
@@ -123,9 +122,9 @@ class SalesforceInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         try:
-            return self._properties['cloudAppsInstance']['salesforceInstance']['sfOrgID']
+            return self._properties["cloudAppsInstance"]["salesforceInstance"]["sfOrgID"]
         except KeyError:
-            raise SDKException('Instance', '105', 'Could not fetch organization ID')
+            raise SDKException("Instance", "105", "Could not fetch organization ID")
 
     @property
     def login_url(self) -> str:
@@ -145,15 +144,15 @@ class SalesforceInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         try:
-            return self._properties['cloudAppsInstance']['salesforceInstance']['endpoint']
+            return self._properties["cloudAppsInstance"]["salesforceInstance"]["endpoint"]
         except KeyError:
-            raise SDKException('Instance', '105', 'Could not fetch login url')
+            raise SDKException("Instance", "105", "Could not fetch login url")
 
     @property
     def consumer_id(self) -> str:
         """Get the Consumer Id of the Salesforce connected app used for authentication.
 
-        This property retrieves the Consumer Id associated with the Salesforce connected app 
+        This property retrieves the Consumer Id associated with the Salesforce connected app
         that is used by this instance to authenticate with Salesforce.
 
         Returns:
@@ -170,9 +169,9 @@ class SalesforceInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         try:
-            return self._properties['cloudAppsInstance']['salesforceInstance']['consumerId']
+            return self._properties["cloudAppsInstance"]["salesforceInstance"]["consumerId"]
         except KeyError:
-            raise SDKException('Instance', '105', 'Could not fetch login url')
+            raise SDKException("Instance", "105", "Could not fetch login url")
 
     @property
     def proxy_client(self) -> str:
@@ -192,19 +191,29 @@ class SalesforceInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         try:
-            general_cloud_properties = self._properties['cloudAppsInstance']['generalCloudProperties']
-            if 'clientName' in general_cloud_properties['proxyServers'][0].keys():
-                return general_cloud_properties['proxyServers'][0]['clientName']
-            if 'clientName' in general_cloud_properties['accessNodes']['memberServers'][0]['client'].keys():
-                return general_cloud_properties['accessNodes']['memberServers'][0]['client']['clientName']
-            if 'clientGroupName' in general_cloud_properties['accessNodes']['memberServers'][0]['client'].keys():
+            general_cloud_properties = self._properties["cloudAppsInstance"][
+                "generalCloudProperties"
+            ]
+            if "clientName" in general_cloud_properties["proxyServers"][0].keys():
+                return general_cloud_properties["proxyServers"][0]["clientName"]
+            if (
+                "clientName"
+                in general_cloud_properties["accessNodes"]["memberServers"][0]["client"].keys()
+            ):
+                return general_cloud_properties["accessNodes"]["memberServers"][0]["client"][
+                    "clientName"
+                ]
+            if (
+                "clientGroupName"
+                in general_cloud_properties["accessNodes"]["memberServers"][0]["client"].keys()
+            ):
                 raise SDKException(
-                    'Instance',
-                    '102',
-                    'This instance uses a client group as access node. Use access_node attribute instead.'
+                    "Instance",
+                    "102",
+                    "This instance uses a client group as access node. Use access_node attribute instead.",
                 )
         except KeyError:
-            raise SDKException('Instance', '105', 'Could not fetch proxy client')
+            raise SDKException("Instance", "105", "Could not fetch proxy client")
 
     @property
     def access_node(self) -> dict:
@@ -229,13 +238,14 @@ class SalesforceInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         try:
-            access_node = self._properties['cloudAppsInstance']['generalCloudProperties']['accessNodes'] \
-                ['memberServers'][0]['client'].copy()
-            if 'entityInfo' in access_node:
-                del access_node['entityInfo']
+            access_node = self._properties["cloudAppsInstance"]["generalCloudProperties"][
+                "accessNodes"
+            ]["memberServers"][0]["client"].copy()
+            if "entityInfo" in access_node:
+                del access_node["entityInfo"]
             return access_node
         except KeyError:
-            raise SDKException('Instance', '105', 'Could not fetch access node')
+            raise SDKException("Instance", "105", "Could not fetch access node")
 
     def _restore_json(self, **kwargs: dict) -> dict:
         """Generate the JSON request payload for a restore operation based on user-selected options.
@@ -266,76 +276,94 @@ class SalesforceInstance(CloudAppsInstance):
         """
         if len(self.backupsets.all_backupsets) > 1 or len(self.subclients.all_subclients) > 1:
             raise SDKException(
-                'Instance',
-                '102',
-                'More than one backupset/subclient configured in this instance. Run restore from subclient'
+                "Instance",
+                "102",
+                "More than one backupset/subclient configured in this instance. Run restore from subclient",
             )
 
-        if not kwargs.get('no_of_streams', None):
-            kwargs['no_of_streams'] = 2
-        kwargs['client'] = kwargs.get('client', None) or self._agent_object._client_object
+        if not kwargs.get("no_of_streams", None):
+            kwargs["no_of_streams"] = 2
+        kwargs["client"] = kwargs.get("client", None) or self._agent_object._client_object
         request_json = super()._restore_json(**kwargs)
 
         backupset = self.backupsets.get(list(self.backupsets.all_backupsets.keys())[0])
         subclient = list(self.subclients.all_subclients.items())[0]
-        request_json['taskInfo']['associations'][0].update({
-            'backupsetName': backupset.name,
-            'backupsetId': int(backupset.backupset_id),
-            'subclientName': subclient[0],
-            'subclientId': int(subclient[1]['id'])
-        })
-
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['cloudAppsRestoreOptions'] = {
-            'instanceType': self.ca_instance_type,
-            'salesforceRestoreOptions': {
-                'restoreToFileSystem': kwargs.get('restore_to_file_system', False),
-                'restoreToSalesforce': kwargs.get('restore_to_salesforce', False),
-                'restoreFromDatabase': kwargs.get('restore_from_database', False),
-                'isMetadataRestore': kwargs.get('is_metadata_restore', False),
-                'pathToStoreCsv': kwargs.get('path_to_store_csv', None) or backupset.download_cache_path,
-                'dependentRestoreLevel': kwargs.get('dependent_restore_level', 0),
-                'restoreParentType': kwargs.get('restore_parent_type', 'NONE'),
-                'isSaaSRestore': False
+        request_json["taskInfo"]["associations"][0].update(
+            {
+                "backupsetName": backupset.name,
+                "backupsetId": int(backupset.backupset_id),
+                "subclientName": subclient[0],
+                "subclientId": int(subclient[1]["id"]),
             }
+        )
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = {
+            "instanceType": self.ca_instance_type,
+            "salesforceRestoreOptions": {
+                "restoreToFileSystem": kwargs.get("restore_to_file_system", False),
+                "restoreToSalesforce": kwargs.get("restore_to_salesforce", False),
+                "restoreFromDatabase": kwargs.get("restore_from_database", False),
+                "isMetadataRestore": kwargs.get("is_metadata_restore", False),
+                "pathToStoreCsv": kwargs.get("path_to_store_csv", None)
+                or backupset.download_cache_path,
+                "dependentRestoreLevel": kwargs.get("dependent_restore_level", 0),
+                "restoreParentType": kwargs.get("restore_parent_type", "NONE"),
+                "isSaaSRestore": False,
+            },
         }
 
-        if 'restore_to_salesforce' in kwargs and kwargs['restore_to_salesforce']:
-            if kwargs.get('instance', None) and kwargs.get('backupset', None):
-                destination_client = self._commcell_object.clients.get(kwargs['client'])
-                destination_instance = destination_client.agents.get('Cloud Apps').instances.get(kwargs['instance'])
-                destination_backupset = destination_instance.backupsets.get(kwargs['backupset'])
+        if "restore_to_salesforce" in kwargs and kwargs["restore_to_salesforce"]:
+            if kwargs.get("instance", None) and kwargs.get("backupset", None):
+                destination_client = self._commcell_object.clients.get(kwargs["client"])
+                destination_instance = destination_client.agents.get("Cloud Apps").instances.get(
+                    kwargs["instance"]
+                )
+                destination_backupset = destination_instance.backupsets.get(kwargs["backupset"])
             else:
                 destination_instance = self
                 destination_backupset = backupset
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'].update({
-                'destinationInstance': {
-                    'instanceId': int(destination_instance.instance_id),
-                    'instanceName': destination_instance.name,
-                },
-                'destinationBackupset': {
-                    'backupsetId': int(destination_backupset.backupset_id),
-                    'backupsetName': destination_backupset.backupset_name
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "destination"
+            ].update(
+                {
+                    "destinationInstance": {
+                        "instanceId": int(destination_instance.instance_id),
+                        "instanceName": destination_instance.name,
+                    },
+                    "destinationBackupset": {
+                        "backupsetId": int(destination_backupset.backupset_id),
+                        "backupsetName": destination_backupset.backupset_name,
+                    },
                 }
-            })
+            )
 
-        if kwargs.get('db_enabled', False):
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['cloudAppsRestoreOptions'] \
-                ['salesforceRestoreOptions'].update({
-                'syncDatabase': {
-                    'dbEnabled': True,
-                    'dbType': kwargs['db_type'],
-                    'dbHost': kwargs['db_host'],
-                    'dbInstance': kwargs.get('db_instance', ''),
-                    'dbPort': str(kwargs.get('db_port', 5432 if kwargs['db_type'] == 'POSTGRESQL' else 1433)),
-                    'dbName': kwargs['db_name'],
-                    'dbUserPassword': {
-                        'userName': kwargs['db_user_name'],
-                        'password': b64encode(kwargs['db_password'].encode()).decode()
-                    }
-                },
-                'overrideTable': kwargs.get('override_table', True),
-                'restoreCatalogDatabase': kwargs.get('restore_catalog_database', False)
-            })
+        if kwargs.get("db_enabled", False):
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "cloudAppsRestoreOptions"
+            ]["salesforceRestoreOptions"].update(
+                {
+                    "syncDatabase": {
+                        "dbEnabled": True,
+                        "dbType": kwargs["db_type"],
+                        "dbHost": kwargs["db_host"],
+                        "dbInstance": kwargs.get("db_instance", ""),
+                        "dbPort": str(
+                            kwargs.get(
+                                "db_port", 5432 if kwargs["db_type"] == "POSTGRESQL" else 1433
+                            )
+                        ),
+                        "dbName": kwargs["db_name"],
+                        "dbUserPassword": {
+                            "userName": kwargs["db_user_name"],
+                            "password": b64encode(kwargs["db_password"].encode()).decode(),
+                        },
+                    },
+                    "overrideTable": kwargs.get("override_table", True),
+                    "restoreCatalogDatabase": kwargs.get("restore_catalog_database", False),
+                }
+            )
 
         return request_json
 
@@ -388,35 +416,34 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        PARAMS = ('client', 'path_to_store_csv')
+        PARAMS = ("client", "path_to_store_csv")
 
-        if not isinstance(kwargs.get('paths', list()), list):
-            raise SDKException('Instance', '101')
+        if not isinstance(kwargs.get("paths", list()), list):
+            raise SDKException("Instance", "101")
 
-        if any(param in kwargs for param in PARAMS) and \
-                not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
-            raise SDKException('Instance', '101')
+        if any(param in kwargs for param in PARAMS) and not all(
+            isinstance(kwargs.get(param, None), str) for param in PARAMS
+        ):
+            raise SDKException("Instance", "101")
 
-        if not 'paths' in kwargs:
-            kwargs['paths'] = ['/Files/', '/Objects/']
+        if "paths" not in kwargs:
+            kwargs["paths"] = ["/Files/", "/Objects/"]
 
         request_json = self._restore_json(
-            client=kwargs.get('client', self.proxy_client),
-            restore_to_file_system=True,
-            **kwargs
+            client=kwargs.get("client", self.proxy_client), restore_to_file_system=True, **kwargs
         )
-        
+
         return self._process_restore_response(request_json)
 
     def restore_to_database(
-            self,
-            db_type: str,
-            db_host_name: str,
-            db_name: str,
-            db_user_name: str,
-            db_password: str,
-            **kwargs: dict
-        ) -> object:
+        self,
+        db_type: str,
+        db_host_name: str,
+        db_name: str,
+        db_user_name: str,
+        db_password: str,
+        **kwargs: dict,
+    ) -> object:
         """Perform an object-level restore to a specified database.
 
         This method initiates a restore operation for Salesforce objects or files to a target database,
@@ -463,17 +490,18 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        PARAMS = (db_type, db_host_name,  db_name, db_user_name, db_password)
+        PARAMS = (db_type, db_host_name, db_name, db_user_name, db_password)
 
-        if not isinstance(kwargs.get('paths', list()), list):
-            raise SDKException('Instance', '101')
+        if not isinstance(kwargs.get("paths", list()), list):
+            raise SDKException("Instance", "101")
 
-        if not all(isinstance(val, str) for val in PARAMS) and \
-                (isinstance(kwargs.get('db_instance', None), str) != (db_type == 'SQLSERVER')):
-            raise SDKException('Instance', '101')
+        if not all(isinstance(val, str) for val in PARAMS) and (
+            isinstance(kwargs.get("db_instance", None), str) != (db_type == "SQLSERVER")
+        ):
+            raise SDKException("Instance", "101")
 
-        if not 'paths' in kwargs:
-            kwargs['paths'] = ['/Objects/']
+        if "paths" not in kwargs:
+            kwargs["paths"] = ["/Objects/"]
 
         request_json = self._restore_json(
             db_enabled=True,
@@ -482,7 +510,7 @@ class SalesforceInstance(CloudAppsInstance):
             db_name=db_name,
             db_user_name=db_user_name,
             db_password=db_password,
-            **kwargs
+            **kwargs,
         )
 
         return self._process_restore_response(request_json)
@@ -546,29 +574,30 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        DB_PARAMS = ('db_type', 'db_host', 'db_name', 'db_user_name', 'db_password')
-        DEST_PARAMS = ('client', 'instance', 'backupset')
+        DB_PARAMS = ("db_type", "db_host", "db_name", "db_user_name", "db_password")
+        DEST_PARAMS = ("client", "instance", "backupset")
 
-        if not isinstance(kwargs.get('paths', list()), list):
-            raise SDKException('Instance', '101')
+        if not isinstance(kwargs.get("paths", list()), list):
+            raise SDKException("Instance", "101")
 
-        if any(param in kwargs for param in DEST_PARAMS) and \
-                not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
-            raise SDKException('Instance', '101')
+        if any(param in kwargs for param in DEST_PARAMS) and not all(
+            isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS
+        ):
+            raise SDKException("Instance", "101")
 
         if any(param in kwargs for param in DB_PARAMS):
-            if not all(isinstance(kwargs.get(param, None), str) for param in DB_PARAMS) and \
-                    (isinstance(kwargs.get('db_instance', None), str) != (kwargs['db_type'] == 'SQLSERVER')):
-                raise SDKException('Instance', '101')
-            kwargs['db_enabled'] = True
+            if not all(isinstance(kwargs.get(param, None), str) for param in DB_PARAMS) and (
+                isinstance(kwargs.get("db_instance", None), str)
+                != (kwargs["db_type"] == "SQLSERVER")
+            ):
+                raise SDKException("Instance", "101")
+            kwargs["db_enabled"] = True
 
-        if not 'paths' in kwargs:
-            kwargs['paths'] = ['/Files/', '/Objects/']
+        if "paths" not in kwargs:
+            kwargs["paths"] = ["/Files/", "/Objects/"]
 
         request_json = self._restore_json(
-            restore_to_salesforce=True,
-            restore_from_database=True,
-            **kwargs
+            restore_to_salesforce=True, restore_from_database=True, **kwargs
         )
 
         return self._process_restore_response(request_json)
@@ -576,8 +605,8 @@ class SalesforceInstance(CloudAppsInstance):
     def restore_to_salesforce_from_media(self, **kwargs: dict) -> object:
         """Restore data to Salesforce from media and return a Job or Schedule object.
 
-        This method initiates a restore operation to Salesforce from a database backup. 
-        For out-of-place restores, specify the `client`, `instance`, and `backupset` parameters. 
+        This method initiates a restore operation to Salesforce from a database backup.
+        For out-of-place restores, specify the `client`, `instance`, and `backupset` parameters.
         If database parameters are not provided, the sync database will be used as the staging database.
 
         Keyword Args:
@@ -597,9 +626,9 @@ class SalesforceInstance(CloudAppsInstance):
             to_time (str, optional): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS').
             no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
             path_to_store_csv (str, optional): Path to use as the staging folder. Defaults to the download cache path.
-            dependent_restore_level (int, optional): Restore children option. 
+            dependent_restore_level (int, optional): Restore children option.
                 0: No Children, 1: Immediate Children, -1: All Children. Defaults to 0.
-            restore_parent_type (str, optional): Restore parents option. 
+            restore_parent_type (str, optional): Restore parents option.
                 'NONE': No Parents, 'ALL': All Parents. Defaults to 'NONE'.
 
         Returns:
@@ -635,29 +664,29 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        DB_PARAMS = ('db_type', 'db_host', 'db_name', 'db_user_name', 'db_password')
-        DEST_PARAMS = ('client', 'instance', 'backupset')
+        DB_PARAMS = ("db_type", "db_host", "db_name", "db_user_name", "db_password")
+        DEST_PARAMS = ("client", "instance", "backupset")
 
-        if not isinstance(kwargs.get('paths', list()), list):
-            raise SDKException('Instance', '101')
+        if not isinstance(kwargs.get("paths", list()), list):
+            raise SDKException("Instance", "101")
 
-        if any(param in kwargs for param in DEST_PARAMS) and \
-                not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
-            raise SDKException('Instance', '101')
+        if any(param in kwargs for param in DEST_PARAMS) and not all(
+            isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS
+        ):
+            raise SDKException("Instance", "101")
 
         if any(keyword in kwargs for keyword in DB_PARAMS):
-            if not all(isinstance(kwargs.get(param, None), str) for param in DB_PARAMS) and \
-                    (isinstance(kwargs.get('db_instance', None), str) != (kwargs['db_type'] == 'SQLSERVER')):
-                raise SDKException('Instance', '101')
-            kwargs['db_enabled'] = True
+            if not all(isinstance(kwargs.get(param, None), str) for param in DB_PARAMS) and (
+                isinstance(kwargs.get("db_instance", None), str)
+                != (kwargs["db_type"] == "SQLSERVER")
+            ):
+                raise SDKException("Instance", "101")
+            kwargs["db_enabled"] = True
 
-        if not 'paths' in kwargs:
-            kwargs['paths'] = ['/Files/', '/Objects/']
+        if "paths" not in kwargs:
+            kwargs["paths"] = ["/Files/", "/Objects/"]
 
-        request_json = self._restore_json(
-            restore_to_salesforce=True,
-            **kwargs
-        )
+        request_json = self._restore_json(restore_to_salesforce=True, **kwargs)
 
         return self._process_restore_response(request_json)
 
@@ -712,22 +741,21 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        PARAMS = ('client', 'path_to_store_csv')
+        PARAMS = ("client", "path_to_store_csv")
 
-        if not isinstance(kwargs.get('paths', list()), list):
-            raise SDKException('Instance', '101')
+        if not isinstance(kwargs.get("paths", list()), list):
+            raise SDKException("Instance", "101")
 
-        if any(param in kwargs for param in PARAMS) and \
-                not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
-            raise SDKException('Instance', '101')
+        if any(param in kwargs for param in PARAMS) and not all(
+            isinstance(kwargs.get(param, None), str) for param in PARAMS
+        ):
+            raise SDKException("Instance", "101")
 
-        if not 'paths' in kwargs:
-            kwargs['paths'] = ['/Metadata/unpackaged/']
-        
+        if "paths" not in kwargs:
+            kwargs["paths"] = ["/Metadata/unpackaged/"]
+
         request_json = self._restore_json(
-            restore_to_file_system=True,
-            is_metadata_restore=True,
-            **kwargs
+            restore_to_file_system=True, is_metadata_restore=True, **kwargs
         )
         return self._process_restore_response(request_json)
 
@@ -739,7 +767,7 @@ class SalesforceInstance(CloudAppsInstance):
         Additional restore options can be specified via keyword arguments.
 
         Keyword Args:
-            paths (List[str], optional): List of metadata component paths to restore. 
+            paths (List[str], optional): List of metadata component paths to restore.
                 Example: ['/Metadata/unpackaged/objects/Account.object', '/Metadata/unpackaged/profiles/Admin.profile'].
                 Defaults to ['/Metadata/unpackaged/'] (restores all metadata components).
             client (str, optional): Name of the destination client. Defaults to the source client.
@@ -749,16 +777,16 @@ class SalesforceInstance(CloudAppsInstance):
             to_time (str, optional): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS'). Defaults to None.
             no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
             path_to_store_csv (str, optional): Path to use as a staging folder. Defaults to the download cache path.
-            dependent_restore_level (int, optional): Restore children option. 
+            dependent_restore_level (int, optional): Restore children option.
                 0: No Children (default), 1: Immediate Children, -1: All Children.
-            restore_parent_type (str, optional): Restore parents option. 
+            restore_parent_type (str, optional): Restore parents option.
                 'NONE': No Parents (default), 'ALL': All Parents.
 
         Returns:
             object: An instance of the Job or Schedule class representing the restore operation.
 
         Raises:
-            SDKException: 
+            SDKException:
                 - If `paths` is provided but is not a list.
                 - If any of `client`, `instance`, or `backupset` are provided but not all three are present.
                 - If `client`, `instance`, or `backupset` are not strings.
@@ -779,22 +807,21 @@ class SalesforceInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        DEST_PARAMS = ('client', 'instance', 'backupset')
+        DEST_PARAMS = ("client", "instance", "backupset")
 
-        if not isinstance(kwargs.get('paths', list()), list):
-            raise SDKException('Instance', '101')
+        if not isinstance(kwargs.get("paths", list()), list):
+            raise SDKException("Instance", "101")
 
-        if any(param in kwargs for param in DEST_PARAMS) and \
-                not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
-            raise SDKException('Instance', '101')
+        if any(param in kwargs for param in DEST_PARAMS) and not all(
+            isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS
+        ):
+            raise SDKException("Instance", "101")
 
-        if not 'paths' in kwargs:
-            kwargs['paths'] = ['/Metadata/unpackaged/']
-        
+        if "paths" not in kwargs:
+            kwargs["paths"] = ["/Metadata/unpackaged/"]
+
         request_json = self._restore_json(
-            restore_to_salesforce=True,
-            is_metadata_restore=True,
-            **kwargs
+            restore_to_salesforce=True, is_metadata_restore=True, **kwargs
         )
-        
+
         return self._process_restore_response(request_json)

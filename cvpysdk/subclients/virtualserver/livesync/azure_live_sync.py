@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -28,34 +26,35 @@ AzureLiveSync:
 
 """
 
-from .vsa_live_sync import VsaLiveSync
 from ....exception import SDKException
+from .vsa_live_sync import VsaLiveSync
 
 
 class AzureLiveSync(VsaLiveSync):
     """Class for configuring and monitoring Hyper-V live sync operations"""
 
-    def configure_live_sync(self,
-                            schedule_name=None,
-                            unconditional_overwrite=None,
-                            destination_client=None,
-                            power_on=True,
-                            copy_precedence=0,
-                            resource_group=None,
-                            storage_account=None,
-                            createpublicip=None,
-                            restoreasmanagedvm=None,
-                            instancesize=None,
-                            restored_vm_name=None,
-                            proxy_client=None,
-                            restore_option=None,
-                            networkdisplayname=None,
-                            vm_to_restore=None,
-                            pattern_dict=None,
-                            region=None,
-                            destsubid=None,
-                            networkrsg=None
-                            ):
+    def configure_live_sync(
+        self,
+        schedule_name=None,
+        unconditional_overwrite=None,
+        destination_client=None,
+        power_on=True,
+        copy_precedence=0,
+        resource_group=None,
+        storage_account=None,
+        createpublicip=None,
+        restoreasmanagedvm=None,
+        instancesize=None,
+        restored_vm_name=None,
+        proxy_client=None,
+        restore_option=None,
+        networkdisplayname=None,
+        vm_to_restore=None,
+        pattern_dict=None,
+        region=None,
+        destsubid=None,
+        networkrsg=None,
+    ):
         """To configure live
 
         Args:
@@ -159,11 +158,11 @@ class AzureLiveSync(VsaLiveSync):
             restore_option = {}
 
         if vm_to_restore and not isinstance(vm_to_restore, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         if not restored_vm_name and isinstance(vm_to_restore, str):
             restored_vm_name = "LiveSync_"
-        restore_option['restore_new_name'] = restored_vm_name
+        restore_option["restore_new_name"] = restored_vm_name
 
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
@@ -173,9 +172,8 @@ class AzureLiveSync(VsaLiveSync):
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(unconditional_overwrite, bool) and
-                    isinstance(power_on, bool)):
-                raise SDKException('Subclient', '101')
+            if not (isinstance(unconditional_overwrite, bool) and isinstance(power_on, bool)):
+                raise SDKException("Subclient", "101")
 
         # set attr for all the option in restore xml from user inputs
         self._subclient_object._set_restore_inputs(
@@ -196,7 +194,7 @@ class AzureLiveSync(VsaLiveSync):
             instanceSize=instancesize,
             createPublicIP=createpublicip,
             destsubid=destsubid,
-            networkrsg=networkrsg
-            )
+            networkrsg=networkrsg,
+        )
 
         return self._configure_live_sync(schedule_name, restore_option, pattern_dict)

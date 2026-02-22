@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -43,40 +41,34 @@ refresh()                       --  refresh the internet options
 set_gateway_for_sendlogs    --- sets internet gateway for sendlog files
 
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from base64 import b64encode
 
 from .exception import SDKException
 
 
-class InternetOptions(object):
+class InternetOptions:
     """Class for setting Internet options in CommServe"""
 
     def __init__(self, commcell_object):
         self._commcell_object = commcell_object
-        self._INTERNET = self._commcell_object._services['INTERNET_PROXY']
+        self._INTERNET = self._commcell_object._services["INTERNET_PROXY"]
         self.refresh()
 
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
-        return "InternetOption class instance for Commcell with config '{0}'".format(
-            self._internet_config
-        )
+        return f"InternetOption class instance for Commcell with config '{self._internet_config}'"
 
     def _get_internet_config(self):
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._INTERNET
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._INTERNET)
         if flag:
             self._internet_config = response.json()
-            if self._internet_config and 'config' in self._internet_config:
-                self._config = self._internet_config['config']
+            if self._internet_config and "config" in self._internet_config:
+                self._config = self._internet_config["config"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def _save_config(self):
         """
@@ -87,16 +79,14 @@ class InternetOptions(object):
                 if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._INTERNET, self._internet_config
+            "POST", self._INTERNET, self._internet_config
         )
         if not flag:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
-    def set_internet_gateway_client(self,
-                                    client_name=None,
-                                    cloud_metrics=True,
-                                    private_metrics=True
-                                    ):
+    def set_internet_gateway_client(
+        self, client_name=None, cloud_metrics=True, private_metrics=True
+    ):
         """
         set internet gateway with the client name provided.
         Args:
@@ -108,24 +98,22 @@ class InternetOptions(object):
                 if client doesnt exist in CommServe
         """
         if client_name is None:
-            raise SDKException('InternetOptions', '101', 'Client name is required')
+            raise SDKException("InternetOptions", "101", "Client name is required")
         clientid = int(self._commcell_object.clients.get(client_name).client_id)
-        self._config['proxyType'] = 2
-        self._config['proxyClient']['clientId'] = clientid
-        self._config['proxyClient']['clientName'] = client_name
+        self._config["proxyType"] = 2
+        self._config["proxyClient"]["clientId"] = clientid
+        self._config["proxyClient"]["clientName"] = client_name
         if cloud_metrics:
-            self._config['useInternetGatewayPublic'] = True
+            self._config["useInternetGatewayPublic"] = True
         else:
-            self._config['useInternetGatewayPublic'] = False
+            self._config["useInternetGatewayPublic"] = False
         if private_metrics:
-            self._config['useInternetGatewayPrivate'] = True
+            self._config["useInternetGatewayPrivate"] = True
         else:
-            self._config['useInternetGatewayPrivate'] = False
+            self._config["useInternetGatewayPrivate"] = False
         self._save_config()
 
-    def set_gateway_for_sendlogs(self,
-                                 client_name
-                                 ):
+    def set_gateway_for_sendlogs(self, client_name):
         """
         set internet gateway with the client name provided for sendlogs.
         Args:
@@ -135,20 +123,20 @@ class InternetOptions(object):
                 if client doesnt exist in CommServe
         """
         clientid = int(self._commcell_object.clients.get(client_name).client_id)
-        self._config['proxyType'] = 2
-        self._config['proxyClient']['clientId'] = clientid
-        self._config['proxyClient']['clientName'] = client_name
-        self._config['useInternetGatewaySendLogFile'] = True
+        self._config["proxyType"] = 2
+        self._config["proxyClient"]["clientId"] = clientid
+        self._config["proxyClient"]["clientName"] = client_name
+        self._config["useInternetGatewaySendLogFile"] = True
         self._save_config()
 
     def set_metrics_internet_gateway(self):
         """sets metrics server as internet gateway"""
-        self._config['proxyType'] = 3
+        self._config["proxyType"] = 3
         self._save_config()
 
     def set_no_gateway(self):
         """Removes internet gateway"""
-        self._config['proxyType'] = 1
+        self._config["proxyType"] = 1
         self._save_config()
 
     def set_http_proxy(self, servername=None, port=None):
@@ -162,33 +150,33 @@ class InternetOptions(object):
                 if proxy server name and port are empty
         """
         if servername is None or port is None:
-            raise SDKException('Response', '101', 'proxy server name and port cannot be empty')
-        self._config['useHttpProxy'] = True
-        self._config['proxyServer'] = servername
-        self._config['proxyPort'] = int(port)
+            raise SDKException("Response", "101", "proxy server name and port cannot be empty")
+        self._config["useHttpProxy"] = True
+        self._config["proxyServer"] = servername
+        self._config["proxyPort"] = int(port)
         self._save_config()
 
     def disable_http_proxy(self):
         """Removes HTTP proxy"""
-        self._config['useHttpProxy'] = False
+        self._config["useHttpProxy"] = False
         self._save_config()
 
-    def set_http_authentication(self, username='', pwd=''):
+    def set_http_authentication(self, username="", pwd=""):
         """
         sets authentication to HTTP proxy
         Args:
             username: username for proxy server
             pwd: password for proxy server
         """
-        self._config['useProxyAuthentication'] = True
-        self._config['proxyCredentials']['userName'] = username
-        self._config['proxyCredentials']['password'] = b64encode(pwd.encode()).decode()
-        self._config['proxyCredentials']['confirmPassword'] = b64encode(pwd.encode()).decode()
+        self._config["useProxyAuthentication"] = True
+        self._config["proxyCredentials"]["userName"] = username
+        self._config["proxyCredentials"]["password"] = b64encode(pwd.encode()).decode()
+        self._config["proxyCredentials"]["confirmPassword"] = b64encode(pwd.encode()).decode()
         self._save_config()
 
     def disable_http_authentication(self):
         """Removes HTTP authentication"""
-        self._config['useProxyAuthentication'] = False
+        self._config["useProxyAuthentication"] = False
         self._save_config()
 
     def refresh(self):

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -49,14 +47,14 @@ OneDriveInstance:
 
 """
 
-from __future__ import unicode_literals
 from base64 import b64encode
 from typing import Any, List, Union
 
 from ...constants import AppIDAType
 from ...exception import SDKException
-from ..cainstance import CloudAppsInstance
 from ...job import Job
+from ..cainstance import CloudAppsInstance
+
 
 class OneDriveInstance(CloudAppsInstance):
     """
@@ -98,7 +96,7 @@ class OneDriveInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        super(OneDriveInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         # Common properties for Google and OneDrive
         self._ca_instance_type = None
         self._manage_content_automatically = None
@@ -109,45 +107,65 @@ class OneDriveInstance(CloudAppsInstance):
         self._client_id = None
         self._tenant = None
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties["cloudAppsInstance"]
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
-            if 'oneDriveInstance' in cloud_apps_instance:
-                onedrive_instance = cloud_apps_instance['oneDriveInstance']
+            if "oneDriveInstance" in cloud_apps_instance:
+                onedrive_instance = cloud_apps_instance["oneDriveInstance"]
 
-                self._manage_content_automatically = onedrive_instance['manageContentAutomatically']
-                self._auto_discovery_enabled = onedrive_instance['isAutoDiscoveryEnabled']
-                self._auto_discovery_mode = onedrive_instance['autoDiscoveryMode']
-                if 'clientId' in onedrive_instance:
-                    self._client_id = onedrive_instance.get('clientId')
-                    self._tenant = onedrive_instance.get('tenant')
+                self._manage_content_automatically = onedrive_instance[
+                    "manageContentAutomatically"
+                ]
+                self._auto_discovery_enabled = onedrive_instance["isAutoDiscoveryEnabled"]
+                self._auto_discovery_mode = onedrive_instance["autoDiscoveryMode"]
+                if "clientId" in onedrive_instance:
+                    self._client_id = onedrive_instance.get("clientId")
+                    self._tenant = onedrive_instance.get("tenant")
                 elif "credentialEntity" in onedrive_instance["azureAppList"]["azureApps"][0]:
                     self._client_id = self._properties["instance"]["clientId"]
                 else:
-                    self._client_id = onedrive_instance.get(
-                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureAppId')
-                    self._tenant = onedrive_instance.get(
-                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureDirectoryId')
+                    self._client_id = (
+                        onedrive_instance.get("azureAppList", {})
+                        .get("azureApps", [{}])[0]
+                        .get("azureAppId")
+                    )
+                    self._tenant = (
+                        onedrive_instance.get("azureAppList", {})
+                        .get("azureApps", [{}])[0]
+                        .get("azureDirectoryId")
+                    )
 
                 if self._client_id is None:
-                    raise SDKException('Instance', '102', 'Azure App has not been configured')
+                    raise SDKException("Instance", "102", "Azure App has not been configured")
 
-            if 'generalCloudProperties' in cloud_apps_instance:
-                if 'proxyServers' in cloud_apps_instance['generalCloudProperties']:
-                    self._proxy_client = cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('proxyServers', [{}])[0].get('clientName')
+            if "generalCloudProperties" in cloud_apps_instance:
+                if "proxyServers" in cloud_apps_instance["generalCloudProperties"]:
+                    self._proxy_client = (
+                        cloud_apps_instance.get("generalCloudProperties", {})
+                        .get("proxyServers", [{}])[0]
+                        .get("clientName")
+                    )
                 else:
-                    if 'clientName' in cloud_apps_instance.get(
-                            'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientName')
+                    if "clientName" in cloud_apps_instance.get("generalCloudProperties", {}).get(
+                        "memberServers", [{}]
+                    )[0].get("client"):
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientName")
+                        )
                     else:
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientGroupName')
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientGroupName")
+                        )
 
                 if self._proxy_client is None:
-                    raise SDKException('Instance', '102', 'Access Node has not been configured')
+                    raise SDKException("Instance", "102", "Access Node has not been configured")
 
     @property
     def ca_instance_type(self) -> str:
@@ -164,7 +182,7 @@ class OneDriveInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         if self._ca_instance_type == 7:
-            return 'ONEDRIVE'
+            return "ONEDRIVE"
         return self._ca_instance_type
 
     @property
@@ -266,8 +284,9 @@ class OneDriveInstance(CloudAppsInstance):
         """
         return self._proxy_client
 
-
-    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list: list, subclient_id: int) -> dict:
+    def _prepare_advsearchgrp_onedrive_for_business_client(
+        self, source_item_list: list, subclient_id: int
+    ) -> dict:
         """Prepare the advsearchgrp JSON structure for a OneDrive for Business restore job.
 
         This utility function generates the required advsearchgrp JSON payload for restoring
@@ -290,7 +309,6 @@ class OneDriveInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-
         user_guid = source_item_list[0]
         advsearchgrp = {
             "fileFilter": [
@@ -300,25 +318,17 @@ class OneDriveInstance(CloudAppsInstance):
                         "filters": [
                             {
                                 "field": "HIDDEN",
-                                "fieldValues": {
-                                    "values": [
-                                        "true"
-                                    ]
-                                },
-                                "intraFieldOp": "FTNot"
+                                "fieldValues": {"values": ["true"]},
+                                "intraFieldOp": "FTNot",
                             },
                             {
                                 "field": "CV_OBJECT_GUID",
-                                "fieldValues": {
-                                    "values": [
-                                        user_guid
-                                    ]
-                                },
-                                "intraFieldOp": "FTOr"
-                            }
+                                "fieldValues": {"values": [user_guid]},
+                                "intraFieldOp": "FTOr",
+                            },
                         ],
-                        "interFilterOP": "FTAnd"
-                    }
+                        "interFilterOP": "FTAnd",
+                    },
                 }
             ],
             "commonFilter": [
@@ -327,38 +337,26 @@ class OneDriveInstance(CloudAppsInstance):
                         "filters": [
                             {
                                 "field": "CISTATE",
-                                "fieldValues": {
-                                    "values": [
-                                        "1"
-                                    ]
-                                },
+                                "fieldValues": {"values": ["1"]},
                                 "intraFieldOp": "FTOr",
-                                "groupType": 0
+                                "groupType": 0,
                             },
                             {
                                 "field": "IS_VISIBLE",
                                 "fieldValues": {
-                                    "values": [
-                                        "true"
-                                    ],
+                                    "values": ["true"],
                                     "isRange": False,
-                                    "isMoniker": False
+                                    "isMoniker": False,
                                 },
                                 "intraFieldOp": "FTOr",
-                                "intraFieldOpStr": "None"
-                            }
+                                "intraFieldOpStr": "None",
+                            },
                         ],
-                        "interFilterOP": "FTAnd"
+                        "interFilterOP": "FTAnd",
                     }
                 }
             ],
-            "galaxyFilter": [
-                {
-                    "appIdList": [
-                        subclient_id
-                    ]
-                }
-            ],
+            "galaxyFilter": [{"appIdList": [subclient_id]}],
             "graphFilter": [
                 {
                     "fromField": "PARENT_GUID",
@@ -369,33 +367,27 @@ class OneDriveInstance(CloudAppsInstance):
                             "filters": [
                                 {
                                     "field": "IS_VISIBLE",
-                                    "fieldValues": {
-                                        "values": [
-                                            "true"
-                                        ]
-                                    },
+                                    "fieldValues": {"values": ["true"]},
                                     "intraFieldOp": "FTAnd",
-                                    "groupType": 0
+                                    "groupType": 0,
                                 },
                                 {
                                     "field": "HIDDEN",
-                                    "fieldValues": {
-                                        "values": [
-                                            "true"
-                                        ]
-                                    },
-                                    "intraFieldOp": "FTNot"
-                                }
+                                    "fieldValues": {"values": ["true"]},
+                                    "intraFieldOp": "FTNot",
+                                },
                             ]
                         }
-                    ]
+                    ],
                 }
-            ]
+            ],
         }
 
         return advsearchgrp
 
-    def _prepare_findquery_onedrive_for_business_client(self, source_item_list: list, subclient_id: int) -> dict:
+    def _prepare_findquery_onedrive_for_business_client(
+        self, source_item_list: list, subclient_id: int
+    ) -> dict:
         """Prepare the findquery JSON payload for a OneDrive for Business restore job.
 
         This utility function constructs the findquery JSON required to initiate a restore job
@@ -418,60 +410,37 @@ class OneDriveInstance(CloudAppsInstance):
         """
 
         findquery = {
-                  "searchProcessingInfo": {
-                    "pageSize": 20,
-                    "resultOffset": 0,
-                    "sortParams": [
-                      {
-                        "sortField": "DATA_TYPE",
-                        "sortDirection": "DESCENDING"
-                      },
-                      {
-                        "sortField": "FileName",
-                        "sortDirection": "ASCENDING"
-                      }
-                    ],
-                    "queryParams": [
-                      {
-                        "param": "ENABLE_MIXEDVIEW",
-                        "value": "true"
-                      },
-                      {
+            "searchProcessingInfo": {
+                "pageSize": 20,
+                "resultOffset": 0,
+                "sortParams": [
+                    {"sortField": "DATA_TYPE", "sortDirection": "DESCENDING"},
+                    {"sortField": "FileName", "sortDirection": "ASCENDING"},
+                ],
+                "queryParams": [
+                    {"param": "ENABLE_MIXEDVIEW", "value": "true"},
+                    {
                         "param": "RESPONSE_FIELD_LIST",
-                        "value": "FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType"
-                      },
-                      {
-                        "param": "DO_NOT_AUDIT",
-                        "value": "false"
-                      },
-                      {
-                        "param": "COLLAPSE_FIELD",
-                        "value": "CV_OBJECT_GUID"
-                      },
-                      {
-                        "param": "COLLAPSE_SORT",
-                        "value": "BACKUPTIME DESC"
-                      },
-                      {
-                        "param": "ENABLE_NAVIGATION",
-                        "value": "on"
-                      },
-                      {
-                        "param": "ENABLE_DEFAULTFACETS",
-                        "value": "false"
-                      }
-                    ]
-                  },
-                  "advSearchGrp": self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list,subclient_id),
-                  "mode": "WebConsole"
-                }
+                        "value": "FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType",
+                    },
+                    {"param": "DO_NOT_AUDIT", "value": "false"},
+                    {"param": "COLLAPSE_FIELD", "value": "CV_OBJECT_GUID"},
+                    {"param": "COLLAPSE_SORT", "value": "BACKUPTIME DESC"},
+                    {"param": "ENABLE_NAVIGATION", "value": "on"},
+                    {"param": "ENABLE_DEFAULTFACETS", "value": "false"},
+                ],
+            },
+            "advSearchGrp": self._prepare_advsearchgrp_onedrive_for_business_client(
+                source_item_list, subclient_id
+            ),
+            "mode": "WebConsole",
+        }
 
         return findquery
 
-
-
-
-    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list: list, **kwargs: object) -> dict:
+    def _prepare_restore_json_onedrive_for_business_client(
+        self, source_item_list: list, **kwargs: object
+    ) -> dict:
         """Prepare the user-level restore JSON for OneDrive for Business clients.
 
         This utility function constructs the request JSON required to initiate a restore job for OneDrive for Business users.
@@ -512,97 +481,110 @@ class OneDriveInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        out_of_place = kwargs.get('out_of_place', False)
-        disk_restore = kwargs.get('disk_restore', False)
-        destination_path = kwargs.get('destination_path', False)
-        destination_client = kwargs.get('destination_client')
-        overwrite = kwargs.get('overwrite', False)
-        restore_as_copy = kwargs.get('restore_as_copy', False)
-        skip_file_permissions = kwargs.get('skip_file_permissions', True)
-        include_deleted_items = kwargs.get('include_deleted_items', False)
-        restore_to_blob = kwargs.get('restore_to_blob', False)
-
+        out_of_place = kwargs.get("out_of_place", False)
+        disk_restore = kwargs.get("disk_restore", False)
+        destination_path = kwargs.get("destination_path", False)
+        destination_client = kwargs.get("destination_client")
+        overwrite = kwargs.get("overwrite", False)
+        restore_as_copy = kwargs.get("restore_as_copy", False)
+        skip_file_permissions = kwargs.get("skip_file_permissions", True)
+        include_deleted_items = kwargs.get("include_deleted_items", False)
+        restore_to_blob = kwargs.get("restore_to_blob", False)
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
-                destination_client_object = self._commcell_object.clients.all_clients.get(destination_client)
-                destination_client_id = int(destination_client_object.get('id'))
+                destination_client_object = self._commcell_object.clients.all_clients.get(
+                    destination_client
+                )
+                destination_client_id = int(destination_client_object.get("id"))
             else:
-                raise SDKException('Client', '102', 'Client "{0}" does not exist.'.format(destination_client))
+                raise SDKException(
+                    "Client", "102", f'Client "{destination_client}" does not exist.'
+                )
 
-        if ((destination_client and not isinstance(destination_client, str) or
-             destination_path and not isinstance(destination_path, str)) or not
-            (isinstance(source_item_list, list) and
-             isinstance(skip_file_permissions, bool) and
-             isinstance(disk_restore, bool) and
-             isinstance(out_of_place, bool) and
-             isinstance(overwrite, bool) and
-             isinstance(restore_as_copy, bool))):
-            raise SDKException('Instance', '101')
+        if (
+            destination_client
+            and not isinstance(destination_client, str)
+            or destination_path
+            and not isinstance(destination_path, str)
+        ) or not (
+            isinstance(source_item_list, list)
+            and isinstance(skip_file_permissions, bool)
+            and isinstance(disk_restore, bool)
+            and isinstance(out_of_place, bool)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_as_copy, bool)
+        ):
+            raise SDKException("Instance", "101")
 
         request_json = self._restore_json(client=self._agent_object._client_object)
 
-        subtasks = request_json['taskInfo']['subTasks'][0]
-        options = subtasks['options']
-        restore_options = options['restoreOptions']
+        subtasks = request_json["taskInfo"]["subTasks"][0]
+        options = subtasks["options"]
+        restore_options = options["restoreOptions"]
 
         options["restoreOptions"]["browseOption"] = {
             "commCellId": self._commcell_object.commcell_id,
-            "showDeletedItems": False
+            "showDeletedItems": False,
         }
 
-        restore_options['commonOptions'] = {
+        restore_options["commonOptions"] = {
             "overwriteFiles": overwrite,
             "skip": True if not restore_as_copy and not overwrite else False,
-            "unconditionalOverwrite": overwrite
+            "unconditionalOverwrite": overwrite,
         }
 
-        destination = restore_options['destination']
-        destination['destAppId'] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
-        destination['inPlace'] = False if out_of_place or disk_restore else True
+        destination = restore_options["destination"]
+        destination["destAppId"] = (
+            AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
+        )
+        destination["inPlace"] = False if out_of_place or disk_restore else True
 
-        destination['destClient'] = {
-            "clientId": destination_client_id,
-            "clientName": destination_client
-        } if disk_restore else {
-            "clientId": int(self._agent_object._client_object.client_id),
-            "clientName": self._agent_object._client_object.client_name
-        }
+        destination["destClient"] = (
+            {"clientId": destination_client_id, "clientName": destination_client}
+            if disk_restore
+            else {
+                "clientId": int(self._agent_object._client_object.client_id),
+                "clientName": self._agent_object._client_object.client_name,
+            }
+        )
 
         if destination_path:
-            destination['destPath'] = [destination_path]
+            destination["destPath"] = [destination_path]
 
-        restore_options['fileOption']['sourceItem'] = source_item_list
+        restore_options["fileOption"]["sourceItem"] = source_item_list
 
-        restore_options['cloudAppsRestoreOptions'] = {
+        restore_options["cloudAppsRestoreOptions"] = {
             "instanceType": self._ca_instance_type,
             "googleRestoreOptions": {
                 "skipPermissionsRestore": False if disk_restore else skip_file_permissions,
                 "restoreToDifferentAccount": True if out_of_place else False,
                 "restoreAsCopy": False if disk_restore else restore_as_copy,
                 "filelevelRestore": False,
-                "strDestUserAccount": destination_path if out_of_place else '',
+                "strDestUserAccount": destination_path if out_of_place else "",
                 "overWriteItems": False if disk_restore else overwrite,
-                "restoreToGoogle": False if disk_restore else True
-            }
+                "restoreToGoogle": False if disk_restore else True,
+            },
         }
 
-        del subtasks['subTaskOperation']
-        del restore_options['fileOption']
-        del restore_options['impersonation']
-        del restore_options['volumeRstOption']
-        del restore_options['sharePointRstOption']
-        del restore_options['virtualServerRstOption']
+        del subtasks["subTaskOperation"]
+        del restore_options["fileOption"]
+        del restore_options["impersonation"]
+        del restore_options["volumeRstOption"]
+        del restore_options["sharePointRstOption"]
+        del restore_options["virtualServerRstOption"]
 
-        associations = request_json['taskInfo']['associations'][0]
-        associations['subclientId'] = subclient_id = int(self.subclients['default']['id'])
+        associations = request_json["taskInfo"]["associations"][0]
+        associations["subclientId"] = subclient_id = int(self.subclients["default"]["id"])
 
-        cloudAppsRestoreOptions = restore_options['cloudAppsRestoreOptions']
-        cloudAppsRestoreOptions['googleRestoreOptions'][
-            'findQuery'] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        cloudAppsRestoreOptions = restore_options["cloudAppsRestoreOptions"]
+        cloudAppsRestoreOptions["googleRestoreOptions"]["findQuery"] = (
+            self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        )
         if include_deleted_items:
-            cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter'][
-                'filters'][0]['fieldValues']['values'].extend(["3333", "3334", "3335"])
+            cloudAppsRestoreOptions["googleRestoreOptions"]["findQuery"]["advSearchGrp"][
+                "commonFilter"
+            ][0]["filter"]["filters"][0]["fieldValues"]["values"].extend(["3333", "3334", "3335"])
 
         destination_option = "Destination"
         destination_value = "Original location"
@@ -613,9 +595,12 @@ class OneDriveInstance(CloudAppsInstance):
             destination_option = "Destination server"
             destination_value = destination_client
         if restore_to_blob:
-            restore_options['cloudAppsRestoreOptions']['googleRestoreOptions']['blobContainerId'] = kwargs.get(
-                'blob_container_id')
-            restore_options['cloudAppsRestoreOptions']['googleRestoreOptions']['googleRestoreChoice'] = 4
+            restore_options["cloudAppsRestoreOptions"]["googleRestoreOptions"][
+                "blobContainerId"
+            ] = kwargs.get("blob_container_id")
+            restore_options["cloudAppsRestoreOptions"]["googleRestoreOptions"][
+                "googleRestoreChoice"
+            ] = 4
             destination_option = "Destination Azure Blob Storage"
             destination_value = ""
 
@@ -623,44 +608,38 @@ class OneDriveInstance(CloudAppsInstance):
             "notifyUserOnJobCompletion": False,
             "jobMetadata": [
                 {
-                    "selectedItems": [
-                        {
-                            "itemName": source_item_list[0],
-                            "itemType": "User"
-                        }
-                    ],
+                    "selectedItems": [{"itemName": source_item_list[0], "itemType": "User"}],
                     "jobOptionItems": [
                         {
                             "option": "Restore destination",
-                            "value": "Azure Blob Storage" if restore_to_blob else "OneDrive for Business"
+                            "value": "Azure Blob Storage"
+                            if restore_to_blob
+                            else "OneDrive for Business",
                         },
-                        {
-                            "option": "Source",
-                            "value": source_item_list[0]
-                        },
-                        {
-                            "option": destination_option,
-                            "value": destination_value
-                        },
+                        {"option": "Source", "value": source_item_list[0]},
+                        {"option": destination_option, "value": destination_value},
                         {
                             "option": "If the file exists",
-                            "value": "Restore as a copy" if restore_as_copy and not overwrite else "Unconditionally overwrite" if overwrite else "Skip"
-
+                            "value": "Restore as a copy"
+                            if restore_as_copy and not overwrite
+                            else "Unconditionally overwrite"
+                            if overwrite
+                            else "Skip",
                         },
                         {
                             "option": "Skip file permissions",
-                            "value": "Enabled" if skip_file_permissions else "Disabled"
+                            "value": "Enabled" if skip_file_permissions else "Disabled",
                         },
                         {
                             "option": "Include deleted items",
-                            "value": "Enabled" if include_deleted_items else "Disabled"
-                        }
-                    ]
+                            "value": "Enabled" if include_deleted_items else "Disabled",
+                        },
+                    ],
                 }
-            ]
+            ],
         }
 
-        joboptionitems = options['commonOpts']['jobMetadata'][0]['jobOptionItems']
+        joboptionitems = options["commonOpts"]["jobMetadata"][0]["jobOptionItems"]
 
         if out_of_place:
             joboptionitems.append({"option": "Destination client", "value": destination_client})
@@ -672,7 +651,7 @@ class OneDriveInstance(CloudAppsInstance):
     def _prepare_delete_json_onedrive_v2(self, item_guids: list, **kwargs: dict) -> dict:
         """Prepare the JSON payload for deleting documents in OneDrive for Business clients.
 
-        This utility function constructs the request JSON required to delete one or more items 
+        This utility function constructs the request JSON required to delete one or more items
         (documents or folders) from OneDrive for Business clients, based on the provided item GUIDs.
         Additional options can be specified using keyword arguments.
 
@@ -685,7 +664,7 @@ class OneDriveInstance(CloudAppsInstance):
             A dictionary representing the request JSON for the delete document operation.
 
         Raises:
-            SDKException: If the destination client with the given item does not exist, or if any 
+            SDKException: If the destination client with the given item does not exist, or if any
                 parameter type is invalid.
 
         Example:
@@ -696,70 +675,61 @@ class OneDriveInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        folder = kwargs.get('folder', False)
-        include_deleted_items = kwargs.get('include_deleted_items', False)
-        subclient_id = int(self.subclients['default']['id'])
+        folder = kwargs.get("folder", False)
+        include_deleted_items = kwargs.get("include_deleted_items", False)
+        subclient_id = int(self.subclients["default"]["id"])
 
         if isinstance(item_guids, str):
             source_item_list = [item_guids]
         else:
             source_item_list = [].extend(item_guids)
         req_json = {
-            'opType': 1,
-            'bulkMode': folder,
-            'deleteOption': {
-                'folderDelete': folder
-            },
-            'searchReq': {
-                'mode': 4,
-                'facetRequests': {
-                    'facetRequest': []
-                },
-                'advSearchGrp': self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list, subclient_id),
-                'searchProcessingInfo': {
-                    'resultOffset': 0,
-                    'pageSize': 50,
-                    'queryParams': [
-                        {
-                            'param': 'ENABLE_MIXEDVIEW',
-                            'value': 'true'
-                        },
-                        {
-                            'param': 'ENABLE_NAVIGATION',
-                            'value': 'on'
-                        },
-                        {
-                            'param': 'ENABLE_DEFAULTFACETS',
-                            'value': 'false'
-                        }
+            "opType": 1,
+            "bulkMode": folder,
+            "deleteOption": {"folderDelete": folder},
+            "searchReq": {
+                "mode": 4,
+                "facetRequests": {"facetRequest": []},
+                "advSearchGrp": self._prepare_advsearchgrp_onedrive_for_business_client(
+                    source_item_list, subclient_id
+                ),
+                "searchProcessingInfo": {
+                    "resultOffset": 0,
+                    "pageSize": 50,
+                    "queryParams": [
+                        {"param": "ENABLE_MIXEDVIEW", "value": "true"},
+                        {"param": "ENABLE_NAVIGATION", "value": "on"},
+                        {"param": "ENABLE_DEFAULTFACETS", "value": "false"},
                     ],
-                    'sortParams': []
-                }
-            }
+                    "sortParams": [],
+                },
+            },
         }
 
         if isinstance(item_guids, list):
-            req_json['searchReq']['advSearchGrp']['fileFilter'][0]['filter']['filters'][1]['fieldValues'][
-                'values'].extend(item_guids[1:])
+            req_json["searchReq"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"][1][
+                "fieldValues"
+            ]["values"].extend(item_guids[1:])
 
         if include_deleted_items:
-            req_json['searchReq']['advSearchGrp']['commonFilter'][0]['filter']['filters'][0]['fieldValues']['values'].extend(
-                ["3333", "3334", "3335"])
+            req_json["searchReq"]["advSearchGrp"]["commonFilter"][0]["filter"]["filters"][0][
+                "fieldValues"
+            ]["values"].extend(["3333", "3334", "3335"])
 
         return req_json
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            to_disk: bool = False
-        ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        to_disk: bool = False,
+    ) -> "Job":
         """Restore specified files or folders to a different client and/or location.
 
         This method restores the files and folders listed in `paths` to the given `destination_path`
@@ -804,26 +774,28 @@ class OneDriveInstance(CloudAppsInstance):
         """
         from cvpysdk.client import Client
 
-        if not ((isinstance(client, str) or isinstance(client, Client)) and
-                isinstance(destination_path, str) and
-                isinstance(paths, list) and
-                isinstance(overwrite, bool) and
-                isinstance(restore_data_and_acl, bool)):
-            raise SDKException('Subclient', '101')
+        if not (
+            (isinstance(client, str) or isinstance(client, Client))
+            and isinstance(destination_path, str)
+            and isinstance(paths, list)
+            and isinstance(overwrite, bool)
+            and isinstance(restore_data_and_acl, bool)
+        ):
+            raise SDKException("Subclient", "101")
 
         if isinstance(client, Client):
             client = client
         elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
-            raise SDKException('Subclient', '105')
+            raise SDKException("Subclient", "105")
 
         paths = self._filter_paths(paths)
 
         destination_path = self._filter_paths([destination_path], True)
 
         if paths == []:
-            raise SDKException('Subclient', '104')
+            raise SDKException("Subclient", "104")
 
         request_json = self._restore_json(
             paths=paths,
@@ -841,22 +813,23 @@ class OneDriveInstance(CloudAppsInstance):
         restore_to_google = True
 
         if to_disk:
-            dest_user_account = ''
+            dest_user_account = ""
             rest_different_account = False
             restore_to_google = False
-        request_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]['cloudAppsRestoreOptions'] = {
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "cloudAppsRestoreOptions"
+        ] = {
             "instanceType": self._ca_instance_type,
             "googleRestoreOptions": {
                 "strDestUserAccount": dest_user_account,
                 "folderGuid": "",
                 "restoreToDifferentAccount": rest_different_account,
-                "restoreToGoogle": restore_to_google
-            }
+                "restoreToGoogle": restore_to_google,
+            },
         }
         return self._process_restore_response(request_json)
 
-    def enable_auto_discovery(self, mode: str = 'REGEX') -> None:
+    def enable_auto_discovery(self, mode: str = "REGEX") -> None:
         """Enable auto discovery on the OneDrive instance.
 
         This method enables automatic discovery of OneDrive users or groups based on the specified mode.
@@ -874,23 +847,20 @@ class OneDriveInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        auto_discovery_dict = {
-            'REGEX': 0,
-            'GROUP': 1
-        }
-        instance_dict = {
-            1: 'gInstance',
-            2: 'gInstance',
-            7: 'oneDriveInstance'
-        }
+        auto_discovery_dict = {"REGEX": 0, "GROUP": 1}
+        instance_dict = {1: "gInstance", 2: "gInstance", 7: "oneDriveInstance"}
         auto_discovery_mode = auto_discovery_dict.get(mode.upper(), None)
 
         if auto_discovery_mode is None:
-            raise SDKException('Instance', '107')
-        instance_prop = self._properties['cloudAppsInstance'].copy()
+            raise SDKException("Instance", "107")
+        instance_prop = self._properties["cloudAppsInstance"].copy()
 
-        instance_prop[instance_dict[instance_prop['instanceType']]]['isAutoDiscoveryEnabled'] = True
-        instance_prop[instance_dict[instance_prop['instanceType']]]['autoDiscoveryMode'] = auto_discovery_mode
+        instance_prop[instance_dict[instance_prop["instanceType"]]]["isAutoDiscoveryEnabled"] = (
+            True
+        )
+        instance_prop[instance_dict[instance_prop["instanceType"]]]["autoDiscoveryMode"] = (
+            auto_discovery_mode
+        )
 
         self._set_instance_properties("_properties['cloudAppsInstance']", instance_prop)
         self.refresh()
@@ -910,7 +880,7 @@ class OneDriveInstance(CloudAppsInstance):
         #ai-gen-doc
         """
 
-        return {'instanceProperties': self._properties}
+        return {"instanceProperties": self._properties}
 
     def modify_index_server(self, modified_index_server: str) -> None:
         """Modify the index server for the OneDrive instance.
@@ -929,23 +899,20 @@ class OneDriveInstance(CloudAppsInstance):
             "instance": {
                 "instanceId": int(self.instance_id),
                 "clientId": int(self._agent_object._client_object.client_id),
-                "applicationId": int(self._agent_object.agent_id)
+                "applicationId": int(self._agent_object.agent_id),
             },
-                "cloudAppsInstance": {
-                    "instanceType": self.ca_instance_type,
-                    "oneDriveInstance": {
-                    },
-                    "generalCloudProperties": {
-                        "indexServer": {
-                            "clientName": modified_index_server
-                        }
-                    }
-                }
-            }
+            "cloudAppsInstance": {
+                "instanceType": self.ca_instance_type,
+                "oneDriveInstance": {},
+                "generalCloudProperties": {"indexServer": {"clientName": modified_index_server}},
+            },
+        }
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_accessnodes(self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) -> None:
+    def modify_accessnodes(
+        self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str
+    ) -> None:
         """Modify the access nodes for the OneDrive instance.
 
         This method updates the list of access nodes and the associated user credentials
@@ -963,20 +930,16 @@ class OneDriveInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        member_servers=[]
+        member_servers = []
         for client in modified_accessnodes_list:
-            client_dict = {
-                "client": {
-                    "clientName": client
-                }
-            }
+            client_dict = {"client": {"clientName": client}}
             member_servers.append(client_dict)
 
         update_dict = {
             "instance": {
                 "instanceId": int(self.instance_id),
                 "clientId": int(self._agent_object._client_object.client_id),
-                "applicationId": int(self._agent_object.agent_id)
+                "applicationId": int(self._agent_object.agent_id),
             },
             "cloudAppsInstance": {
                 "instanceType": self.ca_instance_type,
@@ -987,21 +950,23 @@ class OneDriveInstance(CloudAppsInstance):
                                 "serviceType": "SYSTEM_ACCOUNT",
                                 "userAccount": {
                                     "userName": modified_user_name,
-                                    "password": b64encode(modified_user_password.encode()).decode(),
-                                }
+                                    "password": b64encode(
+                                        modified_user_password.encode()
+                                    ).decode(),
+                                },
                             }
                         ]
                     }
                 },
-                "generalCloudProperties": {
-                    "memberServers": member_servers
-                }
-            }
+                "generalCloudProperties": {"memberServers": member_servers},
+            },
         }
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_connection_settings(self, azure_app_id: str, azure_dir_id: str, azure_app_secret: str) -> None:
+    def modify_connection_settings(
+        self, azure_app_id: str, azure_dir_id: str, azure_app_secret: str
+    ) -> None:
         """Modify the OneDrive connection settings with new Azure credentials.
 
         Updates the Azure application ID, directory ID, and application secret used for connecting to OneDrive.
@@ -1027,11 +992,17 @@ class OneDriveInstance(CloudAppsInstance):
         """
 
         if not isinstance(azure_app_id, str) or not azure_app_id:
-            raise SDKException('Instance', '102', 'Invalid argument: azure_app_id must be a non-empty string')
+            raise SDKException(
+                "Instance", "102", "Invalid argument: azure_app_id must be a non-empty string"
+            )
         if not isinstance(azure_dir_id, str) or not azure_dir_id:
-            raise SDKException('Instance', '102', 'Invalid argument: azure_dir_id must be a non-empty string')
+            raise SDKException(
+                "Instance", "102", "Invalid argument: azure_dir_id must be a non-empty string"
+            )
         if not isinstance(azure_app_secret, str) or not azure_app_secret:
-            raise SDKException('Instance', '102', 'Invalid argument: azure_app_secret must be a non-empty string')
+            raise SDKException(
+                "Instance", "102", "Invalid argument: azure_app_secret must be a non-empty string"
+            )
 
         update_dict = {
             "instance": self._instance,
@@ -1043,20 +1014,25 @@ class OneDriveInstance(CloudAppsInstance):
                             {
                                 "azureDirectoryId": azure_dir_id,
                                 "azureAppId": azure_app_id,
-                                "azureAppKeyValue": b64encode(azure_app_secret.encode()).decode()
+                                "azureAppKeyValue": b64encode(azure_app_secret.encode()).decode(),
                             }
                         ]
                     }
-                }
-            }
+                },
+            },
         }
 
         self.update_properties(properties_dict=update_dict)
 
-    def delete_data_from_browse(self, item_guids: 'Union[str, List[str]]', include_deleted_items: bool = False, folder: bool = False) -> 'Union[None, Any]':
+    def delete_data_from_browse(
+        self,
+        item_guids: "Union[str, List[str]]",
+        include_deleted_items: bool = False,
+        folder: bool = False,
+    ) -> "Union[None, Any]":
         """Delete items from the backupset index, making them unavailable for browsing and recovery.
 
-        This method removes specified items (files or folders) from the backupset's index. 
+        This method removes specified items (files or folders) from the backupset's index.
         Once deleted, these items cannot be browsed or recovered through the standard interface.
 
         Args:
@@ -1075,10 +1051,10 @@ class OneDriveInstance(CloudAppsInstance):
             >>> # Delete a single file by GUID
             >>> instance = OneDriveInstance()
             >>> instance.delete_data_from_browse('file-guid-123')
-            >>> 
+            >>>
             >>> # Delete multiple files by GUIDs
             >>> instance.delete_data_from_browse(['file-guid-123', 'file-guid-456'])
-            >>> 
+            >>>
             >>> # Delete a folder by GUID and get job IDs
             >>> job_ids = instance.delete_data_from_browse('folder-guid-789', folder=True)
             >>> print(f"Delete job IDs: {job_ids}")
@@ -1087,11 +1063,21 @@ class OneDriveInstance(CloudAppsInstance):
         """
         if not isinstance(item_guids, str) or not item_guids:
             if not isinstance(item_guids, list):
-                raise SDKException('Instance', '102', "Invalid argument: item_guid must be a non-empty string or list of strings.")
+                raise SDKException(
+                    "Instance",
+                    "102",
+                    "Invalid argument: item_guid must be a non-empty string or list of strings.",
+                )
         if isinstance(item_guids, list):
             for item in item_guids:
                 if not isinstance(item, str) or not item:
-                    raise SDKException('Instance', '102',"Invalid argument: item_guid must be a non-empty string.")
+                    raise SDKException(
+                        "Instance",
+                        "102",
+                        "Invalid argument: item_guid must be a non-empty string.",
+                    )
 
-        request_json = self._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=include_deleted_items, folder=folder)
+        request_json = self._prepare_delete_json_onedrive_v2(
+            item_guids, include_deleted_items=include_deleted_items, folder=folder
+        )
         return self._process_delete_response(request_json)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -22,12 +20,11 @@ Policies:   Class for representing all types of Policies associated with the Com
 
 """
 
-from __future__ import unicode_literals
 from typing import TYPE_CHECKING
 
 from .policies.configuration_policies import ConfigurationPolicies
-from .policies.storage_policies import StoragePolicies
 from .policies.schedule_policies import SchedulePolicies
+from .policies.storage_policies import StoragePolicies
 
 if TYPE_CHECKING:
     from .commcell import Commcell
@@ -51,7 +48,7 @@ class Policies:
 
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the Policies class.
 
         Args:
@@ -99,8 +96,7 @@ class Policies:
 
         """
         if self._configuration_policies is None:
-            self._configuration_policies = ConfigurationPolicies(
-                self._commcell_object)
+            self._configuration_policies = ConfigurationPolicies(self._commcell_object)
 
         return self._configuration_policies
 

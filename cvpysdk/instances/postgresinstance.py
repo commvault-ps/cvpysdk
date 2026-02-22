@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -89,16 +87,13 @@ PostgreSQLInstance instance Attributes
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from base64 import b64encode
+from typing import TYPE_CHECKING, Optional
 
-from ..instance import Instance
 from ..exception import SDKException
+from ..instance import Instance
 from ..job import Job
 
-from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -133,7 +128,7 @@ class PostgreSQLInstance(Instance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int) -> None:
         """Initialize a PostgreSQLInstance object.
 
         Args:
@@ -143,12 +138,7 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        super(
-            PostgreSQLInstance,
-            self).__init__(
-            agent_object,
-            instance_name,
-            instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
         self.backup_object = None
         self.backupset_object = None
         self.sub_client_object = None
@@ -165,12 +155,9 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if self._properties['postGreSQLInstance']['BinaryDirectory']:
-            return self._properties['postGreSQLInstance']['BinaryDirectory']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch the Binary directory.")
+        if self._properties["postGreSQLInstance"]["BinaryDirectory"]:
+            return self._properties["postGreSQLInstance"]["BinaryDirectory"]
+        raise SDKException("Instance", "105", "Could not fetch the Binary directory.")
 
     @property
     def postgres_lib_directory(self) -> str:
@@ -181,12 +168,9 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if self._properties['postGreSQLInstance']['LibDirectory']:
-            return self._properties['postGreSQLInstance']['LibDirectory']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch the Lib directory.")
+        if self._properties["postGreSQLInstance"]["LibDirectory"]:
+            return self._properties["postGreSQLInstance"]["LibDirectory"]
+        raise SDKException("Instance", "105", "Could not fetch the Lib directory.")
 
     @property
     def postgres_archive_log_directory(self) -> str:
@@ -197,12 +181,9 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if self._properties['postGreSQLInstance']['ArchiveLogDirectory']:
-            return self._properties['postGreSQLInstance']['ArchiveLogDirectory']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch the Archive log directory.")
+        if self._properties["postGreSQLInstance"]["ArchiveLogDirectory"]:
+            return self._properties["postGreSQLInstance"]["ArchiveLogDirectory"]
+        raise SDKException("Instance", "105", "Could not fetch the Archive log directory.")
 
     @property
     def log_storage_policy(self) -> Optional[str]:
@@ -213,7 +194,11 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('postGreSQLInstance', {}).get('logStoragePolicy', {}).get('storagePolicyName', None)
+        return (
+            self._properties.get("postGreSQLInstance", {})
+            .get("logStoragePolicy", {})
+            .get("storagePolicyName", None)
+        )
 
     @log_storage_policy.setter
     def log_storage_policy(self, value: str) -> None:
@@ -225,10 +210,10 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, str):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        properties['postGreSQLInstance']['logStoragePolicy'] = {}
-        properties['postGreSQLInstance']['logStoragePolicy']['storagePolicyName'] = value
+        properties["postGreSQLInstance"]["logStoragePolicy"] = {}
+        properties["postGreSQLInstance"]["logStoragePolicy"]["storagePolicyName"] = value
         self.update_properties(properties)
 
     @property
@@ -243,12 +228,9 @@ class PostgreSQLInstance(Instance):
         if self.credentials:
             return self._commcell_object.credentials.get(self.credentials).credential_user_name
         else:
-            if self._properties['postGreSQLInstance']['SAUser']['userName']:
-                return self._properties['postGreSQLInstance']['SAUser']['userName']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch the Server name.")
+            if self._properties["postGreSQLInstance"]["SAUser"]["userName"]:
+                return self._properties["postGreSQLInstance"]["SAUser"]["userName"]
+        raise SDKException("Instance", "105", "Could not fetch the Server name.")
 
     @property
     def postgres_server_port_number(self) -> str:
@@ -259,12 +241,9 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if self._properties['postGreSQLInstance']['port']:
-            return self._properties['postGreSQLInstance']['port']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch the port Number.")
+        if self._properties["postGreSQLInstance"]["port"]:
+            return self._properties["postGreSQLInstance"]["port"]
+        raise SDKException("Instance", "105", "Could not fetch the port Number.")
 
     @property
     def maintenance_database(self) -> str:
@@ -275,12 +254,9 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if self._properties['postGreSQLInstance'].get('MaintainenceDB'):
-            return self._properties['postGreSQLInstance']['MaintainenceDB']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch maintenance database.")
+        if self._properties["postGreSQLInstance"].get("MaintainenceDB"):
+            return self._properties["postGreSQLInstance"]["MaintainenceDB"]
+        raise SDKException("Instance", "105", "Could not fetch maintenance database.")
 
     @property
     def postgres_version(self) -> str:
@@ -291,12 +267,9 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if self._properties.get('version'):
-            return self._properties['version']
-        raise SDKException(
-            'Instance',
-            '105',
-            "Could not fetch postgres version.")
+        if self._properties.get("version"):
+            return self._properties["version"]
+        raise SDKException("Instance", "105", "Could not fetch postgres version.")
 
     @property
     def archive_delete(self) -> bool:
@@ -307,7 +280,7 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('postGreSQLInstance', {}).get('ArchiveDelete', False)
+        return self._properties.get("postGreSQLInstance", {}).get("ArchiveDelete", False)
 
     @archive_delete.setter
     def archive_delete(self, value: bool) -> None:
@@ -321,9 +294,9 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, bool):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        properties['postGreSQLInstance']['ArchiveDelete'] = value
+        properties["postGreSQLInstance"]["ArchiveDelete"] = value
         self.update_properties(properties)
 
     @property
@@ -336,8 +309,12 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if self.is_standby_enabled:
-            return self._properties.get('postGreSQLInstance', {}).get(
-                'standbyOptions', {}).get('standbyInstance', {}).get('instanceName', "")
+            return (
+                self._properties.get("postGreSQLInstance", {})
+                .get("standbyOptions", {})
+                .get("standbyInstance", {})
+                .get("instanceName", "")
+            )
 
         return None
 
@@ -351,8 +328,12 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if self.is_standby_enabled:
-            return self._properties.get('postGreSQLInstance', {}).get(
-                'standbyOptions', {}).get('standbyInstance', {}).get('instanceId', "")
+            return (
+                self._properties.get("postGreSQLInstance", {})
+                .get("standbyOptions", {})
+                .get("standbyInstance", {})
+                .get("instanceId", "")
+            )
 
         return None
 
@@ -365,7 +346,11 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('isStandbyEnabled', False)
+        return (
+            self._properties.get("postGreSQLInstance", {})
+            .get("standbyOptions", {})
+            .get("isStandbyEnabled", False)
+        )
 
     @property
     def use_master_for_log_backup(self) -> bool:
@@ -376,7 +361,11 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForLogBkp', False)
+        return (
+            self._properties.get("postGreSQLInstance", {})
+            .get("standbyOptions", {})
+            .get("useMasterForLogBkp", False)
+        )
 
     @use_master_for_log_backup.setter
     def use_master_for_log_backup(self, value: bool) -> None:
@@ -388,9 +377,9 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, bool):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        properties['postGreSQLInstance']['standbyOptions']['useMasterForLogBkp'] = value
+        properties["postGreSQLInstance"]["standbyOptions"]["useMasterForLogBkp"] = value
         self.update_properties(properties)
 
     @property
@@ -402,8 +391,11 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('postGreSQLInstance', {}).get(
-            'standbyOptions', {}).get('useMasterForDataBkp', False)
+        return (
+            self._properties.get("postGreSQLInstance", {})
+            .get("standbyOptions", {})
+            .get("useMasterForDataBkp", False)
+        )
 
     @use_master_for_data_backup.setter
     def use_master_for_data_backup(self, value: bool) -> None:
@@ -415,9 +407,9 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, bool):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        properties['postGreSQLInstance']['standbyOptions']['useMasterForDataBkp'] = value
+        properties["postGreSQLInstance"]["standbyOptions"]["useMasterForDataBkp"] = value
         self.update_properties(properties)
 
     @property
@@ -429,7 +421,11 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslEnabled", False)
+        return (
+            self._properties.get("postGreSQLInstance", {})
+            .get("sslOpt", {})
+            .get("sslEnabled", False)
+        )
 
     @property
     def postgres_ssl_ca_file(self) -> str:
@@ -473,9 +469,9 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, str):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        properties['postGreSQLInstance']['SAUser']['password'] = b64encode(value.encode()).decode()
+        properties["postGreSQLInstance"]["SAUser"]["password"] = b64encode(value.encode()).decode()
         self.update_properties(properties)
 
     def _get_instance_properties(self) -> None:
@@ -489,8 +485,8 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        super(PostgreSQLInstance, self)._get_instance_properties()
-        self._postgresql_instance = self._properties['postGreSQLInstance']
+        super()._get_instance_properties()
+        self._postgresql_instance = self._properties["postGreSQLInstance"]
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all properties related to the PostgreSQL instance as a dictionary.
@@ -501,11 +497,10 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":
-                {
-                    "instance": self._instance,
-                    "postGreSQLInstance": self._postgresql_instance
-                }
+            "instanceProperties": {
+                "instance": self._instance,
+                "postGreSQLInstance": self._postgresql_instance,
+            }
         }
         return instance_json
 
@@ -524,7 +519,7 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        rest_json = super(PostgreSQLInstance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
@@ -535,8 +530,9 @@ class PostgreSQLInstance(Instance):
             restore_option.update(kwargs)
 
         self._restore_postgres_option_json(restore_option)
-        rest_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["postgresRstOption"] = self.postgres_restore_json
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["postgresRstOption"] = (
+            self.postgres_restore_json
+        )
         return rest_json
 
     def _restore_common_options_json(self, value: dict) -> None:
@@ -548,8 +544,8 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
-        super(PostgreSQLInstance, self)._restore_common_options_json(value)
+            raise SDKException("Subclient", "101")
+        super()._restore_common_options_json(value)
         if value.get("baseline_jobid"):
             self._commonoption_restore_json = {
                 "clusterDBBackedup": False,
@@ -559,7 +555,7 @@ class PostgreSQLInstance(Instance):
                 "baselineJobId": value.get("baseline_jobid", ""),
                 "copyToObjectStore": False,
                 "onePassRestore": False,
-                "syncRestore": value.get("sync_restore", True)
+                "syncRestore": value.get("sync_restore", True),
             }
 
     def _restore_destination_json(self, value: dict) -> None:
@@ -574,21 +570,19 @@ class PostgreSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         if value.get("restore_to_disk"):
-            return super(PostgreSQLInstance, self)._restore_destination_json(value)
+            return super()._restore_destination_json(value)
 
         else:
             self._destination_restore_json = {
                 "destinationInstance": {
                     "clientName": value.get("dest_client_name", ""),
                     "instanceName": value.get("dest_instance_name", ""),
-                    "appName": self._agent_object.agent_name
+                    "appName": self._agent_object.agent_name,
                 },
-                "destClient": {
-                    "clientName": value.get("dest_client_name", "")
-                }
+                "destClient": {"clientName": value.get("dest_client_name", "")},
             }
 
     def _restore_postgres_option_json(self, value: dict) -> None:
@@ -601,7 +595,7 @@ class PostgreSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self.postgres_restore_json = self._postgres_restore_options = {
             "restoreToSameServer": False,
@@ -609,7 +603,7 @@ class PostgreSQLInstance(Instance):
             "instanceRestore": False,
             "fsBackupSetRestore": value.get("backupset_flag", ""),
             "isCloneRestore": value.get("clone_env", False),
-            "refTime": {}
+            "refTime": {},
         }
 
         if value.get("clone_env", False):
@@ -626,7 +620,7 @@ class PostgreSQLInstance(Instance):
             self.postgres_restore_json["auxilaryMap"] = []
             database_list = []
             for table_path in value.get("paths"):
-                database_list.append(table_path.split('/')[1])
+                database_list.append(table_path.split("/")[1])
             database_list = set(database_list)
             for database_name in database_list:
                 self.postgres_restore_json["auxilaryMap"].append({"sourceDB": database_name})
@@ -661,8 +655,8 @@ class PostgreSQLInstance(Instance):
         restore_to_disk: bool = False,
         restore_to_disk_job: int = None,
         destination_path: str = None,
-        revert: bool = False
-    ) -> 'Job':
+        revert: bool = False,
+    ) -> "Job":
         """Restore PostgreSQL data or log files in place to their original location.
 
         This method restores the specified PostgreSQL databases or files to the same location on the destination client and instance.
@@ -711,12 +705,11 @@ class PostgreSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if not (isinstance(path, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (isinstance(path, list) and isinstance(overwrite, bool)):
+            raise SDKException("Instance", "101")
 
         if not path:
-            raise SDKException('Instance', '104')
+            raise SDKException("Instance", "104")
 
         if not no_of_streams:
             no_of_streams = 1
@@ -747,17 +740,21 @@ class PostgreSQLInstance(Instance):
             restore_to_disk=restore_to_disk,
             index_free_restore=index_free_restore,
             destination_path=destination_path,
-            restore_jobs=restore_to_disk_job)
+            restore_jobs=restore_to_disk_job,
+        )
 
         if volume_level_restore:
-            request_json['taskInfo']['subTasks'][0]['options'][
-                'restoreOptions']['destination']["noOfStreams"] = no_of_streams
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"][
+                "noOfStreams"
+            ] = no_of_streams
 
         if restore_to_disk:
-            request_json['taskInfo']['subTasks'][0]['options'][
-                'restoreOptions']['destination']["destPath"] = [destination_path]
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"][
+                "destPath"
+            ] = [destination_path]
 
         if revert:
-            request_json['taskInfo']['subTasks'][0]['options'][
-                'restoreOptions']['commonOptions']["revert"] = revert
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["commonOptions"][
+                "revert"
+            ] = revert
         return self._process_restore_response(request_json)

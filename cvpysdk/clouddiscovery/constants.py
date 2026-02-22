@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -18,7 +16,7 @@
 
 """Constants and Enums for Cloud Discovery module."""
 
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 
 class AssetProvider(IntEnum):
@@ -127,8 +125,10 @@ RESPONSE_FORMAT = "json"
 START = 0
 ROWS = 100
 ITEM_STATE = "ItemState:1"
-ASSET_SUB_TYPE = ("AssetSubType:0 OR AssetSubType:38 OR AssetSubType:39 OR AssetSubType:40 OR AssetSubType:41 OR"
-                  " AssetSubType:42 OR AssetSubType:43")
+ASSET_SUB_TYPE = (
+    "AssetSubType:0 OR AssetSubType:38 OR AssetSubType:39 OR AssetSubType:40 OR AssetSubType:41 OR"
+    " AssetSubType:42 OR AssetSubType:43"
+)
 FILTER_QUERY = "Provider:1"
 FACET_JSON = {
     "CredentialName": {
@@ -142,9 +142,9 @@ FACET_JSON = {
                 "mincount": 1,
                 "limit": 50,
                 "sort": {"count": "desc"},
-                "type": "terms"
+                "type": "terms",
             }
-        }
+        },
     },
     "WorkloadType": {
         "field": "WorkloadType",
@@ -158,16 +158,16 @@ FACET_JSON = {
                 "domain": {"excludeTags": ["tag_group_Total"]},
                 "minCount": 1,
                 "q": "AssetSize:[* TO *]",
-                "facet": {"Sum_Size": "sum(AssetSize)"}
+                "facet": {"Sum_Size": "sum(AssetSize)"},
             }
-        }
+        },
     },
     "AssetType": {
         "field": "AssetType",
         "mincount": 1,
         "limit": 50,
         "sort": {"count": "desc"},
-        "type": "terms"
+        "type": "terms",
     },
     "ProtectionStatus": {
         "field": "ProtectionStatus",
@@ -181,62 +181,62 @@ FACET_JSON = {
                 "mincount": 1,
                 "limit": 50,
                 "sort": {"count": "desc"},
-                "type": "terms"
+                "type": "terms",
             }
-        }
+        },
     },
     "AssetRegion": {
         "field": "AssetRegion",
         "mincount": 1,
         "sort": {"count": "desc"},
-        "type": "terms"
+        "type": "terms",
     },
     "SubscriptionName": {
         "field": "SubscriptionName",
         "mincount": 1,
         "sort": {"count": "desc"},
-        "type": "terms"
+        "type": "terms",
     },
     "AssetGroup": {
         "field": "AssetGroup",
         "mincount": 1,
         "sort": {"count": "desc"},
-        "type": "terms"
+        "type": "terms",
     },
     "EntityTags": {
         "field": "EntityTags",
         "mincount": 1,
         "sort": {"count": "desc"},
-        "type": "terms"
+        "type": "terms",
     },
     "Total_Size": {
         "type": "query",
         "domain": {"excludeTags": ["tag_group_Total"]},
         "minCount": 1,
         "q": "AssetSize:[* TO *]",
-        "facet": {"Sum_Size": "sum(AssetSize)"}
+        "facet": {"Sum_Size": "sum(AssetSize)"},
     },
     "ProtectionStatusSize_Protected": {
         "type": "query",
         "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
         "minCount": 1,
         "q": "ProtectionStatus:4 AND ProtectedBy:6",
-        "facet": {"Sum_Size": "sum(AssetSize)"}
+        "facet": {"Sum_Size": "sum(AssetSize)"},
     },
     "ProtectionStatusSize_Managed": {
         "type": "query",
         "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
         "minCount": 1,
         "q": "ProtectionStatus:4 AND !ProtectedBy:6",
-        "facet": {"Sum_Size": "sum(AssetSize)"}
+        "facet": {"Sum_Size": "sum(AssetSize)"},
     },
     "ProtectionStatusSize_NotProtected": {
         "type": "query",
         "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
         "minCount": 1,
         "q": "(ProtectionStatus:2 OR ProtectionStatus:5 OR ProtectionStatus:1)",
-        "facet": {"Sum_Size": "sum(AssetSize)"}
-    }
+        "facet": {"Sum_Size": "sum(AssetSize)"},
+    },
 }
 
 # Payloads
@@ -244,12 +244,7 @@ FACET_JSON = {
 AWS_EXPRESS_CONNECTION_PAYLOAD = {
     "cloudType": "aws",
     "connectionType": None,
-    "cloudSpecificConfiguration": {
-        "aws": {
-            "regions": "default",
-            "iamRoleAccountId": None
-        }
-    }
+    "cloudSpecificConfiguration": {"aws": {"regions": "default", "iamRoleAccountId": None}},
 }
 
 AZURE_EXPRESS_CONNECTION_PAYLOAD = {
@@ -262,9 +257,9 @@ AZURE_EXPRESS_CONNECTION_PAYLOAD = {
             "tenantName": None,
             "environment": "AzureCloud",
             "discoverAllSubscription": True,
-            "assignReaderRole": False
+            "assignReaderRole": False,
         }
-    }
+    },
 }
 
 # Constants for AWS Cloud Connection

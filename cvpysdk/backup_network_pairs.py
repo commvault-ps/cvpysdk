@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -38,12 +37,10 @@ BackupNetworkPairs:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from .exception import SDKException
 
 
-class BackupNetworkPairs(object):
+class BackupNetworkPairs:
     """
     Manages backup network pairs operations within a CommCell environment.
 
@@ -82,9 +79,9 @@ class BackupNetworkPairs(object):
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._backup_network_pairs = None
-        self._backup_network_pair = self._services['BACKUP_NETWORK_PAIR']
+        self._backup_network_pair = self._services["BACKUP_NETWORK_PAIR"]
         self._update_response_ = self._commcell_object._update_response_
-        self.operation_type = ['ADD', 'DELETE']
+        self.operation_type = ["ADD", "DELETE"]
 
     def __repr__(self) -> str:
         """Return the string representation of the BackupNetworkPairs instance.
@@ -126,15 +123,15 @@ class BackupNetworkPairs(object):
         #ai-gen-doc
         """
 
-        client_id = self._commcell_object.clients.all_clients.get(client_name).get('id')
+        client_id = self._commcell_object.clients.all_clients.get(client_name).get("id")
 
-        self._backup_network_pairs = self._services['BACKUP_NETWORK_PAIRS'] % client_id
+        self._backup_network_pairs = self._services["BACKUP_NETWORK_PAIRS"] % client_id
 
-        flag, response = self._cvpysdk_object.make_request('GET', self._backup_network_pairs)
+        flag, response = self._cvpysdk_object.make_request("GET", self._backup_network_pairs)
 
         if flag:
-            if response.json() and 'ArchPipeLineList' in response.json():
-                interface = response.json()['ArchPipeLineList']
+            if response.json() and "ArchPipeLineList" in response.json():
+                interface = response.json()["ArchPipeLineList"]
 
             else:
                 interface = {}
@@ -142,7 +139,7 @@ class BackupNetworkPairs(object):
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def add_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -> None:
         """Add backup interface pairs for clients or client groups.
@@ -182,9 +179,12 @@ class BackupNetworkPairs(object):
         """
 
         if not isinstance(interface_pairs, list):
-            raise SDKException('BackupNetworkPairs', '101',
-                               'Interface Pairs should be a list of tuples '
-                               'containing dictionary of source and destination')
+            raise SDKException(
+                "BackupNetworkPairs",
+                "101",
+                "Interface Pairs should be a list of tuples "
+                "containing dictionary of source and destination",
+            )
 
         self._modify_backup_interface_pairs(interface_pairs, self.operation_type[0])
 
@@ -231,13 +231,18 @@ class BackupNetworkPairs(object):
         """
 
         if not isinstance(interface_pairs, list):
-            raise SDKException('BackupNetworkPairs', '101',
-                               'Interface Pairs should be a list of tuples '
-                               'containing dictionary of source and destination')
+            raise SDKException(
+                "BackupNetworkPairs",
+                "101",
+                "Interface Pairs should be a list of tuples "
+                "containing dictionary of source and destination",
+            )
 
         self._modify_backup_interface_pairs(interface_pairs, self.operation_type[1])
 
-    def _modify_backup_interface_pairs(self, interface_pairs: list[tuple[dict[str, str], dict[str, str]]], operation_type: str) -> None:
+    def _modify_backup_interface_pairs(
+        self, interface_pairs: list[tuple[dict[str, str], dict[str, str]]], operation_type: str
+    ) -> None:
         """Set, update, or delete backup interface pairs between clients or client groups.
 
         This method configures backup interface pairs, specifying the source and destination
@@ -287,40 +292,48 @@ class BackupNetworkPairs(object):
 
         for interface_pair in interface_pairs:
             interface_pair_dict = {
-                "destGroupId": int(self._commcell_object.client_groups.all_clientgroups.get(
-                    interface_pair[1].get('clientgroup', '').lower(), 0)),
-                "srcGroupId": int(self._commcell_object.client_groups.all_clientgroups.get(
-                    interface_pair[0].get('clientgroup', '').lower(), 0)),
+                "destGroupId": int(
+                    self._commcell_object.client_groups.all_clientgroups.get(
+                        interface_pair[1].get("clientgroup", "").lower(), 0
+                    )
+                ),
+                "srcGroupId": int(
+                    self._commcell_object.client_groups.all_clientgroups.get(
+                        interface_pair[0].get("clientgroup", "").lower(), 0
+                    )
+                ),
                 "isActive": 1,
                 "client2": {
-                    "name": interface_pair[1]['destip'],
-                    "id": int(self._commcell_object.clients.all_clients.get(
-                        interface_pair[1].get('client', '').lower(), {}).get('id', 0))
+                    "name": interface_pair[1]["destip"],
+                    "id": int(
+                        self._commcell_object.clients.all_clients.get(
+                            interface_pair[1].get("client", "").lower(), {}
+                        ).get("id", 0)
+                    ),
                 },
                 "client1": {
-                    "name": interface_pair[0]['srcip'],
-                    "id": int(self._commcell_object.clients.all_clients.get(
-                        interface_pair[0].get('client', '').lower(), {}).get('id', 0))
-                }
+                    "name": interface_pair[0]["srcip"],
+                    "id": int(
+                        self._commcell_object.clients.all_clients.get(
+                            interface_pair[0].get("client", "").lower(), {}
+                        ).get("id", 0)
+                    ),
+                },
             }
 
             archpipeline_list.append(interface_pair_dict)
 
-        request_json = {
-            "operationType": operation_type,
-            "ArchPipeLineList": archpipeline_list
-        }
+        request_json = {"operationType": operation_type, "ArchPipeLineList": archpipeline_list}
 
-        flag, response = self._cvpysdk_object.make_request('POST',
-                                                           self._backup_network_pair,
-                                                           request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._backup_network_pair, request_json
+        )
 
         if flag:
             if response.json():
-                if response.json()['errorCode'] != 0:
-                    raise SDKException('BackupNetworkPairs', '101',
-                                       "Failed to set network pairs")
+                if response.json()["errorCode"] != 0:
+                    raise SDKException("BackupNetworkPairs", "101", "Failed to set network pairs")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)

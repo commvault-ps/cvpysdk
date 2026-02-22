@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -62,10 +60,11 @@ ContentAnalyzer Attributes
     **cloud_url**    --  returns the url of the content analyzer
 
 """
+
 from .exception import SDKException
 
 
-class ContentAnalyzers(object):
+class ContentAnalyzers:
     """
     Manages and represents all ContentAnalyzers within a CommCell environment.
 
@@ -107,14 +106,14 @@ class ContentAnalyzers(object):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._content_analyzers = None
-        self._api_get_content_analyzer_cloud = self._services['GET_CONTENT_ANALYZER_CLOUD']
+        self._api_get_content_analyzer_cloud = self._services["GET_CONTENT_ANALYZER_CLOUD"]
         self.refresh()
 
     def _response_not_success(self, response: object) -> None:
         """Raise an exception if the API response status is not 200 (OK).
 
-        This helper function checks the status of the provided response object, typically 
-        returned from an API request using the `requests` Python package. If the response 
+        This helper function checks the status of the provided response object, typically
+        returned from an API request using the `requests` Python package. If the response
         status code is not 200, an exception is raised to indicate the request was not successful.
 
         Args:
@@ -128,7 +127,7 @@ class ContentAnalyzers(object):
 
         #ai-gen-doc
         """
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_properties(self, caclient_name: str) -> dict:
         """Retrieve the properties of a specified content analyzer client.
@@ -182,12 +181,12 @@ class ContentAnalyzers(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._api_get_content_analyzer_cloud
+            "GET", self._api_get_content_analyzer_cloud
         )
         if flag:
-            if response.json() and 'contentAnalyzerList' in response.json():
+            if response.json() and "contentAnalyzerList" in response.json():
                 return self._get_cloud_from_collections(response.json())
-            raise SDKException('ContentAnalyzer', '103')
+            raise SDKException("ContentAnalyzer", "103")
         self._response_not_success(response)
 
     @staticmethod
@@ -216,18 +215,18 @@ class ContentAnalyzers(object):
         #ai-gen-doc
         """
         _cacloud = {}
-        for cacloud in collections['contentAnalyzerList']:
+        for cacloud in collections["contentAnalyzerList"]:
             cacloud_dict = {}
-            cacloud_dict['caUrl'] = cacloud.get('caUrl', "")
-            cacloud_dict['clientName'] = cacloud.get('clientName', "")
-            cacloud_dict['clientId'] = cacloud.get('clientId', 0)
-            _cacloud[cacloud['clientName'].lower()] = cacloud_dict
+            cacloud_dict["caUrl"] = cacloud.get("caUrl", "")
+            cacloud_dict["clientName"] = cacloud.get("clientName", "")
+            cacloud_dict["clientId"] = cacloud.get("clientId", 0)
+            _cacloud[cacloud["clientName"].lower()] = cacloud_dict
         return _cacloud
 
     def refresh(self) -> None:
         """Reload the content analyzers associated with the Commcell.
 
-        This method refreshes the internal state of the ContentAnalyzers object, ensuring that 
+        This method refreshes the internal state of the ContentAnalyzers object, ensuring that
         any changes to the content analyzers on the Commcell are reflected in this instance.
 
         Example:
@@ -239,7 +238,7 @@ class ContentAnalyzers(object):
         """
         self._content_analyzers = self._get_all_content_analyzers()
 
-    def get(self, client_name: str) -> 'ContentAnalyzer':
+    def get(self, client_name: str) -> "ContentAnalyzer":
         """Retrieve a ContentAnalyzer object for the specified Content Analyzer (CA) client name.
 
         Args:
@@ -259,11 +258,11 @@ class ContentAnalyzers(object):
         #ai-gen-doc
         """
         if not isinstance(client_name, str):
-            raise SDKException('ContentAnalyzer', '101')
+            raise SDKException("ContentAnalyzer", "101")
 
         if self.has_client(client_name):
             return ContentAnalyzer(self._commcell_object, client_name)
-        raise SDKException('ContentAnalyzer', '102', "Unable to get ContentAnalyzer class object")
+        raise SDKException("ContentAnalyzer", "102", "Unable to get ContentAnalyzer class object")
 
     def has_client(self, client_name: str) -> bool:
         """Check if a content analyzer client exists in the Commcell by name.
@@ -286,12 +285,14 @@ class ContentAnalyzers(object):
         #ai-gen-doc
         """
         if not isinstance(client_name, str):
-            raise SDKException('ContentAnalyzer', '101')
+            raise SDKException("ContentAnalyzer", "101")
 
-        return self._content_analyzers and client_name.lower() in map(str.lower, self._content_analyzers)
+        return self._content_analyzers and client_name.lower() in map(
+            str.lower, self._content_analyzers
+        )
 
 
-class ContentAnalyzer(object):
+class ContentAnalyzer:
     """
     ContentAnalyzer provides an interface for managing and interacting with a single content analyzer client.
 
@@ -331,8 +332,8 @@ class ContentAnalyzer(object):
     def _get_cloud_properties(self) -> None:
         """Retrieve properties for all content analyzer clients in the Commcell.
 
-        This method gathers and updates the configuration properties for each content analyzer client 
-        associated with the Commcell. It is typically used internally to ensure that the latest 
+        This method gathers and updates the configuration properties for each content analyzer client
+        associated with the Commcell. It is typically used internally to ensure that the latest
         cloud-related properties are available for further operations.
 
         Example:
@@ -342,8 +343,10 @@ class ContentAnalyzer(object):
 
         #ai-gen-doc
         """
-        content_analyzers_dict = self._commcell_object.content_analyzers.get_properties(self._client_name)
-        self._cloud_url = content_analyzers_dict['caUrl']
+        content_analyzers_dict = self._commcell_object.content_analyzers.get_properties(
+            self._client_name
+        )
+        self._cloud_url = content_analyzers_dict["caUrl"]
         return content_analyzers_dict
 
     @property
@@ -381,8 +384,8 @@ class ContentAnalyzer(object):
     def refresh(self) -> None:
         """Reload the content analyzer details associated with this Commcell.
 
-        This method refreshes the internal state of the ContentAnalyzer object, ensuring that 
-        any changes made to the content analyzer configuration on the Commcell are reflected 
+        This method refreshes the internal state of the ContentAnalyzer object, ensuring that
+        any changes made to the content analyzer configuration on the Commcell are reflected
         in this instance.
 
         Example:

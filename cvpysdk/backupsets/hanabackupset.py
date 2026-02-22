@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -29,12 +27,11 @@ HANABackupset:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from typing import Optional, Union
 
 from ..backupset import Backupset
 from ..exception import SDKException
-from typing import Union, Optional
+
 
 class HANABackupset(Backupset):
     """
@@ -56,18 +53,18 @@ class HANABackupset(Backupset):
     """
 
     def restore(
-            self,
-            pseudo_client: str,
-            instance: Union[str, 'Instance'],
-            backup_prefix: Optional[str] = None,
-            point_in_time: Optional[str] = None,
-            initialize_log_area: bool = False,
-            use_hardware_revert: bool = False,
-            clone_env: bool = False,
-            check_access: bool = True,
-            destination_instance_dir: Optional[str] = None,
-            ignore_delta_backups: bool = True
-        ) -> 'Job':
+        self,
+        pseudo_client: str,
+        instance: Union[str, "Instance"],
+        backup_prefix: Optional[str] = None,
+        point_in_time: Optional[str] = None,
+        initialize_log_area: bool = False,
+        use_hardware_revert: bool = False,
+        clone_env: bool = False,
+        check_access: bool = True,
+        destination_instance_dir: Optional[str] = None,
+        ignore_delta_backups: bool = True,
+    ) -> "Job":
         """Restore HANA databases to a specified client and instance.
 
         This method initiates a restore operation for HANA databases, allowing customization of restore options such as point-in-time recovery, hardware revert, cloning, and log area initialization.
@@ -112,7 +109,7 @@ class HANABackupset(Backupset):
         from ..instance import Instance
 
         if not isinstance(instance, (str, Instance)):
-            raise SDKException('Backupset', '101')
+            raise SDKException("Backupset", "101")
 
         request_json = self._instance_object._restore_request_json(
             pseudo_client,
@@ -125,7 +122,7 @@ class HANABackupset(Backupset):
             clone_env,
             check_access,
             destination_instance_dir,
-            ignore_delta_backups
+            ignore_delta_backups,
         )
 
         return self._instance_object._process_restore_response(request_json)

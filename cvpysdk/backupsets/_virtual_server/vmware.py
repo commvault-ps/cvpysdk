@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -17,17 +15,19 @@
 # --------------------------------------------------------------------------
 
 """Module for performing operations on a Backupset for the **VMWare Virtual Server** Agent."""
+
 from enum import Enum
 from json import JSONDecodeError
+from typing import Any, Dict, Optional
 
 import xmltodict
 
 from cvpysdk.backupsets.vsbackupset import VSBackupset
 from cvpysdk.exception import SDKException
-from typing import Any, Optional, Dict
+
 
 def _get_blr_pair_details(commcell_object):
-    """ Fetches all BLR Pair Details.
+    """Fetches all BLR Pair Details.
         This function is being used both by VMWareBackupset as well as _BLRReplicationPair
 
 
@@ -39,7 +39,8 @@ def _get_blr_pair_details(commcell_object):
 
     """
     flag, response = commcell_object._cvpysdk_object.make_request(
-        "GET", commcell_object._services["CONTINUOUS_REPLICATION_MONITOR"])
+        "GET", commcell_object._services["CONTINUOUS_REPLICATION_MONITOR"]
+    )
 
     try:
         assert response.json()["summary"]["totalPairs"] != 0
@@ -47,7 +48,10 @@ def _get_blr_pair_details(commcell_object):
     except AssertionError:
         return None
     except (JSONDecodeError, KeyError) as error:
-        err_msg = "Failed to fetch BLR pair details. %s", response.json().get("errorMessage", "") if flag else ""
+        err_msg = (
+            "Failed to fetch BLR pair details. %s",
+            response.json().get("errorMessage", "") if flag else "",
+        )
         raise SDKException("Backupset", 102, err_msg) from error
 
 
@@ -66,7 +70,9 @@ class VMwareBackupset(VSBackupset):
     #ai-gen-doc
     """
 
-    def __init__(self, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None):
+    def __init__(
+        self, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None
+    ):
         """Initialize a VMwareBackupset object with the specified instance and backupset details.
 
         Args:
@@ -87,7 +93,7 @@ class VMwareBackupset(VSBackupset):
     def refresh(self) -> None:
         """Reload the properties of the VMware backupset.
 
-        This method updates the backupset's internal state, ensuring that all properties 
+        This method updates the backupset's internal state, ensuring that all properties
         reflect the latest information from the Commcell, including BLR (Block Level Replication) pair details.
 
         Example:
@@ -100,11 +106,11 @@ class VMwareBackupset(VSBackupset):
         super().refresh()
         self._blr_pair_details = _get_blr_pair_details(self._commcell_object)
 
-    def get_blr_replication_pair(self, vm_name: str) -> '_BLRReplicationPair':
+    def get_blr_replication_pair(self, vm_name: str) -> "_BLRReplicationPair":
         """Retrieve the BLR replication pair for a specified virtual machine.
 
         Args:
-            vm_name: Name of the virtual machine for which to fetch the BLR replication pair. 
+            vm_name: Name of the virtual machine for which to fetch the BLR replication pair.
                 Note: VM names are case sensitive.
 
         Returns:
@@ -122,12 +128,15 @@ class VMwareBackupset(VSBackupset):
         #ai-gen-doc
         """
         try:
-            return _BLRReplicationPair(self._commcell_object, vm_name, self._blr_pair_details[vm_name])
+            return _BLRReplicationPair(
+                self._commcell_object, vm_name, self._blr_pair_details[vm_name]
+            )
         except KeyError as error:
             raise SDKException(
                 "Backupset",
                 102,
-                "Cannot find the VM with the given name[Names are case sensitive]") from error
+                "Cannot find the VM with the given name[Names are case sensitive]",
+            ) from error
 
 
 class _BLRReplicationPair:
@@ -150,23 +159,19 @@ class _BLRReplicationPair:
 
     #ai-gen-doc
     """
+
     _boot_dict = {
         "TMMsg_CreateTaskReq": {
             "taskInfo": {
                 "task": {
-                    "taskFlags": {
-                        "disabled": "0"
-                    },
+                    "taskFlags": {"disabled": "0"},
                     "taskType": "1",
                     "ownerId": "1",
                     "initiatedFrom": "1",
-                    "ownerName": "admin"
+                    "ownerName": "admin",
                 },
                 "subTasks": {
-                    "subTask": {
-                        "subTaskType": "1",
-                        "operationType": "4047"
-                    },
+                    "subTask": {"subTaskType": "1", "operationType": "4047"},
                     "options": {
                         "backupOpts": {
                             "mediaOpt": {
@@ -174,21 +179,21 @@ class _BLRReplicationPair:
                                     "useMaximumStreams": "1",
                                     "maxNumberOfStreams": "0",
                                     "allCopies": "1",
-                                    "useScallableResourceManagement": "0"
+                                    "useScallableResourceManagement": "0",
                                 }
                             }
                         },
                         "adminOpts": {},
-
                     },
-                    "subTaskOperation": "1"
-                }
+                    "subTaskOperation": "1",
+                },
             }
         }
     }
 
     class Status(Enum):
         """Enum for BLR pair status"""
+
         backup = 1
         restoring = 2
         resync = 3
@@ -199,7 +204,7 @@ class _BLRReplicationPair:
         stopping = 11
         resuming = 13
 
-    def __init__(self, commcell: 'Commcell', vmname: str, details: Dict[str, Any]) -> None:
+    def __init__(self, commcell: "Commcell", vmname: str, details: Dict[str, Any]) -> None:
         """Initialize a BLRReplicationPair instance for a specific virtual machine.
 
         Args:
@@ -241,12 +246,16 @@ class _BLRReplicationPair:
         #ai-gen-doc
         """
         flag, response = self._commcell._cvpysdk_object.make_request(
-            "PUT", self._commcell._services["CONTINUOUS_REPLICATION_MONITOR"], payload)
+            "PUT", self._commcell._services["CONTINUOUS_REPLICATION_MONITOR"], payload
+        )
 
         try:
             assert response.json() == {"errorCode": 0}
         except (JSONDecodeError, AssertionError) as error:
-            err_msg = "Failed to modify BLR pair state. %s", response.json().get("errorMessage", "") if flag else ""
+            err_msg = (
+                "Failed to modify BLR pair state. %s",
+                response.json().get("errorMessage", "") if flag else "",
+            )
             raise SDKException("Backupset", 102, err_msg) from error
 
     @property
@@ -356,7 +365,7 @@ class _BLRReplicationPair:
     def resume(self) -> None:
         """Resume the replication pair operation.
 
-        This method resumes the replication process for the current pair, 
+        This method resumes the replication process for the current pair,
         typically after it has been paused or stopped.
 
         Example:
@@ -384,18 +393,30 @@ class _BLRReplicationPair:
         #ai-gen-doc
         """
         flag, response = self._commcell._cvpysdk_object.make_request(
-            "DELETE", "%s/%s" % (self._commcell._services["CONTINUOUS_REPLICATION_MONITOR"], self._details["id"]))
+            "DELETE",
+            "%s/%s"
+            % (self._commcell._services["CONTINUOUS_REPLICATION_MONITOR"], self._details["id"]),
+        )
 
         try:
             assert response.json() == {}
         except AssertionError as error:
-            err_msg = "Failed to delete BLR pair. %s", response.json().get("errorMessage", "") if flag else ""
+            err_msg = (
+                "Failed to delete BLR pair. %s",
+                response.json().get("errorMessage", "") if flag else "",
+            )
             raise SDKException("Backupset", 102, err_msg) from error
 
-    def create_test_boot(self, vm_name: str, life_time: int = 7200, esx_host_name: Optional[str] = None, vm_network: Optional[str] = None) -> None:
+    def create_test_boot(
+        self,
+        vm_name: str,
+        life_time: int = 7200,
+        esx_host_name: Optional[str] = None,
+        vm_network: Optional[str] = None,
+    ) -> None:
         """Create a test boot virtual machine for the replication pair.
 
-        This method initiates the creation of a test boot VM using the specified parameters. 
+        This method initiates the creation of a test boot VM using the specified parameters.
         The VM is created for testing purposes and will exist for the defined lifetime.
 
         Args:
@@ -414,12 +435,18 @@ class _BLRReplicationPair:
         request_dict = _BLRReplicationPair._boot_dict
 
         admin_options = self._get_admin_options(operation_type=1)
-        admin_options["blockOperation"]["operations"]["vmBootInfo"] = self._get_vm_boot_info(vm_name, life_time, esx_host_name, vm_network)
-        request_dict["TMMsg_CreateTaskReq"]["taskInfo"]["subTasks"]["options"]["adminOpts"] = admin_options
+        admin_options["blockOperation"]["operations"]["vmBootInfo"] = self._get_vm_boot_info(
+            vm_name, life_time, esx_host_name, vm_network
+        )
+        request_dict["TMMsg_CreateTaskReq"]["taskInfo"]["subTasks"]["options"]["adminOpts"] = (
+            admin_options
+        )
 
         self._send_xml(request_dict)
 
-    def create_permanent_boot(self, vm_name: str, esx_host_name: Optional[str] = None, vm_network: Optional[str] = None) -> None:
+    def create_permanent_boot(
+        self, vm_name: str, esx_host_name: Optional[str] = None, vm_network: Optional[str] = None
+    ) -> None:
         """Create a permanent boot virtual machine for the replication pair.
 
         This method initiates the creation of a permanent boot VM using the specified parameters.
@@ -440,12 +467,18 @@ class _BLRReplicationPair:
         request_dict = _BLRReplicationPair._boot_dict
 
         admin_options = self._get_admin_options(operation_type=4)
-        admin_options["blockOperation"]["operations"]["vmBootInfo"] = self._get_vm_boot_info(vm_name, 7200, esx_host_name, vm_network)
-        request_dict["TMMsg_CreateTaskReq"]["taskInfo"]["subTasks"]["options"]["adminOpts"] = admin_options
+        admin_options["blockOperation"]["operations"]["vmBootInfo"] = self._get_vm_boot_info(
+            vm_name, 7200, esx_host_name, vm_network
+        )
+        request_dict["TMMsg_CreateTaskReq"]["taskInfo"]["subTasks"]["options"]["adminOpts"] = (
+            admin_options
+        )
 
         self._send_xml(request_dict)
 
-    def _get_vm_boot_info(self, vm_name: str, lifetime: int, esx_host_name: Optional[str], vm_network: str) -> Dict[str, Any]:
+    def _get_vm_boot_info(
+        self, vm_name: str, lifetime: int, esx_host_name: Optional[str], vm_network: str
+    ) -> Dict[str, Any]:
         """Generate VM boot information for BLR replication.
 
         Args:
@@ -465,17 +498,18 @@ class _BLRReplicationPair:
 
         #ai-gen-doc
         """
-        return {"vmUUId": self._details["sourceGuid"],
-                "vmName": self._details["sourceName"],
-                "newVmName": vm_name,
-                "bootFromLatestPointInTime": "0",
-                "bootFromOldestPointInTime": "1",
-                "rpTimeOfDay": "-1",
-                "lifeTimeInSec": lifetime,
-                "blrPairId": self._details["id"],
-                "hostname": esx_host_name or "",
-                "networkCards": {"name": vm_network, "label": "Network adapter 1"}
-                }
+        return {
+            "vmUUId": self._details["sourceGuid"],
+            "vmName": self._details["sourceName"],
+            "newVmName": vm_name,
+            "bootFromLatestPointInTime": "0",
+            "bootFromOldestPointInTime": "1",
+            "rpTimeOfDay": "-1",
+            "lifeTimeInSec": lifetime,
+            "blrPairId": self._details["id"],
+            "hostname": esx_host_name or "",
+            "networkCards": {"name": vm_network, "label": "Network adapter 1"},
+        }
 
     def _get_admin_options(self, operation_type: str) -> Dict[str, Any]:
         """Generate administrative options for a block operation.
@@ -502,7 +536,7 @@ class _BLRReplicationPair:
                     "appId": "206",
                     "dstProxyClientId": self._details["tailClientId"],
                     "jobId": "0",
-                    "opType": operation_type
+                    "opType": operation_type,
                 }
             }
         }
@@ -543,5 +577,8 @@ class _BLRReplicationPair:
         try:
             return response.json()["jobIds"][0]
         except (KeyError, JSONDecodeError) as error:
-            raise SDKException("Backupset", 102,
-                               "Boot was not successful. %s" % response.json().get("errorMessage", "")) from error
+            raise SDKException(
+                "Backupset",
+                102,
+                "Boot was not successful. %s" % response.json().get("errorMessage", ""),
+            ) from error

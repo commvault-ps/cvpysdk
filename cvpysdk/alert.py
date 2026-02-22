@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -128,16 +126,16 @@ Alert Attributes
     **email_recipients**        --  returns the list of email recipients associated to the alert
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from typing import TYPE_CHECKING, Optional, Dict, Any, List, Tuple
 import xml.etree.ElementTree as ET
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+
 from .exception import SDKException
 
 if TYPE_CHECKING:
     from .commcell import Commcell
 
-class Alerts(object):
+
+class Alerts:
     """Class for getting all the Alerts associated with the commcell.
 
     Attributes:
@@ -153,7 +151,7 @@ class Alerts(object):
         alerts = Alerts(commcell_object)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the Alerts class.
 
         Args:
@@ -163,22 +161,22 @@ class Alerts(object):
             object: Instance of the Alerts class.
         """
         self._commcell_object = commcell_object
-        self._ALERTS = commcell_object._services['GET_ALL_ALERTS']
+        self._ALERTS = commcell_object._services["GET_ALL_ALERTS"]
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
         self._alerts = None
 
         self._notification_types = {
-            'email': 1,
-            'snmp': 4,
-            'event viewer': 8,
-            'save to disk': 512,
-            'rss feeds': 1024,
-            'console alerts': 8192,
-            'scom': 32768,
-            'workflow': 65536,
-            'content indexing': 131072
+            "email": 1,
+            "snmp": 4,
+            "event viewer": 8,
+            "save to disk": 512,
+            "rss feeds": 1024,
+            "console alerts": 8192,
+            "scom": 32768,
+            "workflow": 65536,
+            "content indexing": 131072,
         }
         self.refresh()
 
@@ -189,17 +187,14 @@ class Alerts(object):
             str: String of all the alerts for a commcell.
         """
         representation_string = "{:^5}\t{:^50}\t{:^80}\t{:^30}\n\n".format(
-            'S. No.', 'Alert', 'Description', 'Category'
+            "S. No.", "Alert", "Description", "Category"
         )
 
         for index, alert_name in enumerate(self._alerts):
-            alert_description = self._alerts[alert_name]['description']
-            alert_category = self._alerts[alert_name]['category']
-            sub_str = '{:^5}\t{:50}\t{:80}\t{:30}\n'.format(
-                index + 1,
-                alert_name,
-                alert_description,
-                alert_category
+            alert_description = self._alerts[alert_name]["description"]
+            alert_category = self._alerts[alert_name]["category"]
+            sub_str = (
+                f"{index + 1:^5}\t{alert_name:50}\t{alert_description:80}\t{alert_category:30}\n"
             )
             representation_string += sub_str
 
@@ -237,9 +232,9 @@ class Alerts(object):
             return self.all_alerts[value]
         else:
             try:
-                return list(filter(lambda x: x[1]['id'] == value, self.all_alerts.items()))[0][0]
+                return list(filter(lambda x: x[1]["id"] == value, self.all_alerts.items()))[0][0]
             except IndexError:
-                raise IndexError('No alert exists with the given Name / Id')
+                raise IndexError("No alert exists with the given Name / Id")
 
     def _get_alerts(self) -> dict:
         """Gets all the alerts associated with the commcell.
@@ -263,23 +258,23 @@ class Alerts(object):
 
                 if response is not success
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._ALERTS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._ALERTS)
 
         if flag:
-            if response.json() and 'alertList' in response.json():
+            if response.json() and "alertList" in response.json():
                 alerts_dict = {}
 
-                for dictionary in response.json()['alertList']:
+                for dictionary in response.json()["alertList"]:
                     temp_dict = {}
 
-                    temp_name = dictionary['alert']['name'].lower()
-                    temp_id = str(dictionary['alert']['id']).lower()
-                    temp_description = dictionary['description'].lower()
-                    temp_category = dictionary['alertCategory']['name'].lower()
+                    temp_name = dictionary["alert"]["name"].lower()
+                    temp_id = str(dictionary["alert"]["id"]).lower()
+                    temp_description = dictionary["description"].lower()
+                    temp_category = dictionary["alertCategory"]["name"].lower()
 
-                    temp_dict['id'] = temp_id
-                    temp_dict['description'] = temp_description
-                    temp_dict['category'] = temp_category
+                    temp_dict["id"] = temp_id
+                    temp_dict["description"] = temp_description
+                    temp_dict["category"] = temp_category
 
                     alerts_dict[temp_name] = temp_dict
 
@@ -287,10 +282,10 @@ class Alerts(object):
 
                 return alerts_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_entities(self, entities: dict) -> list:
         """Returns the list of entities associations for an alert.
@@ -306,46 +301,38 @@ class Alerts(object):
             list: A list of associations for an alert.
         """
         if not isinstance(entities, dict):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         # policies not handled as
 
         entity_dict = {
-            "clients": {
-                "clientName": "client_name",
-                "clientId": "client_id",
-                "_type_": 3
-            },
+            "clients": {"clientName": "client_name", "clientId": "client_id", "_type_": 3},
             "client_groups": {
                 "clientGroupName": "clientgroup_name",
                 "clientGroupId": "clientgroup_id",
-                "_type_": 28
+                "_type_": 28,
             },
-            "users": {
-                "userName": "user_name",
-                "userId": "user_id",
-                "_type_": 13
-            },
+            "users": {"userName": "user_name", "userId": "user_id", "_type_": 13},
             "user_groups": {
                 "userGroupName": "user_group_name",
                 "userGroupId": "user_group_id",
-                "_type_": 15
+                "_type_": 15,
             },
             "disk_libraries": {
                 "libraryName": "library_name",
                 "libraryId": "library_id",
-                "_type_": 9
+                "_type_": 9,
             },
             "media_agents": {
                 "mediaAgentName": "media_agent_name",
                 "mediaAgentId": "media_agent_id",
-                "_type_": 11
+                "_type_": 11,
             },
             "storage_policies": {
                 "storagePolicyName": "storage_policy_name",
                 "storagePolicyId": "storage_policy_id",
-                "_type_": 17
-            }
+                "_type_": 17,
+            },
         }
 
         associations = []
@@ -357,10 +344,7 @@ class Alerts(object):
                         entity_type = 27
                     else:
                         entity_type = 2
-                    temp_dict = {
-                        "entityTypeName": value,
-                        "_type_": entity_type
-                    }
+                    temp_dict = {"entityTypeName": value, "_type_": entity_type}
                     associations.append(temp_dict)
             else:
                 entity_obj = getattr(self._commcell_object, entity)
@@ -398,29 +382,25 @@ class Alerts(object):
                 "EscnonGalaxyUserList": {
                     "nonGalaxyUserOperationType": alert_json.get("nonGalaxyUserOperationType", 0)
                 },
-                "locale": {
-                    "localeID": alert_json.get("localeID", 0)
-                },
+                "locale": {"localeID": alert_json.get("localeID", 0)},
                 "EscUserList": {
                     "userListOperationType": alert_json.get("userListOperationType", 0)
                 },
                 "EscUserGroupList": {
                     "userGroupListOperationType": alert_json.get("userGroupListOperationType", 0)
                 },
-                "alertrule": {
-                    "alertName": alert_json.get("alert_name")
-                },
-                "criteria": {
-                    "criteria": alert_json.get("criteria")
-                },
+                "alertrule": {"alertName": alert_json.get("alert_name")},
+                "criteria": {"criteria": alert_json.get("criteria")},
                 "userList": {
                     "userListOperationType": alert_json.get("userListOperationType", 0),
-                    "userList": [{"userName": user} for user in alert_json.get("users", ["admin"])]
+                    "userList": [
+                        {"userName": user} for user in alert_json.get("users", ["admin"])
+                    ],
                 },
                 "EntityList": {
                     "associationsOperationType": alert_json.get("associationsOperationType", 0),
-                    "associations": self._get_entities(alert_json.get("entities", dict()))
-                }
+                    "associations": self._get_entities(alert_json.get("entities", dict())),
+                },
             }
         }
 
@@ -436,31 +416,29 @@ class Alerts(object):
             alert_detail["alertDetail"]["userGroupList"] = {
                 "userGroupListOperationType": alert_json.get("userGroupListOperationType", 0),
                 "userGroupList": [
-                    {
-                        "userGroupName": user_grp
-                    } for user_grp in alert_json.get("user_groups")
-                ]
+                    {"userGroupName": user_grp} for user_grp in alert_json.get("user_groups")
+                ],
             }
 
         return alert_detail
 
     def get_alert_sender(self) -> str:
         """Returns the Alert Sender name."""
-        get_alert = self._services['EMAIL_SERVER']
-        flag, response = self._cvpysdk_object.make_request('GET', get_alert)
+        get_alert = self._services["EMAIL_SERVER"]
+        flag, response = self._cvpysdk_object.make_request("GET", get_alert)
         if flag:
             if response.json():
-                sender = response.json()["senderInfo"]['senderName']
+                sender = response.json()["senderInfo"]["senderName"]
                 if not sender:
-                    sender = response.json()["senderInfo"]['senderAddress']
+                    sender = response.json()["senderInfo"]["senderAddress"]
                 return sender
             else:
-                raise SDKException('Alert', '102', "Failed to get sender address")
+                raise SDKException("Alert", "102", "Failed to get sender address")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def create_alert(self, alert_dict: dict) -> 'Alert':
+    def create_alert(self, alert_dict: dict) -> "Alert":
         """Creates a new Alert for CommCell.
 
         Args:
@@ -485,18 +463,16 @@ class Alerts(object):
             alert = alerts.create_alert(alert_dict)
         """
         if not isinstance(alert_dict, dict):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         # required alert json
         alert_json = self._get_alert_json(alert_dict)
         alert_name = alert_json["alertDetail"]["alertrule"]["alertName"]
         if self.has_alert(alert_name):
-            raise SDKException('Alert', '102', 'Alert "{0}" already exists.'.
-                               format(alert_name))
+            raise SDKException("Alert", "102", f'Alert "{alert_name}" already exists.')
 
-        post_alert = self._services['GET_ALL_ALERTS']
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', post_alert, alert_json)
+        post_alert = self._services["GET_ALL_ALERTS"]
+        flag, response = self._cvpysdk_object.make_request("POST", post_alert, alert_json)
 
         if flag:
             if response.json():
@@ -509,23 +485,20 @@ class Alerts(object):
                 else:
                     error_message = ""
 
-                    if 'errorMessage' in error_dict:
-                        error_message = error_dict['errorMessage']
+                    if "errorMessage" in error_dict:
+                        error_message = error_dict["errorMessage"]
 
                     if error_message:
                         raise SDKException(
-                            'Alert', '102', 'Failed to create Alert\nError: "{}"'.format(
-                                error_message
-                            )
+                            "Alert", "102", f'Failed to create Alert\nError: "{error_message}"'
                         )
                     else:
-                        raise SDKException(
-                            'Alert', '102', "Failed to create Alert")
+                        raise SDKException("Alert", "102", "Failed to create Alert")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_alerts(self) -> dict:
@@ -563,11 +536,11 @@ class Alerts(object):
             has_alert = alerts.has_alert("my_alert")
         """
         if not isinstance(alert_name, str):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         return self._alerts and alert_name.lower() in self._alerts
 
-    def get(self, alert_name: str) -> 'Alert':
+    def get(self, alert_name: str) -> "Alert":
         """Returns a alert object of the specified alert name.
 
         Args:
@@ -586,18 +559,19 @@ class Alerts(object):
             alert = alerts.get("my_alert")
         """
         if not isinstance(alert_name, str):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
         else:
             alert_name = alert_name.lower()
 
             if self.has_alert(alert_name):
                 return Alert(
-                    self._commcell_object, alert_name,
-                    self._alerts[alert_name]['id'],
-                    self._alerts[alert_name]['category']
+                    self._commcell_object,
+                    alert_name,
+                    self._alerts[alert_name]["id"],
+                    self._alerts[alert_name]["category"],
                 )
 
-            raise SDKException('Alert', '102', 'No Alert exists with name: {0}'.format(alert_name))
+            raise SDKException("Alert", "102", f"No Alert exists with name: {alert_name}")
 
     def console_alerts(self, page_number: int = 1, page_count: int = 1) -> object:
         """Returns the console alerts from page_number to the number of pages asked for page_count.
@@ -623,40 +597,39 @@ class Alerts(object):
             console_alerts = alerts.console_alerts(page_number=2, page_count=3)
         """
         if not (isinstance(page_number, int) and isinstance(page_count, int)):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
-        console_alerts = self._services['GET_ALL_CONSOLE_ALERTS'] % (
-            page_number, page_count)
+        console_alerts = self._services["GET_ALL_CONSOLE_ALERTS"] % (page_number, page_count)
 
-        flag, response = self._cvpysdk_object.make_request('GET', console_alerts)
+        flag, response = self._cvpysdk_object.make_request("GET", console_alerts)
 
         if flag:
-            if response.json() and 'totalNoOfAlerts' in response.json():
+            if response.json() and "totalNoOfAlerts" in response.json():
                 if self._commcell_object.commserv_version >= 23:
                     return response.json()
 
                 o_str = "Total Console Alerts found: {0}".format(
-                    response.json()['totalNoOfAlerts']
+                    response.json()["totalNoOfAlerts"]
                 )
 
                 o_str += "\n{:^5}\t{:^50}\t{:^50}\t{:^50}\n\n".format(
-                    'S. No.', 'Alert', 'Type', 'Criteria'
+                    "S. No.", "Alert", "Type", "Criteria"
                 )
 
-                for index, dictionary in enumerate(response.json()['feedsList']):
-                    o_str += '{:^5}\t{:50}\t{:^50}\t{:^50}\n'.format(
+                for index, dictionary in enumerate(response.json()["feedsList"]):
+                    o_str += "{:^5}\t{:50}\t{:^50}\t{:^50}\n".format(
                         index + 1,
-                        dictionary['alertName'],
-                        dictionary['alertType'],
-                        dictionary['alertcriteria']
+                        dictionary["alertName"],
+                        dictionary["alertType"],
+                        dictionary["alertcriteria"],
                     )
 
                 return o_str
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def console_alert(self, live_feed_id: int) -> object:
         """Returns the console console alert with given live_feed_id.
@@ -679,21 +652,20 @@ class Alerts(object):
             console_alert = alerts.console_alert(live_feed_id=123)
         """
         if not (isinstance(live_feed_id, int)):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
-        console_alerts = self._services['GET_CONSOLE_ALERT'] % (
-            live_feed_id)
+        console_alerts = self._services["GET_CONSOLE_ALERT"] % (live_feed_id)
 
-        flag, response = self._cvpysdk_object.make_request('GET', console_alerts)
+        flag, response = self._cvpysdk_object.make_request("GET", console_alerts)
 
         if flag:
-            if response and response.json() and 'description' in response.json():
+            if response and response.json() and "description" in response.json():
                 return response.json()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def delete(self, alert_name: str) -> None:
         """Deletes the alert from the commcell.
@@ -711,40 +683,33 @@ class Alerts(object):
             alerts.delete(alert_name='MyAlert')
         """
         if not isinstance(alert_name, str):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
         alert_name = alert_name.lower()
 
         if self.has_alert(alert_name):
-            alert_id = self._alerts[alert_name]['id']
-            alert = self._services['ALERT'] % (alert_id)
+            alert_id = self._alerts[alert_name]["id"]
+            alert = self._services["ALERT"] % (alert_id)
 
-            flag, response = self._cvpysdk_object.make_request(
-                'DELETE', alert
-            )
+            flag, response = self._cvpysdk_object.make_request("DELETE", alert)
 
             if flag:
                 if response.json():
-                    if 'errorCode' in response.json():
-                        if response.json()['errorCode'] == 0:
+                    if "errorCode" in response.json():
+                        if response.json()["errorCode"] == 0:
                             # initialize the alerts again
                             # to refresh with the latest alerts
                             self.refresh()
                         else:
-                            raise SDKException('Alert', '102', response.json()['errorMessage'])
+                            raise SDKException("Alert", "102", response.json()["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._update_response_(response.text)
-                exception_message = 'Failed to delete alert\nError: "{0}"'.format(
-                    response_string
-                )
+                exception_message = f'Failed to delete alert\nError: "{response_string}"'
 
-                raise SDKException('Alert', '102', exception_message)
+                raise SDKException("Alert", "102", exception_message)
         else:
-            raise SDKException(
-                'Alert', '102', 'No alert exists with name: {0}'.format(alert_name)
-            )
-
+            raise SDKException("Alert", "102", f"No alert exists with name: {alert_name}")
 
     def refresh(self) -> None:
         """Refresh the alerts associated with the Commcell.
@@ -754,7 +719,8 @@ class Alerts(object):
         """
         self._alerts = self._get_alerts()
 
-class Alert(object):
+
+class Alert:
     """Class for performing operations for a specific alert.
 
     Description:
@@ -793,7 +759,7 @@ class Alert(object):
 
     def __init__(
         self,
-        commcell_object: 'Commcell',
+        commcell_object: "Commcell",
         alert_name: str,
         alert_id: Optional[str] = None,
         alert_category: Optional[str] = None,
@@ -827,17 +793,17 @@ class Alert(object):
         else:
             self._alert_category = self._get_alert_category()
 
-        self._ALERT = self._services['ALERT'] % (self.alert_id)
+        self._ALERT = self._services["ALERT"] % (self.alert_id)
         self._all_notification_types: Dict[str, int] = {
-            'email': 1,
-            'snmp': 4,
-            'event viewer': 8,
-            'save to disk': 512,
-            'rss feeds': 1024,
-            'console alerts': 8192,
-            'scom': 32768,
-            'workflow': 65536,
-            'content indexing': 131072
+            "email": 1,
+            "snmp": 4,
+            "event viewer": 8,
+            "save to disk": 512,
+            "rss feeds": 1024,
+            "console alerts": 8192,
+            "scom": 32768,
+            "workflow": 65536,
+            "content indexing": 131072,
         }
 
         self._alert_severity: Optional[int] = None
@@ -886,37 +852,43 @@ class Alert(object):
                 - if response is empty
                 - if response is not success
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._ALERT)
+        flag, response = self._cvpysdk_object.make_request("GET", self._ALERT)
 
         if flag:
-            if response.json() and 'alertDetail' in response.json().keys():
-                self._alert_detail = response.json()['alertDetail']
-                if 'alertSeverity' in self._alert_detail:
-                    self._alert_severity = self._alert_detail['alertSeverity']
+            if response.json() and "alertDetail" in response.json().keys():
+                self._alert_detail = response.json()["alertDetail"]
+                if "alertSeverity" in self._alert_detail:
+                    self._alert_severity = self._alert_detail["alertSeverity"]
 
-                if 'criteria' in self._alert_detail:
-                    criterias = self._alert_detail['criteria']
+                if "criteria" in self._alert_detail:
+                    criterias = self._alert_detail["criteria"]
                     for criteria in criterias:
-                        self._criteria.append({
-                            'criteria_value': criteria['value'] if 'value' in criteria else None,
-                            'criteria_id':
-                            str(criteria['criteriaId']) if 'criteriaId' in criteria else None,
-                            'esclation_level':
-                            criteria['esclationLevel'] if 'esclationLevel' in criteria else None
-                        })
+                        self._criteria.append(
+                            {
+                                "criteria_value": criteria["value"]
+                                if "value" in criteria
+                                else None,
+                                "criteria_id": str(criteria["criteriaId"])
+                                if "criteriaId" in criteria
+                                else None,
+                                "esclation_level": criteria["esclationLevel"]
+                                if "esclationLevel" in criteria
+                                else None,
+                            }
+                        )
 
-                if 'alert' in self._alert_detail:
-                    alert = self._alert_detail['alert']
+                if "alert" in self._alert_detail:
+                    alert = self._alert_detail["alert"]
 
-                    if 'description' in alert:
-                        self._description = alert['description']
+                    if "description" in alert:
+                        self._description = alert["description"]
 
-                    if 'alertType' in alert and 'name' in alert['alertType']:
-                        self._alert_type = alert['alertType']['name']
-                        self._alert_type_id = alert['alertType']['id']
+                    if "alertType" in alert and "name" in alert["alertType"]:
+                        self._alert_type = alert["alertType"]["name"]
+                        self._alert_type_id = alert["alertType"]["id"]
 
-                if 'xmlEntityList' in self._alert_detail:
-                    entity_xml = ET.fromstring(self._alert_detail['xmlEntityList'])
+                if "xmlEntityList" in self._alert_detail:
+                    entity_xml = ET.fromstring(self._alert_detail["xmlEntityList"])
                     self._entities_list = []
                     for entity in entity_xml.findall("associations"):
                         if entity.find("flags") is not None:
@@ -933,28 +905,32 @@ class Alert(object):
                         except ValueError:
                             pass
 
-                if 'regularNotifications' in self._alert_detail:
+                if "regularNotifications" in self._alert_detail:
                     self._notification_types = self._alert_detail["regularNotifications"]
 
-                if 'userList' in self._alert_detail:
-                    self._users_list = [user['name'] for user in self._alert_detail['userList']]
+                if "userList" in self._alert_detail:
+                    self._users_list = [user["name"] for user in self._alert_detail["userList"]]
                 else:
                     self._users_list = []
 
-                if 'userGroupList' in self._alert_detail:
-                    self._user_group_list = [grp['name'] for grp in self._alert_detail['userGroupList']]
+                if "userGroupList" in self._alert_detail:
+                    self._user_group_list = [
+                        grp["name"] for grp in self._alert_detail["userGroupList"]
+                    ]
                 else:
                     self._user_group_list = []
 
                 self._email_recipients = []
-                if 'nonGalaxyUserList' in self._alert_detail:
-                    self._email_recipients = [email['name'] for email in self._alert_detail['nonGalaxyUserList']]
+                if "nonGalaxyUserList" in self._alert_detail:
+                    self._email_recipients = [
+                        email["name"] for email in self._alert_detail["nonGalaxyUserList"]
+                    ]
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _modify_alert_properties(self) -> None:
         """Modifies the properties of an alert.
@@ -968,50 +944,46 @@ class Alert(object):
                     "alertType": self._alert_type_id,  # this should not be changed
                     "notifType": self._notification_types,
                     "alertSeverity": self._alert_severity,
-                    "alertrule": {
-                        "alertName": self._alert_name
-                    },
-                    "criteria": {
-                        "criteria": int(self._criteria[0]['criteria_id'])
-                    },
+                    "alertrule": {"alertName": self._alert_name},
+                    "criteria": {"criteria": int(self._criteria[0]["criteria_id"])},
                     "userList": {
                         "userListOperationType": 1,
-                        "userList": [{"userName": user} for user in self._users_list]
+                        "userList": [{"userName": user} for user in self._users_list],
                     },
                     "userGroupList": {
                         "userGroupListOperationType": 1,
-                        "userGroupList": [{"userGroupName": user} for user in self._user_group_list]
+                        "userGroupList": [
+                            {"userGroupName": user} for user in self._user_group_list
+                        ],
                     },
                     "nonGalaxyList": {
-                        "nonGalaxyUserList": [{"nonGalaxyUser": email} for email in self._email_recipients]
+                        "nonGalaxyUserList": [
+                            {"nonGalaxyUser": email} for email in self._email_recipients
+                        ]
                     },
-                    "EntityList": {
-                        "associations": self._entities_list
-                    }
+                    "EntityList": {"associations": self._entities_list},
                 }
             }
         }
 
-        modify_alert = self._services['MODIFY_ALERT'] % (self.alert_id)
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', modify_alert, request_json
-        )
+        modify_alert = self._services["MODIFY_ALERT"] % (self.alert_id)
+        flag, response = self._cvpysdk_object.make_request("POST", modify_alert, request_json)
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
-                if error_code == '0':
+                error_code = str(response.json()["errorCode"])
+                if error_code == "0":
                     self.refresh()
                     return
                 else:
                     o_str = 'Failed to update properties of Alert\nError: "{0}"'
-                    o_str = o_str.format(response.json()['errorMessage'])
-                    raise SDKException('Alert', '102', o_str)
+                    o_str = o_str.format(response.json()["errorMessage"])
+                    raise SDKException("Alert", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def name(self) -> str:
@@ -1020,7 +992,7 @@ class Alert(object):
         Returns:
             str: The display name of the alert.
         """
-        return self._alert_detail['alert']['alert']['name']
+        return self._alert_detail["alert"]["alert"]["name"]
 
     @property
     def alert_name(self) -> str:
@@ -1042,7 +1014,7 @@ class Alert(object):
             SDKException: if the provided name is not a string.
         """
         if not isinstance(name, str):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         self._alert_name = name
         self._modify_alert_properties()
@@ -1094,7 +1066,7 @@ class Alert(object):
             SDKException: if the provided severity is not an integer.
         """
         if not isinstance(severity, int):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         self._alert_severity = severity
         self._modify_alert_properties()
@@ -1134,14 +1106,12 @@ class Alert(object):
                 - if no notification type exists with the name provided.
         """
         if not isinstance(notif_types, list):
-            raise SDKException('Alert', '102')
+            raise SDKException("Alert", "102")
         try:
             ntypes = [self._all_notification_types[ntype.lower()] for ntype in notif_types]
         except KeyError as notif_type:
             raise SDKException(
-                'Alert',
-                '102',
-                'No notification type with name {0} exists'.format(notif_type)
+                "Alert", "102", f"No notification type with name {notif_type} exists"
             )
         self._notification_types = ntypes
         self._modify_alert_properties()
@@ -1166,7 +1136,7 @@ class Alert(object):
             SDKException: if the provided entity JSON is not a dictionary.
         """
         if not isinstance(entity_json, dict):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         self._entities_list = self._alerts_obj._get_entities(entity_json)
         self._modify_alert_properties()
@@ -1265,37 +1235,35 @@ class Alert(object):
             >>> alert.enable_notification_type('email')
         """
         if not isinstance(alert_notification_type, str):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         if alert_notification_type.lower() in self._all_notification_types:
             alert_notification_type_id = self._all_notification_types[
-                alert_notification_type.lower()]
+                alert_notification_type.lower()
+            ]
 
-            enable_request = self._services['ENABLE_ALERT_NOTIFICATION'] % (
-                self.alert_id, alert_notification_type_id
+            enable_request = self._services["ENABLE_ALERT_NOTIFICATION"] % (
+                self.alert_id,
+                alert_notification_type_id,
             )
 
-            flag, response = self._cvpysdk_object.make_request(
-                'POST', enable_request
-            )
+            flag, response = self._cvpysdk_object.make_request("POST", enable_request)
 
             if flag:
                 if response.json():
-                    error_code = str(response.json()['errorCode'])
-                    if error_code == '0':
+                    error_code = str(response.json()["errorCode"])
+                    if error_code == "0":
                         return
                     else:
-                        raise SDKException('Alert', '102', response.json()['errorMessage'])
+                        raise SDKException("Alert", "102", response.json()["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
             raise SDKException(
-                'Alert',
-                '102',
-                'No notification type with name {0} exists'.format(alert_notification_type)
+                "Alert", "102", f"No notification type with name {alert_notification_type} exists"
             )
 
     def disable_notification_type(self, alert_notification_type: str) -> None:
@@ -1316,37 +1284,35 @@ class Alert(object):
             >>> alert.disable_notification_type('email')
         """
         if not isinstance(alert_notification_type, str):
-            raise SDKException('Alert', '101')
+            raise SDKException("Alert", "101")
 
         if alert_notification_type.lower() in self._all_notification_types:
             alert_notification_type_id = self._all_notification_types[
-                alert_notification_type.lower()]
+                alert_notification_type.lower()
+            ]
 
-            disable_request = self._services['DISABLE_ALERT_NOTIFICATION'] % (
-                self.alert_id, alert_notification_type_id
+            disable_request = self._services["DISABLE_ALERT_NOTIFICATION"] % (
+                self.alert_id,
+                alert_notification_type_id,
             )
 
-            flag, response = self._cvpysdk_object.make_request(
-                'POST', disable_request
-            )
+            flag, response = self._cvpysdk_object.make_request("POST", disable_request)
 
             if flag:
                 if response.json():
-                    error_code = str(response.json()['errorCode'])
-                    if error_code == '0':
+                    error_code = str(response.json()["errorCode"])
+                    if error_code == "0":
                         return
                     else:
-                        raise SDKException('Alert', '102', response.json()['errorMessage'])
+                        raise SDKException("Alert", "102", response.json()["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         else:
             raise SDKException(
-                'Alert',
-                '102',
-                'No notification type with name {0} exists'.format(alert_notification_type)
+                "Alert", "102", f"No notification type with name {alert_notification_type} exists"
             )
 
     def enable(self) -> None:
@@ -1361,35 +1327,33 @@ class Alert(object):
         Usage:
             >>> alert.enable()
         """
-        enable_request = self._services['ENABLE_ALERT'] % (self.alert_id)
+        enable_request = self._services["ENABLE_ALERT"] % (self.alert_id)
 
-        flag, response = self._cvpysdk_object.make_request('POST', enable_request)
+        flag, response = self._cvpysdk_object.make_request("POST", enable_request)
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
                 if error_code == "0":
                     return
                 else:
                     error_message = ""
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
 
                     if error_message:
                         raise SDKException(
-                            'Alert', '102', 'Failed to enable Alert\nError: "{0}"'.format(
-                                error_message
-                            )
+                            "Alert", "102", f'Failed to enable Alert\nError: "{error_message}"'
                         )
                     else:
-                        raise SDKException('Alert', '102', "Failed to enable Alert")
+                        raise SDKException("Alert", "102", "Failed to enable Alert")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def disable(self) -> None:
         """Disable an alert.
@@ -1403,37 +1367,33 @@ class Alert(object):
         Usage:
             >>> alert.disable()
         """
-        disable_request = self._services['DISABLE_ALERT'] % (self.alert_id)
+        disable_request = self._services["DISABLE_ALERT"] % (self.alert_id)
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', disable_request
-        )
+        flag, response = self._cvpysdk_object.make_request("POST", disable_request)
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
                 if error_code == "0":
                     return
                 else:
                     error_message = ""
 
-                    if 'errorMessage' in response.json():
-                        error_message = response.json()['errorMessage']
+                    if "errorMessage" in response.json():
+                        error_message = response.json()["errorMessage"]
 
                     if error_message:
                         raise SDKException(
-                            'Alert', '102', 'Failed to disable Alert\nError: "{0}"'.format(
-                                error_message
-                            )
+                            "Alert", "102", f'Failed to disable Alert\nError: "{error_message}"'
                         )
                     else:
-                        raise SDKException('Alert', '102', "Failed to disable Alert")
+                        raise SDKException("Alert", "102", "Failed to disable Alert")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Refresh the properties of the Alert.
@@ -1455,22 +1415,22 @@ class Alert(object):
 
                 if response is not success
         """
-        test_request = self._services['ALERT_TEST'] % (self.alert_id)
+        test_request = self._services["ALERT_TEST"] % (self.alert_id)
 
-        flag, response = self._cvpysdk_object.make_request('POST', test_request)
+        flag, response = self._cvpysdk_object.make_request("POST", test_request)
 
         if not flag:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         if not response.json():
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
-        error_code = response.json().get('errorCode', -1)
+        error_code = response.json().get("errorCode", -1)
 
         if error_code != 0:
-            error_message = response.json().get('errorMessage', '')
+            error_message = response.json().get("errorMessage", "")
 
             raise SDKException(
-                'Alert', '102', f'Failed to trigger the test Alert. Error: ["{error_message}"]'
+                "Alert", "102", f'Failed to trigger the test Alert. Error: ["{error_message}"]'
             )

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -26,9 +24,7 @@ ProxmoxSubclient: Derived class from VirtualServerSubclient Base class, represen
                            Proxmox Subclient, and to perform operations on that Subclient
 """
 
-
 from ..vssubclient import VirtualServerSubclient
-from ...exception import SDKException
 
 
 class ProxmoxSubclient(VirtualServerSubclient):
@@ -47,10 +43,12 @@ class ProxmoxSubclient(VirtualServerSubclient):
             subclient_id     (str)     --  id of the subclient (optional)
         """
 
-        super(ProxmoxSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
         self.diskExtension = ["ide", "scsi", "sata", "virtio", "qcow2", "none"]
 
-    def full_vm_restore_in_place(self, vm_to_restore,destination_client, proxy_client, overwrite,power_on, copy_precedence):
+    def full_vm_restore_in_place(
+        self, vm_to_restore, destination_client, proxy_client, overwrite, power_on, copy_precedence
+    ):
         """
         Restores the full Virtual Machine specified in the input list to the specified client, at the specified
         destination location.
@@ -70,7 +68,7 @@ class ProxmoxSubclient(VirtualServerSubclient):
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option['client_name'] = proxy_client
+            restore_option["client_name"] = proxy_client
 
         if vm_to_restore and not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
@@ -80,16 +78,26 @@ class ProxmoxSubclient(VirtualServerSubclient):
             in_place=True,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             destination_client=destination_client,
-            unconditional_overwrite = overwrite,
-            power_on = power_on,
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
             copy_precedence=copy_precedence,
-            volume_level_restore = 1
+            volume_level_restore=1,
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
-    def full_vm_restore_out_of_place(self, vm_to_restore,destination_client, proxy_client, overwrite,power_on, copy_precedence, esx_host, datastore):
+    def full_vm_restore_out_of_place(
+        self,
+        vm_to_restore,
+        destination_client,
+        proxy_client,
+        overwrite,
+        power_on,
+        copy_precedence,
+        esx_host,
+        datastore,
+    ):
         """
         Restores the full Virtual Machine specified in the input list to the specified client, at the specified
         destination location.
@@ -111,7 +119,7 @@ class ProxmoxSubclient(VirtualServerSubclient):
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option['client_name'] = proxy_client
+            restore_option["client_name"] = proxy_client
 
         if vm_to_restore and not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
@@ -121,12 +129,12 @@ class ProxmoxSubclient(VirtualServerSubclient):
             in_place=False,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             destination_client=destination_client,
-            unconditional_overwrite = overwrite,
-            power_on = power_on,
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
             copy_precedence=copy_precedence,
-            esx_host = esx_host,
+            esx_host=esx_host,
             datastore=datastore,
-            volume_level_restore = 1
+            volume_level_restore=1,
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

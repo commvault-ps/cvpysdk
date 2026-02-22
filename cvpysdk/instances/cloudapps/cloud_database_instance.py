@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-""" File for operating on a cloud database instance.
+"""File for operating on a cloud database instance.
 
 CloudDatabaseInstance is the only class defined in this file.
 
@@ -41,13 +39,13 @@ CloudDatabaseInstance:
 
 """
 
-from __future__ import unicode_literals
 import time
 from typing import Any, Dict
 
-from ..cainstance import CloudAppsInstance
 from ...exception import SDKException
 from ...job import Job
+from ..cainstance import CloudAppsInstance
+
 
 class CloudDatabaseInstance(CloudAppsInstance):
     """
@@ -90,12 +88,7 @@ class CloudDatabaseInstance(CloudAppsInstance):
         self._browse_request = {}
         self._browse_url = None
 
-        super(
-            CloudDatabaseInstance,
-            self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self) -> dict:
         """Retrieve the properties of the current cloud database instance.
@@ -110,10 +103,10 @@ class CloudDatabaseInstance(CloudAppsInstance):
             {'instanceName': 'CloudDB01', 'status': 'Active', ...}
         #ai-gen-doc
         """
-        super(CloudDatabaseInstance, self)._get_instance_properties()
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        super()._get_instance_properties()
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties["cloudAppsInstance"]
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
     @property
     def ca_instance_type(self) -> str:
@@ -179,18 +172,16 @@ class CloudDatabaseInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        start_time = value.get('start_time', 0)
-        end_time = value.get('end_time', int(time.time()))
-        include_aged_data = value.get('include_aged_data', 0)
-        copy_precedence = value.get('copy_precedence', 0)
+        start_time = value.get("start_time", 0)
+        end_time = value.get("end_time", int(time.time()))
+        include_aged_data = value.get("include_aged_data", 0)
+        copy_precedence = value.get("copy_precedence", 0)
         self._browse_request = {
-            "entity": {
-                "instanceId": int(self.instance_id)
-            },
+            "entity": {"instanceId": int(self.instance_id)},
             "copyPresedence": copy_precedence,
             "includeAgedData": include_aged_data,
             "startTime": start_time,
-            "endTime": end_time
+            "endTime": end_time,
         }
 
     def _process_browse_response(self, flag: bool, response: dict) -> dict:
@@ -224,7 +215,7 @@ class CloudDatabaseInstance(CloudAppsInstance):
             return response.json()
 
         o_str = 'Failed to browse content of this instance backups.\nError: "{0}"'
-        raise SDKException('Subclient', '102', o_str.format(response))
+        raise SDKException("Subclient", "102", o_str.format(response))
 
     def browse(self, *args: Any, **kwargs: Any) -> dict:
         """Browse the content of the cloud database instance.
@@ -272,10 +263,12 @@ class CloudDatabaseInstance(CloudAppsInstance):
             options = kwargs
 
         self._browse_request_json = options
-        flag, response = self._cvpysdk_object.make_request('POST', self._browse_url, self._browse_request)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._browse_url, self._browse_request
+        )
         return self._process_browse_response(flag, response)
 
-    def restore(self, destination: str, source: str, options: dict) -> 'Job':
+    def restore(self, destination: str, source: str, options: dict) -> "Job":
         """Restore the content of this cloud database instance from a specified snapshot.
 
         Args:
@@ -321,9 +314,9 @@ class CloudDatabaseInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        if not (isinstance(source, str) or
-                isinstance(destination, str) or
-                isinstance(options, dict)):
-            raise SDKException('Instance', '101')
+        if not (
+            isinstance(source, str) or isinstance(destination, str) or isinstance(options, dict)
+        ):
+            raise SDKException("Instance", "101")
         request_json = self._restore_json(destination=destination, source=source, options=options)
         return self._process_restore_response(request_json)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -69,13 +67,11 @@ Associations:  Class for managing associations of service commcell(s)
         all_associations            --  returns all associations of service commcells
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from base64 import b64encode
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .exception import SDKException
+
 if TYPE_CHECKING:
     from .commcell import Commcell
 
@@ -94,14 +90,15 @@ class ServiceCommcells:
     Usage:
         >>> service_commcells = ServiceCommcells(commcell_object)
     """
-    def __init__(self, commcell_object: 'Commcell') -> None:
+
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialise the Activity control class instance.
 
-            Args:
-                commcell_object (Commcell): instance of the Commcell class
+        Args:
+            commcell_object (Commcell): instance of the Commcell class
 
-            Returns:
-                object: instance of the ServiceCommcells class
+        Returns:
+            object: instance of the ServiceCommcells class
         """
         self._commcell = commcell_object
         self.associations = Associations(self._commcell)
@@ -112,9 +109,11 @@ class ServiceCommcells:
 
     def __repr__(self) -> str:
         """String representation of the instance of this class."""
-        return f'ServiceCommcells class instance for commcell: {self._commcell.webconsole_hostname}'
+        return (
+            f"ServiceCommcells class instance for commcell: {self._commcell.webconsole_hostname}"
+        )
 
-    def __getitem__(self, item: str) -> 'ServiceCommcell':
+    def __getitem__(self, item: str) -> "ServiceCommcell":
         """
         Gets the service commcell object for the given service commcell.
 
@@ -167,7 +166,7 @@ class ServiceCommcells:
                 'routerCommcell': [{...}]
             }
         """
-        return self._commcell.wrap_request('GET', 'MULTI_COMMCELL_SWITCHER')
+        return self._commcell.wrap_request("GET", "MULTI_COMMCELL_SWITCHER")
 
     def _get_commcells_for_user(self) -> list[dict[str, Any]]:
         """
@@ -191,7 +190,7 @@ class ServiceCommcells:
                     ...
                 ]
         """
-        return self._commcell.wrap_request('GET', 'MCC_FOR_USER').get('AvailableRedirects', [])
+        return self._commcell.wrap_request("GET", "MCC_FOR_USER").get("AvailableRedirects", [])
 
     def _get_global_mongodb_status(self) -> dict:
         """
@@ -210,10 +209,8 @@ class ServiceCommcells:
             >>> global_mongo_status = service_commcells._get_global_mongodb_status()
         """
         with self._commcell.global_scope():
-            response = self._commcell.wrap_request('GET', 'GLOBAL_MONGODB_STATUS')
-        return {
-            cs_prop['commcellName']: cs_prop for cs_prop in response
-        }
+            response = self._commcell.wrap_request("GET", "GLOBAL_MONGODB_STATUS")
+        return {cs_prop["commcellName"]: cs_prop for cs_prop in response}
 
     def _get_service_commcells(self) -> dict[str, dict[str, Any]]:
         """
@@ -244,12 +241,10 @@ class ServiceCommcells:
                     "commcell_name2:: {...}
                 }
         """
-        resp = self._commcell.wrap_request(
-            'GET', 'SERVICE_COMMCELLS', empty_check=False
-        )
+        resp = self._commcell.wrap_request("GET", "SERVICE_COMMCELLS", empty_check=False)
         return {
-            commcell['commCell']['commCellName']: commcell
-            for commcell in resp.get('commcellsList', [])
+            commcell["commCell"]["commCellName"]: commcell
+            for commcell in resp.get("commcellsList", [])
         }
 
     def add(self, cc_url: str, username: str, password: str, **kwargs: Any) -> None:
@@ -274,8 +269,8 @@ class ServiceCommcells:
         """
         cc_url = cc_url.lower()
         if not cc_url.endswith("/commandcenter"):
-            cc_url = cc_url.rstrip('/')
-            cc_url += '/commandcenter'
+            cc_url = cc_url.rstrip("/")
+            cc_url += "/commandcenter"
         if not cc_url.startswith("https://") or cc_url.startswith("http://"):
             cc_url = "http://" + cc_url
 
@@ -288,8 +283,10 @@ class ServiceCommcells:
         } | kwargs
 
         self._commcell.wrap_request(
-            'POST', 'SERVICE_REGISTER', req_kwargs={'payload': payload},
-            sdk_exception=('ServiceCommcells', '102'),
+            "POST",
+            "SERVICE_REGISTER",
+            req_kwargs={"payload": payload},
+            sdk_exception=("ServiceCommcells", "102"),
         )
         self.refresh()
 
@@ -321,26 +318,27 @@ class ServiceCommcells:
             >>> service_commcells.delete(commcell_name='commcell_name', force=True)
         """
         payload = {
-          "commcell": {
-            "commCell": {
-              "commCellId": self[commcell_name].commcell_id,
-              "csGUID": self[commcell_name].cs_guid,
+            "commcell": {
+                "commCell": {
+                    "commCellId": self[commcell_name].commcell_id,
+                    "csGUID": self[commcell_name].cs_guid,
+                },
+                "ccClientId": self[commcell_name].client_id,
+                "ccClientName": self[commcell_name].client_name,
+                "interfaceName": self[commcell_name].interface_name,
             },
-            "ccClientId": self[commcell_name].client_id,
-            "ccClientName": self[commcell_name].client_name,
-            "interfaceName": self[commcell_name].interface_name
-          },
-          "forceUnregister": force
+            "forceUnregister": force,
         }
 
         self._commcell.wrap_request(
-            'POST', 'UNREGISTRATION',
-            req_kwargs={'payload': payload},
-            sdk_exception=('ServiceCommcells', '103')
+            "POST",
+            "UNREGISTRATION",
+            req_kwargs={"payload": payload},
+            sdk_exception=("ServiceCommcells", "103"),
         )
         self.refresh()
 
-    def get(self, commcell_name: str) -> 'ServiceCommcell':
+    def get(self, commcell_name: str) -> "ServiceCommcell":
         """
         Gets the service commcell object for the given service commcell
 
@@ -360,7 +358,9 @@ class ServiceCommcells:
         if commcell_name in self.all_service_commcells:
             return ServiceCommcell(self._commcell, commcell_name)
         else:
-            raise SDKException('ServiceCommcells', '102', f'No service commcell found with name: {commcell_name}')
+            raise SDKException(
+                "ServiceCommcells", "102", f"No service commcell found with name: {commcell_name}"
+            )
 
     @property
     def all_service_commcells(self) -> dict[str, Any]:
@@ -444,6 +444,7 @@ class ServiceCommcells:
             self._commcells_for_switching = self._get_commcells_for_switching()
         return self._commcells_for_switching
 
+
 class ServiceCommcell:
     """
     Class for performing operations on a service commcell.
@@ -459,7 +460,8 @@ class ServiceCommcell:
     Usage:
         >>> service_commcell = ServiceCommcell(commcell_object, "service_commcell_name")
     """
-    def __init__(self, commcell_object: 'Commcell', commcell_name: str) -> None:
+
+    def __init__(self, commcell_object: "Commcell", commcell_name: str) -> None:
         """
         Initialise the ServiceCommcell class instance.
 
@@ -479,7 +481,7 @@ class ServiceCommcell:
 
     def __repr__(self) -> str:
         """String representation of the instance of this class."""
-        return f'service commcell {self.commcell_name} of router commcell: {self._commcell.webconsole_hostname}'
+        return f"service commcell {self.commcell_name} of router commcell: {self._commcell.webconsole_hostname}"
 
     def refresh(self) -> None:
         """
@@ -515,8 +517,7 @@ class ServiceCommcell:
             >>> details = service_commcell._get_details()
         """
         return self._commcell.wrap_request(
-            'GET', 'SERVICE_PROPS',
-            req_kwargs={'params': {'commcellId': self.commcell_id}}
+            "GET", "SERVICE_PROPS", req_kwargs={"params": {"commcellId": self.commcell_id}}
         )
 
     def update(self, properties: dict) -> str:
@@ -533,14 +534,13 @@ class ServiceCommcell:
         Usage:
             >>> service_commcell.update({'displayName': 'New Display Name'})
         """
-        payload = {
-            "properties": {'csGUID': self.cs_guid.upper()} | properties
-        }
+        payload = {"properties": {"csGUID": self.cs_guid.upper()} | properties}
         response = self._commcell.wrap_request(
-            'POST', 'SERVICE_PROPS',
-            req_kwargs={'payload': payload},
-            sdk_exception=('ServiceCommcell', '106'),
-            return_resp=True
+            "POST",
+            "SERVICE_PROPS",
+            req_kwargs={"payload": payload},
+            sdk_exception=("ServiceCommcell", "106"),
+            return_resp=True,
         )
         self.refresh()
         return response.headers.get("comet-response")
@@ -563,9 +563,11 @@ class ServiceCommcell:
             "password": b64encode(password.encode()).decode(),
         }
         self._commcell.wrap_request(
-            'POST', 'SERVICE_REREGISTER', (self.commcell_id,),
-            req_kwargs={'payload': payload},
-            sdk_exception=('ServiceCommcell', '107'),
+            "POST",
+            "SERVICE_REREGISTER",
+            (self.commcell_id,),
+            req_kwargs={"payload": payload},
+            sdk_exception=("ServiceCommcell", "107"),
         )
         self.refresh()
 
@@ -579,12 +581,14 @@ class ServiceCommcell:
         Usage:
             >>> service_commcell.refresh_sync()
         """
-        payload = {'commcellId': self.commcell_id}
+        payload = {"commcellId": self.commcell_id}
         self._commcell.wrap_request(
-            'GET', 'SYNC_SERVICE_COMMCELL', (self.commcell_id,),
-            req_kwargs={'params': payload},
-            sdk_exception=('ServiceCommcell', '108'),
-            error_check=True
+            "GET",
+            "SYNC_SERVICE_COMMCELL",
+            (self.commcell_id,),
+            req_kwargs={"params": payload},
+            sdk_exception=("ServiceCommcell", "108"),
+            error_check=True,
         )
         self.refresh()
 
@@ -603,10 +607,12 @@ class ServiceCommcell:
             >>> props = service_commcell.props
         """
         if self._props is None:
-            self._props = self._commcell.service_commcells.all_service_commcells.get(self.commcell_name)
+            self._props = self._commcell.service_commcells.all_service_commcells.get(
+                self.commcell_name
+            )
             if not self._props:
                 raise SDKException(
-                    'ServiceCommcells', '105', f'No props returned for: {self.commcell_name}'
+                    "ServiceCommcells", "105", f"No props returned for: {self.commcell_name}"
                 )
         return self._props
 
@@ -621,7 +627,7 @@ class ServiceCommcell:
         Usage:
             >>> commcell_id = service_commcell.commcell_id
         """
-        return self.props.get('commCell', {}).get('commCellId')
+        return self.props.get("commCell", {}).get("commCellId")
 
     @property
     def cs_guid(self) -> str:
@@ -634,7 +640,7 @@ class ServiceCommcell:
         Usage:
             >>> cs_guid = service_commcell.cs_guid
         """
-        return self.props.get('commCell', {}).get('csGUID')
+        return self.props.get("commCell", {}).get("csGUID")
 
     @property
     def client_id(self) -> int:
@@ -647,7 +653,7 @@ class ServiceCommcell:
         Usage:
             >>> client_id = service_commcell.client_id
         """
-        return self.props.get('ccClientId')
+        return self.props.get("ccClientId")
 
     @property
     def client_name(self) -> str:
@@ -660,7 +666,7 @@ class ServiceCommcell:
         Usage:
             >>> client_name = service_commcell.client_name
         """
-        return self.props.get('ccClientName')
+        return self.props.get("ccClientName")
 
     @property
     def interface_name(self) -> str:
@@ -673,7 +679,7 @@ class ServiceCommcell:
         Usage:
             >>> interface_name = service_commcell.interface_name
         """
-        return self.props.get('interfaceName')
+        return self.props.get("interfaceName")
 
     @property
     def display_name(self) -> str:
@@ -686,7 +692,7 @@ class ServiceCommcell:
         Usage:
             >>> display_name = service_commcell.display_name
         """
-        return self.props.get('displayName')
+        return self.props.get("displayName")
 
     @display_name.setter
     def display_name(self, value: str) -> None:
@@ -699,7 +705,7 @@ class ServiceCommcell:
         Usage:
             >>> service_commcell.display_name = "New Display Name"
         """
-        self.update({'displayName': value})
+        self.update({"displayName": value})
 
     @property
     def webconsole_url(self) -> str:
@@ -712,7 +718,7 @@ class ServiceCommcell:
         Usage:
             >>> webconsole_url = service_commcell.webconsole_url
         """
-        return self.props.get('webconsoleUrl')
+        return self.props.get("webconsoleUrl")
 
     @property
     def service_pack_info(self) -> str:
@@ -725,7 +731,7 @@ class ServiceCommcell:
         Usage:
             >>> service_pack_info = service_commcell.service_pack_info
         """
-        return self.props.get('servicePackInfo')
+        return self.props.get("servicePackInfo")
 
     @property
     def sync_status(self) -> bool:
@@ -738,7 +744,7 @@ class ServiceCommcell:
         Usage:
             >>> sync_status = service_commcell.sync_status
         """
-        return self.props.get('syncStatus', {}).get('status') == 1
+        return self.props.get("syncStatus", {}).get("status") == 1
 
     @property
     def role_string(self) -> str:
@@ -751,7 +757,7 @@ class ServiceCommcell:
         Usage:
             >>> role_string = service_commcell.role_string
         """
-        return self.props.get('commcellRoleString', '')
+        return self.props.get("commcellRoleString", "")
 
     @property
     def details(self) -> dict:
@@ -780,8 +786,11 @@ class ServiceCommcell:
             >>> mongo_status = service_commcell.mongo_status
         """
         if self._mongo_status is None:
-            self._mongo_status = self._commcell.service_commcells.global_mongo_status.get(self.commcell_name)
+            self._mongo_status = self._commcell.service_commcells.global_mongo_status.get(
+                self.commcell_name
+            )
         return self._mongo_status
+
 
 class Associations:
     """
@@ -792,41 +801,40 @@ class Associations:
     Usage:
         associations = Associations(commcell_object)
     """
+
     entity_payload_map = {
-        'User': lambda entity: {
-            'userOrGroup': {
-                'userId': int(entity.user_id),
-                'userName': entity.user_name,
-                '_type_': 13
+        "User": lambda entity: {
+            "userOrGroup": {
+                "userId": int(entity.user_id),
+                "userName": entity.user_name,
+                "_type_": 13,
             }
         },
-        'UserGroup': lambda entity: {
-            'userOrGroup': {
-                'userGroupId': int(entity.user_group_id),
-                'userGroupName': entity.user_group_name,
-                '_type_': 15
+        "UserGroup": lambda entity: {
+            "userOrGroup": {
+                "userGroupId": int(entity.user_group_id),
+                "userGroupName": entity.user_group_name,
+                "_type_": 15,
             }
         },
-        'Domain': lambda entity: {
-            'providerType': 2,
-            'userOrGroup': {
-                'providerId': int(entity.domain_id),
-                'providerDomainName': entity.domain_name,
-                '_type_': 61
-            }
+        "Domain": lambda entity: {
+            "providerType": 2,
+            "userOrGroup": {
+                "providerId": int(entity.domain_id),
+                "providerDomainName": entity.domain_name,
+                "_type_": 61,
+            },
         },
-        'Organization': lambda entity: {
-            'providerType': 5,  # todo: this may be 15 or 5 depending on something
-            'userOrGroup': {
-                'providerId': int(entity.organization_id),
-                'providerDomainName': entity.domain_name,
-                '_type_': 61,
-                'GUID': entity.provider_guid,
-                'entityInfo': {
-                    "multiCommcellName": entity._commcell_object.commserv_name
-                }
-            }
-        }
+        "Organization": lambda entity: {
+            "providerType": 5,  # todo: this may be 15 or 5 depending on something
+            "userOrGroup": {
+                "providerId": int(entity.organization_id),
+                "providerDomainName": entity.domain_name,
+                "_type_": 61,
+                "GUID": entity.provider_guid,
+                "entityInfo": {"multiCommcellName": entity._commcell_object.commserv_name},
+            },
+        },
     }
 
     @staticmethod
@@ -851,7 +859,9 @@ class Associations:
             name = cls.__name__
             if name in Associations.entity_payload_map:
                 return Associations.entity_payload_map[name](entity)
-        raise SDKException('ServiceCommcells', '101', f'Invalid entity type: {type(entity)} : {entity}')
+        raise SDKException(
+            "ServiceCommcells", "101", f"Invalid entity type: {type(entity)} : {entity}"
+        )
 
     def __init__(self, commcell_object: Any, filter_commcell: str = None) -> None:
         """
@@ -871,10 +881,14 @@ class Associations:
     def __repr__(self) -> str:
         """String representation of the instance of this class."""
         if not self._filter_commcell:
-            return f'service commcell associations from router: {self._commcell.webconsole_hostname}'
+            return (
+                f"service commcell associations from router: {self._commcell.webconsole_hostname}"
+            )
         else:
-            return (f'associations of service commcell: {self._filter_commcell} '
-                    f'from router: {self._commcell.webconsole_hostname}')
+            return (
+                f"associations of service commcell: {self._filter_commcell} "
+                f"from router: {self._commcell.webconsole_hostname}"
+            )
 
     def refresh(self) -> None:
         """
@@ -885,7 +899,9 @@ class Associations:
         """
         self._associations = None
 
-    def _associations_api_call(self, method: str, exc_code: int, payload: dict = None, **kwargs) -> dict:
+    def _associations_api_call(
+        self, method: str, exc_code: int, payload: dict = None, **kwargs
+    ) -> dict:
         """
         Makes an API call to the Commcell for service commcell associations.
 
@@ -906,15 +922,16 @@ class Associations:
             response = self._associations_api_call('POST', 110, payload={'key': 'value'}, include_warning=True)
         """
         response_json = self._commcell.wrap_request(
-            method, 'SERVICE_COMMCELL_ASSOC',
-            req_kwargs={'payload': payload} if payload else {},
-            sdk_exception=('ServiceCommcells', exc_code)
+            method,
+            "SERVICE_COMMCELL_ASSOC",
+            req_kwargs={"payload": payload} if payload else {},
+            sdk_exception=("ServiceCommcells", exc_code),
         )
-        if kwargs.get('include_warning'):
-            warning_code = response_json.get('warningCode', 0)
+        if kwargs.get("include_warning"):
+            warning_code = response_json.get("warningCode", 0)
             if warning_code != 0:
-                error_string = response_json.get('warningMessage')
-                raise SDKException('ServiceCommcells', exc_code, error_string)
+                error_string = response_json.get("warningMessage")
+                raise SDKException("ServiceCommcells", exc_code, error_string)
         return response_json
 
     def _form_assoc_dict(self, entity: Any, commcell: str) -> dict:
@@ -935,15 +952,15 @@ class Associations:
             assoc_dict = self._form_assoc_dict(entity, 'commserve1')
         """
         if not isinstance(commcell, str):
-            raise SDKException('ServiceCommcells', '101', 'commcell must be a string')
+            raise SDKException("ServiceCommcells", "101", "commcell must be a string")
         return {
             "entity": {
                 "entityType": 194,
                 "entityName": commcell,
                 "_type_": 150,
-                "entityId": self._commcell.service_commcells[commcell].commcell_id
+                "entityId": self._commcell.service_commcells[commcell].commcell_id,
             },
-            **self.lookup_entity_payload(entity)
+            **self.lookup_entity_payload(entity),
         }
 
     def _form_assoc_list(self, entities: Any, commcells: Any) -> list[dict]:
@@ -966,7 +983,9 @@ class Associations:
         if not isinstance(commcells, list):
             commcells = [commcells]
         return [
-            self._form_assoc_dict(entity, commcell) for entity in entities for commcell in commcells
+            self._form_assoc_dict(entity, commcell)
+            for entity in entities
+            for commcell in commcells
         ]
 
     def get(self, entity: Any, commcell: str = None) -> list[dict]:
@@ -1018,29 +1037,26 @@ class Associations:
         if isinstance(commcell, str):
             commcell = [commcell]
         if isinstance(entity, list):
-            return [
-                assoc for each_entity in entity for assoc in self.get(each_entity)
-            ]
+            return [assoc for each_entity in entity for assoc in self.get(each_entity)]
 
         if isinstance(entity, str):
-            assoc_match = lambda assoc_dict: entity.lower() in [
-                assoc_dict['userOrGroup'].get('userName', '').lower(),
-                assoc_dict['userOrGroup'].get('userGroupName', '').lower(),
-                assoc_dict['userOrGroup'].get('providerDomainName', '').lower()
-            ]
+            assoc_match = lambda assoc_dict: (
+                entity.lower()
+                in [
+                    assoc_dict["userOrGroup"].get("userName", "").lower(),
+                    assoc_dict["userOrGroup"].get("userGroupName", "").lower(),
+                    assoc_dict["userOrGroup"].get("providerDomainName", "").lower(),
+                ]
+            )
         else:
             catch_assoc_dict = self.lookup_entity_payload(entity)
-            assoc_match = lambda assoc_dict: (
-                set(assoc_dict['userOrGroup'].items()).issuperset(
-                    set(catch_assoc_dict['userOrGroup'].items())
-                )
+            assoc_match = lambda assoc_dict: set(assoc_dict["userOrGroup"].items()).issuperset(
+                set(catch_assoc_dict["userOrGroup"].items())
             )
-        entity_assocs = [
-            assoc for assoc in self.all_associations if assoc_match(assoc)
-        ]
+        entity_assocs = [assoc for assoc in self.all_associations if assoc_match(assoc)]
         if commcell:
             entity_assocs = [
-                assoc for assoc in entity_assocs if assoc['entity']['entityName'] in commcell
+                assoc for assoc in entity_assocs if assoc["entity"]["entityName"] in commcell
             ]
         return entity_assocs
 
@@ -1066,12 +1082,13 @@ class Associations:
         """
         commcell = commcell or self._filter_commcell
         self._associations_api_call(
-            'POST', 110,
+            "POST",
+            110,
             {
                 "associations": self._form_assoc_list(entity, commcell),
-                "associationsOperationType": 2
+                "associationsOperationType": 2,
             },
-            **kwargs
+            **kwargs,
         )
         self.refresh()
 
@@ -1092,12 +1109,10 @@ class Associations:
         commcell = commcell or self._filter_commcell
         if assocs_to_delete := self.get(entity, commcell):
             self._associations_api_call(
-                'POST', 111,
-                {
-                    "associations": assocs_to_delete,
-                    "associationsOperationType": 3
-                },
-                **kwargs
+                "POST",
+                111,
+                {"associations": assocs_to_delete, "associationsOperationType": 3},
+                **kwargs,
             )
             self.refresh()
 
@@ -1113,10 +1128,12 @@ class Associations:
             all_assocs = associations.all_associations
         """
         if self._associations is None:
-            all_assocs = self._associations_api_call('GET', 109).get('associations', [])
+            all_assocs = self._associations_api_call("GET", 109).get("associations", [])
             if self._filter_commcell:
                 all_assocs = [
-                    assoc for assoc in all_assocs if assoc['entity']['entityName'] == self._filter_commcell
+                    assoc
+                    for assoc in all_assocs
+                    if assoc["entity"]["entityName"] == self._filter_commcell
                 ]
             self._associations = all_assocs
         return self._associations

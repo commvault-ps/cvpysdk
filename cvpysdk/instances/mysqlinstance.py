@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -89,14 +87,13 @@ MYSQLInstance instance Attributes:
 
 """
 
-from __future__ import unicode_literals
+from typing import TYPE_CHECKING, Optional
 
-from ..instance import Instance
-from ..exception import SDKException
 from ..credential_manager import Credential
+from ..exception import SDKException
+from ..instance import Instance
 from ..job import Job
 
-from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -128,7 +125,7 @@ class MYSQLInstance(Instance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
         """Initialize a MYSQLInstance object.
 
         Args:
@@ -145,7 +142,7 @@ class MYSQLInstance(Instance):
         self._instance = None
         self.admin_option_json = None
         self.mysql_restore_json = None
-        super(MYSQLInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     @property
     def port(self) -> str:
@@ -156,7 +153,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('port', None)
+        return self._properties.get("mySqlInstance", {}).get("port", None)
 
     @property
     def mysql_username(self) -> str:
@@ -167,7 +164,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        credential_name = self._properties.get('credentialEntity', {}).get('credentialName', None)
+        credential_name = self._properties.get("credentialEntity", {}).get("credentialName", None)
         return Credential(self._commcell_object, credential_name).credential_user_name
 
     @property
@@ -179,7 +176,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('NTUser', {}).get('userName', None)
+        return self._properties.get("mySqlInstance", {}).get("NTUser", {}).get("userName", None)
 
     @property
     def config_file(self) -> str:
@@ -190,7 +187,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('ConfigFile', None)
+        return self._properties.get("mySqlInstance", {}).get("ConfigFile", None)
 
     @property
     def binary_directory(self) -> str:
@@ -201,7 +198,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('BinaryDirectory', None)
+        return self._properties.get("mySqlInstance", {}).get("BinaryDirectory", None)
 
     @property
     def version(self) -> str:
@@ -212,7 +209,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('version', None)
+        return self._properties.get("mySqlInstance", {}).get("version", None)
 
     @property
     def log_data_directory(self) -> str:
@@ -223,7 +220,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('LogDataDirectory', None)
+        return self._properties.get("mySqlInstance", {}).get("LogDataDirectory", None)
 
     @property
     def log_backup_sp_details(self) -> dict:
@@ -234,13 +231,21 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        log_storage_policy_name = self._properties.get('mySqlInstance', {}).get(
-            'logStoragePolicy', {}).get('storagePolicyName', None)
-        log_storage_policy_id = self._properties.get('mySqlInstance', {}).get(
-            'logStoragePolicy', {}).get('storagePolicyId', None)
+        log_storage_policy_name = (
+            self._properties.get("mySqlInstance", {})
+            .get("logStoragePolicy", {})
+            .get("storagePolicyName", None)
+        )
+        log_storage_policy_id = (
+            self._properties.get("mySqlInstance", {})
+            .get("logStoragePolicy", {})
+            .get("storagePolicyId", None)
+        )
 
-        log_sp = {"storagePolicyName": log_storage_policy_name,
-                  "storagePolicyId": log_storage_policy_id}
+        log_sp = {
+            "storagePolicyName": log_storage_policy_name,
+            "storagePolicyId": log_storage_policy_id,
+        }
         return log_sp
 
     @property
@@ -252,15 +257,23 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        cmd_storage_policy_name = self._properties.get('mySqlInstance', {}).get(
-            'mysqlStorageDevice', {}).get('commandLineStoragePolicy', {}).get(
-            'storagePolicyName', None)
-        cmd_storage_policy_id = self._properties.get('mySqlInstance', {}).get(
-            'mysqlStorageDevice', {}).get('commandLineStoragePolicy', {}).get(
-            'storagePolicyId', None)
+        cmd_storage_policy_name = (
+            self._properties.get("mySqlInstance", {})
+            .get("mysqlStorageDevice", {})
+            .get("commandLineStoragePolicy", {})
+            .get("storagePolicyName", None)
+        )
+        cmd_storage_policy_id = (
+            self._properties.get("mySqlInstance", {})
+            .get("mysqlStorageDevice", {})
+            .get("commandLineStoragePolicy", {})
+            .get("storagePolicyId", None)
+        )
 
-        command_sp = {"storagePolicyName": cmd_storage_policy_name,
-                      "storagePolicyId": cmd_storage_policy_id}
+        command_sp = {
+            "storagePolicyName": cmd_storage_policy_name,
+            "storagePolicyId": cmd_storage_policy_id,
+        }
         return command_sp
 
     @property
@@ -272,7 +285,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('EnableAutoDiscovery', False)
+        return self._properties.get("mySqlInstance", {}).get("EnableAutoDiscovery", False)
 
     @autodiscovery_enabled.setter
     def autodiscovery_enabled(self, value: bool) -> None:
@@ -284,10 +297,8 @@ class MYSQLInstance(Instance):
         #ai-gen-doc
         """
         properties = self._properties
-        update = {
-            "EnableAutoDiscovery": value
-        }
-        properties['mySqlInstance'] = update
+        update = {"EnableAutoDiscovery": value}
+        properties["mySqlInstance"] = update
         self.update_properties(properties)
 
     @property
@@ -299,7 +310,11 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('xtraBackupSettings', {}).get('xtraBackupBinPath', "")
+        return (
+            self._properties.get("mySqlInstance", {})
+            .get("xtraBackupSettings", {})
+            .get("xtraBackupBinPath", "")
+        )
 
     @property
     def is_xtrabackup_enabled(self) -> bool:
@@ -310,7 +325,11 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('xtraBackupSettings', {}).get('enableXtraBackup', False)
+        return (
+            self._properties.get("mySqlInstance", {})
+            .get("xtraBackupSettings", {})
+            .get("enableXtraBackup", False)
+        )
 
     @property
     def proxy_options(self) -> dict:
@@ -321,15 +340,16 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        proxy_settings = self._properties.get('mySqlInstance', {}).get('proxySettings', {})
+        proxy_settings = self._properties.get("mySqlInstance", {}).get("proxySettings", {})
         proxy_opt = {
-            "isUseSSL": proxy_settings.get('isUseSSL', False),
-            "isProxyEnabled": proxy_settings.get('isProxyEnabled', False),
-            "runBackupOnProxy": proxy_settings.get('runBackupOnProxy', False),
-            "instanceId": proxy_settings.get('proxyInstance', {}).get('instanceId', None),
-            "instanceName": proxy_settings.get('proxyInstance', {}).get('instanceName', None),
-            "clientId": proxy_settings.get('proxyInstance', {}).get('clientId', None),
-            "clientName": proxy_settings.get('proxyInstance', {}).get('clientName', None)}
+            "isUseSSL": proxy_settings.get("isUseSSL", False),
+            "isProxyEnabled": proxy_settings.get("isProxyEnabled", False),
+            "runBackupOnProxy": proxy_settings.get("runBackupOnProxy", False),
+            "instanceId": proxy_settings.get("proxyInstance", {}).get("instanceId", None),
+            "instanceName": proxy_settings.get("proxyInstance", {}).get("instanceName", None),
+            "clientId": proxy_settings.get("proxyInstance", {}).get("clientId", None),
+            "clientName": proxy_settings.get("proxyInstance", {}).get("clientName", None),
+        }
         return proxy_opt
 
     @property
@@ -341,7 +361,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        meb_settings = self._properties.get('mySqlInstance', {}).get('mebSettings', {})
+        meb_settings = self._properties.get("mySqlInstance", {}).get("mebSettings", {})
         return meb_settings
 
     @mysql_enterprise_backup_binary_path.setter
@@ -354,13 +374,10 @@ class MYSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, str):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        meb_bin_path_update = {
-            "enableMEB": False if value == '' else True,
-            "mebBinPath": value
-        }
-        properties['mySqlInstance']['mebSettings'] = meb_bin_path_update
+        meb_bin_path_update = {"enableMEB": False if value == "" else True, "mebBinPath": value}
+        properties["mySqlInstance"]["mebSettings"] = meb_bin_path_update
         self.update_properties(properties)
 
     @property
@@ -372,7 +389,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('EnableNoLocking', False)
+        return self._properties.get("mySqlInstance", {}).get("EnableNoLocking", False)
 
     @no_lock_status.setter
     def no_lock_status(self, value: bool) -> None:
@@ -384,9 +401,9 @@ class MYSQLInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(value, bool):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         properties = self._properties
-        properties['mySqlInstance']['EnableNoLocking'] = value
+        properties["mySqlInstance"]["EnableNoLocking"] = value
         self.update_properties(properties)
 
     @property
@@ -398,7 +415,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties.get('mySqlInstance', {}).get('sslEnabled', False)
+        return self._properties.get("mySqlInstance", {}).get("sslEnabled", False)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this MySQL instance.
@@ -412,7 +429,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        super(MYSQLInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         self._instance = {
             "type": 0,
             "clientName": self._agent_object._client_object.client_name,
@@ -421,7 +438,7 @@ class MYSQLInstance(Instance):
             "backupsetName": "defaultDummyBackupSet",
             "instanceName": self.instance_name,
             "appName": self._agent_object.agent_name,
-            "consumeLicense": True
+            "consumeLicense": True,
         }
 
     def _restore_json(self, **kwargs) -> dict:
@@ -439,7 +456,7 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        rest_json = super(MYSQLInstance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
@@ -457,8 +474,9 @@ class MYSQLInstance(Instance):
 
         self._restore_admin_option_json(restore_option)
         self._restore_mysql_option_json(restore_option)
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "mySqlRstOption"] = self.mysql_restore_json
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["mySqlRstOption"] = (
+            self.mysql_restore_json
+        )
         rest_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"] = self.admin_option_json
         return rest_json
 
@@ -480,8 +498,8 @@ class MYSQLInstance(Instance):
         clone_options: Optional[dict] = None,
         redirect_enabled: bool = False,
         redirect_path: Optional[str] = None,
-        browse_jobid: Optional[int] = None
-    ) -> 'Job':
+        browse_jobid: Optional[int] = None,
+    ) -> "Job":
         """Restore MySQL data and/or log files to their original location (in-place restore).
 
         This method restores the specified MySQL databases or tables to the same location on the source or destination client.
@@ -526,12 +544,11 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if not (isinstance(path, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (isinstance(path, list) and isinstance(overwrite, bool)):
+            raise SDKException("Instance", "101")
 
         if not path:
-            raise SDKException('Instance', '104')
+            raise SDKException("Instance", "104")
 
         if dest_client_name is None:
             dest_client_name = self._agent_object._client_object.client_name
@@ -556,7 +573,8 @@ class MYSQLInstance(Instance):
             clone_options=clone_options,
             redirect_enabled=redirect_enabled,
             redirect_path=redirect_path,
-            browse_jobid=browse_jobid)
+            browse_jobid=browse_jobid,
+        )
 
         return self._process_restore_response(request_json)
 
@@ -579,8 +597,8 @@ class MYSQLInstance(Instance):
         redirect_enabled: bool = False,
         redirect_path: Optional[str] = None,
         browse_jobid: Optional[int] = None,
-        recurringRestore: bool = False
-    ) -> 'Job':
+        recurringRestore: bool = False,
+    ) -> "Job":
         """Perform an out-of-place restore of MySQL data, logs, or recurring files to a specified destination client and instance.
 
         This method allows you to restore MySQL databases or tables to a different client or instance, with options for data/log restore, table-level restore, cloning, and advanced restore settings.
@@ -613,22 +631,27 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        if not (isinstance(path, list) and
-                isinstance(overwrite, bool)):
-            raise SDKException('Instance', '101')
+        if not (isinstance(path, list) and isinstance(overwrite, bool)):
+            raise SDKException("Instance", "101")
 
         if not path:
-            raise SDKException('Instance', '104')
+            raise SDKException("Instance", "104")
 
         if dest_client_name is None:
-            raise SDKException('Client', '102',
-                               "The destination client name is missing. "
-                               "Please provide a valid destination client name to proceed")
+            raise SDKException(
+                "Client",
+                "102",
+                "The destination client name is missing. "
+                "Please provide a valid destination client name to proceed",
+            )
 
         if dest_instance_name is None:
-            raise SDKException('Instance', '102',
-                               "The destination Instance name is missing. "
-                               "Please provide a valid destination Instance name to proceed")
+            raise SDKException(
+                "Instance",
+                "102",
+                "The destination Instance name is missing. "
+                "Please provide a valid destination Instance name to proceed",
+            )
 
         request_json = self._restore_json(
             paths=path,
@@ -648,7 +671,8 @@ class MYSQLInstance(Instance):
             redirect_enabled=redirect_enabled,
             redirect_path=redirect_path,
             browse_jobid=browse_jobid,
-            recurringRestore=recurringRestore)
+            recurringRestore=recurringRestore,
+        )
 
         return self._process_restore_response(request_json)
 
@@ -662,22 +686,22 @@ class MYSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
-        super(MYSQLInstance, self)._restore_browse_option_json(value)
+        super()._restore_browse_option_json(value)
 
-        self._browse_restore_json['backupset'] = {
+        self._browse_restore_json["backupset"] = {
             "clientName": self._agent_object._client_object.client_name,
-            "backupsetName": "defaultDummyBackupSet"
+            "backupsetName": "defaultDummyBackupSet",
         }
 
         if value.get("browse_jobid"):
-            self._browse_restore_json['browseJobId'] = value.get("browse_jobid")
+            self._browse_restore_json["browseJobId"] = value.get("browse_jobid")
 
         if value.get("from_time") and value.get("to_time"):
             self._browse_restore_json["timeRange"] = {
                 "fromTime": value.get("from_time"),
-                "toTime": value.get("to_time")
+                "toTime": value.get("to_time"),
             }
 
     def _restore_common_options_json(self, value: dict) -> None:
@@ -690,13 +714,13 @@ class MYSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._commonoption_restore_json = {
             "restoreToDisk": False,
             "onePassRestore": False,
             "revert": False,
-            "syncRestore": False
+            "syncRestore": False,
         }
 
     def _restore_destination_json(self, value: dict) -> None:
@@ -709,17 +733,15 @@ class MYSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self._destination_restore_json = {
             "destinationInstance": {
                 "clientName": value.get("dest_client_name", ""),
                 "instanceName": value.get("dest_instance_name", ""),
-                "appName": "MySQL"
+                "appName": "MySQL",
             },
-            "destClient": {
-                "clientName": value.get("dest_client_name", "")
-            }
+            "destClient": {"clientName": value.get("dest_client_name", "")},
         }
 
     def _restore_fileoption_json(self, value: dict) -> None:
@@ -732,11 +754,9 @@ class MYSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
-        self._fileoption_restore_json = {
-            "sourceItem": value.get("paths", [])
-        }
+        self._fileoption_restore_json = {"sourceItem": value.get("paths", [])}
 
     def _restore_admin_option_json(self, value: dict) -> None:
         """Set the admin restore option in the restore JSON configuration.
@@ -748,13 +768,9 @@ class MYSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
-        self.admin_option_json = {
-            "contentIndexingOption": {
-                "subClientBasedAnalytics": False
-            }
-        }
+        self.admin_option_json = {"contentIndexingOption": {"subClientBasedAnalytics": False}}
 
     def _restore_mysql_option_json(self, value: dict) -> None:
         """Set the MySQL restore options in the restore JSON configuration.
@@ -766,7 +782,7 @@ class MYSQLInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         self.mysql_restore_json = {
             "destinationFolder": "",
@@ -782,13 +798,11 @@ class MYSQLInstance(Instance):
             "isCloneRestore": value.get("clone_env", False),
             "fromTime": value.get("from_time", {}),
             "refTime": value.get("to_time", {}),
-            "destinationServer": {
-                "name": ""
-            }
+            "destinationServer": {"name": ""},
         }
         if value.get("table_level_restore"):
-            self.mysql_restore_json['dropTable'] = True
-            self.mysql_restore_json['instanceRestore'] = False
+            self.mysql_restore_json["dropTable"] = True
+            self.mysql_restore_json["instanceRestore"] = False
 
         if value.get("clone_env", False):
             self.mysql_restore_json["cloneOptions"] = value.get("clone_options", "")
@@ -807,4 +821,6 @@ class MYSQLInstance(Instance):
             self.mysql_restore_json["pointInTime"] = {"time": value.get("to_time")}
 
         if value.get("dest_instance_name"):
-            self.mysql_restore_json["destinationServer"] = {"name": value.get("dest_instance_name")}
+            self.mysql_restore_json["destinationServer"] = {
+                "name": value.get("dest_instance_name")
+            }

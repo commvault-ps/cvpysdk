@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=W0104, R0205, R1710
 
 # --------------------------------------------------------------------------
@@ -288,19 +287,18 @@ ErrorRule
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import time
 import copy
-
-from .exception import SDKException
-from .constants import AdvancedJobDetailType, ApplicationGroup
+import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+from .constants import AdvancedJobDetailType, ApplicationGroup
+from .exception import SDKException
+
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
 
-class JobController(object):
+
+class JobController:
     """
     Controller class for managing jobs associated with a CommCell.
 
@@ -324,7 +322,7 @@ class JobController(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize the JobController with a Commcell connection.
 
         Args:
@@ -347,8 +345,8 @@ class JobController(object):
     def __str__(self) -> str:
         """Return a formatted string representation of all active jobs on this Commcell.
 
-        The string includes a table with columns for Job ID, Operation, Status, Agent type, 
-        Job type, Progress, and Pending Reason, providing a clear overview of all currently 
+        The string includes a table with columns for Job ID, Operation, Status, Agent type,
+        Job type, Progress, and Pending Reason, providing a clear overview of all currently
         active jobs managed by this JobController.
 
         Returns:
@@ -363,19 +361,19 @@ class JobController(object):
         """
         jobs_dict = self.active_jobs()
 
-        representation_string = '{:^5}\t{:^25}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'Job ID', 'Operation', 'Status', 'Agent type', 'Job type', 'Progress', 'Pending Reason'
+        representation_string = "{:^5}\t{:^25}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n".format(
+            "Job ID", "Operation", "Status", "Agent type", "Job type", "Progress", "Pending Reason"
         )
 
         for job in jobs_dict:
-            sub_str = '{:^5}\t{:25}\t{:20}\t{:20}\t{:20}\t{:20}%\t{:^20}\n'.format(
+            sub_str = "{:^5}\t{:25}\t{:20}\t{:20}\t{:20}\t{:20}%\t{:^20}\n".format(
                 job,
-                jobs_dict[job]['operation'],
-                jobs_dict[job]['status'],
-                jobs_dict[job]['app_type'],
-                jobs_dict[job]['job_type'],
-                jobs_dict[job]['percent_complete'],
-                jobs_dict[job]['pending_reason']
+                jobs_dict[job]["operation"],
+                jobs_dict[job]["status"],
+                jobs_dict[job]["app_type"],
+                jobs_dict[job]["job_type"],
+                jobs_dict[job]["percent_complete"],
+                jobs_dict[job]["pending_reason"],
             )
             representation_string += sub_str
 
@@ -402,9 +400,9 @@ class JobController(object):
     def _get_jobs_request_json(self, **options: Any) -> Dict[str, Any]:
         """Construct the request JSON for retrieving job information.
 
-        This method builds a request payload for querying jobs from the server, 
-        allowing customization via keyword arguments. The options dictionary can 
-        include filters such as job category, paging configuration, client lists, 
+        This method builds a request payload for querying jobs from the server,
+        allowing customization via keyword arguments. The options dictionary can
+        include filters such as job category, paging configuration, client lists,
         job types, and entity details.
 
         Args:
@@ -437,46 +435,42 @@ class JobController(object):
 
         #ai-gen-doc
         """
-        job_list_category = {
-            'ALL': 0,
-            'ACTIVE': 1,
-            'FINISHED': 2
-        }
+        job_list_category = {"ALL": 0, "ACTIVE": 1, "FINISHED": 2}
 
-        for client in options.get('clients_list', []):
+        for client in options.get("clients_list", []):
             if not self._commcell_object.clients.has_client(client):
-                raise SDKException('Job', '102', 'No client with name {0} exists.'.format(client))
+                raise SDKException("Job", "102", f"No client with name {client} exists.")
 
         client_list = []
-        for client in options.get('clients_list', []):
+        for client in options.get("clients_list", []):
             try:
-                _client_id = int(self._commcell_object.clients.all_clients[client.lower()]['id'])
+                _client_id = int(self._commcell_object.clients.all_clients[client.lower()]["id"])
             except KeyError:
-                _client_id = int(self._commcell_object.clients.hidden_clients[client.lower()]['id'])
+                _client_id = int(
+                    self._commcell_object.clients.hidden_clients[client.lower()]["id"]
+                )
             client_list.append({"clientId": _client_id})
 
         request_json = {
             "scope": 1,
-            "category": job_list_category[options.get('category', 'ALL')],
+            "category": job_list_category[options.get("category", "ALL")],
             "pagingConfig": {
                 "sortDirection": 1,
-                "offset": options.get('offset', 0),
+                "offset": options.get("offset", 0),
                 "sortField": "jobId",
-                "limit": options.get('limit', 20)
+                "limit": options.get("limit", 20),
             },
             "jobFilter": {
-                "completedJobLookupTime": int(options.get('lookup_time', 5) * 60 * 60),
-                "showAgedJobs": options.get('show_aged_jobs', False),
-                "hideAdminJobs": options.get('hide_admin_jobs', False),
+                "completedJobLookupTime": int(options.get("lookup_time", 5) * 60 * 60),
+                "showAgedJobs": options.get("show_aged_jobs", False),
+                "hideAdminJobs": options.get("hide_admin_jobs", False),
                 "clientList": client_list,
-                "jobTypeList": [
-                    job_type for job_type in options.get('job_type_list', [])
-                ]
-            }
+                "jobTypeList": [job_type for job_type in options.get("job_type_list", [])],
+            },
         }
 
         if "entity" in options:
-            request_json['jobFilter']['entity'] = options.get("entity")
+            request_json["jobFilter"]["entity"] = options.get("entity")
 
         return request_json
 
@@ -505,16 +499,14 @@ class JobController(object):
         #ai-gen-doc
         """
         return self._commcell_object.wrap_request(
-            'POST', 'ACTIVE_JOBS_SUMMARY',
-            req_kwargs={"payload": {}},
-            error_check=False
+            "POST", "ACTIVE_JOBS_SUMMARY", req_kwargs={"payload": {}}, error_check=False
         )
 
     def _get_jobs_list(self, **options: Any) -> Dict[str, Dict[str, Any]]:
         """Retrieve the list of jobs from the server with optional filtering.
 
-        This method sends a request to the server to obtain job details. The returned dictionary contains 
-        job information keyed by job ID. The level of detail in each job entry can be controlled using 
+        This method sends a request to the server to obtain job details. The returned dictionary contains
+        job information keyed by job ID. The level of detail in each job entry can be controlled using
         the 'job_summary' option.
 
         Args:
@@ -523,7 +515,7 @@ class JobController(object):
                   Otherwise, returns a filtered set of job attributes.
 
         Returns:
-            Dictionary mapping job IDs to job details. Each value is either the full job summary or a 
+            Dictionary mapping job IDs to job details. Each value is either the full job summary or a
             filtered dictionary of job attributes, depending on the 'job_summary' option.
 
         Raises:
@@ -541,7 +533,7 @@ class JobController(object):
         request_json = self._get_jobs_request_json(**options)
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['ALL_JOBS'], request_json
+            "POST", self._services["ALL_JOBS"], request_json
         )
 
         jobs_dict = {}
@@ -549,88 +541,86 @@ class JobController(object):
         if flag:
             try:
                 if response.json():
-                    if 'jobs' in response.json():
-                        all_jobs = response.json()['jobs']
+                    if "jobs" in response.json():
+                        all_jobs = response.json()["jobs"]
 
                         for job in all_jobs:
-                            if 'jobSummary' in job and job['jobSummary']['isVisible'] is True:
+                            if "jobSummary" in job and job["jobSummary"]["isVisible"] is True:
+                                job_summary = job["jobSummary"]
+                                job_id = job_summary["jobId"]
 
-                                job_summary = job['jobSummary']
-                                job_id = job_summary['jobId']
-
-                                if options.get('job_summary', '').lower() == 'full':
+                                if options.get("job_summary", "").lower() == "full":
                                     jobs_dict[job_id] = job_summary
                                 else:
-                                    status = job_summary['status']
-                                    operation = job_summary.get('localizedOperationName', '')
-                                    percent_complete = job_summary['percentComplete']
-                                    backup_level = job_summary.get('backupLevelName')
+                                    status = job_summary["status"]
+                                    operation = job_summary.get("localizedOperationName", "")
+                                    percent_complete = job_summary["percentComplete"]
+                                    backup_level = job_summary.get("backupLevelName")
 
-                                    app_type = ''
-                                    job_type = ''
-                                    pending_reason = ''
-                                    subclient_id = ''
-                                    client_id = ''
-                                    client_name = ''
+                                    app_type = ""
+                                    job_type = ""
+                                    pending_reason = ""
+                                    subclient_id = ""
+                                    client_id = ""
+                                    client_name = ""
                                     job_elapsed_time = 0
                                     job_start_time = 0
 
-                                    if 'jobElapsedTime' in job_summary:
-                                        job_elapsed_time = job_summary['jobElapsedTime']
+                                    if "jobElapsedTime" in job_summary:
+                                        job_elapsed_time = job_summary["jobElapsedTime"]
 
-                                    if 'jobStartTime' in job_summary:
-                                        job_start_time = job_summary['jobStartTime']
+                                    if "jobStartTime" in job_summary:
+                                        job_start_time = job_summary["jobStartTime"]
 
-                                    if 'appTypeName' in job_summary:
-                                        app_type = job_summary['appTypeName']
+                                    if "appTypeName" in job_summary:
+                                        app_type = job_summary["appTypeName"]
 
-                                    if 'jobType' in job_summary:
-                                        job_type = job_summary['jobType']
+                                    if "jobType" in job_summary:
+                                        job_type = job_summary["jobType"]
 
-                                    if 'pendingReason' in job_summary:
-                                        pending_reason = job_summary['pendingReason']
+                                    if "pendingReason" in job_summary:
+                                        pending_reason = job_summary["pendingReason"]
 
-                                    if 'subclient' in job_summary:
-                                        job_subclient = job_summary['subclient']
-                                        if 'subclientId' in job_subclient:
-                                            subclient_id = job_subclient['subclientId']
-                                        if 'clientId' in job_subclient:
-                                            client_id = job_subclient['clientId']
-                                        if 'clientName' in job_subclient:
-                                            client_name = job_subclient['clientName']
+                                    if "subclient" in job_summary:
+                                        job_subclient = job_summary["subclient"]
+                                        if "subclientId" in job_subclient:
+                                            subclient_id = job_subclient["subclientId"]
+                                        if "clientId" in job_subclient:
+                                            client_id = job_subclient["clientId"]
+                                        if "clientName" in job_subclient:
+                                            client_name = job_subclient["clientName"]
 
                                     jobs_dict[job_id] = {
-                                        'operation': operation,
-                                        'status': status,
-                                        'app_type': app_type,
-                                        'job_type': job_type,
-                                        'percent_complete': percent_complete,
-                                        'pending_reason': pending_reason,
-                                        'client_id': client_id,
-                                        'client_name': client_name,
-                                        'subclient_id': subclient_id,
-                                        'backup_level': backup_level,
-                                        'job_start_time': job_start_time,
-                                        'job_elapsed_time': job_elapsed_time
-
+                                        "operation": operation,
+                                        "status": status,
+                                        "app_type": app_type,
+                                        "job_type": job_type,
+                                        "percent_complete": percent_complete,
+                                        "pending_reason": pending_reason,
+                                        "client_id": client_id,
+                                        "client_name": client_name,
+                                        "subclient_id": subclient_id,
+                                        "backup_level": backup_level,
+                                        "job_start_time": job_start_time,
+                                        "job_elapsed_time": job_elapsed_time,
                                     }
 
                     return jobs_dict
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
 
             except ValueError:
-                raise SDKException('Response', '102', 'Please check the inputs.')
+                raise SDKException("Response", "102", "Please check the inputs.")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _modify_all_jobs(self, operation_type: Optional[str] = None) -> None:
         """Execute a request to suspend, resume, or kill all jobs on the CommServe.
 
         Args:
-            operation_type: The operation to perform on all jobs. 
+            operation_type: The operation to perform on all jobs.
                 Valid options are 'suspend', 'resume', or 'kill'.
 
         Raises:
@@ -646,48 +636,46 @@ class JobController(object):
         #ai-gen-doc
         """
 
-        job_map = {
-            'suspend': 'JOB_SUSPEND',
-            'resume': 'JOB_RESUME',
-            'kill': 'JOB_KILL'
-        }
+        job_map = {"suspend": "JOB_SUSPEND", "resume": "JOB_RESUME", "kill": "JOB_KILL"}
 
         if operation_type not in job_map:
-            raise SDKException('Job', '102', 'Invalid input')
+            raise SDKException("Job", "102", "Invalid input")
 
         request_json = {
             "JobManager_PerformMultiCellJobOpReq": {
-                "jobOpReq": {
-                    "operationType": job_map[operation_type]
-                },
+                "jobOpReq": {"operationType": job_map[operation_type]},
                 "message": "ALL_JOBS",
-                "operationDescription": "All jobs"
+                "operationDescription": "All jobs",
             }
         }
 
         response = self._commcell_object._qoperation_execute(request_json)
 
-        if 'error' in response:
-            error_code = response['error'].get('errorCode')
+        if "error" in response:
+            error_code = response["error"].get("errorCode")
             if error_code != 0:
-                if 'errLogMessage' in response['error']:
+                if "errLogMessage" in response["error"]:
                     error_message = "Failed to {0} all jobs with error: [{1}]".format(
-                        operation_type, response['error']['errLogMessage']
+                        operation_type, response["error"]["errLogMessage"]
                     )
 
                     raise SDKException(
-                        'Job',
-                        '102',
-                        'Error Code:"{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        "Job",
+                        "102",
+                        f'Error Code:"{error_code}"\nError Message: "{error_message}"',
                     )
                 else:
-                    raise SDKException('Job',
-                                       '102',
-                                       "Failed to {0} all jobs".format(operation_type))
+                    raise SDKException("Job", "102", f"Failed to {operation_type} all jobs")
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
-    def all_jobs(self, client_name: Optional[str] = None, lookup_time: int = 5, job_filter: Optional[str] = None, **options: Any) -> Dict[str, Any]:
+    def all_jobs(
+        self,
+        client_name: Optional[str] = None,
+        lookup_time: int = 5,
+        job_filter: Optional[str] = None,
+        **options: Any,
+    ) -> Dict[str, Any]:
         """Retrieve all jobs executed on the Commcell within the specified lookup time.
 
         This method returns a dictionary of job IDs and their details, filtered by client name, job type, and other optional criteria.
@@ -721,21 +709,27 @@ class JobController(object):
             >>>     print(f"Job ID: {job_id}, Type: {job_details.get('type')}, Status: {job_details.get('status')}")
         #ai-gen-doc
         """
-        options['category'] = 'ALL'
-        options['lookup_time'] = lookup_time
+        options["category"] = "ALL"
+        options["lookup_time"] = lookup_time
 
         if job_filter:
-            options['job_type_list'] = options.get('job_type_list', []) + job_filter.split(',')
+            options["job_type_list"] = options.get("job_type_list", []) + job_filter.split(",")
 
         if client_name:
-            options['clients_list'] = options.get('clients_list', []) + [client_name]
+            options["clients_list"] = options.get("clients_list", []) + [client_name]
 
         return self._get_jobs_list(**options)
 
-    def active_jobs(self, client_name: Optional[str] = None, lookup_time: int = 1, job_filter: Optional[str] = None, **options: Any) -> Dict[str, Any]:
+    def active_jobs(
+        self,
+        client_name: Optional[str] = None,
+        lookup_time: int = 1,
+        job_filter: Optional[str] = None,
+        **options: Any,
+    ) -> Dict[str, Any]:
         """Retrieve all active jobs currently being executed on the Commcell within the specified lookup time.
 
-        This method returns a dictionary of active job IDs and their details, filtered by client name, job type, 
+        This method returns a dictionary of active job IDs and their details, filtered by client name, job type,
         and additional options. The lookup_time parameter specifies the number of hours to look back for active jobs.
 
         Args:
@@ -769,18 +763,24 @@ class JobController(object):
 
         #ai-gen-doc
         """
-        options['category'] = 'ACTIVE'
-        options['lookup_time'] = lookup_time
+        options["category"] = "ACTIVE"
+        options["lookup_time"] = lookup_time
 
         if job_filter:
-            options['job_type_list'] = options.get('job_type_list', []) + job_filter.split(',')
+            options["job_type_list"] = options.get("job_type_list", []) + job_filter.split(",")
 
         if client_name:
-            options['clients_list'] = options.get('clients_list', []) + [client_name]
+            options["clients_list"] = options.get("clients_list", []) + [client_name]
 
         return self._get_jobs_list(**options)
 
-    def finished_jobs(self, client_name: Optional[str] = None, lookup_time: int = 24, job_filter: Optional[str] = None, **options: Any) -> Dict[str, Any]:
+    def finished_jobs(
+        self,
+        client_name: Optional[str] = None,
+        lookup_time: int = 24,
+        job_filter: Optional[str] = None,
+        **options: Any,
+    ) -> Dict[str, Any]:
         """Retrieve all finished jobs from the Commcell within the specified lookup time.
 
         This method returns a dictionary of finished jobs, filtered by client name, job type, and other optional criteria.
@@ -814,14 +814,14 @@ class JobController(object):
             ...     print(f"Job ID: {job_id}, Type: {job_details.get('type')}, Status: {job_details.get('status')}")
         #ai-gen-doc
         """
-        options['category'] = 'FINISHED'
-        options['lookup_time'] = lookup_time
+        options["category"] = "FINISHED"
+        options["lookup_time"] = lookup_time
 
         if job_filter:
-            options['job_type_list'] = options.get('job_type_list', []) + job_filter.split(',')
+            options["job_type_list"] = options.get("job_type_list", []) + job_filter.split(",")
 
         if client_name:
-            options['clients_list'] = options.get('clients_list', []) + [client_name]
+            options["clients_list"] = options.get("clients_list", []) + [client_name]
 
         return self._get_jobs_list(**options)
 
@@ -837,7 +837,7 @@ class JobController(object):
             >>> print("All jobs have been suspended on the CommServe.")
         #ai-gen-doc
         """
-        self._modify_all_jobs('suspend')
+        self._modify_all_jobs("suspend")
 
     def resume_all_jobs(self) -> None:
         """Resume all jobs on the CommServe server.
@@ -851,7 +851,7 @@ class JobController(object):
 
         #ai-gen-doc
         """
-        self._modify_all_jobs('resume')
+        self._modify_all_jobs("resume")
 
     def kill_all_jobs(self) -> None:
         """Terminate all active jobs on the CommServe server.
@@ -866,9 +866,9 @@ class JobController(object):
 
         #ai-gen-doc
         """
-        self._modify_all_jobs('kill')
+        self._modify_all_jobs("kill")
 
-    def get(self, job_id: int) -> 'Job':
+    def get(self, job_id: int) -> "Job":
         """Retrieve the Job object for the specified job ID.
 
         Args:
@@ -891,7 +891,7 @@ class JobController(object):
         return Job(self._commcell_object, job_id)
 
 
-class JobManagement(object):
+class JobManagement:
     """
     Comprehensive class for managing and configuring job operations within a CommCell environment.
 
@@ -916,7 +916,7 @@ class JobManagement(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize the JobManagement instance for managing job management settings.
 
         Args:
@@ -931,13 +931,13 @@ class JobManagement(object):
         #ai-gen-doc
         """
         self._comcell = commcell_object
-        self._service = commcell_object._services.get('JOB_MANAGEMENT_SETTINGS')
+        self._service = commcell_object._services.get("JOB_MANAGEMENT_SETTINGS")
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._error_rules = None
         self.refresh()
 
     @property
-    def error_rules(self) -> '_ErrorRule':
+    def error_rules(self) -> "_ErrorRule":
         """Get the _ErrorRule instance associated with this JobManagement object.
 
         Returns:
@@ -958,8 +958,8 @@ class JobManagement(object):
     def _set_jobmanagement_settings(self) -> None:
         """Set job management settings on the server.
 
-        This method sends a POST request to the server to update job management settings 
-        using the current configuration. If the server returns an error, an SDKException 
+        This method sends a POST request to the server to update job management settings
+        using the current configuration. If the server returns an error, an SDKException
         is raised with the relevant error message.
 
         Raises:
@@ -974,23 +974,29 @@ class JobManagement(object):
         #ai-gen-doc
         """
 
-        flag, response = self._cvpysdk_object.make_request(method='POST', url=self._service,
-                                                           payload=self._settings_dict)
+        flag, response = self._cvpysdk_object.make_request(
+            method="POST", url=self._service, payload=self._settings_dict
+        )
         if flag:
             if response and response.json():
-                if response.json().get('errorCode', 0) != 0:
-                    raise SDKException('Job', '102', 'Failed to set job management properties. \nError: {0}'.format(
-                        response.json().get('errorMessage', '')))
+                if response.json().get("errorCode", 0) != 0:
+                    raise SDKException(
+                        "Job",
+                        "102",
+                        "Failed to set job management properties. \nError: {0}".format(
+                            response.json().get("errorMessage", "")
+                        ),
+                    )
                 self.refresh()
         else:
-            raise SDKException('Response', '101', response.json()["errorMessage"])
+            raise SDKException("Response", "101", response.json()["errorMessage"])
 
     def _get_jobmanagement_settings(self) -> None:
         """Retrieve job management settings from the server and update internal state.
 
-        This method sends a GET request to the server to fetch job management settings. 
-        The settings are parsed and stored in internal attributes for restart, priority, 
-        general, and update settings. If the response is empty or indicates an error, 
+        This method sends a GET request to the server to fetch job management settings.
+        The settings are parsed and stored in internal attributes for restart, priority,
+        general, and update settings. If the response is empty or indicates an error,
         an SDKException is raised.
 
         Raises:
@@ -1004,35 +1010,52 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request(method='GET', url=self._service)
+        flag, response = self._cvpysdk_object.make_request(method="GET", url=self._service)
         if flag:
             if response and response.json():
                 self._settings_dict = response.json()
-                if self._settings_dict.get('errorCode', 0) != 0:
-                    raise SDKException('Job', '102', 'Failed to get job management properties. \nError: {0}'.format(
-                        self._settings_dict.get('errorMessage', '')))
-                if 'jobManagementSettings' in self._settings_dict:
-                    self._restart_settings = {'jobRestartSettings': self._settings_dict.get(
-                        'jobManagementSettings').get('jobRestartSettings', {})}
-                    self._priority_settings = {'jobPrioritySettings': self._settings_dict.get(
-                        'jobManagementSettings').get('jobPrioritySettings', {})}
-                    self._general_settings = {'generalSettings': self._settings_dict.get(
-                        'jobManagementSettings').get('generalSettings', {})}
-                    self._update_settings = {'jobUpdatesSettings': self._settings_dict.get(
-                        'jobManagementSettings').get('jobUpdatesSettings', {})}
+                if self._settings_dict.get("errorCode", 0) != 0:
+                    raise SDKException(
+                        "Job",
+                        "102",
+                        "Failed to get job management properties. \nError: {0}".format(
+                            self._settings_dict.get("errorMessage", "")
+                        ),
+                    )
+                if "jobManagementSettings" in self._settings_dict:
+                    self._restart_settings = {
+                        "jobRestartSettings": self._settings_dict.get("jobManagementSettings").get(
+                            "jobRestartSettings", {}
+                        )
+                    }
+                    self._priority_settings = {
+                        "jobPrioritySettings": self._settings_dict.get(
+                            "jobManagementSettings"
+                        ).get("jobPrioritySettings", {})
+                    }
+                    self._general_settings = {
+                        "generalSettings": self._settings_dict.get("jobManagementSettings").get(
+                            "generalSettings", {}
+                        )
+                    }
+                    self._update_settings = {
+                        "jobUpdatesSettings": self._settings_dict.get("jobManagementSettings").get(
+                            "jobUpdatesSettings", {}
+                        )
+                    }
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._comcell._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Reload all job management settings from the Commcell.
 
-        This method clears cached job management settings and retrieves the latest configuration 
-        by calling the internal method. Use this to ensure you are working with up-to-date 
+        This method clears cached job management settings and retrieves the latest configuration
+        by calling the internal method. Use this to ensure you are working with up-to-date
         job management parameters.
 
         Example:
@@ -1056,7 +1079,7 @@ class JobManagement(object):
         batch updating of multiple settings at once.
 
         Args:
-            settings: Dictionary containing general job management settings to update. 
+            settings: Dictionary containing general job management settings to update.
                 Supported keys include:
                     - "allowRunningJobsToCompletePastOperationWindow": bool
                     - "jobAliveCheckIntervalInMinutes": int
@@ -1088,10 +1111,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(settings, dict):
-            self._general_settings.get('generalSettings').update(settings)
+            self._general_settings.get("generalSettings").update(settings)
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     def set_priority_settings(self, settings: List[Dict[str, Any]]) -> None:
         """Set priority settings for jobs and agent types.
@@ -1138,22 +1161,26 @@ class JobManagement(object):
         if isinstance(settings, list):
             for job in settings:
                 if job["type_of_operation"] == 1:
-                    for job_type in self._priority_settings['jobPrioritySettings']['jobTypePriorityList']:
-                        if job_type['jobTypeName'] == job.get("jobTypeName"):
+                    for job_type in self._priority_settings["jobPrioritySettings"][
+                        "jobTypePriorityList"
+                    ]:
+                        if job_type["jobTypeName"] == job.get("jobTypeName"):
                             job.pop("jobTypeName")
                             job.pop("type_of_operation")
                             job_type.update(job)
                             break
                 elif job["type_of_operation"] == 2:
-                    for job_type in self._priority_settings['jobPrioritySettings']['agentTypePriorityList']:
-                        if job_type['agentTypeEntity']['appTypeName'] == job.get("appTypeName"):
+                    for job_type in self._priority_settings["jobPrioritySettings"][
+                        "agentTypePriorityList"
+                    ]:
+                        if job_type["agentTypeEntity"]["appTypeName"] == job.get("appTypeName"):
                             job.pop("appTypeName")
                             job.pop("type_of_operation")
                             job_type.update(job)
                             break
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     def set_restart_settings(self, settings: List[Dict[str, Any]]) -> None:
         """Set restart settings for jobs based on the provided configuration.
@@ -1208,13 +1235,17 @@ class JobManagement(object):
 
         if isinstance(settings, list):
             for job in settings:
-                target = {'target': job_type for job_type in
-                          self._restart_settings['jobRestartSettings']['jobTypeRestartSettingList']
-                          if job_type['jobTypeName'] == job.get("jobTypeName")}
-                target.get('target').update(job)
+                target = {
+                    "target": job_type
+                    for job_type in self._restart_settings["jobRestartSettings"][
+                        "jobTypeRestartSettingList"
+                    ]
+                    if job_type["jobTypeName"] == job.get("jobTypeName")
+                }
+                target.get("target").update(job)
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     def set_update_settings(self, settings: List[Dict[str, Any]]) -> None:
         """Set update settings for jobs using a list of configuration dictionaries.
@@ -1252,14 +1283,16 @@ class JobManagement(object):
 
         if isinstance(settings, list):
             for job in settings:
-                for job_type in self._update_settings['jobUpdatesSettings']['agentTypeJobUpdateIntervalList']:
-                    if job_type['agentTypeEntity']['appTypeName'] == job.get("appTypeName"):
+                for job_type in self._update_settings["jobUpdatesSettings"][
+                    "agentTypeJobUpdateIntervalList"
+                ]:
+                    if job_type["agentTypeEntity"]["appTypeName"] == job.get("appTypeName"):
                         job.pop("appTypeName")
                         job_type.update(job)
                         break
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def job_priority_precedence(self) -> str:
@@ -1277,11 +1310,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
 
-        available_priorities = {
-            1: "client",
-            2: "agentType"
-        }
-        return available_priorities.get(self._priority_settings["jobPrioritySettings"]["priorityPrecedence"])
+        available_priorities = {1: "client", 2: "agentType"}
+        return available_priorities.get(
+            self._priority_settings["jobPrioritySettings"]["priorityPrecedence"]
+        )
 
     @job_priority_precedence.setter
     def job_priority_precedence(self, priority_type: str) -> None:
@@ -1300,14 +1332,13 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(priority_type, str):
-            available_priorities = {
-                "client": 1,
-                "agentType": 2
-            }
-            self._priority_settings["jobPrioritySettings"]["priorityPrecedence"] = available_priorities[priority_type]
+            available_priorities = {"client": 1, "agentType": 2}
+            self._priority_settings["jobPrioritySettings"]["priorityPrecedence"] = (
+                available_priorities[priority_type]
+            )
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def start_phase_retry_interval(self) -> int:
@@ -1343,10 +1374,12 @@ class JobManagement(object):
         """
 
         if isinstance(minutes, int):
-            self._restart_settings["jobRestartSettings"]["startPhaseRetryIntervalInMinutes"] = minutes
+            self._restart_settings["jobRestartSettings"]["startPhaseRetryIntervalInMinutes"] = (
+                minutes
+            )
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def state_update_interval_for_continuous_data_replicator(self) -> int:
@@ -1361,7 +1394,9 @@ class JobManagement(object):
             >>> print(f"State update interval: {interval} minutes")
         #ai-gen-doc
         """
-        return self._update_settings["jobUpdatesSettings"]["stateUpdateIntervalForContinuousDataReplicator"]
+        return self._update_settings["jobUpdatesSettings"][
+            "stateUpdateIntervalForContinuousDataReplicator"
+        ]
 
     @state_update_interval_for_continuous_data_replicator.setter
     def state_update_interval_for_continuous_data_replicator(self, minutes: int) -> None:
@@ -1381,10 +1416,12 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(minutes, int):
-            self._update_settings["jobUpdatesSettings"]["stateUpdateIntervalForContinuousDataReplicator"] = minutes
+            self._update_settings["jobUpdatesSettings"][
+                "stateUpdateIntervalForContinuousDataReplicator"
+            ] = minutes
             self._set_jobmanagement_settings()
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def allow_running_jobs_to_complete_past_operation_window(self) -> bool:
@@ -1402,7 +1439,9 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("allowRunningJobsToCompletePastOperationWindow")
+        return self._general_settings.get("generalSettings").get(
+            "allowRunningJobsToCompletePastOperationWindow"
+        )
 
     @allow_running_jobs_to_complete_past_operation_window.setter
     def allow_running_jobs_to_complete_past_operation_window(self, flag: bool) -> None:
@@ -1422,12 +1461,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "allowRunningJobsToCompletePastOperationWindow": flag
-            }
+            settings = {"allowRunningJobsToCompletePastOperationWindow": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def job_alive_check_interval_in_minutes(self) -> int:
@@ -1442,7 +1479,7 @@ class JobManagement(object):
             >>> print(f"Job alive check interval: {interval} minutes")
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("jobAliveCheckIntervalInMinutes")
+        return self._general_settings.get("generalSettings").get("jobAliveCheckIntervalInMinutes")
 
     @job_alive_check_interval_in_minutes.setter
     def job_alive_check_interval_in_minutes(self, minutes: int) -> None:
@@ -1462,12 +1499,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(minutes, int):
-            settings = {
-                "jobAliveCheckIntervalInMinutes": minutes
-            }
+            settings = {"jobAliveCheckIntervalInMinutes": minutes}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def queue_scheduled_jobs(self) -> bool:
@@ -1483,7 +1518,7 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("queueScheduledJobs")
+        return self._general_settings.get("generalSettings").get("queueScheduledJobs")
 
     @queue_scheduled_jobs.setter
     def queue_scheduled_jobs(self, flag: bool) -> None:
@@ -1503,12 +1538,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "queueScheduledJobs": flag
-            }
+            settings = {"queueScheduledJobs": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def enable_job_throttle_at_client_level(self) -> bool:
@@ -1524,7 +1557,7 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("enableJobThrottleAtClientLevel")
+        return self._general_settings.get("generalSettings").get("enableJobThrottleAtClientLevel")
 
     @enable_job_throttle_at_client_level.setter
     def enable_job_throttle_at_client_level(self, flag: bool) -> None:
@@ -1544,12 +1577,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "enableJobThrottleAtClientLevel": flag
-            }
+            settings = {"enableJobThrottleAtClientLevel": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def enable_multiplexing_for_db_agents(self) -> bool:
@@ -1565,7 +1596,7 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("enableMultiplexingForDBAgents")
+        return self._general_settings.get("generalSettings").get("enableMultiplexingForDBAgents")
 
     @enable_multiplexing_for_db_agents.setter
     def enable_multiplexing_for_db_agents(self, flag: bool) -> None:
@@ -1585,12 +1616,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "enableMultiplexingForDBAgents": flag
-            }
+            settings = {"enableMultiplexingForDBAgents": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def queue_jobs_if_conflicting_jobs_active(self) -> bool:
@@ -1608,7 +1637,9 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("queueJobsIfConflictingJobsActive")
+        return self._general_settings.get("generalSettings").get(
+            "queueJobsIfConflictingJobsActive"
+        )
 
     @queue_jobs_if_conflicting_jobs_active.setter
     def queue_jobs_if_conflicting_jobs_active(self, flag: bool) -> None:
@@ -1630,12 +1661,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "queueJobsIfConflictingJobsActive": flag
-            }
+            settings = {"queueJobsIfConflictingJobsActive": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def queue_jobs_if_activity_disabled(self) -> bool:
@@ -1653,7 +1682,7 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("queueJobsIfActivityDisabled")
+        return self._general_settings.get("generalSettings").get("queueJobsIfActivityDisabled")
 
     @queue_jobs_if_activity_disabled.setter
     def queue_jobs_if_activity_disabled(self, flag: bool) -> None:
@@ -1675,12 +1704,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "queueJobsIfActivityDisabled": flag
-            }
+            settings = {"queueJobsIfActivityDisabled": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def backups_preempts_auxilary_copy(self) -> bool:
@@ -1698,14 +1725,14 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("backupsPreemptsAuxilaryCopy")
+        return self._general_settings.get("generalSettings").get("backupsPreemptsAuxilaryCopy")
 
     @backups_preempts_auxilary_copy.setter
     def backups_preempts_auxilary_copy(self, flag: bool) -> None:
         """Enable or disable the 'backups preempts auxiliary copy' setting.
 
         Args:
-            flag: Boolean value to set the option. 
+            flag: Boolean value to set the option.
                 - True enables backups to preempt auxiliary copy operations.
                 - False disables this behavior.
 
@@ -1720,12 +1747,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "backupsPreemptsAuxilaryCopy": flag
-            }
+            settings = {"backupsPreemptsAuxilaryCopy": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def restore_preempts_other_jobs(self) -> bool:
@@ -1743,7 +1768,7 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("restorePreemptsOtherJobs")
+        return self._general_settings.get("generalSettings").get("restorePreemptsOtherJobs")
 
     @restore_preempts_other_jobs.setter
     def restore_preempts_other_jobs(self, flag: bool) -> None:
@@ -1765,12 +1790,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "restorePreemptsOtherJobs": flag
-            }
+            settings = {"restorePreemptsOtherJobs": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def enable_multiplexing_for_oracle(self) -> bool:
@@ -1786,14 +1809,14 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("enableMultiplexingForOracle")
+        return self._general_settings.get("generalSettings").get("enableMultiplexingForOracle")
 
     @enable_multiplexing_for_oracle.setter
     def enable_multiplexing_for_oracle(self, flag: bool) -> None:
         """Enable or disable multiplexing for Oracle jobs.
 
         Args:
-            flag: Boolean value to set multiplexing. 
+            flag: Boolean value to set multiplexing.
                 - True to enable multiplexing for Oracle jobs.
                 - False to disable multiplexing.
 
@@ -1808,18 +1831,16 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "enableMultiplexingForOracle": flag
-            }
+            settings = {"enableMultiplexingForOracle": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def job_stream_high_water_mark_level(self) -> int:
         """Get the job stream high water mark level for job management.
 
-        This property retrieves the configured high water mark level, which determines 
+        This property retrieves the configured high water mark level, which determines
         the maximum number of concurrent job streams allowed.
 
         Returns:
@@ -1831,13 +1852,13 @@ class JobManagement(object):
             >>> print(f"High water mark level: {high_water_mark}")
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("jobStreamHighWaterMarkLevel")
+        return self._general_settings.get("generalSettings").get("jobStreamHighWaterMarkLevel")
 
     @job_stream_high_water_mark_level.setter
     def job_stream_high_water_mark_level(self, level: int) -> None:
         """Set the job stream high water mark level.
 
-        This property setter configures the maximum number of jobs that can be performed concurrently 
+        This property setter configures the maximum number of jobs that can be performed concurrently
         in a job stream. The value must be an integer.
 
         Args:
@@ -1854,12 +1875,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(level, int):
-            settings = {
-                "jobStreamHighWaterMarkLevel": level
-            }
+            settings = {"jobStreamHighWaterMarkLevel": level}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def backups_preempts_other_backups(self) -> bool:
@@ -1875,7 +1894,7 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("backupsPreemptsOtherBackups")
+        return self._general_settings.get("generalSettings").get("backupsPreemptsOtherBackups")
 
     @backups_preempts_other_backups.setter
     def backups_preempts_other_backups(self, flag: bool) -> None:
@@ -1897,12 +1916,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "backupsPreemptsOtherBackups": flag
-            }
+            settings = {"backupsPreemptsOtherBackups": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def do_not_start_backups_on_disabled_client(self) -> bool:
@@ -1920,7 +1937,9 @@ class JobManagement(object):
 
         #ai-gen-doc
         """
-        return self._general_settings.get('generalSettings').get("doNotStartBackupsOnDisabledClient")
+        return self._general_settings.get("generalSettings").get(
+            "doNotStartBackupsOnDisabledClient"
+        )
 
     @do_not_start_backups_on_disabled_client.setter
     def do_not_start_backups_on_disabled_client(self, flag: bool) -> None:
@@ -1942,12 +1961,10 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(flag, bool):
-            settings = {
-                "doNotStartBackupsOnDisabledClient": flag
-            }
+            settings = {"doNotStartBackupsOnDisabledClient": flag}
             self.set_general_settings(settings)
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     def get_restart_setting(self, jobtype: str) -> Dict[str, Any]:
         """Retrieve restart settings for a specific job type.
@@ -2030,12 +2047,14 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(jobtype, str):
-            for job_type in self._restart_settings['jobRestartSettings']['jobTypeRestartSettingList']:
-                if job_type['jobTypeName'] == jobtype:
+            for job_type in self._restart_settings["jobRestartSettings"][
+                "jobTypeRestartSettingList"
+            ]:
+                if job_type["jobTypeName"] == jobtype:
                     settings = copy.deepcopy(job_type)
                     return settings
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     def get_priority_setting(self, jobtype: str) -> Dict[str, Any]:
         """Retrieve the priority settings associated with a specific job type or application type.
@@ -2080,24 +2099,26 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(jobtype, str):
-            for job_type in self._priority_settings['jobPrioritySettings']['jobTypePriorityList']:
-                if job_type['jobTypeName'] == jobtype:
+            for job_type in self._priority_settings["jobPrioritySettings"]["jobTypePriorityList"]:
+                if job_type["jobTypeName"] == jobtype:
                     settings = {
-                        'jobTypeName': job_type.get('jobTypeName'),
-                        'combinedPriority': job_type.get('combinedPriority'),
-                        'type_of_operation': 1
+                        "jobTypeName": job_type.get("jobTypeName"),
+                        "combinedPriority": job_type.get("combinedPriority"),
+                        "type_of_operation": 1,
                     }
                     return settings
-            for job_type in self._priority_settings['jobPrioritySettings']['agentTypePriorityList']:
-                if job_type['agentTypeEntity']['appTypeName'] == jobtype:
+            for job_type in self._priority_settings["jobPrioritySettings"][
+                "agentTypePriorityList"
+            ]:
+                if job_type["agentTypeEntity"]["appTypeName"] == jobtype:
                     settings = {
-                        'appTypeName': job_type.get('agentTypeEntity').get('appTypeName'),
-                        'combinedPriority': job_type.get('combinedPriority'),
-                        'type_of_operation': 2
+                        "appTypeName": job_type.get("agentTypeEntity").get("appTypeName"),
+                        "combinedPriority": job_type.get("combinedPriority"),
+                        "type_of_operation": 2,
                     }
                     return settings
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     def get_update_setting(self, jobtype: str) -> Dict[str, Any]:
         """Retrieve update settings associated with a specific job type.
@@ -2125,16 +2146,18 @@ class JobManagement(object):
         #ai-gen-doc
         """
         if isinstance(jobtype, str):
-            for job_type in self._update_settings['jobUpdatesSettings']['agentTypeJobUpdateIntervalList']:
-                if job_type['agentTypeEntity']['appTypeName'] == jobtype:
+            for job_type in self._update_settings["jobUpdatesSettings"][
+                "agentTypeJobUpdateIntervalList"
+            ]:
+                if job_type["agentTypeEntity"]["appTypeName"] == jobtype:
                     settings = {
-                        'appTypeName': job_type.get('agentTypeEntity').get('appTypeName'),
-                        'recoveryTimeInMinutes': job_type.get('recoveryTimeInMinutes'),
-                        'protectionTimeInMinutes': job_type.get('protectionTimeInMinutes')
+                        "appTypeName": job_type.get("agentTypeEntity").get("appTypeName"),
+                        "recoveryTimeInMinutes": job_type.get("recoveryTimeInMinutes"),
+                        "protectionTimeInMinutes": job_type.get("protectionTimeInMinutes"),
                     }
                     return settings
         else:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
     @property
     def general_settings(self) -> Dict[str, Any]:
@@ -2228,7 +2251,7 @@ class JobManagement(object):
         raise NotImplementedError("Yet To Be Implemented")
 
 
-class Job(object):
+class Job:
     """
     Represents a job for performing client operations within a CommCell environment.
 
@@ -2255,7 +2278,7 @@ class Job(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', job_id: Union[str, int]) -> None:
+    def __init__(self, commcell_object: "Commcell", job_id: Union[str, int]) -> None:
         """Initialize a Job instance for managing backup or restore jobs.
 
         Args:
@@ -2277,7 +2300,7 @@ class Job(object):
         try:
             int(job_id)
         except ValueError:
-            raise SDKException('Job', '101')
+            raise SDKException("Job", "101")
 
         self._commcell_object = commcell_object
 
@@ -2287,19 +2310,21 @@ class Job(object):
 
         self._job_id = str(job_id)
 
-        self._JOB = self._services['JOB'] % (self.job_id)
+        self._JOB = self._services["JOB"] % (self.job_id)
 
         if not self._is_valid_job():
-            raise SDKException('Job', '102', f'No job exists with the specified Job ID: {self.job_id}')
+            raise SDKException(
+                "Job", "102", f"No job exists with the specified Job ID: {self.job_id}"
+            )
 
-        self._JOB_DETAILS = self._services['JOB_DETAILS']
+        self._JOB_DETAILS = self._services["JOB_DETAILS"]
         self.ADVANCED_JOB_DETAILS = AdvancedJobDetailType
-        self._SUSPEND = self._services['SUSPEND_JOB'] % self.job_id
-        self._RESUME = self._services['RESUME_JOB'] % self.job_id
-        self._KILL = self._services['KILL_JOB'] % self.job_id
-        self._RESUBMIT = self._services['RESUBMIT_JOB'] % self.job_id
-        self._JOB_EVENTS = self._services['JOB_EVENTS'] % self.job_id
-        self._JOB_TASK_DETAILS = self._services['JOB_TASK_DETAILS']
+        self._SUSPEND = self._services["SUSPEND_JOB"] % self.job_id
+        self._RESUME = self._services["RESUME_JOB"] % self.job_id
+        self._KILL = self._services["KILL_JOB"] % self.job_id
+        self._RESUBMIT = self._services["RESUBMIT_JOB"] % self.job_id
+        self._JOB_EVENTS = self._services["JOB_EVENTS"] % self.job_id
+        self._JOB_TASK_DETAILS = self._services["JOB_TASK_DETAILS"]
 
         self._client_name = None
         self._agent_name = None
@@ -2323,7 +2348,7 @@ class Job(object):
     def __repr__(self) -> str:
         """Return a string representation of the Job instance.
 
-        This method provides a human-readable description of the Job object, 
+        This method provides a human-readable description of the Job object,
         including its job ID. Useful for debugging and logging purposes.
 
         Returns:
@@ -2359,7 +2384,7 @@ class Job(object):
                 self._get_job_summary()
                 return True
             except SDKException as excp:
-                if excp.exception_module == 'Job' and excp.exception_id == '104':
+                if excp.exception_module == "Job" and excp.exception_id == "104":
                     time.sleep(1.5)
                     continue
                 else:
@@ -2390,30 +2415,30 @@ class Job(object):
         """
         attempts = 0
         while attempts < 5:  # Retrying to ignore the transient case when no jobs are found
-            flag, response = self._cvpysdk_object.make_request('GET', self._JOB)
+            flag, response = self._cvpysdk_object.make_request("GET", self._JOB)
             attempts += 1
 
             if flag:
                 if response.json():
-                    if response.json().get('totalRecordsWithoutPaging', 0) == 0:
+                    if response.json().get("totalRecordsWithoutPaging", 0) == 0:
                         time.sleep(2**attempts)
                         continue
 
-                    if 'jobs' in response.json():
-                        for job in response.json()['jobs']:
-                            return job['jobSummary']
+                    if "jobs" in response.json():
+                        for job in response.json()["jobs"]:
+                            return job["jobSummary"]
                 else:
                     if attempts > 4:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
                     time.sleep(20)
 
             else:
                 if attempts > 4:
                     response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
                 time.sleep(20)
 
-        raise SDKException('Job', '104')
+        raise SDKException("Job", "104")
 
     def _get_job_details(self) -> Dict[str, Any]:
         """Retrieve the detailed properties of this job.
@@ -2437,43 +2462,42 @@ class Job(object):
 
         #ai-gen-doc
         """
-        payload = {
-            "jobId": int(self.job_id),
-            "showAttempt": True
-        }
+        payload = {"jobId": int(self.job_id), "showAttempt": True}
 
         retry_count = 0
 
-        while retry_count < 5:  # Retrying to ignore the transient case when job details are not found
-            flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
+        while (
+            retry_count < 5
+        ):  # Retrying to ignore the transient case when job details are not found
+            flag, response = self._cvpysdk_object.make_request("POST", self._JOB_DETAILS, payload)
             retry_count += 1
 
             if flag:
                 if response.json():
-                    if 'job' in response.json():
-                        return response.json()['job']
-                    elif 'error' in response.json():
-                        error_code = response.json()['error']['errList'][0]['errorCode']
-                        error_message = response.json()['error']['errList'][0]['errLogMessage']
+                    if "job" in response.json():
+                        return response.json()["job"]
+                    elif "error" in response.json():
+                        error_code = response.json()["error"]["errList"][0]["errorCode"]
+                        error_message = response.json()["error"]["errList"][0]["errLogMessage"]
 
                         raise SDKException(
-                            'Job',
-                            '105',
-                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                            "Job",
+                            "105",
+                            f'Error Code: "{error_code}"\nError Message: "{error_message}"',
                         )
                     else:
-                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                        raise SDKException("Job", "106", f"Response JSON: {response.json()}")
                 else:
                     if retry_count > 4:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
                     time.sleep(20)
             else:
                 if retry_count > 4:
                     response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
                 time.sleep(20)
 
-        raise SDKException('Response', '102')
+        raise SDKException("Response", "102")
 
     def _get_job_task_details(self) -> Dict[str, Any]:
         """Retrieve the task details associated with this job.
@@ -2500,42 +2524,46 @@ class Job(object):
         """
         retry_count = 0
 
-        while retry_count < 5:  # Retrying to ignore the transient case when job task details are not found
-            flag, response = self._cvpysdk_object.make_request('GET', self._JOB_TASK_DETAILS % self.job_id)
+        while (
+            retry_count < 5
+        ):  # Retrying to ignore the transient case when job task details are not found
+            flag, response = self._cvpysdk_object.make_request(
+                "GET", self._JOB_TASK_DETAILS % self.job_id
+            )
             retry_count += 1
 
             if flag:
                 if response.json():
-                    if 'taskInfo' in response.json():
-                        return response.json()['taskInfo']
-                    elif 'error' in response.json():
-                        error_code = response.json()['error']['errList'][0]['errorCode']
-                        error_message = response.json()['error']['errList'][0]['errorMessage']
+                    if "taskInfo" in response.json():
+                        return response.json()["taskInfo"]
+                    elif "error" in response.json():
+                        error_code = response.json()["error"]["errList"][0]["errorCode"]
+                        error_message = response.json()["error"]["errList"][0]["errorMessage"]
 
                         raise SDKException(
-                            'Job',
-                            '105',
-                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                            "Job",
+                            "105",
+                            f'Error Code: "{error_code}"\nError Message: "{error_message}"',
                         )
                     else:
-                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                        raise SDKException("Job", "106", f"Response JSON: {response.json()}")
                 else:
                     if retry_count > 4:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
                     time.sleep(20)
             else:
                 if retry_count > 4:
                     response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
                 time.sleep(20)
 
-        raise SDKException('Response', '102')
+        raise SDKException("Response", "102")
 
     def _initialize_job_properties(self) -> None:
         """Initialize common properties for the job object.
 
-        This method sets up essential job attributes such as client, agent, backupset, 
-        and subclient names, along with job status and start time. It retrieves job 
+        This method sets up essential job attributes such as client, agent, backupset,
+        and subclient names, along with job status and start time. It retrieves job
         summary and details, and formats the job start time for easy access.
 
         Example:
@@ -2550,10 +2578,10 @@ class Job(object):
         self._summary = self._get_job_summary()
         self._details = self._get_job_details()
 
-        self._status = self._summary['status']
+        self._status = self._summary["status"]
 
         self._start_time = time.strftime(
-            '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary['jobStartTime'])
+            "%Y-%m-%d %H:%M:%S", time.gmtime(self._summary["jobStartTime"])
         )
 
     def _wait_for_status(self, status: str, timeout: int = 6) -> None:
@@ -2586,19 +2614,19 @@ class Job(object):
     def wait_for_completion(self, timeout: int = 30, **kwargs: Any) -> bool:
         """Wait until the job completes or exceeds the specified timeout.
 
-        This method monitors the job's status and waits until it is finished. If the job remains in 
-        'Pending' or 'Waiting' state for longer than the specified timeout (in minutes), the job is 
-        killed and logs are sent to configured email addresses. Optionally, you can specify 
+        This method monitors the job's status and waits until it is finished. If the job remains in
+        'Pending' or 'Waiting' state for longer than the specified timeout (in minutes), the job is
+        killed and logs are sent to configured email addresses. Optionally, you can specify
         'return_timeout' in kwargs to force the method to return False after a given number of minutes.
 
-        In case of job failure, you can obtain the job status and failure reason using the 
+        In case of job failure, you can obtain the job status and failure reason using the
         `status` and `delay_reason` properties.
 
         Args:
-            timeout: Number of minutes to wait before killing the job if it remains in 'Pending' or 
+            timeout: Number of minutes to wait before killing the job if it remains in 'Pending' or
                 'Waiting' state. Default is 30.
             **kwargs: Optional arguments.
-                return_timeout (int): Number of minutes after which the method will return False 
+                return_timeout (int): Number of minutes after which the method will return False
                     regardless of job status.
 
         Returns:
@@ -2617,9 +2645,9 @@ class Job(object):
         pending_time = 0
         waiting_time = 0
         previous_status = None
-        return_timeout = kwargs.get('return_timeout')
+        return_timeout = kwargs.get("return_timeout")
         email_ids = self._commcell_object.job_logs_emails
-        status_list = ['pending', 'waiting']
+        status_list = ["pending", "waiting"]
 
         while not self.is_finished:
             time.sleep(30)
@@ -2638,12 +2666,12 @@ class Job(object):
             if status in status_list and previous_status not in status_list:
                 start_time = time.time()
 
-            if status == 'pending':
+            if status == "pending":
                 pending_time = (time.time() - start_time) / 60
             else:
                 pending_time = 0
 
-            if status == 'waiting':
+            if status == "waiting":
                 waiting_time = (time.time() - start_time) / 60
             else:
                 waiting_time = 0
@@ -2658,7 +2686,7 @@ class Job(object):
             previous_status = status
         else:
             if self._status.lower() not in ["failed", "killed", "failed to start"]:
-               return True
+                return True
             else:
                 if len(email_ids):
                     self.send_logs(email_ids=email_ids)
@@ -2687,17 +2715,19 @@ class Job(object):
         self._summary = self._get_job_summary()
         self._details = self._get_job_details()
 
-        self._status = self._summary['status']
+        self._status = self._summary["status"]
 
-        if self._summary['lastUpdateTime'] != 0:
+        if self._summary["lastUpdateTime"] != 0:
             self._end_time = time.strftime(
-                '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary['lastUpdateTime'])
+                "%Y-%m-%d %H:%M:%S", time.gmtime(self._summary["lastUpdateTime"])
             )
 
-        return ('completed' in self._status.lower() or
-                'killed' in self._status.lower() or
-                'committed' in self._status.lower() or
-                'failed' in self._status.lower())
+        return (
+            "completed" in self._status.lower()
+            or "killed" in self._status.lower()
+            or "committed" in self._status.lower()
+            or "failed" in self._status.lower()
+        )
 
     @property
     def client_name(self) -> str:
@@ -2714,8 +2744,8 @@ class Job(object):
 
         #ai-gen-doc
         """
-        if 'clientName' in self._summary['subclient']:
-            return self._summary['subclient']['clientName']
+        if "clientName" in self._summary["subclient"]:
+            return self._summary["subclient"]["clientName"]
 
     @property
     def agent_name(self) -> Optional[str]:
@@ -2732,8 +2762,8 @@ class Job(object):
 
         #ai-gen-doc
         """
-        if 'appName' in self._summary['subclient']:
-            return self._summary['subclient']['appName']
+        if "appName" in self._summary["subclient"]:
+            return self._summary["subclient"]["appName"]
 
     @property
     def instance_name(self) -> str:
@@ -2749,8 +2779,8 @@ class Job(object):
 
         #ai-gen-doc
         """
-        if 'instanceName' in self._summary['subclient']:
-            return self._summary['subclient']['instanceName']
+        if "instanceName" in self._summary["subclient"]:
+            return self._summary["subclient"]["instanceName"]
 
     @property
     def backupset_name(self) -> str:
@@ -2767,8 +2797,8 @@ class Job(object):
 
         #ai-gen-doc
         """
-        if 'backupsetName' in self._summary['subclient']:
-            return self._summary['subclient']['backupsetName']
+        if "backupsetName" in self._summary["subclient"]:
+            return self._summary["subclient"]["backupsetName"]
 
     @property
     def subclient_name(self) -> str:
@@ -2783,8 +2813,8 @@ class Job(object):
             >>> print(f"Subclient name: {name}")
         #ai-gen-doc
         """
-        if 'subclientName' in self._summary['subclient']:
-            return self._summary['subclient']['subclientName']
+        if "subclientName" in self._summary["subclient"]:
+            return self._summary["subclient"]["subclientName"]
 
     @property
     def status(self) -> str:
@@ -2837,7 +2867,7 @@ class Job(object):
             >>> # Output might be: 'Backup'
         #ai-gen-doc
         """
-        return self._summary['jobType']
+        return self._summary["jobType"]
 
     @property
     def backup_level(self) -> str:
@@ -2854,8 +2884,8 @@ class Job(object):
 
         #ai-gen-doc
         """
-        if 'backupLevelName' in self._summary:
-            return self._summary['backupLevelName']
+        if "backupLevelName" in self._summary:
+            return self._summary["backupLevelName"]
 
     @property
     def start_time(self) -> str:
@@ -2872,7 +2902,7 @@ class Job(object):
         #ai-gen-doc
         """
         return self._start_time
-    
+
     @property
     def start_timestamp(self) -> int:
         """Get the Unix start time of the job as a read-only property.
@@ -2886,7 +2916,7 @@ class Job(object):
             >>> print(f"Job started at Unix time: {start_time}")
         #ai-gen-doc
         """
-        return self._summary['jobStartTime']
+        return self._summary["jobStartTime"]
 
     @property
     def end_timestamp(self) -> int:
@@ -2902,7 +2932,7 @@ class Job(object):
 
         #ai-gen-doc
         """
-        return self._summary['jobEndTime']
+        return self._summary["jobEndTime"]
 
     @property
     def end_time(self) -> str:
@@ -2938,9 +2968,9 @@ class Job(object):
         #ai-gen-doc
         """
         self.is_finished
-        progress_info = self._details['jobDetail']['progressInfo']
-        if 'reasonForJobDelay' in progress_info and progress_info['reasonForJobDelay']:
-            return progress_info['reasonForJobDelay']
+        progress_info = self._details["jobDetail"]["progressInfo"]
+        if "reasonForJobDelay" in progress_info and progress_info["reasonForJobDelay"]:
+            return progress_info["reasonForJobDelay"]
 
     @property
     def pending_reason(self) -> Optional[str]:
@@ -2959,8 +2989,8 @@ class Job(object):
         #ai-gen-doc
         """
         self.is_finished
-        if 'pendingReason' in self._summary and self._summary['pendingReason']:
-            return self._summary['pendingReason']
+        if "pendingReason" in self._summary and self._summary["pendingReason"]:
+            return self._summary["pendingReason"]
 
     @property
     def phase(self) -> str:
@@ -2977,8 +3007,8 @@ class Job(object):
         #ai-gen-doc
         """
         self.is_finished
-        if 'currentPhaseName' in self._summary:
-            return self._summary['currentPhaseName']
+        if "currentPhaseName" in self._summary:
+            return self._summary["currentPhaseName"]
 
     @property
     def attempts(self) -> Dict[str, Any]:
@@ -2997,7 +3027,7 @@ class Job(object):
         #ai-gen-doc
         """
         self.is_finished
-        return self._details.get('jobDetail', {}).get('attemptsInfo', {})
+        return self._details.get("jobDetail", {}).get("attemptsInfo", {})
 
     @property
     def summary(self) -> Dict[str, Any]:
@@ -3030,7 +3060,7 @@ class Job(object):
             >>> print(f"Job executed by user: {user}")
         #ai-gen-doc
         """
-        return self._summary['userName']['userName']
+        return self._summary["userName"]["userName"]
 
     @property
     def userid(self) -> str:
@@ -3045,7 +3075,7 @@ class Job(object):
             >>> print(f"Job submitted by user ID: {user_id}")
         #ai-gen-doc
         """
-        return self._summary['userName']['userId']
+        return self._summary["userName"]["userId"]
 
     @property
     def details(self) -> Dict[str, Any]:
@@ -3082,8 +3112,8 @@ class Job(object):
             >>> print(f"Application size: {app_size} bytes")
         #ai-gen-doc
         """
-        if 'sizeOfApplication' in self._summary:
-            return self._summary['sizeOfApplication']
+        if "sizeOfApplication" in self._summary:
+            return self._summary["sizeOfApplication"]
 
     @property
     def media_size(self) -> int:
@@ -3101,7 +3131,7 @@ class Job(object):
             >>> print(f"Media size: {size} bytes")
         #ai-gen-doc
         """
-        return self._summary.get('sizeOfMediaOnDisk', 0)
+        return self._summary.get("sizeOfMediaOnDisk", 0)
 
     @property
     def job_end_time(self) -> int:
@@ -3118,7 +3148,7 @@ class Job(object):
 
         #ai-gen-doc
         """
-        return self._details.get('jobDetail', {}).get('detailInfo',{}).get('endTime',-1)
+        return self._details.get("jobDetail", {}).get("detailInfo", {}).get("endTime", -1)
 
     @property
     def num_of_objects(self) -> int:
@@ -3134,13 +3164,13 @@ class Job(object):
 
         #ai-gen-doc
         """
-        return self._details.get('jobDetail', {}).get('detailInfo', {}).get('numOfObjects', -1)
+        return self._details.get("jobDetail", {}).get("detailInfo", {}).get("numOfObjects", -1)
 
     @property
     def num_of_files_transferred(self) -> int:
         """Get the number of files transferred for this job.
 
-        This property provides the count of files that have been successfully transferred 
+        This property provides the count of files that have been successfully transferred
         during the execution of the job. It is read-only and automatically updated as the job progresses.
 
         Returns:
@@ -3154,7 +3184,7 @@ class Job(object):
         #ai-gen-doc
         """
         self.is_finished
-        return self._details['jobDetail']['progressInfo']['numOfFilesTransferred']
+        return self._details["jobDetail"]["progressInfo"]["numOfFilesTransferred"]
 
     @property
     def state(self) -> str:
@@ -3172,7 +3202,7 @@ class Job(object):
         #ai-gen-doc
         """
         self.is_finished
-        return self._details['jobDetail']['progressInfo']['state']
+        return self._details["jobDetail"]["progressInfo"]["state"]
 
     @property
     def task_details(self) -> Dict[str, Any]:
@@ -3216,27 +3246,27 @@ class Job(object):
             >>> print("Job has been suspended.")
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._SUSPEND)
+        flag, response = self._cvpysdk_object.make_request("POST", self._SUSPEND)
 
         self.is_finished
 
         if flag:
             if response.json():
-                if 'errors' in response.json():
-                    error_list = response.json()['errors'][0]['errList'][0]
-                    error_code = error_list['errorCode']
-                    error_message = error_list['errLogMessage'].strip()
+                if "errors" in response.json():
+                    error_list = response.json()["errors"][0]["errList"][0]
+                    error_code = error_list["errorCode"]
+                    error_message = error_list["errLogMessage"].strip()
                 else:
-                    error_code = response.json().get('errorCode', 0)
-                    error_message = response.json().get('errorMessage', 'nil')
+                    error_code = response.json().get("errorCode", 0)
+                    error_message = response.json().get("errorMessage", "nil")
 
                 if error_code != 0:
                     raise SDKException(
-                        'Job', '102', 'Job suspend failed\nError: "{0}"'.format(error_message)
+                        "Job", "102", f'Job suspend failed\nError: "{error_message}"'
                     )
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         if wait_for_job_to_pause is True:
             self._wait_for_status("SUSPENDED", timeout=timeout)
@@ -3254,38 +3284,38 @@ class Job(object):
         Example:
             >>> job = Job(...)
             >>> job.resume()  # Resume the job without waiting for status change
-            >>> 
+            >>>
             >>> # Resume the job and wait until it is running
             >>> job.resume(wait_for_job_to_resume=True)
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._RESUME)
+        flag, response = self._cvpysdk_object.make_request("POST", self._RESUME)
 
         self.is_finished
 
         if flag:
             if response.json():
-                if 'errors' in response.json():
-                    error_list = response.json()['errors'][0]['errList'][0]
-                    error_code = error_list['errorCode']
-                    error_message = error_list['errLogMessage'].strip()
+                if "errors" in response.json():
+                    error_list = response.json()["errors"][0]["errList"][0]
+                    error_code = error_list["errorCode"]
+                    error_message = error_list["errLogMessage"].strip()
                 else:
-                    error_code = response.json().get('errorCode', 0)
-                    error_message = response.json().get('errorMessage', 'nil')
+                    error_code = response.json().get("errorCode", 0)
+                    error_message = response.json().get("errorMessage", "nil")
 
                 if error_code != 0:
                     raise SDKException(
-                        'Job', '102', 'Job resume failed\nError: "{0}"'.format(error_message)
+                        "Job", "102", f'Job resume failed\nError: "{error_message}"'
                     )
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         if wait_for_job_to_resume is True:
             self._wait_for_status("RUNNING")
 
-    def resubmit(self, start_suspended: Optional[bool] = None) -> 'Job':
+    def resubmit(self, start_suspended: Optional[bool] = None) -> "Job":
         """Resubmit the current job, optionally starting the new job in a suspended state.
 
         Args:
@@ -3309,34 +3339,34 @@ class Job(object):
         #ai-gen-doc
         """
         if start_suspended not in [True, False, None]:
-            raise SDKException('Job', '108')
+            raise SDKException("Job", "108")
 
         if not self.is_finished:
-            raise SDKException('Job', '102', 'Cannot resubmit the Job, the Job is still running')
+            raise SDKException("Job", "102", "Cannot resubmit the Job, the Job is still running")
 
         url = self._RESUBMIT
         if start_suspended is not None:
-            url += f'?startInSuspendedState={start_suspended}'
-        flag, response = self._cvpysdk_object.make_request('POST', url)
+            url += f"?startInSuspendedState={start_suspended}"
+        flag, response = self._cvpysdk_object.make_request("POST", url)
 
         if flag:
             if response.json():
-                if 'errors' in response.json():
-                    error_list = response.json()['errors'][0]['errList'][0]
-                    error_code = error_list['errorCode']
-                    error_message = error_list['errLogMessage'].strip()
+                if "errors" in response.json():
+                    error_list = response.json()["errors"][0]["errList"][0]
+                    error_code = error_list["errorCode"]
+                    error_message = error_list["errLogMessage"].strip()
                 else:
-                    error_code = response.json().get('errorCode', 0)
-                    error_message = response.json().get('errorMessage', 'nil')
+                    error_code = response.json().get("errorCode", 0)
+                    error_message = response.json().get("errorMessage", "nil")
 
                 if error_code != 0:
                     raise SDKException(
-                        'Job', '102', 'Resubmitting job failed\nError: "{0}"'.format(error_message)
+                        "Job", "102", f'Resubmitting job failed\nError: "{error_message}"'
                     )
-            return Job(self._commcell_object, response.json()['jobIds'][0])
+            return Job(self._commcell_object, response.json()["jobIds"][0])
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def kill(self, wait_for_job_to_kill: bool = False) -> None:
         """Terminate the current job and optionally wait until its status is 'Killed'.
@@ -3351,33 +3381,31 @@ class Job(object):
         Example:
             >>> job = Job(...)
             >>> job.kill()  # Terminates the job without waiting for status change
-            >>> 
+            >>>
             >>> # To wait until the job status is 'Killed'
             >>> job.kill(wait_for_job_to_kill=True)
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._KILL)
+        flag, response = self._cvpysdk_object.make_request("POST", self._KILL)
 
         self.is_finished
 
         if flag:
             if response.json():
-                if 'errors' in response.json():
-                    error_list = response.json()['errors'][0]['errList'][0]
-                    error_code = error_list['errorCode']
-                    error_message = error_list['errLogMessage'].strip()
+                if "errors" in response.json():
+                    error_list = response.json()["errors"][0]["errList"][0]
+                    error_code = error_list["errorCode"]
+                    error_message = error_list["errLogMessage"].strip()
                 else:
-                    error_code = response.json().get('errorCode', 0)
-                    error_message = response.json().get('errorMessage', 'nil')
+                    error_code = response.json().get("errorCode", 0)
+                    error_message = response.json().get("errorMessage", "nil")
 
                 if error_code != 0:
-                    raise SDKException(
-                        'Job', '102', 'Job kill failed\nError: "{0}"'.format(error_message)
-                    )
+                    raise SDKException("Job", "102", f'Job kill failed\nError: "{error_message}"')
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         if wait_for_job_to_kill is True:
             self._wait_for_status("KILLED")
@@ -3409,24 +3437,23 @@ class Job(object):
         if email_ids is None:
             email_ids = []
         details = self._get_job_details()
-        failure_reason = details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [{}])[0].get(
-            'FailureReason', '')
+        failure_reason = (
+            details.get("jobDetail", {})
+            .get("clientStatusInfo", {})
+            .get("vmStatus", [{}])[0]
+            .get("FailureReason", "")
+        )
         request_json = {
             "taskInfo": {
                 "task": {
                     "taskType": 1,
                     "initiatedFrom": 1,
                     "policyType": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 5010
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 5010},
                         "options": {
                             "adminOpts": {
                                 "sendLogFilesOption": {
@@ -3463,55 +3490,48 @@ class Job(object):
                                     "enableChunking": True,
                                     "collectRFC": False,
                                     "collectUserAppLogs": False,
-                                    "impersonateUser": {
-                                        "useImpersonation": False
-                                    },
-                                    "clients": [
-                                        {
-                                            "clientId": 0,
-                                            "clientName": None
-                                        }
-                                    ],
+                                    "impersonateUser": {"useImpersonation": False},
+                                    "clients": [{"clientId": 0, "clientName": None}],
                                     "recipientTo": {
                                         "emailids": email_ids,
                                         "users": [],
-                                        "userGroups": []
+                                        "userGroups": [],
                                     },
                                     "sendLogsOnJobCompletion": False,
-                                    "emailDescription": f"<h4>Error summary</h4> {failure_reason}"
+                                    "emailDescription": f"<h4>Error summary</h4> {failure_reason}",
                                 }
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CREATE_TASK'], request_json
+            "POST", self._services["CREATE_TASK"], request_json
         )
         if flag:
             if response.json():
-                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
-                    error_message = response.json().get('errorMessage', 'nil')
+                if "errorCode" in response.json() and response.json()["errorCode"] != 0:
+                    error_message = response.json().get("errorMessage", "nil")
                     raise SDKException(
-                        'Job', '102', 'Sending logs failed\nError: "{0}"'.format(error_message)
+                        "Job", "102", f'Sending logs failed\nError: "{error_message}"'
                     )
                 else:
-                    send_logs_job = Job(self._commcell_object, response.json()['jobIds'][0])
+                    send_logs_job = Job(self._commcell_object, response.json()["jobIds"][0])
                     try:
                         send_logs_job.wait_for_completion()
-                    except Exception as exp:
+                    except Exception:
                         pass
                 return True
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', response.text)
+            raise SDKException("Response", "101", response.text)
 
     def refresh(self) -> None:
         """Reload the properties of the Job instance to reflect the latest state.
 
-        This method updates the job's internal properties, ensuring that any changes 
+        This method updates the job's internal properties, ensuring that any changes
         in the job's status or attributes are reflected in the object.
 
         Example:
@@ -3523,7 +3543,7 @@ class Job(object):
         self._initialize_job_properties()
         self.is_finished
 
-    def advanced_job_details(self, info_type: 'AdvancedJobDetailType') -> Dict[str, Any]:
+    def advanced_job_details(self, info_type: "AdvancedJobDetailType") -> Dict[str, Any]:
         """Retrieve advanced properties for the job based on the specified detail type.
 
         Args:
@@ -3544,24 +3564,24 @@ class Job(object):
         #ai-gen-doc
         """
         if not isinstance(info_type, AdvancedJobDetailType):
-            raise SDKException('Response', '107')
-        url = self._services['ADVANCED_JOB_DETAIL_TYPE'] % (self.job_id, info_type.value)
-        flag, response = self._cvpysdk_object.make_request('GET', url)
+            raise SDKException("Response", "107")
+        url = self._services["ADVANCED_JOB_DETAIL_TYPE"] % (self.job_id, info_type.value)
+        flag, response = self._cvpysdk_object.make_request("GET", url)
 
         if flag:
             if response.json():
                 response = response.json()
 
-                if response.get('errorCode', 0) != 0:
-                    error_message = response.json()['errorMessage']
-                    o_str = 'Failed to fetch details.\nError: "{0}"'.format(error_message)
-                    raise SDKException('Job', '102', o_str)
+                if response.get("errorCode", 0) != 0:
+                    error_message = response.json()["errorMessage"]
+                    o_str = f'Failed to fetch details.\nError: "{error_message}"'
+                    raise SDKException("Job", "102", o_str)
 
                 return response
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_events(self) -> List[Dict[str, Any]]:
         """Retrieve the CommServe events associated with this job.
@@ -3581,12 +3601,12 @@ class Job(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._JOB_EVENTS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._JOB_EVENTS)
         if flag:
-            if response.json() and 'commservEvents' in response.json():
-                    return response.json()['commservEvents']
-            raise SDKException('Job', '104')
-        raise SDKException('Response', '101', self._update_response_(response.text))
+            if response.json() and "commservEvents" in response.json():
+                return response.json()["commservEvents"]
+            raise SDKException("Job", "104")
+        raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_vm_list(self) -> List[Dict[str, Any]]:
         """Retrieve the list of all virtual machines (VMs) associated with this job.
@@ -3638,7 +3658,7 @@ class Job(object):
             >>>     print(f"First VM name: {first_vm.get('vmName')}")
         #ai-gen-doc
         """
-        return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])
+        return self.details.get("jobDetail", {}).get("clientStatusInfo", {}).get("vmStatus", [])
 
     def get_child_jobs(self) -> Optional[List[Dict[str, Any]]]:
         """Retrieve the child job details for the current job.
@@ -3660,8 +3680,8 @@ class Job(object):
         #ai-gen-doc
         """
         _jobs_list = []
-        if self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus'):
-            for _job in self.details['jobDetail']['clientStatusInfo']['vmStatus']:
+        if self.details.get("jobDetail", {}).get("clientStatusInfo", {}).get("vmStatus"):
+            for _job in self.details["jobDetail"]["clientStatusInfo"]["vmStatus"]:
                 _jobs_list.append(_job)
             return _jobs_list
         else:
@@ -3685,16 +3705,16 @@ class Job(object):
 
         #ai-gen-doc
         """
-        service = self._services['GET_LOGS'] % (self.job_id)
-        flag, response = self._cvpysdk_object.make_request(method='GET', url=service)
+        service = self._services["GET_LOGS"] % (self.job_id)
+        flag, response = self._cvpysdk_object.make_request(method="GET", url=service)
 
         if flag:
             if response.text:
-                return response.text.split('\n')
+                return response.text.split("\n")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
 
 class _ErrorRule:
@@ -3716,7 +3736,7 @@ class _ErrorRule:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize an _ErrorRule instance for managing job error decision rules.
 
         Args:
@@ -3788,13 +3808,14 @@ class _ErrorRule:
         """
 
         return self.error_rule_str.format(
-            pattern=rule_dict['pattern'],
-            all_error_codes=rule_dict['all_error_codes'],
-            from_error_code=rule_dict['from_error_code'],
-            to_error_code=rule_dict['to_error_code'],
-            job_decision=rule_dict['job_decision'],
-            is_enabled=rule_dict['is_enabled'],
-            skip_reporting_error=rule_dict['skip_reporting_error'])
+            pattern=rule_dict["pattern"],
+            all_error_codes=rule_dict["all_error_codes"],
+            from_error_code=rule_dict["from_error_code"],
+            to_error_code=rule_dict["to_error_code"],
+            job_decision=rule_dict["job_decision"],
+            is_enabled=rule_dict["is_enabled"],
+            skip_reporting_error=rule_dict["skip_reporting_error"],
+        )
 
     def add_error_rule(self, rules_arg: Dict[Any, Dict[str, Dict[str, Any]]]) -> None:
         """Add new error rules or update existing ones for specified application groups.
@@ -3847,70 +3868,80 @@ class _ErrorRule:
         old_values = []
 
         for app_group, rules_dict in rules_arg.items():
-            assert (app_group.name in [i.name for i in ApplicationGroup])
+            assert app_group.name in [i.name for i in ApplicationGroup]
 
             # FETCH ALL EXISTING RULES ON THE COMMCELL FOR THE APPLICATION
             # GROUP IN QUESTION
             existing_error_rules = self._get_error_rules(app_group)
 
             for rule_name, rule in rules_dict.items():
-                assert isinstance(
-                    rule['pattern'], str) and isinstance(
-                    rule['all_error_codes'], bool) and isinstance(
-                    rule['skip_reporting_error'], int) and isinstance(
-                    rule['from_error_code'], int) and isinstance(
-                    rule['to_error_code'], int) and isinstance(
-                    rule['job_decision'], int) and rule['job_decision'] in range(
-                    0, 3) and isinstance(
-                    rule['is_enabled'], bool), "Invalid key value pairs provided."
+                assert (
+                    isinstance(rule["pattern"], str)
+                    and isinstance(rule["all_error_codes"], bool)
+                    and isinstance(rule["skip_reporting_error"], int)
+                    and isinstance(rule["from_error_code"], int)
+                    and isinstance(rule["to_error_code"], int)
+                    and isinstance(rule["job_decision"], int)
+                    and rule["job_decision"] in range(0, 3)
+                    and isinstance(rule["is_enabled"], bool)
+                ), "Invalid key value pairs provided."
 
-                rule_dict = {k:v for k,v in rule.items() if k != 'appGroupName'}
+                rule_dict = {k: v for k, v in rule.items() if k != "appGroupName"}
 
                 # GET RULE STRING FOR EACH RULE DICTIONARY PROVIDED IN THE ARGUMENT
                 new_rule_str = self._get_xml_for_rule(rule_dict)
 
                 # IF RULE NAME NOT PRESENT IN OUR INTERNAL STRUCTURE, IT MEANS USER IS ADDING NEW RULE
                 if rule_name not in list(self.rule_dict.keys()):
-                    self.rule_dict[rule_name] = {'new_value': new_rule_str, 'old_value': new_rule_str}
-                    final_str = ''.join((final_str, new_rule_str))
+                    self.rule_dict[rule_name] = {
+                        "new_value": new_rule_str,
+                        "old_value": new_rule_str,
+                    }
+                    final_str = "".join((final_str, new_rule_str))
 
                 # ELSE CHECK IF THE RULE'S VALUE REMAINS SAME AND IF IT DOES, WE SIMPLY CONTINUE AND STORE EXISTING VALUE
-                elif new_rule_str == self.rule_dict[rule_name]['old_value']:
-                    final_str = ''.join((final_str, self.rule_dict[rule_name]['old_value']))
+                elif new_rule_str == self.rule_dict[rule_name]["old_value"]:
+                    final_str = "".join((final_str, self.rule_dict[rule_name]["old_value"]))
 
                 # ELSE RULE IS BEING UPDATED, STORE NEW VALUE IN FINAL STRING AND PRESERVE OLD VALUE AS WELL
                 else:
-                    self.rule_dict[rule_name]['old_value'] = self.rule_dict[rule_name]['new_value']
-                    self.rule_dict[rule_name]['new_value'] = new_rule_str
-                    final_str = ''.join((final_str, new_rule_str))
+                    self.rule_dict[rule_name]["old_value"] = self.rule_dict[rule_name]["new_value"]
+                    self.rule_dict[rule_name]["new_value"] = new_rule_str
+                    final_str = "".join((final_str, new_rule_str))
 
             # NOW GO THROUGH ALL EXISTING RULES ON CS AND EITHER PRESERVE OR UPDATE IT
             # PREPARE A LIST OF ALL OLD VALUES FIRST
             for rule_name, values in self.rule_dict.items():
-                old_values.extend([value for value_type, value in values.items() if value_type == 'old_value'])
+                old_values.extend(
+                    [value for value_type, value in values.items() if value_type == "old_value"]
+                )
             for existing_error_rule in existing_error_rules:
-                existing_rule_dict = {'pattern': existing_error_rule['pattern'],
-                                      'all_error_codes': existing_error_rule['errorCode']['allErrorCodes'],
-                                      'skip_reporting_error': existing_error_rule['errorCode']['skipReportingError'],
-                                      'from_error_code': existing_error_rule['errorCode']['fromValue'],
-                                      'to_error_code': existing_error_rule['errorCode']['toValue'],
-                                      'job_decision': existing_error_rule['jobDecision'],
-                                      'is_enabled': existing_error_rule['isEnabled']}
+                existing_rule_dict = {
+                    "pattern": existing_error_rule["pattern"],
+                    "all_error_codes": existing_error_rule["errorCode"]["allErrorCodes"],
+                    "skip_reporting_error": existing_error_rule["errorCode"]["skipReportingError"],
+                    "from_error_code": existing_error_rule["errorCode"]["fromValue"],
+                    "to_error_code": existing_error_rule["errorCode"]["toValue"],
+                    "job_decision": existing_error_rule["jobDecision"],
+                    "is_enabled": existing_error_rule["isEnabled"],
+                }
 
                 existing_rule_str = self._get_xml_for_rule(existing_rule_dict)
                 # AN EXISTING RULE THAT HAS NOT BEEN UPDATED AND IS NOT ADDED BY THE TEST CASE OR THROUGH AUTOMATION.
                 # IN OTHER WORDS, AN EXISTING RULE THAT WAS ADDED OUTSIDE OF THE SCOPE OF THE TEST CASE
                 if existing_rule_str not in old_values:
-                    final_str = ''.join((final_str, existing_rule_str))
+                    final_str = "".join((final_str, existing_rule_str))
 
         # NEED TO ADD SUPPORT FOR UPDATION OF ERROR RULES FOR MULTIPLE iDAs SIMULTANEOUSLY
-        xml_body = self.xml_body.format(commcell_id=self.commcell.commcell_id,
-                                        commserv_name=self.commcell.commserv_name,
-                                        enable_flag_ida=1,
-                                        app_group_name=app_group,
-                                        final_str=final_str)
+        xml_body = self.xml_body.format(
+            commcell_id=self.commcell.commcell_id,
+            commserv_name=self.commcell.commserv_name,
+            enable_flag_ida=1,
+            app_group_name=app_group,
+            final_str=final_str,
+        )
 
-        xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
+        xml_body = "".join(i.lstrip().rstrip() for i in xml_body.split("\n"))
         self.commcell.qoperation_execute(xml_body)
 
     def enable(self, app_group: str) -> None:
@@ -3971,22 +4002,26 @@ class _ErrorRule:
 
         # FOR EVERY RULE IN RULE LIST
         for rule in error_rules:
-            rule_str = self.error_rule_str.format(pattern=rule['pattern'],
-                                                  all_error_codes=rule['errorCode']['allErrorCodes'],
-                                                  from_error_code=rule['errorCode']['fromValue'],
-                                                  to_error_code=rule['errorCode']['toValue'],
-                                                  job_decision=rule['jobDecision'],
-                                                  is_enabled=rule['isEnabled'],
-                                                  skip_reporting_error=rule['errorCode']['skipReportingError'])
+            rule_str = self.error_rule_str.format(
+                pattern=rule["pattern"],
+                all_error_codes=rule["errorCode"]["allErrorCodes"],
+                from_error_code=rule["errorCode"]["fromValue"],
+                to_error_code=rule["errorCode"]["toValue"],
+                job_decision=rule["jobDecision"],
+                is_enabled=rule["isEnabled"],
+                skip_reporting_error=rule["errorCode"]["skipReportingError"],
+            )
 
-            final_str = ''.join((final_str, rule_str))
+            final_str = "".join((final_str, rule_str))
 
-        xml_body = self.xml_body.format(commcell_id=self.commcell.commcell_id,
-                                        commserv_name=self.commcell.commserv_name,
-                                        enable_flag_ida=1 if enable_flag else 0,
-                                        final_str=final_str)
+        xml_body = self.xml_body.format(
+            commcell_id=self.commcell.commcell_id,
+            commserv_name=self.commcell.commserv_name,
+            enable_flag_ida=1 if enable_flag else 0,
+            final_str=final_str,
+        )
 
-        xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
+        xml_body = "".join(i.lstrip().rstrip() for i in xml_body.split("\n"))
         return self.commcell.qoperation_execute(xml_body)
 
     def _get_error_rules(self, app_group: str) -> List[Dict[str, Any]]:
@@ -4017,17 +4052,16 @@ class _ErrorRule:
         <entity _type_="1" commCellId="{self.commcell.commcell_id}" commCellName="{self.commcell.commserv_name}"/>
         </App_GetJobErrorDecisionReq>"""
 
-        xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
+        xml_body = "".join(i.lstrip().rstrip() for i in xml_body.split("\n"))
         error_rules = self.commcell.qoperation_execute(xml_body)
 
         if any(error_rules):
-
-            ida_rule_lists = error_rules['jobErrorRuleList']['idaRuleList']
+            ida_rule_lists = error_rules["jobErrorRuleList"]["idaRuleList"]
             for ida_rule_list in ida_rule_lists:
                 # HARD CODED FOR WINDOWS SUPPORT ONLY
-                if ida_rule_list['ida']['appGroupName'] == app_group:
+                if ida_rule_list["ida"]["appGroupName"] == app_group:
                     try:
-                        rule_list = ida_rule_list['ruleList']['ruleList']
+                        rule_list = ida_rule_list["ruleList"]["ruleList"]
                     except Exception:
                         pass
 

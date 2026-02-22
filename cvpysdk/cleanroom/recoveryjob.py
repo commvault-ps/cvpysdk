@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -29,9 +27,10 @@ RecoveryJob(Job):
 
 import time
 from typing import TYPE_CHECKING
-from cvpysdk.job import Job
-from cvpysdk.exception import SDKException
+
 from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJobPhaseToText
+from cvpysdk.exception import SDKException
+from cvpysdk.job import Job
 
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
@@ -57,7 +56,7 @@ class RecoveryJob(Job):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', job_id: int) -> None:
+    def __init__(self, commcell_object: "Commcell", job_id: int) -> None:
         """Initialize a RecoveryJob instance with the specified Commcell connection and job ID.
 
         Args:
@@ -72,7 +71,7 @@ class RecoveryJob(Job):
         """
         self._recovery_job_stats = None
 
-        service_url = commcell_object._services['DRORCHESTRATION_JOB_STATS']
+        service_url = commcell_object._services["DRORCHESTRATION_JOB_STATS"]
         self._RECOVERY_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
@@ -80,7 +79,7 @@ class RecoveryJob(Job):
     def __repr__(self) -> str:
         """Return a string representation of the RecoveryJob object.
 
-        This method provides a developer-friendly string that can be used to 
+        This method provides a developer-friendly string that can be used to
         inspect the RecoveryJob instance, typically for debugging purposes.
 
         Example:
@@ -96,13 +95,13 @@ class RecoveryJob(Job):
     def _get_recovery_job_stats(self) -> list:
         """Retrieve statistics for the current Recovery Job.
 
-        This method returns a list of dictionaries containing detailed statistics 
-        about the recovery job, including job IDs, recovery entity IDs, replication IDs, 
+        This method returns a list of dictionaries containing detailed statistics
+        about the recovery job, including job IDs, recovery entity IDs, replication IDs,
         phase information, client details, and vApp details.
 
         Returns:
-            list: A list of dictionaries, each representing the statistics for a recovery job. 
-            Each dictionary contains keys such as 'jobId', 'recoveryEntityId', 'replicationId', 
+            list: A list of dictionaries, each representing the statistics for a recovery job.
+            Each dictionary contains keys such as 'jobId', 'recoveryEntityId', 'replicationId',
             'phase', 'client', and 'vapp', with nested structures for detailed phase and job info.
 
         Example:
@@ -116,27 +115,26 @@ class RecoveryJob(Job):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._RECOVERY_STATS)
+            "GET", self._RECOVERY_STATS
+        )
 
         if flag:
-            if response.json() and 'job' in response.json():
-                return response.json()['job'] or []
-            elif response.json() and 'errors' in response.json():
-                errors = response.json().get('errors', [{}])
-                error_list = errors[0].get('errList', [{}])
-                error_code = error_list[0].get('errorCode', 0)
-                error_message = error_list.get('errLogMessage', '').strip()
+            if response.json() and "job" in response.json():
+                return response.json()["job"] or []
+            elif response.json() and "errors" in response.json():
+                errors = response.json().get("errors", [{}])
+                error_list = errors[0].get("errList", [{}])
+                error_code = error_list[0].get("errorCode", 0)
+                error_message = error_list.get("errLogMessage", "").strip()
                 if error_code != 0:
-                    response_string = self._commcell_object._update_response_(
-                        error_message)
-                    raise SDKException('Response', '101', response_string)
+                    response_string = self._commcell_object._update_response_(error_message)
+                    raise SDKException("Response", "101", response_string)
             else:
                 if response.json():
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def _initialize_job_properties(self) -> None:
         """Initialize the job properties and set up the Recovery job details.
@@ -184,23 +182,32 @@ class RecoveryJob(Job):
             return job_stats
         for pair_stats in self._recovery_job_stats:
             phases = []
-            for phase in pair_stats.get('phase', []):
-                phases.append({
-                    # We use common enum for job phases
-                    'phase_name': DRJobPhaseToText[DRJobPhases(phase.get('phase', '')).name]
-                    if phase.get('phase', '') else '',
-                    'phase_status': phase.get('status', 1),
-                    'start_time': phase.get('startTime', {}).get('time', ''),
-                    'end_time': phase.get('endTime', {}).get('time', ''),
-                    'machine_name': phase.get('entity', {}).get('clientName', ''),
-                    'error_message': phase.get('phaseInfo', {}).get('job', [{}])[0].get('failure', {})
-                                     .get('errorMessage', ''),
-                    'job_id': str(phase.get('phaseInfo', {}).get('job', [{}])[0].get('jobid', '')),
-                })
-            job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
+            for phase in pair_stats.get("phase", []):
+                phases.append(
+                    {
+                        # We use common enum for job phases
+                        "phase_name": DRJobPhaseToText[DRJobPhases(phase.get("phase", "")).name]
+                        if phase.get("phase", "")
+                        else "",
+                        "phase_status": phase.get("status", 1),
+                        "start_time": phase.get("startTime", {}).get("time", ""),
+                        "end_time": phase.get("endTime", {}).get("time", ""),
+                        "machine_name": phase.get("entity", {}).get("clientName", ""),
+                        "error_message": phase.get("phaseInfo", {})
+                        .get("job", [{}])[0]
+                        .get("failure", {})
+                        .get("errorMessage", ""),
+                        "job_id": str(
+                            phase.get("phaseInfo", {}).get("job", [{}])[0].get("jobid", "")
+                        ),
+                    }
+                )
+            job_stats[str(pair_stats.get("client", {}).get("clientName", ""))] = phases
         return job_stats
 
-    def get_restore_vm_from_recovery_job(self, entity: str, max_retries: int = 30, check_frequency: int = 10) -> int:
+    def get_restore_vm_from_recovery_job(
+        self, entity: str, max_retries: int = 30, check_frequency: int = 10
+    ) -> int:
         """Retrieve the restore job ID for a specific VM entity during a recovery job.
 
         This method attempts to locate the restore job ID associated with the given VM entity
@@ -230,10 +237,12 @@ class RecoveryJob(Job):
             phases = recovery_job_obj.get_phases().get(entity, [])
 
             for phase in phases:
-                if phase.get('phase_name').name == "RESTORE_VM":
-                    restore_job_id = phase.get('job_id')
+                if phase.get("phase_name").name == "RESTORE_VM":
+                    restore_job_id = phase.get("job_id")
                     return restore_job_id
 
             time.sleep(check_frequency)
 
-        raise Exception(f"Failed to locate RESTORE_VM phase for VM '{entity}' in job {self.job_id}")
+        raise Exception(
+            f"Failed to locate RESTORE_VM phase for VM '{entity}' in job {self.job_id}"
+        )

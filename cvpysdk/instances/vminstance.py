@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -27,9 +26,11 @@ VMInstance:     Derived class from Instance  Base class, representing a VMInstan
 VMInstance:
     __init__()                    --  initialize object of VMInstance object associated with the Instance
 """
-from ..instance import Instance
 
 from typing import TYPE_CHECKING
+
+from ..instance import Instance
+
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -50,7 +51,8 @@ class VMInstance(Instance):
 
     #ai-gen-doc
     """
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
         """Initialize a VMInstance object for the specified Virtual Server instance.
 
         Args:
@@ -60,4 +62,4 @@ class VMInstance(Instance):
 
         #ai-gen-doc
         """
-        super(VMInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)

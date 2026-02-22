@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -36,12 +34,10 @@ CommServeRecovery:
     _create_cs_recovery_request()       --   returns the details of the given request ID
 
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from datetime import datetime
 from json import JSONDecodeError
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
@@ -71,7 +67,7 @@ class CommServeRecovery:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', cs_guid: str) -> None:
+    def __init__(self, commcell_object: "Commcell", cs_guid: str) -> None:
         """Initialize a new instance of the CommServeRecovery class.
 
         Args:
@@ -92,15 +88,21 @@ class CommServeRecovery:
             self._cvpysdk_object = commcell_object._cvpysdk_object
             self._services = commcell_object._services
             self.cs_guid = cs_guid
-            self._CS_RECOVERY_API = self._services['COMMSERVE_RECOVERY']
-            self._CS_RECOVERY_LICENSE_API = self._services['GET_COMMSERVE_RECOVERY_LICENSE_DETAILS'] % self.cs_guid
-            self._CS_RECOVERY_RETENTION_API = self._services['GET_COMMSERVE_RECOVERY_RETENTION_DETAILS'] % self.cs_guid
-            self._BACKUPSET_API = self._services['GET_BACKUPSET_INFO'] % self.cs_guid
+            self._CS_RECOVERY_API = self._services["COMMSERVE_RECOVERY"]
+            self._CS_RECOVERY_LICENSE_API = (
+                self._services["GET_COMMSERVE_RECOVERY_LICENSE_DETAILS"] % self.cs_guid
+            )
+            self._CS_RECOVERY_RETENTION_API = (
+                self._services["GET_COMMSERVE_RECOVERY_RETENTION_DETAILS"] % self.cs_guid
+            )
+            self._BACKUPSET_API = self._services["GET_BACKUPSET_INFO"] % self.cs_guid
             self._cleanup_lock_time = None
-            self._is_licensed_commcell = self._quota_details().get('is_licensed')
+            self._is_licensed_commcell = self._quota_details().get("is_licensed")
             self._manual_retention_details()
         except Exception as e:
-            raise SDKException('CommserveRecovery', '105', "Failed to initialize CommServeRecovery") from e
+            raise SDKException(
+                "CommserveRecovery", "105", "Failed to initialize CommServeRecovery"
+            ) from e
 
     def _get_backupsets(self) -> dict:
         """Retrieve details of uploaded backupsets.
@@ -116,31 +118,41 @@ class CommServeRecovery:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._BACKUPSET_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._BACKUPSET_API)
 
         if flag:
             try:
-                companies = response.json().get('companies')
+                companies = response.json().get("companies")
                 if not companies:
-                    raise SDKException('CommserveRecovery', '101')
+                    raise SDKException("CommserveRecovery", "101")
                 return {
                     backupset_details["set_name"]: {
                         "set_id": backupset_details["set_id"],
-                        "size": sum(int(files_details['size']) for files_details in backupset_details['files']),
-                        "backup_time": datetime.strptime(backupset_details["time_modified"], "%Y-%m-%dT%H:%M:%SZ").timestamp(),
+                        "size": sum(
+                            int(files_details["size"])
+                            for files_details in backupset_details["files"]
+                        ),
+                        "backup_time": datetime.strptime(
+                            backupset_details["time_modified"], "%Y-%m-%dT%H:%M:%SZ"
+                        ).timestamp(),
                         "manually_retained": bool(self._cleanup_lock_time),
-                        "retained_until": self._cleanup_lock_time if self._cleanup_lock_time else None
+                        "retained_until": self._cleanup_lock_time
+                        if self._cleanup_lock_time
+                        else None,
                     }
-                    for backupset_details in companies[0].get('commcells')[0].get('sets')
+                    for backupset_details in companies[0].get("commcells")[0].get("sets")
                 }
 
-
             except (JSONDecodeError, KeyError):
-                raise SDKException('Responcsse', '102', 'Job id not found in response')
+                raise SDKException("Responcsse", "102", "Job id not found in response")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
-    def _create_cs_recovery_request(self, set_name: str, address_prefixes: list, remember_address: bool) -> int:
+    def _create_cs_recovery_request(
+        self, set_name: str, address_prefixes: list, remember_address: bool
+    ) -> int:
         """Submit a new CommServe recovery request.
 
         This method initiates a CommServe recovery operation using the specified set name and address prefixes.
@@ -166,7 +178,10 @@ class CommServeRecovery:
         #ai-gen-doc
         """
         try:
-            set_id, set_size = self.backupsets[set_name]['set_id'], self.backupsets[set_name]['size']
+            set_id, set_size = (
+                self.backupsets[set_name]["set_id"],
+                self.backupsets[set_name]["size"],
+            )
         except KeyError:
             raise SDKException("CommserveRecovery", "104")
         payload = {
@@ -175,19 +190,19 @@ class CommServeRecovery:
             "setName": set_name,
             "setSize": set_size,
             "addressPrefixes": address_prefixes,
-            "rememberAddress": remember_address
+            "rememberAddress": remember_address,
         }
-        flag, response = self._cvpysdk_object.make_request('POST', self._CS_RECOVERY_API, payload)
+        flag, response = self._cvpysdk_object.make_request("POST", self._CS_RECOVERY_API, payload)
 
         if flag:
             try:
-                if not response.json()['success']:
-                    raise SDKException('Response', '101', 'request creation not successful')
-                return response.json()['requestId']
+                if not response.json()["success"]:
+                    raise SDKException("Response", "101", "request creation not successful")
+                return response.json()["requestId"]
             except (JSONDecodeError, KeyError):
-                raise SDKException('Response', '102', 'Job id not found in response')
+                raise SDKException("Response", "102", "Job id not found in response")
         else:
-            raise SDKException('CommserveRecovery', '105', "Failed to create recovery request")
+            raise SDKException("CommserveRecovery", "105", "Failed to create recovery request")
 
     def _extend_recovery_request(self, request_id: int) -> bool:
         """Extend the recovery request for the specified request ID.
@@ -205,20 +220,16 @@ class CommServeRecovery:
 
         #ai-gen-doc
         """
-        payload = {
-            "csGuid": self.cs_guid,
-            "requestId": request_id,
-            "operation": 2
-        }
-        flag, response = self._cvpysdk_object.make_request('PUT', self._CS_RECOVERY_API, payload)
+        payload = {"csGuid": self.cs_guid, "requestId": request_id, "operation": 2}
+        flag, response = self._cvpysdk_object.make_request("PUT", self._CS_RECOVERY_API, payload)
 
         if flag:
-            if response.json()['errorCode'] == 0:
+            if response.json()["errorCode"] == 0:
                 return True
             else:
-                raise SDKException('Response', '102', 'request did not submit successfully')
+                raise SDKException("Response", "102", "request did not submit successfully")
         else:
-            raise SDKException('CommserveRecovery', '105', "Failed to extend recovery request")
+            raise SDKException("CommserveRecovery", "105", "Failed to extend recovery request")
 
     def _close_recovery_request(self, request_id: int) -> bool:
         """Submit a request to close a CommServe recovery operation.
@@ -236,20 +247,16 @@ class CommServeRecovery:
 
         #ai-gen-doc
         """
-        payload = {
-            "csGuid": self.cs_guid,
-            "requestId": request_id,
-            "operation": 3
-        }
-        flag, response = self._cvpysdk_object.make_request('PUT', self._CS_RECOVERY_API, payload)
+        payload = {"csGuid": self.cs_guid, "requestId": request_id, "operation": 3}
+        flag, response = self._cvpysdk_object.make_request("PUT", self._CS_RECOVERY_API, payload)
 
         if flag:
-            if response.json()['errorCode'] == 0:
+            if response.json()["errorCode"] == 0:
                 return True
             else:
-                raise SDKException('Response', '102', 'request did not submit successfully')
+                raise SDKException("Response", "102", "request did not submit successfully")
         else:
-            raise SDKException('CommserveRecovery', '105', "Failed to close recovery request")
+            raise SDKException("CommserveRecovery", "105", "Failed to close recovery request")
 
     def _get_active_recovery_requests(self) -> list:
         """Retrieve the list of currently active CommServe recovery requests.
@@ -266,47 +273,49 @@ class CommServeRecovery:
         #ai-gen-doc
         """
 
-        url = f'{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&showOnlyActiveRequests=true'
+        url = f"{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&showOnlyActiveRequests=true"
 
         states = {
-            1: 'SUBMITTED',
-            2: 'CREATING_VM',
-            3: 'VM_CREATED',
-            4: 'STAGING_CS',
-            5: 'CS_STAGED',
-            6: 'FINISHED',
-            7: 'FAILED',
-            8: 'KILLED'
+            1: "SUBMITTED",
+            2: "CREATING_VM",
+            3: "VM_CREATED",
+            4: "STAGING_CS",
+            5: "CS_STAGED",
+            6: "FINISHED",
+            7: "FAILED",
+            8: "KILLED",
         }
 
-        flag, response = self._cvpysdk_object.make_request('GET', url)
+        flag, response = self._cvpysdk_object.make_request("GET", url)
 
         if flag:
             response = response.json()
             if response.get("errorCode") == 6:
-                raise SDKException('CommserveRecovery', '101')
+                raise SDKException("CommserveRecovery", "101")
 
             map_vm_info = lambda vm_info: {
-                                    "commandcenter_url": f"https://{vm_info['ipAddress']}/commandcenter",
-                                    "vm_expiration_time": vm_info['vmExpirationTime'],
-                                    "username": vm_info['credentials']['sUsername'],
-                                    'password': vm_info['credentials']['sPassword']
-                                }
+                "commandcenter_url": f"https://{vm_info['ipAddress']}/commandcenter",
+                "vm_expiration_time": vm_info["vmExpirationTime"],
+                "username": vm_info["credentials"]["sUsername"],
+                "password": vm_info["credentials"]["sPassword"],
+            }
             return {
-                        request["id"]: {
-                            "backupset": request.get("setName"),
-                            "requestor": request["requestor"]["fullName"],
-                            "version": request["servicePack"],
-                            "start_time": request["createdTime"],
-                            "end_time": request["vmInfo"]['vmExpirationTime'],
-                            "status": states[request["status"]],
-                            "vmInfo": map_vm_info(request['vmInfo']) if request['status'] == 5 else {}
-                        }
-                        for request in response.get('requests', [])
-                    }
+                request["id"]: {
+                    "backupset": request.get("setName"),
+                    "requestor": request["requestor"]["fullName"],
+                    "version": request["servicePack"],
+                    "start_time": request["createdTime"],
+                    "end_time": request["vmInfo"]["vmExpirationTime"],
+                    "status": states[request["status"]],
+                    "vmInfo": map_vm_info(request["vmInfo"]) if request["status"] == 5 else {},
+                }
+                for request in response.get("requests", [])
+            }
 
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def _get_vm_details(self, requestid: int) -> dict:
         """Retrieve access details for a virtual machine associated with a specific request ID.
@@ -326,9 +335,9 @@ class CommServeRecovery:
         #ai-gen-doc
         """
         try:
-            return self.active_recovery_requests[requestid]['vmInfo']
+            return self.active_recovery_requests[requestid]["vmInfo"]
         except KeyError:
-            raise SDKException('CommserveRecovery', '103')
+            raise SDKException("CommserveRecovery", "103")
 
     def _quota_details(self) -> dict:
         """Retrieve the CommServe Recovery license quota details.
@@ -344,18 +353,24 @@ class CommServeRecovery:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._CS_RECOVERY_LICENSE_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._CS_RECOVERY_LICENSE_API)
         if flag:
             response = response.json()
             return {
-                "is_licensed": response['license'],
-                "start_date": datetime.strptime(response['quotaStartDate'], "%Y-%m-%dT%H:%M:%SZ").timestamp(),
-                "end_date": datetime.strptime(response['quotaEndDate'], "%Y-%m-%dT%H:%M:%SZ").timestamp(),
-                'used_recoveries_count': response['recoveriesCount'],
-                'total_recoveries_allocated': response['maxRecoveries']
+                "is_licensed": response["license"],
+                "start_date": datetime.strptime(
+                    response["quotaStartDate"], "%Y-%m-%dT%H:%M:%SZ"
+                ).timestamp(),
+                "end_date": datetime.strptime(
+                    response["quotaEndDate"], "%Y-%m-%dT%H:%M:%SZ"
+                ).timestamp(),
+                "used_recoveries_count": response["recoveriesCount"],
+                "total_recoveries_allocated": response["maxRecoveries"],
             }
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def _manual_retention_details(self) -> dict:
         """Retrieve details about the used versus allocated quota of manual retains.
@@ -371,18 +386,24 @@ class CommServeRecovery:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._CS_RECOVERY_RETENTION_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._CS_RECOVERY_RETENTION_API)
         if flag:
             response = response.json()
-            self._cleanup_lock_time = response['cleanup_lock_time']
+            self._cleanup_lock_time = response["cleanup_lock_time"]
             return {
-                "start_date": datetime.strptime(response['quota_start_date'], "%Y-%m-%dT%H:%M:%SZ").timestamp(),
-                "end_date": datetime.strptime(response['quota_end_date'], "%Y-%m-%dT%H:%M:%SZ").timestamp(),
-                'consumed_retains': response['consumed_retains'],
-                'max_retains_allocated': response['max_retains']
+                "start_date": datetime.strptime(
+                    response["quota_start_date"], "%Y-%m-%dT%H:%M:%SZ"
+                ).timestamp(),
+                "end_date": datetime.strptime(
+                    response["quota_end_date"], "%Y-%m-%dT%H:%M:%SZ"
+                ).timestamp(),
+                "consumed_retains": response["consumed_retains"],
+                "max_retains_allocated": response["max_retains"],
             }
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     @property
     def is_licensed_commcell(self) -> bool:
@@ -485,7 +506,9 @@ class CommServeRecovery:
         """
         return self._manual_retention_details()
 
-    def start_recovery(self, backupset_name: str, address_prefixes: str = "*", remember_address: bool = True) -> int:
+    def start_recovery(
+        self, backupset_name: str, address_prefixes: str = "*", remember_address: bool = True
+    ) -> int:
         """Submit a CommServe recovery request for the specified backup set.
 
         This method initiates a recovery operation for the given backup set name, using the provided

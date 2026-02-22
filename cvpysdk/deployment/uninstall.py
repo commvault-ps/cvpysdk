@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""" Main file for performing the Uniinstall operations
+""" " Main file for performing the Uniinstall operations
 
 Download
 ========
@@ -28,15 +26,18 @@ Download
 
 """
 
-from ..job import Job
+from typing import TYPE_CHECKING, Dict, List
+
 from ..exception import SDKException
-from typing import List, Dict, Union, TYPE_CHECKING
+from ..job import Job
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
 UNINSTALL_SELECTED_PACKAGES = 6
-class Uninstall(object):
+
+
+class Uninstall:
     """class for Uninstalling software packages
 
     Attributes:
@@ -48,7 +49,7 @@ class Uninstall(object):
         uninstall_obj = Uninstall(commcell_object)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the Uninstall class.
 
         Args:
@@ -63,7 +64,9 @@ class Uninstall(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-    def uninstall_software(self, client_name: str, force_uninstall: bool=True, client_composition: List[Dict]=None) -> Job:
+    def uninstall_software(
+        self, client_name: str, force_uninstall: bool = True, client_composition: List[Dict] = None
+    ) -> Job:
         """
         Performs readiness check on the client
 
@@ -109,32 +112,23 @@ class Uninstall(object):
                              ])
         """
         if not isinstance(client_name, str):
-            raise SDKException('Uninstall', '101')
-        optype = 7 # default value to remove all the packages
+            raise SDKException("Uninstall", "101")
+        optype = 7  # default value to remove all the packages
         if client_composition:
             optype = UNINSTALL_SELECTED_PACKAGES
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "clientName": client_name
-                    }
-                ],
+                "associations": [{"clientName": client_name}],
                 "task": {
                     "taskType": 1,
                     "initiatedFrom": 2,
                     "policyType": 0,
-                    "taskFlags": {
-                        "disabled": False
-                    }
+                    "taskFlags": {"disabled": False},
                 },
                 "subTasks": [
                     {
                         "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4027
-                        },
+                        "subTask": {"subTaskType": 1, "operationType": 4027},
                         "options": {
                             "adminOpts": {
                                 "clientInstallOption": {
@@ -146,36 +140,34 @@ class Uninstall(object):
                                         "Operationtype": optype,
                                         "CommServeHostName": self._commcell_object.commserv_name,
                                         "RemoteClient": False,
-                                        "User": {
-                                            "userName": "admin"
-                                        },
-                                        "clientComposition":client_composition
+                                        "User": {"userName": "admin"},
+                                        "clientComposition": client_composition,
                                     },
                                     "clientDetails": [
-                                        {
-                                            "clientEntity": {
-                                                "clientName": client_name
-                                            }
-                                        }
-                                    ]
+                                        {"clientEntity": {"clientName": client_name}}
+                                    ],
                                 }
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._services['CREATE_TASK'], request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._services["CREATE_TASK"], request_json
+        )
 
         if flag:
             if response.json():
-                if 'jobIds' in response.json():
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
                 else:
-                    o_str = 'Failed to submit uninstall job.'
-                    raise SDKException('Uninstall', '102', o_str)
+                    o_str = "Failed to submit uninstall job."
+                    raise SDKException("Uninstall", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )

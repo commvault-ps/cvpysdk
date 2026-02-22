@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -104,7 +102,8 @@ Role
 
 from ..exception import SDKException
 
-class Roles(object):
+
+class Roles:
     """Class for maintaining all the configured role on this commcell.
 
     Attributes:
@@ -121,11 +120,11 @@ class Roles(object):
     def __init__(self, commcell_object: object) -> None:
         """Initializes the roles class object for this commcell
 
-            Args:
-                commcell_object (object): instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Clients class
+        Returns:
+            object - instance of the Clients class
         """
         self._commcell_object = commcell_object
         self._roles = None
@@ -137,13 +136,13 @@ class Roles(object):
     def __str__(self) -> str:
         """Representation string consisting of all roles of the commcell.
 
-            Returns:
-                str - string of all the roles configured on the commcell
+        Returns:
+            str - string of all the roles configured on the commcell
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Roles')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Roles")
 
         for index, role in enumerate(self._roles):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, role)
+            sub_str = f"{index + 1:^5}\t{role:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -169,23 +168,25 @@ class Roles(object):
             >>> roles = self._get_roles()
             >>> roles = self._get_roles(full_response=True)
         """
-        get_all_roles_service = self._commcell_object._services['GET_SECURITY_ROLES']
+        get_all_roles_service = self._commcell_object._services["GET_SECURITY_ROLES"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_all_roles_service
+            "GET", get_all_roles_service
         )
 
         if flag:
-            if response.json() and 'roleProperties' in response.json():
+            if response.json() and "roleProperties" in response.json():
                 if full_response:
                     return response.json()
                 roles_dict = {}
                 name_count = {}
-                self._all_roles_prop = response.json()['roleProperties']
+                self._all_roles_prop = response.json()["roleProperties"]
 
                 for role in self._all_roles_prop:
-                    temp_name = role.get('role', {}).get('roleName', '').lower()
-                    temp_company = role.get('role', {}).get('entityInfo', {}).get('companyName', '').lower()
+                    temp_name = role.get("role", {}).get("roleName", "").lower()
+                    temp_company = (
+                        role.get("role", {}).get("entityInfo", {}).get("companyName", "").lower()
+                    )
 
                     if temp_name in name_count:
                         name_count[temp_name].add(temp_company)
@@ -193,9 +194,11 @@ class Roles(object):
                         name_count[temp_name] = {temp_company}
 
                 for role in self._all_roles_prop:
-                    temp_id = role['role']['roleId']
-                    temp_name = role['role']['roleName'].lower()
-                    temp_company = role.get('role', {}).get('entityInfo', {}).get('companyName', '').lower()
+                    temp_id = role["role"]["roleId"]
+                    temp_name = role["role"]["roleName"].lower()
+                    temp_company = (
+                        role.get("role", {}).get("entityInfo", {}).get("companyName", "").lower()
+                    )
 
                     if len(name_count[temp_name]) > 1:
                         unique_key = f"{temp_name}_({temp_company})"
@@ -209,7 +212,7 @@ class Roles(object):
                 return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_v4_roles(self, full_response: bool = False) -> dict:
         """
@@ -228,23 +231,23 @@ class Roles(object):
             >>> roles = self._get_v4_roles()
             >>> roles = self._get_v4_roles(full_response=True)
         """
-        get_all_roles_service = self._commcell_object._services['V4_ROLES']
+        get_all_roles_service = self._commcell_object._services["V4_ROLES"]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_all_roles_service
+            "GET", get_all_roles_service
         )
 
         if flag:
-            if response.json() and 'roles' in response.json():
+            if response.json() and "roles" in response.json():
                 if full_response:
                     return response.json()
                 roles_dict = {}
                 name_count = {}
-                self._all_roles_prop = response.json()['roles']
+                self._all_roles_prop = response.json()["roles"]
 
                 for role in self._all_roles_prop:
-                    temp_name = role.get('name', '').lower()
-                    temp_company = role.get('company', {}).get('name', '').lower()
+                    temp_name = role.get("name", "").lower()
+                    temp_company = role.get("company", {}).get("name", "").lower()
 
                     if temp_name in name_count:
                         name_count[temp_name].add(temp_company)
@@ -252,9 +255,9 @@ class Roles(object):
                         name_count[temp_name] = {temp_company}
 
                 for role in self._all_roles_prop:
-                    temp_id = role['id']
-                    temp_name = role['name'].lower()
-                    temp_company = role.get('company', {}).get('name', '').lower()
+                    temp_id = role["id"]
+                    temp_name = role["name"].lower()
+                    temp_company = role.get("company", {}).get("name", "").lower()
 
                     if len(name_count[temp_name]) > 1:
                         unique_key = f"{temp_name}_({temp_company})"
@@ -268,7 +271,7 @@ class Roles(object):
                 return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_fl_parameters(self, fl: list = None) -> str:
         """
@@ -287,19 +290,19 @@ class Roles(object):
             >>> fl_params = self._get_fl_parameters(fl=['roleName', 'status'])
         """
         self.valid_columns = {
-            'roleName': 'roleProperties.role.roleName',
-            'roleId': 'roleProperties.role.roleId',
-            'description': 'roleProperties.description',
-            'disabled': 'roleProperties.role.flags.disabled',
-            'company': 'companyName'
+            "roleName": "roleProperties.role.roleName",
+            "roleId": "roleProperties.role.roleId",
+            "description": "roleProperties.description",
+            "disabled": "roleProperties.role.flags.disabled",
+            "company": "companyName",
         }
-        default_columns = 'roleProperties.role.roleName'
+        default_columns = "roleProperties.role.roleName"
 
         if fl:
             if all(col in self.valid_columns for col in fl):
                 fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
             else:
-                raise SDKException('Role', '102', 'Invalid column name passed')
+                raise SDKException("Role", "102", "Invalid column name passed")
         else:
             fl_parameters = "&fl=roleProperties.role%2CroleProperties.description"
 
@@ -325,10 +328,10 @@ class Roles(object):
         """
         sort_type = str(sort[1])
         col = sort[0]
-        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
-            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        if col in self.valid_columns.keys() and sort_type in ["1", "-1"]:
+            sort_parameter = "&sort=" + self.valid_columns[col] + ":" + sort_type
         else:
-            raise SDKException('Role', '102', 'Invalid column name passed')
+            raise SDKException("Role", "102", "Invalid column name passed")
         return sort_parameter
 
     def _get_fq_parameters(self, fq: list = None) -> str:
@@ -352,14 +355,14 @@ class Roles(object):
 
         for column, condition, *value in fq or []:
             if column not in self.valid_columns:
-                raise SDKException('Role', '102', 'Invalid column name passed')
+                raise SDKException("Role", "102", "Invalid column name passed")
 
             if condition in conditions:
                 params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
             elif condition == "isEmpty" and not value:
                 params.append(f"&fq={self.valid_columns[column]}:in:null,")
             else:
-                raise SDKException('Role', '102', 'Invalid condition passed')
+                raise SDKException("Role", "102", "Invalid condition passed")
 
         return "".join(params)
 
@@ -391,17 +394,25 @@ class Roles(object):
             >>> roles_cache = self.get_roles_cache(hard=True, fl=['roleName', 'status'], sort=['roleName', '1'], limit=['0', '50'], search='admin', fq=[['disabled', 'eq', True]])
         """
         # computing params
-        fl_parameters = self._get_fl_parameters(kwargs.get('fl'))
-        fq_parameters = self._get_fq_parameters(kwargs.get('fq'))
-        limit = kwargs.get('limit', None)
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
-        hard_refresh = '&hardRefresh=true' if hard else ''
-        sort_parameters = self._get_sort_parameters(kwargs.get('sort')) if kwargs.get('sort') else ''
+        fl_parameters = self._get_fl_parameters(kwargs.get("fl"))
+        fq_parameters = self._get_fq_parameters(kwargs.get("fq"))
+        limit = kwargs.get("limit", None)
+        limit_parameters = f"start={limit[0]}&limit={limit[1]}" if limit else ""
+        hard_refresh = "&hardRefresh=true" if hard else ""
+        sort_parameters = (
+            self._get_sort_parameters(kwargs.get("sort")) if kwargs.get("sort") else ""
+        )
 
         # Search operation can only be performed on limited columns, so filtering out the columns on which search works
-        searchable_columns= ["roleName","description","company"]
-        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
-                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+        searchable_columns = ["roleName", "description", "company"]
+        search_parameter = (
+            (
+                f"&search={','.join(self.valid_columns[col] for col in searchable_columns)}:contains:"
+                f"{kwargs.get('search', None)}"
+            )
+            if kwargs.get("search", None)
+            else ""
+        )
 
         params = [
             limit_parameters,
@@ -409,54 +420,54 @@ class Roles(object):
             fl_parameters,
             hard_refresh,
             search_parameter,
-            fq_parameters
+            fq_parameters,
         ]
         request_url = f"{self._commcell_object._services['GET_SECURITY_ROLES']}?" + "".join(params)
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         roles_cache = {}
-        if response.json() and 'roleProperties' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount',0)
-            for role in response.json()['roleProperties']:
-                name = role.get('role', {}).get('roleName')
-                company = role.get('role', {}).get('entityInfo', {}).get('companyName')
+        if response.json() and "roleProperties" in response.json():
+            self.filter_query_count = response.json().get("filterQueryCount", 0)
+            for role in response.json()["roleProperties"]:
+                name = role.get("role", {}).get("roleName")
+                company = role.get("role", {}).get("entityInfo", {}).get("companyName")
                 unique_name = name
                 if name in roles_cache:
                     unique_name = f"{name}_{company}"
                 roles_config = {
-                    'roleName': name,
-                    'roleId': role.get('role', {}).get('roleId'),
-                    'description': role.get('description', ''),
-                    'disabled': role.get('role', {}).get('flags', {}).get('disabled'),
-                    'company': company
+                    "roleName": name,
+                    "roleId": role.get("role", {}).get("roleId"),
+                    "description": role.get("description", ""),
+                    "disabled": role.get("role", {}).get("flags", {}).get("disabled"),
+                    "company": company,
                 }
                 roles_cache[unique_name] = roles_config
 
             return roles_cache
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     @property
     def all_roles_cache(self) -> dict:
         """Returns dict of all the roles and their info present in CommcellEntityCache in mongoDB
 
-            dict - consists of all roles of the in the CommcellEntityCache
-                    {
-                         "role1_name": {
-                                'id': role1_id ,
-                                'status': role1_status,
-                                'company': role1_company
-                                },
-                         "role2_name": {
-                                'id': role2_id ,
-                                'status': role2_status,
-                                'company': role2_company
-                                }
-                    }
+        dict - consists of all roles of the in the CommcellEntityCache
+                {
+                     "role1_name": {
+                            'id': role1_id ,
+                            'status': role1_status,
+                            'company': role1_company
+                            },
+                     "role2_name": {
+                            'id': role2_id ,
+                            'status': role2_status,
+                            'company': role2_company
+                            }
+                }
         """
         if not self._roles_cache:
             self._roles_cache = self.get_roles_cache()
@@ -478,11 +489,13 @@ class Roles(object):
             >>> has_role = self.has_role('Admin')
         """
         if not isinstance(role_name, str):
-            raise SDKException('Role', '101')
+            raise SDKException("Role", "101")
 
         return self._roles and role_name.lower() in self._roles
 
-    def add(self, rolename: str, permission_list: list = None, categoryname_list: list = None) -> 'Role':
+    def add(
+        self, rolename: str, permission_list: list = None, categoryname_list: list = None
+    ) -> "Role":
         """creates new role
 
              Args:
@@ -510,14 +523,17 @@ class Roles(object):
             >>> role = self.add(rolename='NewRole', categoryname_list=['Client', 'CommCell'])
         """
         if permission_list is None and categoryname_list is None:
-            raise SDKException('Role', '102', "empty role can not be created!!  "
-                                              "either permission_list or categoryname_list "
-                                              "should have some value! ")
+            raise SDKException(
+                "Role",
+                "102",
+                "empty role can not be created!!  "
+                "either permission_list or categoryname_list "
+                "should have some value! ",
+            )
         if not isinstance(rolename, str):
-            raise SDKException('Role', '101')
+            raise SDKException("Role", "101")
         if self.has_role(rolename):
-            raise SDKException('Role', '102',
-                               "Role {0} already exists on this commcell.".format(rolename))
+            raise SDKException("Role", "102", f"Role {rolename} already exists on this commcell.")
 
         if permission_list:
             arr = [{"permissionName": permission} for permission in permission_list]
@@ -525,43 +541,45 @@ class Roles(object):
             arr = []
         if categoryname_list:
             for catname in categoryname_list:
-                cat_blob = {"categoryName":catname}
+                cat_blob = {"categoryName": catname}
                 arr.append(cat_blob)
 
         request_json = {
-            "roles": [{
-                "role": {
-                    "roleName": rolename
-                },
-                "categoryPermission": {
-                    "categoriesPermissionOperationType": "ADD",
-                    "categoriesPermissionList": arr
+            "roles": [
+                {
+                    "role": {"roleName": rolename},
+                    "categoryPermission": {
+                        "categoriesPermissionOperationType": "ADD",
+                        "categoriesPermissionList": arr,
+                    },
                 }
-            }]
+            ]
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['ROLES'], request_json
+            "POST", self._commcell_object._services["ROLES"], request_json
         )
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
         return self.get(rolename)
 
-    def v4_add(self, rolename: str, permission_list: list = None, categoryname_list: list = None) -> 'Role':
+    def v4_add(
+        self, rolename: str, permission_list: list = None, categoryname_list: list = None
+    ) -> "Role":
         """creates new role
 
              Args:
@@ -589,14 +607,17 @@ class Roles(object):
             >>> role = self.add(rolename='NewRole', categoryname_list=['Client', 'CommCell'])
         """
         if permission_list is None and categoryname_list is None:
-            raise SDKException('Role', '102', "empty role can not be created!!  "
-                                              "either permission_list or categoryname_list "
-                                              "should have some value! ")
+            raise SDKException(
+                "Role",
+                "102",
+                "empty role can not be created!!  "
+                "either permission_list or categoryname_list "
+                "should have some value! ",
+            )
         if not isinstance(rolename, str):
-            raise SDKException('Role', '101')
+            raise SDKException("Role", "101")
         if self.has_role(rolename):
-            raise SDKException('Role', '102',
-                               "Role {0} already exists on this commcell.".format(rolename))
+            raise SDKException("Role", "102", f"Role {rolename} already exists on this commcell.")
 
         arr = []
         if permission_list:
@@ -606,31 +627,28 @@ class Roles(object):
             for category in categoryname_list:
                 arr.append({"category": {"name": category}})
 
-        request_json = {
-            "name": rolename,
-            "permissionList": arr
-        }
+        request_json = {"name": rolename, "permissionList": arr}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['V4_ROLES'], request_json
+            "POST", self._commcell_object._services["V4_ROLES"], request_json
         )
         if flag:
             if response.json():
                 response_json = response.json()
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         self.refresh()
         return self.get(rolename)
 
-    def get(self, role_name: str) -> 'Role':
+    def get(self, role_name: str) -> "Role":
         """Returns the role object for the specified role name
 
             Args:
@@ -644,9 +662,7 @@ class Roles(object):
             >>> role = self.get('Admin')
         """
         if not self.has_role(role_name):
-            raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format(role_name)
-            )
+            raise SDKException("Role", "102", f"Role {role_name} doesn't exists on this commcell.")
 
         return Role(self._commcell_object, role_name, self._roles[role_name.lower()])
 
@@ -669,31 +685,27 @@ class Roles(object):
             >>> self.delete('NewRole')
         """
         if not self.has_role(role_name):
-            raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format(role_name)
-            )
+            raise SDKException("Role", "102", f"Role {role_name} doesn't exists on this commcell.")
 
-        delete_role = self._commcell_object._services['ROLE'] % (self._roles[role_name.lower()])
+        delete_role = self._commcell_object._services["ROLE"] % (self._roles[role_name.lower()])
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'DELETE', delete_role
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("DELETE", delete_role)
 
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def v4_delete(self, role_name: str) -> None:
@@ -715,28 +727,24 @@ class Roles(object):
             >>> self.delete('NewRole')
         """
         if not self.has_role(role_name):
-            raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format(role_name)
-            )
+            raise SDKException("Role", "102", f"Role {role_name} doesn't exists on this commcell.")
 
-        delete_role = self._commcell_object._services['V4_ROLE'] % (self._roles[role_name.lower()])
+        delete_role = self._commcell_object._services["V4_ROLE"] % (self._roles[role_name.lower()])
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'DELETE', delete_role
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("DELETE", delete_role)
 
         if flag:
             if response.json():
                 response_json = response.json()
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def refresh(self, **kwargs) -> None:
@@ -752,8 +760,8 @@ class Roles(object):
             >>> self.refresh()
             >>> self.refresh(mongodb=True, hard=True)
         """
-        mongodb = kwargs.get('mongodb', False)
-        hard = kwargs.get('hard', False)
+        mongodb = kwargs.get("mongodb", False)
+        hard = kwargs.get("hard", False)
 
         self._roles = self._get_v4_roles()
         if mongodb:
@@ -777,10 +785,11 @@ class Roles(object):
         Usage:
             >>> all_roles_prop = self.all_roles_prop
         """
-        self._all_roles_prop = self._get_v4_roles(full_response=True).get("roles",[])
+        self._all_roles_prop = self._get_v4_roles(full_response=True).get("roles", [])
         return self._all_roles_prop
 
-class Role(object):
+
+class Role:
     """Class for representing a particular role configured on this commcell.
 
     Attributes:
@@ -815,13 +824,13 @@ class Role(object):
         else:
             self._role_id = role_id
 
-        self._request_role = self._commcell_object._services['ROLE'] % (self._role_id)
-        self._request_permissions = self._commcell_object._services['PERMISSIONS']
-        self._role_description = ''
+        self._request_role = self._commcell_object._services["ROLE"] % (self._role_id)
+        self._request_permissions = self._commcell_object._services["PERMISSIONS"]
+        self._role_description = ""
         self._role_status = None
         self._security_associations = {}
         self._role_permissions = {}
-        self._company_name = ''
+        self._company_name = ""
         self._get_v4_role_properties()
 
     def __repr__(self) -> str:
@@ -858,79 +867,83 @@ class Role(object):
             SDKException: If the response is empty or not successful.
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._request_role
+            "GET", self._request_role
         )
 
         if flag:
-            if response.json() and 'roleProperties' in response.json():
-                role_properties = response.json()['roleProperties'][0]
+            if response.json() and "roleProperties" in response.json():
+                role_properties = response.json()["roleProperties"][0]
 
-                self._role_description = role_properties.get('description')
-                self._role_id = role_properties['role'].get('roleId')
-                self._role_name = role_properties['role'].get('roleName')
-                self._role_status = not role_properties['role']['flags'].get('disabled')
+                self._role_description = role_properties.get("description")
+                self._role_id = role_properties["role"].get("roleId")
+                self._role_name = role_properties["role"].get("roleName")
+                self._role_status = not role_properties["role"]["flags"].get("disabled")
 
-                self._company_name = role_properties.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName', None)
+                self._company_name = (
+                    role_properties.get("securityAssociations", {})
+                    .get("tagWithCompany", {})
+                    .get("providerDomainName", None)
+                )
 
                 category_list = []
                 permission_list = []
 
-                if 'categoryPermission' in role_properties:
-                    for associations in role_properties['categoryPermission'].get(
-                            'categoriesPermissionList', []):
-                        if 'permissionName' in associations:
-                            permission_list.append(associations['permissionName'])
-                        elif 'categoryName' in associations:
-                            category_list.append(associations['categoryName'])
+                if "categoryPermission" in role_properties:
+                    for associations in role_properties["categoryPermission"].get(
+                        "categoriesPermissionList", []
+                    ):
+                        if "permissionName" in associations:
+                            permission_list.append(associations["permissionName"])
+                        elif "categoryName" in associations:
+                            category_list.append(associations["categoryName"])
 
                 self._role_permissions = {
-                    'permission_list': permission_list,
-                    'category_list': category_list
+                    "permission_list": permission_list,
+                    "category_list": category_list,
                 }
-                if 'securityAssociations' in role_properties:
-                    for association in role_properties['securityAssociations'].get(
-                            'associations', []):
-                        user_or_group = association['userOrGroup'][0]
-                        if 'userName' in user_or_group:
-                            name = user_or_group['userName']
-                        elif 'userGroupName' in user_or_group:
-                            name = user_or_group['userGroupName']
+                if "securityAssociations" in role_properties:
+                    for association in role_properties["securityAssociations"].get(
+                        "associations", []
+                    ):
+                        user_or_group = association["userOrGroup"][0]
+                        if "userName" in user_or_group:
+                            name = user_or_group["userName"]
+                        elif "userGroupName" in user_or_group:
+                            name = user_or_group["userGroupName"]
                         else:
                             return
 
-                        properties = association['properties']
+                        properties = association["properties"]
 
                         if name not in self._security_associations:
                             self._security_associations[name] = {
-                                'permissions': set([]),
-                                'roles': set([])
+                                "permissions": set([]),
+                                "roles": set([]),
                             }
 
                         permission = None
                         role = None
 
-                        if 'categoryPermission' in properties:
-                            permissions = properties['categoryPermission']
-                            permission_list = permissions['categoriesPermissionList'][0]
-                            permission = permission_list['permissionName']
-                        elif 'permissions' in properties:
-                            permission = properties['permissions'][0]['permissionName']
-                        elif 'role' in properties:
-                            role = properties['role']['roleName']
+                        if "categoryPermission" in properties:
+                            permissions = properties["categoryPermission"]
+                            permission_list = permissions["categoriesPermissionList"][0]
+                            permission = permission_list["permissionName"]
+                        elif "permissions" in properties:
+                            permission = properties["permissions"][0]["permissionName"]
+                        elif "role" in properties:
+                            role = properties["role"]["roleName"]
 
                         if permission is not None:
-                            self._security_associations[name]['permissions'].add(
-                                permission
-                            )
+                            self._security_associations[name]["permissions"].add(permission)
                         if role is not None:
-                            self._security_associations[name]['roles'].add(role)
+                            self._security_associations[name]["roles"].add(role)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_v4_role_properties(self) -> None:
         """Gets the properties of this role from the V4 API response.
@@ -941,61 +954,55 @@ class Role(object):
         Usage:
             role._get_v4_role_properties()
         """
-        request_url = self._commcell_object._services['V4_ROLE'] % self._role_id
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', request_url
-        )
+        request_url = self._commcell_object._services["V4_ROLE"] % self._role_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if flag:
             if response.json():
                 role_properties = response.json()
 
-                self._role_id = role_properties.get('id')
-                self._role_name = role_properties.get('name')
-                self._role_description = role_properties.get('description', '')
-                self._role_status = role_properties.get('status', '')
+                self._role_id = role_properties.get("id")
+                self._role_name = role_properties.get("name")
+                self._role_description = role_properties.get("description", "")
+                self._role_status = role_properties.get("status", "")
 
                 permission_list = []
                 category_list = []
 
-                for permission in role_properties.get('permissions', []):
-                    if permission.get('type') == "PERMISSION_ENTITY":
-                        permission_list.append(permission['permission']['name'])
-                    elif permission.get('type') == "CATEGORY_ENTITY":
-                        category_list.append(permission['category']['name'])
+                for permission in role_properties.get("permissions", []):
+                    if permission.get("type") == "PERMISSION_ENTITY":
+                        permission_list.append(permission["permission"]["name"])
+                    elif permission.get("type") == "CATEGORY_ENTITY":
+                        category_list.append(permission["category"]["name"])
 
                 self._role_permissions = {
-                    'permission_list': permission_list,
-                    'category_list': category_list
+                    "permission_list": permission_list,
+                    "category_list": category_list,
                 }
 
                 self._security_associations = {}
-                for security in role_properties.get('security', []):
-                    user = security.get('user', {})
-                    usergroup = security.get('userGroup', {})
-                    role = security.get('role', {})
+                for security in role_properties.get("security", []):
+                    user = security.get("user", {})
+                    usergroup = security.get("userGroup", {})
+                    role = security.get("role", {})
 
-                    user_name = user.get('name')
+                    user_name = user.get("name")
                     if user_name:
                         if user_name not in self._security_associations:
-                            self._security_associations[user_name] = {
-                                'roles': set()
-                            }
-                        self._security_associations[user_name]['roles'].add(role.get('name'))
+                            self._security_associations[user_name] = {"roles": set()}
+                        self._security_associations[user_name]["roles"].add(role.get("name"))
 
-                    usergroup_name = usergroup.get('name')
+                    usergroup_name = usergroup.get("name")
                     if usergroup_name:
                         if usergroup_name not in self._security_associations:
-                            self._security_associations[usergroup_name] = {
-                                'roles': set()
-                            }
-                        self._security_associations[usergroup_name]['roles'].add(role.get('name'))
+                            self._security_associations[usergroup_name] = {"roles": set()}
+                        self._security_associations[usergroup_name]["roles"].add(role.get("name"))
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _update_v4_role_props(self, properties_dict: dict, name_val: str = None) -> None:
         """Updates the properties of this role
@@ -1019,27 +1026,25 @@ class Role(object):
             role._update_v4_role_props({"description": "New description"})
             role._update_v4_role_props({}, name_val="NewRoleName")
         """
-        request_json = {
-            "newName": name_val if name_val else self.role_name
-        }
+        request_json = {"newName": name_val if name_val else self.role_name}
         request_json.update(properties_dict)
 
-        request_url = self._commcell_object._services['V4_ROLE'] % self._role_id
+        request_url = self._commcell_object._services["V4_ROLE"] % self._role_id
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', request_url, request_json
+            "PUT", request_url, request_json
         )
         if flag:
             if response.json():
                 response_json = response.json()
-                error_code = response_json.get('errorCode', 0)
-                error_message = response_json.get('errorMessage', '')
+                error_code = response_json.get("errorCode", 0)
+                error_message = response_json.get("errorMessage", "")
                 if not error_code == 0:
-                    raise SDKException('Response', '101', error_message)
+                    raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def _update_role_props(self, properties_dict: dict, name_val: str = None) -> None:
@@ -1065,45 +1070,33 @@ class Role(object):
             role._update_role_props({}, name_val="NewRoleName")
         """
         if name_val:
-            request_json = {
-                "roles": [{
-                    "role": {
-                        "roleName": name_val
-                    }
-                }]
-            }
+            request_json = {"roles": [{"role": {"roleName": name_val}}]}
         else:
-            request_json = {
-                "roles": [{
-                    "role": {
-                        "roleName": self.role_name
-                    }
-                }]
-            }
+            request_json = {"roles": [{"role": {"roleName": self.role_name}}]}
 
         if "description" in properties_dict:
-            request_json['roles'][0].update(properties_dict)
+            request_json["roles"][0].update(properties_dict)
         else:
-            request_json['roles'][0]['role'].update(properties_dict)
+            request_json["roles"][0]["role"].update(properties_dict)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._request_role, request_json
+            "POST", self._request_role, request_json
         )
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
         self.refresh()
 
     def associate_user(self, rolename: str, username: str) -> None:
@@ -1125,61 +1118,43 @@ class Role(object):
             role.associate_user('Admin', 'user1')
         """
         if not isinstance(username, str):
-            raise SDKException('Role', '101')
+            raise SDKException("Role", "101")
         if not self._commcell_object.roles.has_role(rolename):
-            raise SDKException(
-                'Role', '102', "Role {0} doesn't exists on this commcell.".format(rolename)
-            )
+            raise SDKException("Role", "102", f"Role {rolename} doesn't exists on this commcell.")
         if not self._commcell_object.users.has_user(username):
-            raise SDKException(
-                'User', '102', "User {0} doesn't exists on this commcell.".format(username)
-            )
+            raise SDKException("User", "102", f"User {username} doesn't exists on this commcell.")
 
         request_json = {
-            "entityAssociated": {
-                "entity": [
+            "entityAssociated": {"entity": [{"roleId": self._role_id}]},
+            "securityAssociations": {
+                "associationsOperationType": 2,
+                "associations": [
                     {
-                        "roleId": self._role_id
+                        "userOrGroup": [{"userName": username}],
+                        "properties": {"role": {"roleName": rolename}},
                     }
-                ]
+                ],
             },
-            "securityAssociations":{
-                "associationsOperationType":2,
-                "associations":[
-                    {
-                        "userOrGroup":[
-                            {
-                                "userName":username
-                            }
-                        ],
-                        "properties":{
-                            "role":{
-                                "roleName":rolename
-                            }
-                        }
-                    }
-                ]
-            }
         }
-        security = self._commcell_object._services['SECURITY_ASSOCIATION']
+        security = self._commcell_object._services["SECURITY_ASSOCIATION"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', security, request_json
+            "POST", security, request_json
         )
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def associate_usergroup(self, rolename: str, usergroupname: str) -> None:
         """Updates the usergroup who can manage this role with the permission provided
@@ -1200,65 +1175,50 @@ class Role(object):
             role.associate_usergroup('Admin', 'group1')
         """
         if not isinstance(usergroupname, str):
-            raise SDKException('Role', '101')
+            raise SDKException("Role", "101")
         if not self._commcell_object.roles.has_role(rolename):
-            raise SDKException(
-                'User', '102', "Role {0} doesn't exists on this commcell.".format(rolename)
-            )
+            raise SDKException("User", "102", f"Role {rolename} doesn't exists on this commcell.")
         if not self._commcell_object.user_groups.has_user_group(usergroupname):
             raise SDKException(
-                'UserGroup', '102', "UserGroup {0} doesn't exists on this commcell.".format(
-                    usergroupname)
+                "UserGroup", "102", f"UserGroup {usergroupname} doesn't exists on this commcell."
             )
 
         request_json = {
-            "entityAssociated": {
-                "entity": [
-                    {
-                        "roleId": self._role_id
-                    }
-                ]
-            },
+            "entityAssociated": {"entity": [{"roleId": self._role_id}]},
             "securityAssociations": {
                 "associationsOperationType": 2,
                 "associations": [
                     {
-                        "userOrGroup": [
-                            {
-                                "userGroupName": usergroupname
-                            }
-                        ],
-                        "properties": {
-                            "role": {
-                                "roleName": rolename
-                            }
-                        }
+                        "userOrGroup": [{"userGroupName": usergroupname}],
+                        "properties": {"role": {"roleName": rolename}},
                     }
-                ]
-            }
+                ],
+            },
         }
-        security = self._commcell_object._services['SECURITY_ASSOCIATION']
+        security = self._commcell_object._services["SECURITY_ASSOCIATION"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', security, request_json
+            "POST", security, request_json
         )
 
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
-    def modify_capability(self, request_type: str, permission_list: str = "", categoryname_list: str = "") -> None:
+    def modify_capability(
+        self, request_type: str, permission_list: str = "", categoryname_list: str = ""
+    ) -> None:
         """Updates role capabilities
 
         Args:
@@ -1285,55 +1245,55 @@ class Role(object):
             role.modify_capability('DELETE', categoryname_list=['Client'])
         """
 
-        update_role_request = {
-            "NONE": 0,
-            "OVERWRITE": 1,
-            "UPDATE": 2,
-            "ADD":2,
-            "DELETE": 3
-        }
-        if (permission_list == "" and categoryname_list == ""):
-            raise SDKException('Role', '102', "Capabilties can not be modified!!  "
-                                              "either permission_list or categoryname_list "
-                                              "should have some value! ")
+        update_role_request = {"NONE": 0, "OVERWRITE": 1, "UPDATE": 2, "ADD": 2, "DELETE": 3}
+        if permission_list == "" and categoryname_list == "":
+            raise SDKException(
+                "Role",
+                "102",
+                "Capabilties can not be modified!!  "
+                "either permission_list or categoryname_list "
+                "should have some value! ",
+            )
         capability_arr = []
         if permission_list:
             capability_arr = [{"permissionName": permission} for permission in permission_list]
         if categoryname_list:
             for catname in categoryname_list:
-                cat_blob = {"categoryName":catname}
+                cat_blob = {"categoryName": catname}
                 capability_arr.append(cat_blob)
 
         request_json = {
-            "roles": [{
-                "role": {
-                    "roleName": self.role_name
-                },
-                "categoryPermission": {
-                    "categoriesPermissionOperationType" : update_role_request[request_type.upper()],
-                    "categoriesPermissionList": capability_arr
+            "roles": [
+                {
+                    "role": {"roleName": self.role_name},
+                    "categoryPermission": {
+                        "categoriesPermissionOperationType": update_role_request[
+                            request_type.upper()
+                        ],
+                        "categoriesPermissionList": capability_arr,
+                    },
                 }
-            }]
+            ]
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._request_role, request_json
+            "POST", self._request_role, request_json
         )
         if flag:
             if response.json():
                 error_code = -1
-                error_message = ''
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                error_message = ""
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                    error_code = response_json["errorCode"]
+                    error_message = response_json["errorString"]
                     if not error_code == 0:
-                        raise SDKException('Response', '101', error_message)
+                        raise SDKException("Response", "101", error_message)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
         self.refresh()
 
@@ -1360,7 +1320,6 @@ class Role(object):
             role.role_name = 'NewRoleName'
         """
         self._update_v4_role_props(properties_dict={}, name_val=val)
-
 
     @property
     def role_id(self) -> str:
@@ -1408,9 +1367,7 @@ class Role(object):
         Usage:
             role.role_description = 'New description'
         """
-        props_dict = {
-            "description": value
-        }
+        props_dict = {"description": value}
         self._update_v4_role_props(props_dict)
 
     @property
@@ -1435,9 +1392,7 @@ class Role(object):
         Usage:
             role.status = False
         """
-        props_dict = {
-            "enabled": value
-        }
+        props_dict = {"enabled": value}
         self._update_v4_role_props(props_dict)
 
     @property
@@ -1461,40 +1416,40 @@ class Role(object):
             SDKException: If the response is empty or not successful.
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._request_permissions
+            "GET", self._request_permissions
         )
         category_list = []
         permission_list = []
 
         if flag:
-            if response.json() and 'permissions' in response.json():
-                permissions = response.json()['permissions']
+            if response.json() and "permissions" in response.json():
+                permissions = response.json()["permissions"]
                 for item in permissions:
-                    if 'category' in item and 'name' in item['category']:
-                        category_list.append(item['category']['name'])
-                    if 'permissions' in item:
-                        for permission in item['permissions']:
-                            if 'name' in permission:
-                                permission_list.append(permission['name'])
-                    if 'categoryList' in item:
-                        for sub_category in item['categoryList']:
-                            if 'category' in sub_category and 'name' in sub_category['category']:
-                                category_list.append(sub_category['category']['name'])
-                            if 'permissions' in sub_category:
-                                for permission in sub_category['permissions']:
-                                    if 'name' in permission:
-                                        permission_list.append(permission['name'])
+                    if "category" in item and "name" in item["category"]:
+                        category_list.append(item["category"]["name"])
+                    if "permissions" in item:
+                        for permission in item["permissions"]:
+                            if "name" in permission:
+                                permission_list.append(permission["name"])
+                    if "categoryList" in item:
+                        for sub_category in item["categoryList"]:
+                            if "category" in sub_category and "name" in sub_category["category"]:
+                                category_list.append(sub_category["category"]["name"])
+                            if "permissions" in sub_category:
+                                for permission in sub_category["permissions"]:
+                                    if "name" in permission:
+                                        permission_list.append(permission["name"])
 
                 self._role_permissions = {
-                    'permission_list': permission_list,
-                    'category_list': category_list
+                    "permission_list": permission_list,
+                    "category_list": category_list,
                 }
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Refresh the properties of the Roles.

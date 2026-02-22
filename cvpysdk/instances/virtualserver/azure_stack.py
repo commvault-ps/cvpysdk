@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -38,9 +36,10 @@ AzureStackInstance:         Derived class from VirtualServer
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -65,7 +64,7 @@ class AzureStackInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+    def __init__(self, agent: "Agent", name: str, iid: str) -> None:
         """Initialize the AzureStackInstance object for a given Virtual Server instance.
 
         Args:
@@ -85,7 +84,7 @@ class AzureStackInstance(VirtualServerInstance):
         self._applicationid = None
         self._server_name = []
         self._vendor_id = 403
-        super(AzureStackInstance, self).__init__(agent, name, iid)
+        super().__init__(agent, name, iid)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this AzureStackInstance.
@@ -99,22 +98,25 @@ class AzureStackInstance(VirtualServerInstance):
         #ai-gen-doc
         """
 
-        super(AzureStackInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
         if "vmwareVendor" in self._virtualserverinstance:
-            self._subscriptionid = self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['domainName']
+            self._subscriptionid = self._virtualserverinstance["vmwareVendor"]["virtualCenter"][
+                "domainName"
+            ]
 
-            self._applicationid = self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['userName']
+            self._applicationid = self._virtualserverinstance["vmwareVendor"]["virtualCenter"][
+                "userName"
+            ]
 
-        if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"][
-                "associatedClients"]["memberServers"]
+        if "virtualServerInstance" in self._properties:
+            _member_servers = self._properties["virtualServerInstance"]["associatedClients"][
+                "memberServers"
+            ]
             for _each_client in _member_servers:
-                client = _each_client['client']
-                if 'clientName' in client.keys():
-                    self._server_name.append(str(client['clientName']))
+                client = _each_client["client"]
+                if "clientName" in client.keys():
+                    self._server_name.append(str(client["clientName"]))
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all instance-related properties for this subclient.
@@ -130,10 +132,10 @@ class AzureStackInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": {},
+                },
             }
         }
         return instance_json

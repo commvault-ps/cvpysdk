@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -42,9 +40,10 @@ class ThreatConstants:
 
     #ai-gen-doc
     """
-    FIELD_INFECTED_COUNT = 'infectedFilesCount'
-    FIELD_FINGERPRINT_COUNT = 'fingerPrintFilesCount'
-    FIELD_DATASOURCE_ID = 'dataSourceId'
+
+    FIELD_INFECTED_COUNT = "infectedFilesCount"
+    FIELD_FINGERPRINT_COUNT = "fingerPrintFilesCount"
+    FIELD_DATASOURCE_ID = "dataSourceId"
 
 
 class FileTypeConstants:
@@ -63,10 +62,11 @@ class FileTypeConstants:
 
     #ai-gen-doc
     """
-    FIELD_DELETE_COUNT = 'deleteCount'
-    FIELD_RENAME_COUNT = 'renameCount'
-    FIELD_CREATE_COUNT = 'createCount'
-    FIELD_MODIFIED_COUNT = 'modCount'
+
+    FIELD_DELETE_COUNT = "deleteCount"
+    FIELD_RENAME_COUNT = "renameCount"
+    FIELD_CREATE_COUNT = "createCount"
+    FIELD_MODIFIED_COUNT = "modCount"
 
 
 class RequestConstants:
@@ -85,16 +85,24 @@ class RequestConstants:
 
     #ai-gen-doc
     """
-    CLEAR_ANOMALY_JSON = {"clients": [{"_type_": "CLIENT_ENTITY",
-                                       "clientId": 0,
-                                       "displayName": "",
-                                       "dataSourceId": 0,
-                                       "selected": True}],
-                          "anomalyTypes": []}
 
-    RUN_SCAN_JSON = {"client": {
-        "clientId": 0},
+    CLEAR_ANOMALY_JSON = {
+        "clients": [
+            {
+                "_type_": "CLIENT_ENTITY",
+                "clientId": 0,
+                "displayName": "",
+                "dataSourceId": 0,
+                "selected": True,
+            }
+        ],
+        "anomalyTypes": [],
+    }
+
+    RUN_SCAN_JSON = {
+        "client": {"clientId": 0},
         "timeRange": {"fromTime": 0, "toTime": 0},
         "threatAnalysisFlags": 0,
         "indexServer": {"clientId": 0},
-        "backupDetails": [{"copyId": 0, "storagePoolId": 0}]}
+        "backupDetails": [{"copyId": 0, "storagePoolId": 0}],
+    }

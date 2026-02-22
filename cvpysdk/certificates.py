@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -24,7 +22,7 @@ class Certificate:
         """
         Initialize the Certificate class object
 
-        Args: 
+        Args:
             commcell: Commcell object
         """
 
@@ -38,7 +36,7 @@ class Certificate:
         Args:
             body (dict): Body to pass in post request
 
-        Return: 
+        Return:
             Response of the request
 
         Example:
@@ -58,29 +56,18 @@ class Certificate:
         Args:
             cert_ids (List[int]): List of certificate id's
 
-        Return: 
+        Return:
             bool: if request processed successfully
 
         Example:
             revoke([1, 2, 3])
         """
-        data = {
-            "operation": 3,
-            "certificateInfo": {
-                "certificates": [
-
-                ]
-            }
-        }
+        data = {"operation": 3, "certificateInfo": {"certificates": []}}
         if type(cert_ids) == list:
             for id in cert_ids:
-                data["certificateInfo"]["certificates"].append(
-                    {"id": int(id)}
-                )
+                data["certificateInfo"]["certificates"].append({"id": int(id)})
         elif type(cert_ids) == int or type(cert_ids) == str:
-            data["certificateInfo"]["certificates"].append(
-                {"id": int(cert_ids)}
-            )
+            data["certificateInfo"]["certificates"].append({"id": int(cert_ids)})
         else:
             raise Exception("cert_ids should be of type list or int")
         resp_data = self._make_request(data)
@@ -93,29 +80,18 @@ class Certificate:
         Args:
             cert_ids (List[int]): List of certificate id's
 
-        Return: 
+        Return:
             bool: if request processed successfully
 
         Example:
             renew([1, 2, 3])
         """
-        data = {
-            "operation": 2,
-            "certificateInfo": {
-                "certificates": [
-
-                ]
-            }
-        }
+        data = {"operation": 2, "certificateInfo": {"certificates": []}}
         if type(cert_ids) == list:
             for id in cert_ids:
-                data["certificateInfo"]["certificates"].append(
-                    {"id": int(id)}
-                )
+                data["certificateInfo"]["certificates"].append({"id": int(id)})
         elif type(cert_ids) == int or type(cert_ids) == str:
-            data["certificateInfo"]["certificates"].append(
-                {"id": int(cert_ids)}
-            )
+            data["certificateInfo"]["certificates"].append({"id": int(cert_ids)})
         else:
             raise Exception("cert_ids should be of type list or int")
         resp_data = self._make_request(data)
@@ -126,24 +102,17 @@ class Certificate:
         Enable of disable the lockdown mode
 
         Args:
-            operation (bool): Turn ON/OFF the lockdown mode. 
+            operation (bool): Turn ON/OFF the lockdown mode.
 
-        Return: 
+        Return:
             bool: if request processed successfully
 
         Example:
             force_client_authentication(True)
             force_client_authentication(False)
         """
-        body = {
-            "operation": 0,
-            "certificateInfo": {
-
-                "forceClientAuth": operation
-
-            }
-        }
-        try :
+        body = {"operation": 0, "certificateInfo": {"forceClientAuth": operation}}
+        try:
             resp_data = self._make_request(body)
             return True
         except Exception as e:
@@ -156,16 +125,13 @@ class Certificate:
         Args:
             client_id (int): Client Id to generate certificate.
 
-        Return: 
+        Return:
             str: Temp certificate for the client.
 
         Example:
             make_temp_certificate(5)
         """
-        body = {
-            "operation": 4,
-            "makeTempCertClientID": client_id
-        }
+        body = {"operation": 4, "makeTempCertClientID": client_id}
         resp_data = self._make_request(body)
         return resp_data["certificateInfo"]["tempCertificateInfo"]
 
@@ -176,18 +142,13 @@ class Certificate:
         Args:
             months (int): Number of months.
 
-        Return: 
+        Return:
             bool: if request processed successfully
 
         Example:
             client_certificate_rotation(12)
         """
-        body = {
-            "operation": 0,
-            "certificateInfo": {
-                "ClientCertificateRotation": int(months)
-            }
-        }
+        body = {"operation": 0, "certificateInfo": {"ClientCertificateRotation": int(months)}}
         try:
             resp_data = self._make_request(body)
             return True
@@ -201,18 +162,13 @@ class Certificate:
         Args:
             years (int): Number of years.
 
-        Return: 
+        Return:
             bool: if request processed successfully
 
         Example:
             ca_certificate_rotation(1)
         """
-        body = {
-            "operation": 0,
-            "certificateInfo": {
-                "CACertificateRotation": int(years)
-            }
-        }
+        body = {"operation": 0, "certificateInfo": {"CACertificateRotation": int(years)}}
         try:
             resp_data = self._make_request(body)
             return True

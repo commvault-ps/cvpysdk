@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -24,13 +23,13 @@ RecoveryGroups:     Class for representing all the recovery groups
 RecoveryGroup:      Class for a single recovery group selected, and to perform operations on that recovery group
 
 """
+
 from enum import Enum
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-
-from cvpysdk.exception import SDKException
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from cvpysdk.cleanroom.target import CleanroomTarget
+from cvpysdk.exception import SDKException
 
 from .recovery_entities import RecoveryEntities
 
@@ -47,13 +46,11 @@ WORKLOADS = {
     6: "TEAMS",
     7: "DYNAMICS_365",
     8: "VIRTUAL SERVER",
-    9: "FILE SYSTEM"
+    9: "FILE SYSTEM",
 }
 
-INSTANCES = {
-    'AZURE_V2': 'Azure Resource Manager',
-    'AMAZON': 'Amazon Web Services'
-}
+INSTANCES = {"AZURE_V2": "Azure Resource Manager", "AMAZON": "Amazon Web Services"}
+
 
 class RecoveryGroups:
     """
@@ -76,7 +73,7 @@ class RecoveryGroups:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize a RecoveryGroups object with the specified Commcell connection.
 
         Args:
@@ -93,7 +90,7 @@ class RecoveryGroups:
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-        self._RECOVERY_GROUPS_URL = commcell_object._services['ALL_RECOVERY_GROUPS']
+        self._RECOVERY_GROUPS_URL = commcell_object._services["ALL_RECOVERY_GROUPS"]
         self._recovery_groups = None
 
         self.refresh()
@@ -137,11 +134,11 @@ class RecoveryGroups:
         #ai-gen-doc
         """
         if not isinstance(recovery_group_name, str):
-            raise SDKException('RecoveryGroup', '101')
+            raise SDKException("RecoveryGroup", "101")
 
         return self._recovery_groups and recovery_group_name in self._recovery_groups
 
-    def get(self, recovery_group_name: str) -> 'RecoveryGroup':
+    def get(self, recovery_group_name: str) -> "RecoveryGroup":
         """Retrieve a recovery group object by its name.
 
         Args:
@@ -161,17 +158,20 @@ class RecoveryGroups:
         #ai-gen-doc
         """
         if not isinstance(recovery_group_name, str):
-            raise SDKException('RecoveryGroup', '101')
+            raise SDKException("RecoveryGroup", "101")
         else:
             if self.has_recovery_group(recovery_group_name):
                 return RecoveryGroup(
                     self._commcell_object,
                     recovery_group_name,
-                    self.all_groups[recovery_group_name]
+                    self.all_groups[recovery_group_name],
                 )
 
-            raise SDKException('RecoveryGroup', '102',
-                               'No recovery group exists with name: {0}'.format(recovery_group_name))
+            raise SDKException(
+                "RecoveryGroup",
+                "102",
+                f"No recovery group exists with name: {recovery_group_name}",
+            )
 
     def refresh(self) -> None:
         """Reload the recovery group information from the Commcell.
@@ -204,13 +204,10 @@ class RecoveryGroups:
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'RecoveryGroup')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "RecoveryGroup")
 
         for index, group in enumerate(self._recovery_groups):
-            sub_str = '{:^5}\t{:20}\n'.format(
-                index + 1,
-                group
-            )
+            sub_str = f"{index + 1:^5}\t{group:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -236,19 +233,23 @@ class RecoveryGroups:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUPS_URL)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RECOVERY_GROUPS_URL)
 
         if flag:
             try:
                 json_resp = response.json()
 
-                group_name_id_dict = {group['name']: group['id'] for group in json_resp['recoveryGroups']}
+                group_name_id_dict = {
+                    group["name"]: group["id"] for group in json_resp["recoveryGroups"]
+                }
 
                 return group_name_id_dict
             except (JSONDecodeError, KeyError):
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
 
 class RecoveryStatus(Enum):
@@ -266,6 +267,7 @@ class RecoveryStatus(Enum):
 
     #ai-gen-doc
     """
+
     NO_STATUS = 0
     NONE = 0
     NOT_READY = 1
@@ -277,6 +279,7 @@ class RecoveryStatus(Enum):
     CLEANED_UP = 7
     MARK_AS_FAILED = 8
     CLEANUP_FAILED = 9
+
 
 class RecoveryStatusNotReadyCategory(Enum):
     """
@@ -293,6 +296,7 @@ class RecoveryStatusNotReadyCategory(Enum):
 
     #ai-gen-doc
     """
+
     NONE = 0
     INVALID_VM_NAME = 1
     INVALID_COPY = 2
@@ -303,6 +307,7 @@ class RecoveryStatusNotReadyCategory(Enum):
     LAST_BACKUP_NOT_READY = 64
     MANAGED_IDENTITY_ENABLED = 128
     AUTOSCALING_DISABLED = 256
+
 
 class RecoveryGroup:
     """
@@ -331,7 +336,12 @@ class RecoveryGroup:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', recovery_group_name: str, recovery_group_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        commcell_object: "Commcell",
+        recovery_group_name: str,
+        recovery_group_id: Optional[str] = None,
+    ) -> None:
         """Initialize a RecoveryGroup instance.
 
         Args:
@@ -354,10 +364,18 @@ class RecoveryGroup:
             self._recovery_group_id = str(recovery_group_id)
         else:
             # get id from RecoveryGroups class
-            self._recovery_group_id = RecoveryGroups(commcell_object).all_groups[recovery_group_name]
-        self._RECOVERY_GROUP_URL = commcell_object._services['RECOVERY_GROUP'] % self._recovery_group_id
-        self._RECOVER_URL = commcell_object._services['RECOVERY_GROUP_RECOVER'] % self._recovery_group_id
-        self._RECOVERY_GROUP_THREATS_COUNT = commcell_object._services['RECOVERY_GROUP_THREATS_COUNT'] % self._recovery_group_id
+            self._recovery_group_id = RecoveryGroups(commcell_object).all_groups[
+                recovery_group_name
+            ]
+        self._RECOVERY_GROUP_URL = (
+            commcell_object._services["RECOVERY_GROUP"] % self._recovery_group_id
+        )
+        self._RECOVER_URL = (
+            commcell_object._services["RECOVERY_GROUP_RECOVER"] % self._recovery_group_id
+        )
+        self._RECOVERY_GROUP_THREATS_COUNT = (
+            commcell_object._services["RECOVERY_GROUP_THREATS_COUNT"] % self._recovery_group_id
+        )
 
         # will be set when refresh is called
         self._properties = None
@@ -366,7 +384,7 @@ class RecoveryGroup:
         self._recovery_target = CleanroomTarget(self._commcell_object, self.target_name)
 
     @property
-    def recovery_entities(self) -> 'RecoveryEntities':
+    def recovery_entities(self) -> "RecoveryEntities":
         """Get the RecoveryEntities manager associated with this RecoveryGroup.
 
         This property provides access to the RecoveryEntities manager, which can be used to create and manage individual RecoveryEntity objects within the recovery group.
@@ -430,7 +448,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self.entities[0]['target']['name']
+        return self.entities[0]["target"]["name"]
 
     @property
     def is_rescued_cs(self):
@@ -448,7 +466,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self._properties['recoveryGroup']['recoveryExpirationOptions']['isRescuedCommServe']
+        return self._properties["recoveryGroup"]["recoveryExpirationOptions"]["isRescuedCommServe"]
 
     @property
     def entities(self) -> List[Dict[str, Any]]:
@@ -466,7 +484,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self._properties['entities']
+        return self._properties["entities"]
 
     @property
     def entities_list(self) -> list:
@@ -484,7 +502,7 @@ class RecoveryGroup:
         """
         entity_list = []
         for entity in self.entities:
-            entity_list.append(entity['name'])
+            entity_list.append(entity["name"])
         return entity_list
 
     @property
@@ -503,7 +521,7 @@ class RecoveryGroup:
         """
         entity_list_id = []
         for entity in self.entities:
-            entity_list_id.append(entity['id'])
+            entity_list_id.append(entity["id"])
         return entity_list_id
 
     @property
@@ -520,13 +538,15 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        config = self.entities[0]['recoveryConfiguration']['configuration']
-        if 'azure' in config:
-            return 'azure'
-        elif 'amazon' in config:
-            return 'amazon'
+        config = self.entities[0]["recoveryConfiguration"]["configuration"]
+        if "azure" in config:
+            return "azure"
+        elif "amazon" in config:
+            return "amazon"
         else:
-            raise SDKException('RecoveryGroup', '102', 'Unknown vendor type in recovery configuration')
+            raise SDKException(
+                "RecoveryGroup", "102", "Unknown vendor type in recovery configuration"
+            )
 
     @property
     def security_group(self) -> str:
@@ -543,12 +563,12 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
+        config = self.entities[0]["recoveryConfiguration"]["configuration"][vendor]
 
-        if vendor == 'azure':
-            return config['overrideReplicationOptions']['securityGroup']['id']
-        elif vendor == 'amazon':
-            return config['overrideReplicationOptions'].get('securityGroups', [])
+        if vendor == "azure":
+            return config["overrideReplicationOptions"]["securityGroup"]["id"]
+        elif vendor == "amazon":
+            return config["overrideReplicationOptions"].get("securityGroups", [])
 
     @property
     def virtual_network(self) -> str:
@@ -565,12 +585,12 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
+        config = self.entities[0]["recoveryConfiguration"]["configuration"][vendor]
 
-        if vendor == 'azure':
-            return config['overrideReplicationOptions']['virtualNetwork']['networkName']
-        elif vendor == 'amazon':
-            return config['overrideReplicationOptions']['network'].get('name', '')
+        if vendor == "azure":
+            return config["overrideReplicationOptions"]["virtualNetwork"]["networkName"]
+        elif vendor == "amazon":
+            return config["overrideReplicationOptions"]["network"].get("name", "")
 
     @property
     def resource_group(self) -> str:
@@ -587,9 +607,11 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'azure':
-            return self.entities[0]['recoveryConfiguration']['configuration']['azure']['resourceGroup']
-        elif vendor == 'amazon':
+        if vendor == "azure":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["azure"][
+                "resourceGroup"
+            ]
+        elif vendor == "amazon":
             return None  # AWS doesn't have resource groups
 
     @property
@@ -607,9 +629,11 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'azure':
-            return self.entities[0]['recoveryConfiguration']['configuration']['azure']['storageAccount']
-        elif vendor == 'amazon':
+        if vendor == "azure":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["azure"][
+                "storageAccount"
+            ]
+        elif vendor == "amazon":
             return None  # AWS doesn't use storage accounts
 
     @property
@@ -627,8 +651,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon'].get('instanceType')
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"].get(
+                "instanceType"
+            )
         return None
 
     @property
@@ -646,8 +672,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon'].get('datacenter')
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"].get(
+                "datacenter"
+            )
         return None
 
     @property
@@ -665,8 +693,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon'].get('availabilityZone')
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"].get(
+                "availabilityZone"
+            )
         return None
 
     @property
@@ -684,12 +714,12 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        config = self.entities[0]['recoveryConfiguration']['configuration'][vendor]
+        config = self.entities[0]["recoveryConfiguration"]["configuration"][vendor]
 
-        if vendor == 'azure':
-            return config['overrideReplicationOptions']['virtualNetwork'].get('subnetId', '')
-        elif vendor == 'amazon':
-            return config['overrideReplicationOptions']['network'].get('subnetId', '')
+        if vendor == "azure":
+            return config["overrideReplicationOptions"]["virtualNetwork"].get("subnetId", "")
+        elif vendor == "amazon":
+            return config["overrideReplicationOptions"]["network"].get("subnetId", "")
 
     @property
     def iam_role(self) -> dict:
@@ -706,8 +736,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('IAMRole', {})
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"][
+                "overrideReplicationOptions"
+            ].get("IAMRole", {})
         return None
 
     @property
@@ -725,8 +757,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('keyPair')
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"][
+                "overrideReplicationOptions"
+            ].get("keyPair")
         return None
 
     @property
@@ -744,8 +778,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('encryptionKey')
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"][
+                "overrideReplicationOptions"
+            ].get("encryptionKey")
         return None
 
     @property
@@ -763,8 +799,10 @@ class RecoveryGroup:
         #ai-gen-doc
         """
         vendor = self.vendor_type
-        if vendor == 'amazon':
-            return self.entities[0]['recoveryConfiguration']['configuration']['amazon']['overrideReplicationOptions'].get('volumeType', '')
+        if vendor == "amazon":
+            return self.entities[0]["recoveryConfiguration"]["configuration"]["amazon"][
+                "overrideReplicationOptions"
+            ].get("volumeType", "")
         return None
 
     @property
@@ -781,7 +819,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return f'{self.recovery_group_name}-Target'
+        return f"{self.recovery_group_name}-Target"
 
     @property
     def get_new_hypervisor_name(self) -> str:
@@ -799,7 +837,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return f'{self.get_new_target_name}-Hypervisor'
+        return f"{self.get_new_target_name}-Hypervisor"
 
     @property
     def is_threatscan_enabled(self) -> bool:
@@ -817,7 +855,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self._properties['recoveryGroup']['threatScan']['enableThreatScan']
+        return self._properties["recoveryGroup"]["threatScan"]["enableThreatScan"]
 
     @property
     def is_windefender_enabled(self) -> bool:
@@ -835,7 +873,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self._properties['recoveryGroup']['threatScan']['enableWindowsDefenderScan']
+        return self._properties["recoveryGroup"]["threatScan"]["enableWindowsDefenderScan"]
 
     @property
     def powerOffDestinationVMPostRecovery(self) -> bool:
@@ -851,7 +889,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return self._properties['recoveryGroup']['powerOffDestinationVMPostRecoveryAndValidation']
+        return self._properties["recoveryGroup"]["powerOffDestinationVMPostRecoveryAndValidation"]
 
     # ---------------------------- DESTINATION ----------------------------
 
@@ -865,14 +903,17 @@ class RecoveryGroup:
     def destination_agent_object(self, workload):
         """Returns cvpysdk destination agent(workload) object"""
         destination_agent = WORKLOADS[workload]
-        self._destination_agent_object = self.destination_client_object.agents.get(destination_agent)
+        self._destination_agent_object = self.destination_client_object.agents.get(
+            destination_agent
+        )
         return self._destination_agent_object
 
     def destination_instance_object(self, workload):
         """Returns cvpysdk destination instance object"""
         destination_instance = INSTANCES[self._recovery_target.target_instance]
         self._destination_instance_object = self.destination_agent_object(workload).instances.get(
-            destination_instance)
+            destination_instance
+        )
         return self._destination_instance_object
 
     @property
@@ -891,16 +932,17 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        post_actions = self._properties['recoveryGroup'].get('postRecoveryActions', [])
+        post_actions = self._properties["recoveryGroup"].get("postRecoveryActions", [])
         return bool(post_actions)  # True if list is non-empty
-
 
     @property
     def autoscale_enabled(self):
         """Returns boolean if autoscale enabled or not"""
-        return self._properties['recoveryGroup']['useAutoScale']
+        return self._properties["recoveryGroup"]["useAutoScale"]
 
-    def _recover_entities(self, entity_ids: list, threat_scan: bool = False, win_defender_scan: bool = False) -> int:
+    def _recover_entities(
+        self, entity_ids: list, threat_scan: bool = False, win_defender_scan: bool = False
+    ) -> int:
         """Send a request to recover all entities with the specified IDs.
 
         This method initiates the recovery process for the provided entity IDs. Optionally, security scans
@@ -924,24 +966,32 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._RECOVER_URL, payload={
-            'recoveryGroup': {
-                'id': self.id
+        flag, response = self._cvpysdk_object.make_request(
+            "POST",
+            self._RECOVER_URL,
+            payload={
+                "recoveryGroup": {"id": self.id},
+                "entities": [{"id": e_id} for e_id in entity_ids],
+                "threatScan": {
+                    "enableThreatScan": threat_scan
+                    if not self.is_threatscan_enabled
+                    else self.is_threatscan_enabled,
+                    "enableWindowsDefenderScan": win_defender_scan
+                    if not self.is_windefender_enabled
+                    else self.is_windefender_enabled,
+                },
             },
-            'entities': [{'id': e_id} for e_id in entity_ids],
-            'threatScan': {
-                'enableThreatScan': threat_scan if not self.is_threatscan_enabled else self.is_threatscan_enabled,
-                'enableWindowsDefenderScan': win_defender_scan if not self.is_windefender_enabled else self.is_windefender_enabled
-            }
-        })
+        )
 
         if flag:
             try:
-                return response.json()['jobId']
+                return response.json()["jobId"]
             except (JSONDecodeError, KeyError):
-                raise SDKException('Response', '102', 'Job id not found in response')
+                raise SDKException("Response", "102", "Job id not found in response")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def get_threats_count(self) -> int:
         """Retrieve the total number of threats detected for the recovery group.
@@ -961,15 +1011,19 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUP_THREATS_COUNT)
+        flag, response = self._cvpysdk_object.make_request(
+            "GET", self._RECOVERY_GROUP_THREATS_COUNT
+        )
 
         if flag:
             try:
-                return response.json()['KPI'][0]["threatCount"]
+                return response.json()["KPI"][0]["threatCount"]
             except (JSONDecodeError, KeyError):
-                raise SDKException('Response', '102', 'Threat count not found in response')
+                raise SDKException("Response", "102", "Threat count not found in response")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def recover_all(self, threat_scan: bool = False, win_defender_scan: bool = False) -> int:
         """Initiate recovery for all entities in the recovery group.
@@ -994,10 +1048,13 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        eligible_entities = [entity['id'] for entity in self.entities if
-                             entity['recoveryStatus'] not in [RecoveryStatus.NOT_READY.value,
-                                                              RecoveryStatus.IN_PROGRESS.value] and
-                     (not win_defender_scan or (win_defender_scan and entity['osType'] == 0))]
+        eligible_entities = [
+            entity["id"]
+            for entity in self.entities
+            if entity["recoveryStatus"]
+            not in [RecoveryStatus.NOT_READY.value, RecoveryStatus.IN_PROGRESS.value]
+            and (not win_defender_scan or (win_defender_scan and entity["osType"] == 0))
+        ]
 
         return self._recover_entities(eligible_entities, threat_scan, win_defender_scan)
 
@@ -1030,15 +1087,17 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_GROUP_URL)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RECOVERY_GROUP_URL)
 
         if flag:
             try:
                 return response.json()
             except JSONDecodeError:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def delete(self) -> None:
         """Send a request to delete the replication group associated with this RecoveryGroup instance.
@@ -1057,15 +1116,17 @@ class RecoveryGroup:
         #ai-gen-doc
         """
 
-        flag, response = self._cvpysdk_object.make_request('DELETE', self._RECOVERY_GROUP_URL)
+        flag, response = self._cvpysdk_object.make_request("DELETE", self._RECOVERY_GROUP_URL)
 
         if flag:
             try:
                 return response.json()
             except JSONDecodeError:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     def get_entity_status(self) -> dict:
         """Retrieve the recovery status and readiness category for all entities in the recovery group.
@@ -1089,12 +1150,14 @@ class RecoveryGroup:
         """
         status_map = {}
         for entity in self.entities:
-            if 'name' not in entity:
+            if "name" not in entity:
                 continue  # Skip entities without a name
 
-            status_map[entity['name']] = {
-                'recoveryStatus': entity.get('recoveryStatus', None),
-                'recoveryStatusNotReadyCategory': entity.get('recoveryStatusNotReadyCategory', None)
+            status_map[entity["name"]] = {
+                "recoveryStatus": entity.get("recoveryStatus", None),
+                "recoveryStatusNotReadyCategory": entity.get(
+                    "recoveryStatusNotReadyCategory", None
+                ),
             }
         return status_map
 
@@ -1157,21 +1220,21 @@ class RecoveryGroup:
         group_id = self.id
 
         if not entity_ids:
-            raise SDKException('RecoveryGroup', '101', 'entity_ids cannot be empty')
+            raise SDKException("RecoveryGroup", "101", "entity_ids cannot be empty")
 
         payload = {
             "recoveryGroup": {"id": group_id},
-            "entities": [{"id": eid} for eid in entity_ids]
+            "entities": [{"id": eid} for eid in entity_ids],
         }
         flag, response = self._cvpysdk_object.make_request(
-            'POST',
-            self._commcell_object._services['CLEANUP_RECOVERY_GROUP'],
-            payload
+            "POST", self._commcell_object._services["CLEANUP_RECOVERY_GROUP"], payload
         )
         if flag:
             try:
-                return response.json()['jobId']
+                return response.json()["jobId"]
             except (JSONDecodeError, KeyError):
-                raise SDKException('Response', '102', 'Job id not found in response')
+                raise SDKException("Response", "102", "Job id not found in response")
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )

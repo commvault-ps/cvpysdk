@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -68,21 +66,18 @@ RecoveryTarget Attributes
     **no_of_vm**                -- Returns the no_of_vm hos
 
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from cvpysdk.exception import SDKException
 
 
 class RecoveryTargets:
-
-    """ Class for representing all the recovery targets"""
+    """Class for representing all the recovery targets"""
 
     def __init__(self, commcell_object):
         """Initialize object of the RecoveryTargets class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object)  --  instance of the Commcell class
 
         """
         self._commcell_object = commcell_object
@@ -90,7 +85,7 @@ class RecoveryTargets:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-        self._RECOVERY_TARGETS_API = self._services['GET_ALL_RECOVERY_TARGETS']
+        self._RECOVERY_TARGETS_API = self._services["GET_ALL_RECOVERY_TARGETS"]
 
         self._recovery_targets = None
         self.refresh()
@@ -98,66 +93,61 @@ class RecoveryTargets:
     def __str__(self):
         """Representation string consisting of all targets .
 
-            Returns:
-                str     -   string of all the targets
+        Returns:
+            str     -   string of all the targets
 
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'RecoveryTargets')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "RecoveryTargets")
 
         for index, recovery_target in enumerate(self._recovery_targets):
-            sub_str = '{:^5}\t{:20}\n'.format(
-                index + 1,
-                recovery_target
-            )
+            sub_str = f"{index + 1:^5}\t{recovery_target:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
 
-
     def _get_recovery_targets(self):
         """Gets all the recovery targets.
 
-            Returns:
-                dict - consists of all targets in the client
-                    {
-                         "target1_name": target1_id,
-                         "target2_name": target2_id
-                    }
+        Returns:
+            dict - consists of all targets in the client
+                {
+                     "target1_name": target1_id,
+                     "target2_name": target2_id
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGETS_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RECOVERY_TARGETS_API)
         if flag:
-            if response.json() and 'recoveryTargets' in response.json():
-
+            if response.json() and "recoveryTargets" in response.json():
                 recovery_target_dict = {}
-                for recoveryTarget in response.json()['recoveryTargets']:
-                    if recoveryTarget['applicationType'] != "CLEAN_ROOM":
-                        temp_name = recoveryTarget['name'].lower()
-                        recovery_target_dict[temp_name] = str(recoveryTarget['id'])
+                for recoveryTarget in response.json()["recoveryTargets"]:
+                    if recoveryTarget["applicationType"] != "CLEAN_ROOM":
+                        temp_name = recoveryTarget["name"].lower()
+                        recovery_target_dict[temp_name] = str(recoveryTarget["id"])
 
                 return recovery_target_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def all_targets(self):
         """Returns dict of all the targets.
 
-         Returns dict    -   consists of all targets
+        Returns dict    -   consists of all targets
 
-                {
-                    "target1_name": target1_id,
+               {
+                   "target1_name": target1_id,
 
-                    "target2_name": target2_id
-                }
+                   "target2_name": target2_id
+               }
 
         """
         return self._recovery_targets
@@ -165,48 +155,53 @@ class RecoveryTargets:
     def has_recovery_target(self, target_name):
         """Checks if a target is present in the commcell.
 
-            Args:
-                target_name (str)  --  name of the target
+        Args:
+            target_name (str)  --  name of the target
 
-            Returns:
-                bool - boolean output whether the target is present in commcell or not
+        Returns:
+            bool - boolean output whether the target is present in commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the target name argument is not string
+        Raises:
+            SDKException:
+                if type of the target name argument is not string
 
         """
         if not isinstance(target_name, str):
-            raise SDKException('Target', '101')
+            raise SDKException("Target", "101")
 
         return self._recovery_targets and target_name.lower() in self._recovery_targets
 
     def get(self, recovery_target_name):
         """Returns a target object.
 
-            Args:
-                recovery_target_name (str)  --  name of the target
+        Args:
+            recovery_target_name (str)  --  name of the target
 
-            Returns:
-                object - instance of the target class for the given target name
+        Returns:
+            object - instance of the target class for the given target name
 
-            Raises:
-                SDKException:
-                    if type of the target name argument is not string
+        Raises:
+            SDKException:
+                if type of the target name argument is not string
 
-                    if no target exists with the given name
+                if no target exists with the given name
 
         """
         if not isinstance(recovery_target_name, str):
-            raise SDKException('Target', '101')
+            raise SDKException("Target", "101")
         else:
             recovery_target_name = recovery_target_name.lower()
 
             if self.has_recovery_target(recovery_target_name):
                 return RecoveryTarget(
-                    self._commcell_object, recovery_target_name, self.all_targets[recovery_target_name])
+                    self._commcell_object,
+                    recovery_target_name,
+                    self.all_targets[recovery_target_name],
+                )
 
-            raise SDKException('RecoveryTarget', '102', 'No target exists with name: {0}'.format(recovery_target_name))
+            raise SDKException(
+                "RecoveryTarget", "102", f"No target exists with name: {recovery_target_name}"
+            )
 
     def refresh(self):
         """Refresh the recovery targets"""
@@ -214,18 +209,17 @@ class RecoveryTargets:
 
 
 class RecoveryTarget:
-
-    """ Class for a single recovery target selected, and to perform operations on that recovery target"""
+    """Class for a single recovery target selected, and to perform operations on that recovery target"""
 
     def __init__(self, commcell_object, recovery_target_name, recovery_target_id=None):
         """Initialize the instance of the RecoveryTarget class.
 
-            Args:
-                commcell_object   (object)    --  instance of the Commcell class
+        Args:
+            commcell_object   (object)    --  instance of the Commcell class
 
-                recovery_target_name      (str)       --  name of the target
+            recovery_target_name      (str)       --  name of the target
 
-                recovery_target_id        (str)       --  id of the target -- default: None
+            recovery_target_id        (str)       --  id of the target -- default: None
         """
         self._commcell_object = commcell_object
 
@@ -240,7 +234,9 @@ class RecoveryTarget:
         else:
             # Get the target id if target id is not provided
             self._recovery_target_id = self._get_recovery_target_id()
-        self._RECOVERY_TARGET_API = self._services['GET_RECOVERY_TARGET'] %self._recovery_target_id
+        self._RECOVERY_TARGET_API = (
+            self._services["GET_RECOVERY_TARGET"] % self._recovery_target_id
+        )
 
         self._recovery_target_properties = None
 
@@ -251,8 +247,8 @@ class RecoveryTarget:
         self._access_node_client_group = None
         self._users = []
         self._user_groups = []
-        self._vm_prefix = ''
-        self._vm_suffix = ''
+        self._vm_prefix = ""
+        self._vm_suffix = ""
 
         self._destination_host = None
         self._vm_storage_policy = None
@@ -293,8 +289,8 @@ class RecoveryTarget:
     def _get_recovery_target_id(self):
         """Gets the target id associated with this target.
 
-            Returns:
-                str - id associated with this target
+        Returns:
+            str - id associated with this target
 
         """
         target = RecoveryTargets(self._commcell_object)
@@ -316,103 +312,251 @@ class RecoveryTarget:
     def _get_recovery_target_properties(self):
         """Gets the target properties of this target.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET_API)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RECOVERY_TARGET_API)
         if flag:
-            if response.json() and 'entity' in response.json():
+            if response.json() and "entity" in response.json():
                 self._recovery_target_properties = response.json()
-                self._application_type = self._recovery_target_properties.get('entity', {}).get('applicationType')
-                self._destination_hypervisor = self._recovery_target_properties.get('entity', {}).get('destinationHypervisor', {}).get('name')
-                self._vm_suffix = self._recovery_target_properties.get('vmDisplayName', {}).get("suffix", "")
-                self._vm_prefix = self._recovery_target_properties.get('vmDisplayName', {}).get("prefix", "")
-                self._access_node = self._recovery_target_properties.get('accessNode', {}).get("name", "")
-                self._access_node_client_group = self._access_node if self._recovery_target_properties.get('accessNode', {}).get("type", "") == 'Group' else ''
-                self._users = self._recovery_target_properties.get('securityOptions', {}).get('users', [])
-                self._user_groups = self._recovery_target_properties.get('securityOptions', {}).get('userGroups', [])
+                self._application_type = self._recovery_target_properties.get("entity", {}).get(
+                    "applicationType"
+                )
+                self._destination_hypervisor = (
+                    self._recovery_target_properties.get("entity", {})
+                    .get("destinationHypervisor", {})
+                    .get("name")
+                )
+                self._vm_suffix = self._recovery_target_properties.get("vmDisplayName", {}).get(
+                    "suffix", ""
+                )
+                self._vm_prefix = self._recovery_target_properties.get("vmDisplayName", {}).get(
+                    "prefix", ""
+                )
+                self._access_node = self._recovery_target_properties.get("accessNode", {}).get(
+                    "name", ""
+                )
+                self._access_node_client_group = (
+                    self._access_node
+                    if self._recovery_target_properties.get("accessNode", {}).get("type", "")
+                    == "Group"
+                    else ""
+                )
+                self._users = self._recovery_target_properties.get("securityOptions", {}).get(
+                    "users", []
+                )
+                self._user_groups = self._recovery_target_properties.get(
+                    "securityOptions", {}
+                ).get("userGroups", [])
                 policy_type = self._recovery_target_properties["entity"].get("policyType", "")
                 self._set_policy_type(policy_type)
 
                 if self._policy_type == 1:
-                    self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('availabilityZone')
-                    self._volume_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('volumeType')
-                    self._encryption_key = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('encryptionKey', {}).get('name')
-                    self._encryption_key_id = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('encryptionKey', {}).get('id')
-                    self._iam_role_name = self._recovery_target_properties.get('destinationOptions', {}).get('iamRole', {}).get('name')
-                    self._iam_role_id = self._recovery_target_properties.get('destinationOptions', {}).get('iamRole', {}).get('id')
-                    self._destination_network = self._recovery_target_properties.get('networkOptions', {}).get('networkCard', {}).get('networkDisplayName')
-                    self._security_group = self._recovery_target_properties.get('securityOptions', {}).get('securityGroups', [{}])[0].get('name', '')
-                    self._instance_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('instanceTypes', ['Auto'])[0]
-                    expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
-                    expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
+                    self._availability_zone = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("availabilityZone")
+                    self._volume_type = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("volumeType")
+                    self._encryption_key = (
+                        self._recovery_target_properties.get("cloudDestinationOptions", {})
+                        .get("encryptionKey", {})
+                        .get("name")
+                    )
+                    self._encryption_key_id = (
+                        self._recovery_target_properties.get("cloudDestinationOptions", {})
+                        .get("encryptionKey", {})
+                        .get("id")
+                    )
+                    self._iam_role_name = (
+                        self._recovery_target_properties.get("destinationOptions", {})
+                        .get("iamRole", {})
+                        .get("name")
+                    )
+                    self._iam_role_id = (
+                        self._recovery_target_properties.get("destinationOptions", {})
+                        .get("iamRole", {})
+                        .get("id")
+                    )
+                    self._destination_network = (
+                        self._recovery_target_properties.get("networkOptions", {})
+                        .get("networkCard", {})
+                        .get("networkDisplayName")
+                    )
+                    self._security_group = (
+                        self._recovery_target_properties.get("securityOptions", {})
+                        .get("securityGroups", [{}])[0]
+                        .get("name", "")
+                    )
+                    self._instance_type = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("instanceTypes", ["Auto"])[0]
+                    expiry_hours = (
+                        self._recovery_target_properties.get("liveMountOptions", {})
+                        .get("expirationTime", {})
+                        .get("minutesRetainUntil", "")
+                    )
+                    expiry_days = (
+                        self._recovery_target_properties.get("liveMountOptions", {})
+                        .get("expirationTime", {})
+                        .get("daysRetainUntil", "")
+                    )
                     if expiry_hours:
-                        self._expiration_time = f'{expiry_hours} hours'
+                        self._expiration_time = f"{expiry_hours} hours"
                     elif expiry_days:
-                        self._expiration_time = f'{expiry_days} days'
-                    self._test_virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('cloudNetwork', {}).get('label')
-                    self._test_security_group = self._recovery_target_properties.get('securityOptions', {}).get('testSecurityGroups', [{}])[0].get('name', '')
-                    self._test_vm_size = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('vmInstanceType', 'Auto')
+                        self._expiration_time = f"{expiry_days} days"
+                    self._test_virtual_network = (
+                        self._recovery_target_properties.get("networkOptions", {})
+                        .get("cloudNetwork", {})
+                        .get("label")
+                    )
+                    self._test_security_group = (
+                        self._recovery_target_properties.get("securityOptions", {})
+                        .get("testSecurityGroups", [{}])[0]
+                        .get("name", "")
+                    )
+                    self._test_vm_size = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("vmInstanceType", "Auto")
 
                 elif self._policy_type == 2:
-                    self._vm_folder = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
-                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("networkNames")[0]
-                    self._destination_host = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
+                    self._vm_folder = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("dataStore", "")
+                    self._destination_network = (
+                        self._recovery_target_properties.get("networkOptions", {})
+                        .get("networkCard", {})
+                        .get("networkNames")[0]
+                    )
+                    self._destination_host = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("destinationHost", "")
                 elif self._policy_type == 7:
-                    self._resource_group = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
-                    self._region = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('region', {}).get('name')
-                    self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions',{}).get('availabilityZone')
-                    self._storage_account = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
+                    self._resource_group = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("destinationHost", "")
+                    self._region = (
+                        self._recovery_target_properties.get("cloudDestinationOptions", {})
+                        .get("region", {})
+                        .get("name")
+                    )
+                    self._availability_zone = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("availabilityZone")
+                    self._storage_account = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("dataStore", "")
 
-                    self._vm_size = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('vmInstanceType')
-                    self._disk_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('volumeType')
-                    self._virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('networkCard', {}).get('networkDisplayName')
-                    self._security_group = self._recovery_target_properties.get('securityOptions', {}).get('securityGroups', [{}])[0].get('name', '')
-                    self._create_public_ip = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('publicIP')
-                    self._restore_as_managed_vm = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('restoreAsManagedVM')
+                    self._vm_size = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("vmInstanceType")
+                    self._disk_type = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("volumeType")
+                    self._virtual_network = (
+                        self._recovery_target_properties.get("networkOptions", {})
+                        .get("networkCard", {})
+                        .get("networkDisplayName")
+                    )
+                    self._security_group = (
+                        self._recovery_target_properties.get("securityOptions", {})
+                        .get("securityGroups", [{}])[0]
+                        .get("name", "")
+                    )
+                    self._create_public_ip = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("publicIP")
+                    self._restore_as_managed_vm = self._recovery_target_properties.get(
+                        "cloudDestinationOptions", {}
+                    ).get("restoreAsManagedVM")
 
-                    expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
-                    expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
+                    expiry_hours = (
+                        self._recovery_target_properties.get("liveMountOptions", {})
+                        .get("expirationTime", {})
+                        .get("minutesRetainUntil", "")
+                    )
+                    expiry_days = (
+                        self._recovery_target_properties.get("liveMountOptions", {})
+                        .get("expirationTime", {})
+                        .get("daysRetainUntil", "")
+                    )
                     if expiry_hours:
-                        self._expiration_time = f'{expiry_hours} hours'
+                        self._expiration_time = f"{expiry_hours} hours"
                     elif expiry_days:
-                        self._expiration_time = f'{expiry_days} days'
-                    self._test_virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('cloudNetwork', {}).get('label')
-                    self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
+                        self._expiration_time = f"{expiry_days} days"
+                    self._test_virtual_network = (
+                        self._recovery_target_properties.get("networkOptions", {})
+                        .get("cloudNetwork", {})
+                        .get("label")
+                    )
+                    self._test_vm_size = (
+                        self._recovery_target_properties.get("amazonPolicy", {})
+                        .get("vmInstanceTypes", [{}])[0]
+                        .get("vmInstanceTypeName", "")
+                    )
                 elif self._policy_type == 13:
-                    self._destination_host = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
-                    self._datastore = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
-                    self._resource_pool = self._recovery_target_properties.get("destinationOptions", {}).get("resourcePoolPath", "")
-                    self._vm_folder = self._recovery_target_properties.get("destinationOptions", {}).get("vmFolder", "")
-                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
+                    self._destination_host = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("destinationHost", "")
+                    self._datastore = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("dataStore", "")
+                    self._resource_pool = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("resourcePoolPath", "")
+                    self._vm_folder = self._recovery_target_properties.get(
+                        "destinationOptions", {}
+                    ).get("vmFolder", "")
+                    self._destination_network = (
+                        self._recovery_target_properties.get("networkOptions", {})
+                        .get("networkCard", {})
+                        .get("destinationNetworks", [])
+                    )
 
-                    self._vm_storage_policy = self._recovery_target_properties.get('vmStoragePolicyName')
-                    expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
-                    expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
+                    self._vm_storage_policy = self._recovery_target_properties.get(
+                        "vmStoragePolicyName"
+                    )
+                    expiry_hours = (
+                        self._recovery_target_properties.get("liveMountOptions", {})
+                        .get("expirationTime", {})
+                        .get("minutesRetainUntil", "")
+                    )
+                    expiry_days = (
+                        self._recovery_target_properties.get("liveMountOptions", {})
+                        .get("expirationTime", {})
+                        .get("daysRetainUntil", "")
+                    )
                     if expiry_hours:
-                        self._expiration_time = f'{expiry_hours} hours'
+                        self._expiration_time = f"{expiry_hours} hours"
                     elif expiry_days:
-                        self._expiration_time = f'{expiry_days} days'
-                    if self._recovery_target_properties.get('mediaAgent', {}):
-                        self._failover_ma = self._recovery_target_properties['mediaAgent']['clientName']
+                        self._expiration_time = f"{expiry_days} days"
+                    if self._recovery_target_properties.get("mediaAgent", {}):
+                        self._failover_ma = self._recovery_target_properties["mediaAgent"][
+                            "clientName"
+                        ]
 
-                    self._isolated_network = self._recovery_target_properties.get("virtualLabOptions", {}).get("configureIsolatedNetwork")
+                    self._isolated_network = self._recovery_target_properties.get(
+                        "virtualLabOptions", {}
+                    ).get("configureIsolatedNetwork")
 
-                    self._no_of_cpu = self._recovery_target_properties.get('maxCores')
-                    self._no_of_vm = self._recovery_target_properties.get('maxVMQuota')
-                    self._iso_paths = [iso['isoPath'] for iso in
-                                       self._recovery_target_properties.get('isoInfo', [])]
-                    if self._recovery_target_properties.get('associatedClientGroup'):
-                        self._server_group = (self._recovery_target_properties["associatedClientGroup"]
-                                              ["clientGroupName"])
+                    self._no_of_cpu = self._recovery_target_properties.get("maxCores")
+                    self._no_of_vm = self._recovery_target_properties.get("maxVMQuota")
+                    self._iso_paths = [
+                        iso["isoPath"]
+                        for iso in self._recovery_target_properties.get("isoInfo", [])
+                    ]
+                    if self._recovery_target_properties.get("associatedClientGroup"):
+                        self._server_group = self._recovery_target_properties[
+                            "associatedClientGroup"
+                        ]["clientGroupName"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def recovery_target_id(self):
@@ -427,18 +571,18 @@ class RecoveryTarget:
     @property
     def policy_type(self):
         """Returns: (str) the policy type ID
-            1  - AWS
-            2  - Microsoft Hyper-V
-            7  - Azure
-            13 - VMware
+        1  - AWS
+        2  - Microsoft Hyper-V
+        7  - Azure
+        13 - VMware
         """
         return self._policy_type
 
     @property
     def application_type(self):
         """Returns: (str) the name of the application type
-            0 - Replication type
-            1 - Regular type
+        0 - Replication type
+        1 - Regular type
         """
         return self._application_type
 
@@ -460,7 +604,7 @@ class RecoveryTarget:
     @property
     def security_user_names(self):
         """Returns: list<str> the names of the users who are used for ownership of the hypervisor and VMs"""
-        return [user['userName'] for user in self._users]
+        return [user["userName"] for user in self._users]
 
     @property
     def vm_prefix(self):
@@ -505,7 +649,7 @@ class RecoveryTarget:
     @property
     def expiration_time(self):
         """Returns: (str) VMware/Azure: the expiration time of the test boot VM/test failover VM
-            eg: 4 hours or 3 days
+        eg: 4 hours or 3 days
         """
         return self._expiration_time
 

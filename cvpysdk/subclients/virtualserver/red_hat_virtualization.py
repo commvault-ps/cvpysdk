@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -41,14 +39,14 @@ VMWareVirtualServerSubclient:
 
 """
 
-from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
+from ..vssubclient import VirtualServerSubclient
 
 
 class RhevVirtualServerSubclient(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient Base class.
-       This represents a VMWare virtual server subclient,
-       and can perform restore operations on only that subclient.
+    This represents a VMWare virtual server subclient,
+    and can perform restore operations on only that subclient.
 
     """
 
@@ -60,69 +58,64 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        super(RhevVirtualServerSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
         self.diskExtension = ["none"]
 
-        self._disk_option = {
-            'Original': 0,
-            'Thick Lazy Zero': 1,
-            'Thin': 2,
-            'Thick Eager Zero': 3
-        }
+        self._disk_option = {"Original": 0, "Thick Lazy Zero": 1, "Thin": 2, "Thick Eager Zero": 3}
 
     def full_vm_restore_in_place(
-            self,
-            vm_to_restore=None,
-            overwrite=True,
-            power_on=True,
-            copy_precedence=0,
-            disk_option='Original',
-            proxy_client=None,
-            **kwargs):
+        self,
+        vm_to_restore=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        disk_option="Original",
+        proxy_client=None,
+        **kwargs,
+    ):
         """Restores the FULL Virtual machine specified in the input list
-            to the location same as the actual location of the VM in VCenter.
+        to the location same as the actual location of the VM in VCenter.
 
-            Args:
-                vm_to_restore         (list)        --  provide the VM name to restore
-                                                        default: None
+        Args:
+            vm_to_restore         (list)        --  provide the VM name to restore
+                                                    default: None
 
-                overwrite             (bool)        --  overwrite the existing VM
-                                                        default: True
+            overwrite             (bool)        --  overwrite the existing VM
+                                                    default: True
 
-                power_on              (bool)        --  power on the  restored VM
-                                                        default: True
+            power_on              (bool)        --  power on the  restored VM
+                                                    default: True
 
-                copy_precedence       (int)         --  copy precedence value
-                                                        default: 0
+            copy_precedence       (int)         --  copy precedence value
+                                                    default: 0
 
-                disk_option           (str)  --  disk provisioning for the restored vm
-                                                        Options for input are: 'Original',
-                                                        'Thick Lazy Zero', 'Thin',
-                                                        'Thick Eager Zero'
-                                                        default: Original
+            disk_option           (str)  --  disk provisioning for the restored vm
+                                                    Options for input are: 'Original',
+                                                    'Thick Lazy Zero', 'Thin',
+                                                    'Thick Eager Zero'
+                                                    default: Original
 
-                proxy_client          (str)  --  proxy client to be used for restore
-                                                        default: proxy added in subclient
+            proxy_client          (str)  --  proxy client to be used for restore
+                                                    default: proxy added in subclient
 
-                **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                     full_vm_restore_in_place
-                    eg:
-                    v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
 
@@ -130,15 +123,15 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         disk_option_value = self._disk_option[disk_option]
 
         if copy_precedence:
-            restore_option['copy_precedence_applicable'] = True
+            restore_option["copy_precedence_applicable"] = True
 
         if proxy_client is not None:
-            restore_option['client'] = proxy_client
+            restore_option["client"] = proxy_client
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -150,90 +143,88 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             unconditional_overwrite=overwrite,
             power_on=power_on,
             disk_option=disk_option_value,
-            copy_precedence=copy_precedence
+            copy_precedence=copy_precedence,
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        ovf_disk = {
-            "name": restore_option["vm_to_restore"][0]+".ovf",
-            "Datastore": ""
-        }
+        ovf_disk = {"name": restore_option["vm_to_restore"][0] + ".ovf", "Datastore": ""}
         # Add the new disk object to the existing disks list
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
-            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'].append(ovf_disk)
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "virtualServerRstOption"
+        ]["diskLevelVMRestoreOption"]["advancedRestoreOptions"][0]["disks"].append(ovf_disk)
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
-            self,
-            vm_to_restore=None,
-            restored_vm_name=None,
-            destination_client=None,
-            cluster=None,
-            storage=None,
-            overwrite=True,
-            power_on=True,
-            copy_precedence=0,
-            disk_option='Original',
-            proxy_client=None,
-            **kwargs
+        self,
+        vm_to_restore=None,
+        restored_vm_name=None,
+        destination_client=None,
+        cluster=None,
+        storage=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        disk_option="Original",
+        proxy_client=None,
+        **kwargs,
     ):
         """Restores the FULL Virtual machine specified in the input list
-            to the provided vcenter client along with the ESX and the datastores.
-            If the provided client name is none then it restores the Full Virtual
-            Machine to the source client and corresponding ESX and datastore.
+        to the provided vcenter client along with the ESX and the datastores.
+        If the provided client name is none then it restores the Full Virtual
+        Machine to the source client and corresponding ESX and datastore.
 
-            Args:
-                vm_to_restore            (str)    --  VM that is to be restored
+        Args:
+            vm_to_restore            (str)    --  VM that is to be restored
 
-                restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                      'delete' is appended to the original vm name
+            restored_vm_name         (str)    --  new name of vm. If nothing is passed,
+                                                  'delete' is appended to the original vm name
 
-                destination_client   (str) --  name of the RHEV client where the VM
-                                                      should be restored.
+            destination_client   (str) --  name of the RHEV client where the VM
+                                                  should be restored.
 
-                cluster           (str)    --  destination cluster host. Restores to the source
-                                                      VM cluster if this value is not specified
+            cluster           (str)    --  destination cluster host. Restores to the source
+                                                  VM cluster if this value is not specified
 
-                storage         (str)   --  datastore where the restored VM should be
-                                                      located. Restores to the source VM datastore
-                                                      if this value is not specified
+            storage         (str)   --  datastore where the restored VM should be
+                                                  located. Restores to the source VM datastore
+                                                  if this value is not specified
 
-                overwrite               (bool)    --  overwrite the existing VM
-                                                      default: True
+            overwrite               (bool)    --  overwrite the existing VM
+                                                  default: True
 
-                power_on                (bool)    --  power on the  restored VM
-                                                      default: True
+            power_on                (bool)    --  power on the  restored VM
+                                                  default: True
 
-                copy_precedence          (int)    --  copy precedence value
-                                                      default: 0
+            copy_precedence          (int)    --  copy precedence value
+                                                  default: 0
 
-                disk_option       (str)    --  disk provisioning for the  restored vm
-                                                      Options for input are: 'Original',
-                                                      'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
-                                                      default: 'Original'
+            disk_option       (str)    --  disk provisioning for the  restored vm
+                                                  Options for input are: 'Original',
+                                                  'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
+                                                  default: 'Original'
 
-                proxy_client      (str)    --  destination proxy client
+            proxy_client      (str)    --  destination proxy client
 
-                **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                     full_vm_restore_out_of_place
-                    eg:
-                    v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         """
 
@@ -241,21 +232,20 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         if copy_precedence:
-            restore_option['copy_precedence_applicable'] = True
+            restore_option["copy_precedence_applicable"] = True
 
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option['client'] = proxy_client
+            restore_option["client"] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, str) or
-                   isinstance(restored_vm_name, str)):
-                raise SDKException('Subclient', '101')
-            restore_option['restore_new_name'] = restored_vm_name
+            if not (isinstance(vm_to_restore, str) or isinstance(restored_vm_name, str)):
+                raise SDKException("Subclient", "101")
+            restore_option["restore_new_name"] = restored_vm_name
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -267,21 +257,22 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             datastore=storage,
             esx_host=cluster,
             cluster=cluster,
-            esx_server='',
+            esx_server="",
             unconditional_overwrite=overwrite,
             power_on=power_on,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             disk_option=self._disk_option[disk_option],
             copy_precedence=copy_precedence,
             volume_level_restore=1,
-            source_item=[]
+            source_item=[],
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)
         ovf_disk = {
-            "name": restore_option["vm_to_restore"][0]+".ovf",
-            "Datastore": restore_option["datastore"]
+            "name": restore_option["vm_to_restore"][0] + ".ovf",
+            "Datastore": restore_option["datastore"],
         }
         # Add the new disk object to the existing disks list
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
-            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'].append(ovf_disk)
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "virtualServerRstOption"
+        ]["diskLevelVMRestoreOption"]["advancedRestoreOptions"][0]["disks"].append(ovf_disk)
         return self._process_restore_response(request_json)

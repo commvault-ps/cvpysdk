@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -72,12 +70,11 @@ InformixInstance instance Attributes
 
 """
 
-from __future__ import unicode_literals
-
-from ..instance import Instance
-from ..exception import SDKException
-
 from typing import TYPE_CHECKING
+
+from ..exception import SDKException
+from ..instance import Instance
+
 if TYPE_CHECKING:
     from ..agent import Agent
     from ..job import Job
@@ -105,7 +102,7 @@ class InformixInstance(Instance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int) -> None:
         """Initialize an InformixInstance object.
 
         Args:
@@ -119,7 +116,7 @@ class InformixInstance(Instance):
         self._destination_restore_json = None
         self.informix_restore_json = None
         self._informix_instance = None
-        super(InformixInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     @property
     def informix_directory(self) -> str:
@@ -130,7 +127,7 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance'].get('informixDir', None)
+        return self._properties["informixInstance"].get("informixDir", None)
 
     @property
     def informix_user(self) -> str:
@@ -146,7 +143,7 @@ class InformixInstance(Instance):
         if self.credentials:
             return self._commcell_object.credentials.get(self.credentials).credential_user_name
 
-        return self._properties['informixInstance']['informixUser'].get('userName', None)
+        return self._properties["informixInstance"]["informixUser"].get("userName", None)
 
     @property
     def credentials(self) -> str:
@@ -157,8 +154,11 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties[
-            'informixInstance']['informixUser'].get('savedCredential', {}).get('credentialName', None)
+        return (
+            self._properties["informixInstance"]["informixUser"]
+            .get("savedCredential", {})
+            .get("credentialName", None)
+        )
 
     @property
     def on_config_file(self) -> str:
@@ -169,7 +169,7 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance'].get('onConfigFile', None)
+        return self._properties["informixInstance"].get("onConfigFile", None)
 
     @property
     def sql_host_file(self) -> str:
@@ -180,7 +180,7 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance'].get('sqlHostfile', None)
+        return self._properties["informixInstance"].get("sqlHostfile", None)
 
     @property
     def log_storage_policy_name(self) -> str:
@@ -191,8 +191,9 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance']['informixStorageDevice'][
-            'logBackupStoragePolicy'].get('storagePolicyName', None)
+        return self._properties["informixInstance"]["informixStorageDevice"][
+            "logBackupStoragePolicy"
+        ].get("storagePolicyName", None)
 
     @log_storage_policy_name.setter
     def log_storage_policy_name(self, storage_policy: str) -> None:
@@ -203,14 +204,10 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        content = self._informix_instance['informixStorageDevice']
-        content['logBackupStoragePolicy'] = {
-            'storagePolicyName': storage_policy
-        }
-        content = {
-            'informixStorageDevice': content
-        }
-        self._set_instance_properties('_informix_instance', content)
+        content = self._informix_instance["informixStorageDevice"]
+        content["logBackupStoragePolicy"] = {"storagePolicyName": storage_policy}
+        content = {"informixStorageDevice": content}
+        self._set_instance_properties("_informix_instance", content)
 
     @property
     def log_storage_policy_id(self) -> int:
@@ -221,8 +218,9 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance']['informixStorageDevice'][
-            'logBackupStoragePolicy'].get('storagePolicyId', None)
+        return self._properties["informixInstance"]["informixStorageDevice"][
+            "logBackupStoragePolicy"
+        ].get("storagePolicyId", None)
 
     @property
     def command_line_sp_name(self) -> str:
@@ -233,8 +231,9 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance']['informixStorageDevice'][
-            'commandLineStoragePolicy'].get('storagePolicyName', None)
+        return self._properties["informixInstance"]["informixStorageDevice"][
+            "commandLineStoragePolicy"
+        ].get("storagePolicyName", None)
 
     @command_line_sp_name.setter
     def command_line_sp_name(self, storage_policy: str) -> None:
@@ -245,14 +244,10 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        content = self._informix_instance['informixStorageDevice']
-        content['commandLineStoragePolicy'] = {
-            'storagePolicyName': storage_policy
-        }
-        content = {
-            'informixStorageDevice': content
-        }
-        self._set_instance_properties('_informix_instance', content)
+        content = self._informix_instance["informixStorageDevice"]
+        content["commandLineStoragePolicy"] = {"storagePolicyName": storage_policy}
+        content = {"informixStorageDevice": content}
+        self._set_instance_properties("_informix_instance", content)
 
     @property
     def command_line_sp_id(self) -> int:
@@ -263,8 +258,9 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        return self._properties['informixInstance']['informixStorageDevice'][
-            'commandLineStoragePolicy'].get('storagePolicyId', None)
+        return self._properties["informixInstance"]["informixStorageDevice"][
+            "commandLineStoragePolicy"
+        ].get("storagePolicyId", None)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of the current Informix instance.
@@ -277,8 +273,8 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        super(InformixInstance, self)._get_instance_properties()
-        self._informix_instance = self._properties['informixInstance']
+        super()._get_instance_properties()
+        self._informix_instance = self._properties["informixInstance"]
 
     def _get_instance_properties_json(self) -> dict:
         """Retrieve all properties related to the Informix instance as a dictionary.
@@ -289,11 +285,10 @@ class InformixInstance(Instance):
         #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":
-                {
-                    "instance": self._instance,
-                    "informixInstance": self._informix_instance
-                }
+            "instanceProperties": {
+                "instance": self._instance,
+                "informixInstance": self._informix_instance,
+            }
         }
         return instance_json
 
@@ -311,7 +306,7 @@ class InformixInstance(Instance):
 
         #ai-gen-doc
         """
-        rest_json = super(InformixInstance, self)._restore_json(**kwargs)
+        rest_json = super()._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
@@ -322,12 +317,14 @@ class InformixInstance(Instance):
             restore_option.update(kwargs)
 
         self._restore_informix_option_json(restore_option)
-        if restore_option.get('out_of_place'):
+        if restore_option.get("out_of_place"):
             self._restore_destination_option_json(restore_option)
-            rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "destination"] = self._destination_restore_json
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-            "informixOption"] = self.informix_restore_json
+            rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = (
+                self._destination_restore_json
+            )
+        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["informixOption"] = (
+            self.informix_restore_json
+        )
         return rest_json
 
     def restore_in_place(
@@ -339,8 +336,8 @@ class InformixInstance(Instance):
         logical_restore: bool = True,
         restore_option_type: str = "NORMAL",
         to_time: str = None,
-        upto_log: int = None
-    ) -> 'Job':
+        upto_log: int = None,
+    ) -> "Job":
         """Restore Informix data or log files in-place to their original locations.
 
         This method initiates an in-place restore operation for the specified Informix dbspaces or log files.
@@ -375,21 +372,14 @@ class InformixInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(path, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         if not path:
-            raise SDKException('Instance', '104')
+            raise SDKException("Instance", "104")
 
-        restore_types_dict = {
-            "ENTIRE INSTANCE":1,
-            "WHOLE SYSTEM":2
-        }
+        restore_types_dict = {"ENTIRE INSTANCE": 1, "WHOLE SYSTEM": 2}
 
-        restore_option_type_dict = {
-            "NORMAL": 0,
-            "POINT_IN_TIME": 1,
-            "UPTO_LOGICAL_LOG": 2
-        }
+        restore_option_type_dict = {"NORMAL": 0, "POINT_IN_TIME": 1, "UPTO_LOGICAL_LOG": 2}
 
         request_json = self._restore_json(
             paths=path,
@@ -399,7 +389,8 @@ class InformixInstance(Instance):
             logical_restore=logical_restore,
             restore_option_type=restore_option_type_dict[restore_option_type.upper()],
             to_time=to_time,
-            upto_log=upto_log)
+            upto_log=upto_log,
+        )
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
@@ -410,8 +401,8 @@ class InformixInstance(Instance):
         restore_type: str = "ENTIRE INSTANCE",
         copy_precedence: int = None,
         physical_restore: bool = True,
-        logical_restore: bool = True
-    ) -> 'Job':
+        logical_restore: bool = True,
+    ) -> "Job":
         """Restore Informix data or log files to a different client or instance (out-of-place restore).
 
         This method initiates an out-of-place restore operation for the specified Informix dbspaces,
@@ -449,15 +440,12 @@ class InformixInstance(Instance):
         #ai-gen-doc
         """
         if not isinstance(path, list):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
 
         if not path:
-            raise SDKException('Instance', '104')
+            raise SDKException("Instance", "104")
 
-        restore_types_dict = {
-            "ENTIRE INSTANCE": 1,
-            "WHOLE SYSTEM": 2
-        }
+        restore_types_dict = {"ENTIRE INSTANCE": 1, "WHOLE SYSTEM": 2}
 
         request_json = self._restore_json(
             paths=path,
@@ -467,7 +455,8 @@ class InformixInstance(Instance):
             logical_restore=logical_restore,
             dest_client_name=dest_client_name,
             dest_instance_name=dest_instance_name,
-            out_of_place=True)
+            out_of_place=True,
+        )
         return self._process_restore_response(request_json)
 
     def _restore_informix_option_json(self, value: dict) -> None:
@@ -480,13 +469,13 @@ class InformixInstance(Instance):
         """
 
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         restore_time_dict = {}
-        if value.get('to_time'):
-            restore_time_dict['timeValue'] = value.get('to_time')
+        if value.get("to_time"):
+            restore_time_dict["timeValue"] = value.get("to_time")
         last_log_number = 0
-        if value.get('upto_log'):
-            last_log_number = value.get('upto_log')
+        if value.get("upto_log"):
+            last_log_number = value.get("upto_log")
         self.informix_restore_json = {
             "restoreOnConfigFile": True,
             "informixRestoreOptionType": value.get("restore_option_type", 0),
@@ -497,9 +486,7 @@ class InformixInstance(Instance):
             "physical": value.get("physical_restore", ""),
             "logical": value.get("logical_restore", ""),
             "restoreTime": restore_time_dict,
-            "timeZone": {
-                "TimeZoneName": "(UTC) Coordinated Universal Time"
-            }
+            "timeZone": {"TimeZoneName": "(UTC) Coordinated Universal Time"},
         }
 
     def _restore_destination_option_json(self, value: dict) -> None:
@@ -512,17 +499,19 @@ class InformixInstance(Instance):
         """
         instance_id = ""
         if value.get("dest_client_name") and value.get("dest_instance_name"):
-            instance_id = self._commcell_object.clients.get(
-                value.get("dest_client_name")).agents.get(
-                    'informix').instances.all_instances[value.get("dest_instance_name")]
+            instance_id = (
+                self._commcell_object.clients.get(value.get("dest_client_name"))
+                .agents.get("informix")
+                .instances.all_instances[value.get("dest_instance_name")]
+            )
         if not isinstance(value, dict):
-            raise SDKException('Instance', '101')
+            raise SDKException("Instance", "101")
         self._destination_restore_json = {
             "destClient": {
                 "clientName": value.get("dest_client_name", ""),
             },
             "destinationInstance": {
                 "instanceName": value.get("dest_instance_name", ""),
-                "instanceId": int(instance_id)
-            }
+                "instanceId": int(instance_id),
+            },
         }

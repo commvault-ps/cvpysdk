@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,4 +14,4 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-__author__ = 'Commvault Systems Inc.'
+__author__ = "Commvault Systems Inc."

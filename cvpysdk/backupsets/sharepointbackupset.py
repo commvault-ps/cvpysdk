@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -30,10 +28,10 @@ SPBackupset:
 
 """
 
-from __future__ import unicode_literals
+from typing import Any, Dict, Optional
 
 from ..backupset import Backupset
-from typing import Optional, Dict, Any
+
 
 class SharepointBackupset(Backupset):
     """
@@ -90,8 +88,9 @@ class SharepointBackupset(Backupset):
         """
         backupset_properties = self.properties
         azure_storage_account_information = None
-        accounts = backupset_properties["sharepointBackupSet"]["spOffice365BackupSetProp"]["serviceAccounts"]\
-            ["accounts"]
+        accounts = backupset_properties["sharepointBackupSet"]["spOffice365BackupSetProp"][
+            "serviceAccounts"
+        ]["accounts"]
         for account in accounts:
             if account.get("serviceType", -1) == 52:
                 azure_storage_account_information = account
@@ -127,9 +126,12 @@ class SharepointBackupset(Backupset):
         #ai-gen-doc
         """
         backupset_properties = self.properties
-        backupset_properties["sharepointBackupSet"]["spOffice365BackupSetProp"]["serviceAccounts"]["accounts"].append(
-            azure_storage_account_information)
+        backupset_properties["sharepointBackupSet"]["spOffice365BackupSetProp"]["serviceAccounts"][
+            "accounts"
+        ].append(azure_storage_account_information)
         backupset_properties["commonBackupSet"]["isDefaultBackupSet"] = False
-        backupset_properties["sharepointBackupSet"]["spOffice365BackupSetProp"]["additionalCredentials"] = {}
+        backupset_properties["sharepointBackupSet"]["spOffice365BackupSetProp"][
+            "additionalCredentials"
+        ] = {}
         backupset_properties["backupSetEntity"]["flags"] = {}
         self.update_properties(backupset_properties)

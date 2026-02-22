@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -96,16 +94,15 @@ SchedulePolicy:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from typing import TYPE_CHECKING
 
 from ..exception import SDKException
-from .schedule_options import ScheduleOptions
 from ..schedules import SchedulePattern
+from .schedule_options import ScheduleOptions
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
+
 
 class OperationType:
     """Operation Type for schedule policy associations and appGroups
@@ -118,9 +115,10 @@ class OperationType:
     Usage:
         >>> operation = OperationType.INCLUDE
     """
-    INCLUDE = 'include'
-    EXCLUDE = 'exclude'
-    DELETE = 'deleted'
+
+    INCLUDE = "include"
+    EXCLUDE = "exclude"
+    DELETE = "deleted"
 
 
 class SchedulePolicies:
@@ -140,9 +138,8 @@ class SchedulePolicies:
     """
 
     policy_to_subtask_map = {
-
-        'Data Protection': [2, 2],  # [subtaskType, OperationType]
-        'Auxiliary Copy': [1, 4003]
+        "Data Protection": [2, 2],  # [subtaskType, OperationType]
+        "Auxiliary Copy": [1, 4003],
     }
 
     policy_types = {
@@ -157,7 +154,7 @@ class SchedulePolicies:
         "Network Throttle": 8,
     }
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize object of the SchedulePolicies class.
 
         Args:
@@ -167,8 +164,8 @@ class SchedulePolicies:
             object: instance of the SchedulePolicies class
         """
         self._commcell_object = commcell_object
-        self._POLICY = self._commcell_object._services['SCHEDULE_POLICY']
-        self._CREATE_POLICY = self._commcell_object._services['CREATE_UPDATE_SCHEDULE_POLICY']
+        self._POLICY = self._commcell_object._services["SCHEDULE_POLICY"]
+        self._CREATE_POLICY = self._commcell_object._services["CREATE_UPDATE_SCHEDULE_POLICY"]
         self._policies = None
         self.refresh()
 
@@ -178,11 +175,10 @@ class SchedulePolicies:
         Returns:
             str: string of all the schedule policies associated with the commcell
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format(
-            'S. No.', 'Schedule Policy')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Schedule Policy")
 
         for index, policy in enumerate(self._policies):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, policy)
+            sub_str = f"{index + 1:^5}\t{policy:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -207,29 +203,27 @@ class SchedulePolicies:
 
                 if response is not success
         """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._POLICY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._POLICY)
 
         if flag:
             if response and response.json():
-                if response.json() and 'taskDetail' in response.json():
-                    policies = response.json()['taskDetail']
+                if response.json() and "taskDetail" in response.json():
+                    policies = response.json()["taskDetail"]
                     policies_dict = {}
 
                     for policy in policies:
-                        temp_name = policy['task']['taskName'].lower()
-                        temp_id = str(policy['task']['taskId']).lower()
+                        temp_name = policy["task"]["taskName"].lower()
+                        temp_id = str(policy["task"]["taskId"]).lower()
                         policies_dict[temp_name] = temp_id
 
                     return policies_dict
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 return {}
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_schedule_policies(self) -> dict:
@@ -258,7 +252,7 @@ class SchedulePolicies:
                 if type of the schedule policy name argument is not string
         """
         if not isinstance(policy_name, str):
-            raise SDKException('Storage', '101')
+            raise SDKException("Storage", "101")
 
         return self._policies and policy_name.lower() in self._policies
 
@@ -275,7 +269,7 @@ class SchedulePolicies:
 
         _backup_subtask = {
             "subTaskType": SchedulePolicies.policy_to_subtask_map[policy_type][0],
-            "operationType": SchedulePolicies.policy_to_subtask_map[policy_type][1]
+            "operationType": SchedulePolicies.policy_to_subtask_map[policy_type][1],
         }
 
         return _backup_subtask
@@ -296,30 +290,33 @@ class SchedulePolicies:
         Returns:
             dict: The schedule json for the given schedule options and pattern
         """
-        schedule_options = ScheduleOptions(ScheduleOptions.policy_to_options_map[policy_type]
-                                           ).options_json(schedule_dict.get('options', None))
+        schedule_options = ScheduleOptions(
+            ScheduleOptions.policy_to_options_map[policy_type]
+        ).options_json(schedule_dict.get("options", None))
         sub_task = SchedulePolicies.subtasks_json(policy_type)
-        sub_task['subTaskName'] = schedule_dict.get('name', '')
-        sub_task = {
-            "subTaskOperation": 1,
-            "subTask": sub_task,
-            "options": schedule_options
-        }
+        sub_task["subTaskName"] = schedule_dict.get("name", "")
+        sub_task = {"subTaskOperation": 1, "subTask": sub_task, "options": schedule_options}
 
-        freq_type = schedule_dict.get('pattern', {}).get('freq_type', 'daily')
+        freq_type = schedule_dict.get("pattern", {}).get("freq_type", "daily")
 
         try:
             schedule_dict["pattern"]["freq_type"] = freq_type
         except KeyError:
             schedule_dict["pattern"] = {"freq_type": freq_type}
 
-        task_json = SchedulePattern().create_schedule({'taskInfo':
-                                                       {'subTasks': [sub_task]
-                                                        }
-                                                       }, schedule_dict.get('pattern'))
-        return task_json.get('taskInfo').get('subTasks')[0]
+        task_json = SchedulePattern().create_schedule(
+            {"taskInfo": {"subTasks": [sub_task]}}, schedule_dict.get("pattern")
+        )
+        return task_json.get("taskInfo").get("subTasks")[0]
 
-    def add(self, name: str, policy_type: str, associations: list, schedules: list, agent_type: list = None) -> 'SchedulePolicy':
+    def add(
+        self,
+        name: str,
+        policy_type: str,
+        associations: list,
+        schedules: list,
+        agent_type: list = None,
+    ) -> "SchedulePolicy":
         """Adds a schedule policy.
 
         Args:
@@ -392,37 +389,34 @@ class SchedulePolicies:
         """
 
         if not isinstance(schedules, list):
-            raise SDKException('Schedules', '102',
-                               'schedules should be a list')
+            raise SDKException("Schedules", "102", "schedules should be a list")
 
         sub_tasks = []
         for schedule in schedules:
             sub_tasks.append(self.schedule_json(policy_type, schedule))
 
         schedule_policy = {
-            "taskInfo":
-                {
-                    "associations": associations,
-                    "task":
-                        {
-                            "description": "", "taskType": 4, "initiatedFrom": 2,
-                            "policyType": self.policy_types[policy_type],
-                            "taskName": name,
-                            "securityAssociations": {},
-                            "taskSecurity": {},
-                            "alert": {"alertName": ""},
-                            "taskFlags": {"isEdgeDrive": False, "disabled": False}
-                        },
-                    "appGroup":
-                        {
-                            "appGroups": agent_type if agent_type else [],
-                        },
-                    "subTasks": sub_tasks
-
-                }
+            "taskInfo": {
+                "associations": associations,
+                "task": {
+                    "description": "",
+                    "taskType": 4,
+                    "initiatedFrom": 2,
+                    "policyType": self.policy_types[policy_type],
+                    "taskName": name,
+                    "securityAssociations": {},
+                    "taskSecurity": {},
+                    "alert": {"alertName": ""},
+                    "taskFlags": {"isEdgeDrive": False, "disabled": False},
+                },
+                "appGroup": {
+                    "appGroups": agent_type if agent_type else [],
+                },
+                "subTasks": sub_tasks,
+            }
         }
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._CREATE_POLICY, schedule_policy
+            "POST", self._CREATE_POLICY, schedule_policy
         )
         output = self._process_schedule_policy_response(flag, response)
         self.refresh()
@@ -431,9 +425,9 @@ class SchedulePolicies:
             return self.get(name)
 
         o_str = 'Failed to update properties of Schedule\nError: "{0}"'
-        raise SDKException('Schedules', '102', o_str.format(output[2]))
+        raise SDKException("Schedules", "102", o_str.format(output[2]))
 
-    def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -> 'SchedulePolicy':
+    def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -> "SchedulePolicy":
         """Returns a schedule policy object of the specified schedule policy name.
 
         Args:
@@ -454,23 +448,19 @@ class SchedulePolicies:
         """
 
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         if schedule_policy_id and not isinstance(schedule_policy_id, int):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(
-            schedule_policy_name)
+        schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
         if self.has_policy(schedule_policy_name):
-            return SchedulePolicy(
-                self._commcell_object, schedule_policy_name, schedule_policy_id
-            )
+            return SchedulePolicy(self._commcell_object, schedule_policy_name, schedule_policy_id)
 
         raise SDKException(
-            'Schedules',
-            '102',
-            'No Schedule Policy exists with name: {0}'.format(schedule_policy_name))
+            "Schedules", "102", f"No Schedule Policy exists with name: {schedule_policy_name}"
+        )
 
     def delete(self, schedule_policy_name: str) -> None:
         """Deletes the specified schedule policy name.
@@ -488,53 +478,42 @@ class SchedulePolicies:
         """
 
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(
-            schedule_policy_name)
+        schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
 
         if schedule_policy_id:
             request_json = {
-                "TMMsg_TaskOperationReq":
-                    {
-                        "opType": 3,
-                        "taskEntities":
-                            [
-                                {
-                                    "_type_": 69,
-                                    "taskId": schedule_policy_id
-                                }
-                            ]
-                    }
+                "TMMsg_TaskOperationReq": {
+                    "opType": 3,
+                    "taskEntities": [{"_type_": 69, "taskId": schedule_policy_id}],
+                }
             }
 
-            modify_schedule = self._commcell_object._services['EXECUTE_QCOMMAND']
+            modify_schedule = self._commcell_object._services["EXECUTE_QCOMMAND"]
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', modify_schedule, request_json)
+                "POST", modify_schedule, request_json
+            )
 
             if flag:
                 if response.json():
-                    if 'errorCode' in response.json():
-                        if response.json()['errorCode'] == 0:
+                    if "errorCode" in response.json():
+                        if response.json()["errorCode"] == 0:
                             self.refresh()
                         else:
-                            raise SDKException(
-                                'Schedules', '102', response.json()['errorMessage'])
+                            raise SDKException("Schedules", "102", response.json()["errorMessage"])
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                response_string = self._commcell_object._update_response_(
-                    response.text)
-                exception_message = 'Failed to delete schedule policy\nError: "{0}"'.format(
-                    response_string)
+                response_string = self._commcell_object._update_response_(response.text)
+                exception_message = f'Failed to delete schedule policy\nError: "{response_string}"'
 
-                raise SDKException('Schedules', '102', exception_message)
+                raise SDKException("Schedules", "102", exception_message)
         else:
             raise SDKException(
-                'Schedules', '102', 'No schedule policy exists for: {0}'.format(
-                    schedule_policy_id)
+                "Schedules", "102", f"No schedule policy exists for: {schedule_policy_id}"
             )
 
     def refresh(self) -> None:
@@ -561,8 +540,8 @@ class SchedulePolicies:
                         return True, "0", ""
 
                 elif "errorCode" in response.json():
-                    error_code = str(response.json()['errorCode'])
-                    error_message = response.json()['errorMessage']
+                    error_code = str(response.json()["errorCode"])
+                    error_message = response.json()["errorMessage"]
 
                     if error_code == "0":
                         return True, "0", ""
@@ -572,13 +551,12 @@ class SchedulePolicies:
                     else:
                         return False, error_code, ""
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
 
 class SchedulePolicy:
@@ -602,7 +580,9 @@ class SchedulePolicy:
         schedule_policy = SchedulePolicy(commcell_object, "MySchedulePolicy", schedule_policy_id=123)
     """
 
-    def __init__(self, commcell_obj: 'Commcell', schedule_policy_name: str, schedule_policy_id: int = None) -> None:
+    def __init__(
+        self, commcell_obj: "Commcell", schedule_policy_name: str, schedule_policy_id: int = None
+    ) -> None:
         """Initialise the Schedule Policy class instance.
 
         Args:
@@ -630,10 +610,12 @@ class SchedulePolicy:
         else:
             self.schedule_policy_id = self._get_schedule_policy_id()
 
-        self._SCHEDULE_POLICY = self._commcell_object._services['GET_SCHEDULE_POLICY'] % (
-            self.schedule_policy_id)
+        self._SCHEDULE_POLICY = self._commcell_object._services["GET_SCHEDULE_POLICY"] % (
+            self.schedule_policy_id
+        )
         self._MODIFY_SCHEDULE_POLICY = self._commcell_object._services[
-            'CREATE_UPDATE_SCHEDULE_POLICY']
+            "CREATE_UPDATE_SCHEDULE_POLICY"
+        ]
 
         self._associations = []
         self._subtasks = []
@@ -665,11 +647,9 @@ class SchedulePolicy:
         Usage:
             policy_type = sch_pol_obj.policy_type
         """
-        return (
-            list(
-                SchedulePolicies.policy_types.keys())[
-                list(
-                    SchedulePolicies.policy_types.values()).index(self._task_json['policyType'])])
+        return list(SchedulePolicies.policy_types.keys())[
+            list(SchedulePolicies.policy_types.values()).index(self._task_json["policyType"])
+        ]
 
     def _get_schedule_policy_properties(self) -> dict:
         """Gets the properties of this Schedule Policy.
@@ -687,37 +667,39 @@ class SchedulePolicy:
             schedule_policy_properties = self._get_schedule_policy_properties()
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._SCHEDULE_POLICY)
+            "GET", self._SCHEDULE_POLICY
+        )
 
         if flag:
-            if response.json() and 'taskInfo' in response.json():
-                _task_info = response.json()['taskInfo']
+            if response.json() and "taskInfo" in response.json():
+                _task_info = response.json()["taskInfo"]
 
-                if 'associations' in _task_info:
-                    self._associations = _task_info['associations']
+                if "associations" in _task_info:
+                    self._associations = _task_info["associations"]
 
-                if 'task' in _task_info:
-                    self._task_json = _task_info['task']
+                if "task" in _task_info:
+                    self._task_json = _task_info["task"]
 
-                self._app_groups = _task_info['appGroup'].get('appGroups')
+                self._app_groups = _task_info["appGroup"].get("appGroups")
 
-                self._subtasks = _task_info.get('subTasks', [])
+                self._subtasks = _task_info.get("subTasks", [])
                 self._all_schedules = []
 
                 for subtask in self._subtasks:
-                    self._all_schedules.append({
-                        "schedule_name": subtask["subTask"].get("subTaskName", ''),
-                        "schedule_id": subtask["subTask"]["subTaskId"]
-                    })
+                    self._all_schedules.append(
+                        {
+                            "schedule_name": subtask["subTask"].get("subTaskName", ""),
+                            "schedule_id": subtask["subTask"]["subTaskId"],
+                        }
+                    )
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
-    def update_associations(self, associations: list, operation_type: 'OperationType') -> None:
+    def update_associations(self, associations: list, operation_type: "OperationType") -> None:
         """Updates the schedule policy associations
 
         Args:
@@ -730,9 +712,7 @@ class SchedulePolicy:
         """
 
         for app_group in associations:
-            app_group["flags"] = {
-                operation_type: True
-            }
+            app_group["flags"] = {operation_type: True}
         self._associations = associations
         self._modify_schedule_policy_properties()
 
@@ -776,30 +756,27 @@ class SchedulePolicy:
 
         for subtask in self._subtasks:
             if subtask["subTask"]["subTaskId"] == schedule_id:
+                if "pattern" in subtask:
+                    existing_pattern = subtask["pattern"]
 
-                if 'pattern' in subtask:
-                    existing_pattern = subtask['pattern']
+                if "options" in subtask:
+                    _options = subtask["options"]
+                    if "commonOpts" in _options:
+                        if "automaticSchedulePattern" in _options["commonOpts"]:
+                            existing_pattern = _options["commonOpts"]["automaticSchedulePattern"]
 
-                if 'options' in subtask:
-                    _options = subtask['options']
-                    if 'commonOpts' in _options:
-                        if 'automaticSchedulePattern' in _options["commonOpts"]:
-                            existing_pattern = _options[
-                                "commonOpts"]['automaticSchedulePattern']
-
-                    if 'backupOpts' in _options:
-                        if 'dataOpt' in _options['backupOpts']:
+                    if "backupOpts" in _options:
+                        if "dataOpt" in _options["backupOpts"]:
                             if isinstance(existing_pattern, dict):
-                                _data_opt = _options['backupOpts']['dataOpt']
+                                _data_opt = _options["backupOpts"]["dataOpt"]
                                 existing_pattern.update(_data_opt)
                 break
 
-        task_json = SchedulePattern(existing_pattern).create_schedule({'taskInfo':
-                                                                       {'subTasks': self._subtasks
-                                                                        }
-                                                                       }, pattern_dict, schedule_id)
+        task_json = SchedulePattern(existing_pattern).create_schedule(
+            {"taskInfo": {"subTasks": self._subtasks}}, pattern_dict, schedule_id
+        )
 
-        self._subtasks = task_json.get('taskInfo').get('subTasks')
+        self._subtasks = task_json.get("taskInfo").get("subTasks")
 
     @staticmethod
     def get_option(option_dict: dict, option: str) -> dict:
@@ -852,14 +829,14 @@ class SchedulePolicy:
         option_allowed = ScheduleOptions.policy_to_options_map[self.policy_type]
         for subtask in self._subtasks:
             if subtask["subTask"]["subTaskId"] == schedule_id:
-                if 'options' in subtask:
-                    existing_options = self.get_option(
-                        subtask['options'], option_allowed)
+                if "options" in subtask:
+                    existing_options = self.get_option(subtask["options"], option_allowed)
                     if not existing_options:
-                        raise SDKException('Schedules', '104')
+                        raise SDKException("Schedules", "104")
 
-                    subtask['options'] = ScheduleOptions(
-                        option_allowed, existing_options).options_json(options)
+                    subtask["options"] = ScheduleOptions(
+                        option_allowed, existing_options
+                    ).options_json(options)
                     self._subtasks[self._subtasks.index(subtask)] = subtask
                     break
 
@@ -885,16 +862,13 @@ class SchedulePolicy:
             schedule = sch_pol_obj.get_schedule(schedule_id=10)
         """
         if not schedule_name and not schedule_id:
-            raise SDKException(
-                'Schedules',
-                '102',
-                'Either Schedule Name or Schedule Id is needed')
+            raise SDKException("Schedules", "102", "Either Schedule Name or Schedule Id is needed")
 
         if schedule_name and not isinstance(schedule_name, str):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         if schedule_id and not isinstance(schedule_id, int):
-            raise SDKException('Schedules', '102')
+            raise SDKException("Schedules", "102")
 
         if schedule_name:
             search_dict = ("subTaskName", schedule_name)
@@ -938,13 +912,14 @@ class SchedulePolicy:
                 sch_pol_obj.add_schedule({'pattern':{'freq_type': 'monthly'}})
 
         """
-        sub_task = SchedulePolicies.schedule_json(
-            self.policy_type, schedule_dict)
+        sub_task = SchedulePolicies.schedule_json(self.policy_type, schedule_dict)
         sub_task["subTaskOperation"] = 2
         self._subtasks.append(sub_task)
         self._modify_schedule_policy_properties()
 
-    def modify_schedule(self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None) -> None:
+    def modify_schedule(
+        self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None
+    ) -> None:
         """Modifies the schedule with the given schedule json inputs for the given schedule id or name
 
         Args:
@@ -984,11 +959,11 @@ class SchedulePolicy:
         """
         sub_task = self.get_schedule(schedule_id, schedule_name)
         if not sub_task:
-            raise SDKException('Schedules', '105')
-        if 'pattern' in schedule_json:
-            self._update_pattern(sub_task["subTask"]["subTaskId"], schedule_json.get('pattern'))
-        if 'options' in schedule_json:
-            self._update_option(sub_task["subTask"]["subTaskId"], schedule_json.get('options'))
+            raise SDKException("Schedules", "105")
+        if "pattern" in schedule_json:
+            self._update_pattern(sub_task["subTask"]["subTaskId"], schedule_json.get("pattern"))
+        if "options" in schedule_json:
+            self._update_option(sub_task["subTask"]["subTaskId"], schedule_json.get("options"))
         self._modify_schedule_policy_properties()
 
     def delete_schedule(self, schedule_id: int = None, schedule_name: str = None) -> None:
@@ -1006,12 +981,12 @@ class SchedulePolicy:
         """
         sub_task = self.get_schedule(schedule_id, schedule_name)
         if not sub_task:
-            raise SDKException('Schedules', '105')
+            raise SDKException("Schedules", "105")
         sub_task["subTaskOperation"] = 3
         self._subtasks[self._subtasks.index(sub_task)] = sub_task
         self._modify_schedule_policy_properties()
 
-    def update_app_groups(self, app_groups: list, operation_type: 'OperationType') -> None:
+    def update_app_groups(self, app_groups: list, operation_type: "OperationType") -> None:
         """Update the appgroups for the provided schedule policy
 
         Args:
@@ -1032,9 +1007,7 @@ class SchedulePolicy:
             sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)
         """
         for app_group in app_groups:
-            app_group["flags"] = {
-                operation_type: True
-            }
+            app_group["flags"] = {operation_type: True}
         self._app_groups = app_groups
         self._modify_schedule_policy_properties()
 
@@ -1045,21 +1018,19 @@ class SchedulePolicy:
             SDKException: If modification of the schedule policy failed.
         """
         request_json = {
-            'taskInfo':
-                {
-                    'taskOperation': 1,
-                    'associations': self._associations,
-                    'task': self._task_json,
-                    "appGroup":
-                        {
-                            "appGroups": self._app_groups if self._app_groups else [],
-                        },
-                    'subTasks': self._subtasks
-                }
+            "taskInfo": {
+                "taskOperation": 1,
+                "associations": self._associations,
+                "task": self._task_json,
+                "appGroup": {
+                    "appGroups": self._app_groups if self._app_groups else [],
+                },
+                "subTasks": self._subtasks,
+            }
         }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._MODIFY_SCHEDULE_POLICY, request_json
+            "PUT", self._MODIFY_SCHEDULE_POLICY, request_json
         )
         output = self._process_schedule_policy_update_response(flag, response)
         self.refresh()
@@ -1068,7 +1039,7 @@ class SchedulePolicy:
             return
 
         o_str = 'Failed to update properties of Schedule Policy\nError: "{0}"'
-        raise SDKException('Schedules', '102', o_str.format(output[2]))
+        raise SDKException("Schedules", "102", o_str.format(output[2]))
 
     def enable(self) -> None:
         """Enable a schedule policy.
@@ -1084,33 +1055,34 @@ class SchedulePolicy:
         Usage:
             sch_pol_obj.enable()
         """
-        enable_request = self._commcell_object._services['ENABLE_SCHEDULE']
-        request_text = "taskId={0}".format(self.schedule_policy_id)
+        enable_request = self._commcell_object._services["ENABLE_SCHEDULE"]
+        request_text = f"taskId={self.schedule_policy_id}"
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', enable_request, request_text)
+            "POST", enable_request, request_text
+        )
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
                 if error_code == "0":
                     return
                 else:
-                    error_message = 'Failed to enable Schedule Policy'
+                    error_message = "Failed to enable Schedule Policy"
 
-                    if 'errorMessage' in response.json():
+                    if "errorMessage" in response.json():
                         error_message = "{0}\nError: {1}".format(
-                            error_message, response.json()['errorMessage'])
+                            error_message, response.json()["errorMessage"]
+                        )
 
-                    raise SDKException('Schedules', '102', error_message)
+                    raise SDKException("Schedules", "102", error_message)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def disable(self) -> None:
         """Disable a Schedule Policy.
@@ -1126,36 +1098,39 @@ class SchedulePolicy:
         Usage:
             sch_pol_obj.disable()
         """
-        disable_request = self._commcell_object._services['DISABLE_SCHEDULE']
+        disable_request = self._commcell_object._services["DISABLE_SCHEDULE"]
 
-        request_text = "taskId={0}".format(self.schedule_policy_id)
+        request_text = f"taskId={self.schedule_policy_id}"
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', disable_request, request_text)
+            "POST", disable_request, request_text
+        )
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
+                error_code = str(response.json()["errorCode"])
 
                 if error_code == "0":
                     return
                 else:
-                    error_message = 'Failed to disable Schedule Policy'
+                    error_message = "Failed to disable Schedule Policy"
 
-                    if 'errorMessage' in response.json():
+                    if "errorMessage" in response.json():
                         error_message = "{0}\nError: {1}".format(
-                            error_message, response.json()['errorMessage'])
+                            error_message, response.json()["errorMessage"]
+                        )
 
-                    raise SDKException('Schedules', '102', error_message)
+                    raise SDKException("Schedules", "102", error_message)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
-    def _process_schedule_policy_update_response(self, flag: bool, response: dict) -> tuple[bool, str, str]:
+    def _process_schedule_policy_update_response(
+        self, flag: bool, response: dict
+    ) -> tuple[bool, str, str]:
         """Processes the response received post update request.
 
         Args:
@@ -1184,8 +1159,8 @@ class SchedulePolicy:
                         return True, "0", ""
 
                 elif "errorCode" in response.json():
-                    error_code = str(response.json()['errorCode'])
-                    error_message = response.json()['errorMessage']
+                    error_code = str(response.json()["errorCode"])
+                    error_message = response.json()["errorMessage"]
 
                     if error_code == "0":
                         return True, "0", ""
@@ -1195,13 +1170,12 @@ class SchedulePolicy:
                     else:
                         return False, error_code, ""
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Refresh the properties of the Schedule Policy.

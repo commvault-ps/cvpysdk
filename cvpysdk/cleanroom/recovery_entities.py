@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -21,8 +20,8 @@ from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING
 
-from cvpysdk.exception import SDKException
 from cvpysdk.cleanroom.recoveryjob import RecoveryJob
+from cvpysdk.exception import SDKException
 
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
@@ -37,18 +36,13 @@ WORKLOADS = {
     6: "TEAMS",
     7: "DYNAMICS_365",
     8: "VIRTUAL SERVER",
-    9: "FILE SYSTEM"
+    9: "FILE SYSTEM",
 }
 
-INSTANCES = {
-    'AZURE_V2': 'Azure Resource Manager',
-    'AMAZON': 'Amazon Web Services'
-}
+INSTANCES = {"AZURE_V2": "Azure Resource Manager", "AMAZON": "Amazon Web Services"}
 
-RecoveryDestinationVendor = {
-    7 : 'azure',
-    1 : 'amazon'
-}
+RecoveryDestinationVendor = {7: "azure", 1: "amazon"}
+
 
 class RecoveryStatus(Enum):
     """
@@ -65,6 +59,7 @@ class RecoveryStatus(Enum):
 
     #ai-gen-doc
     """
+
     NO_STATUS = 0
     NONE = 0
     NOT_READY = 1
@@ -77,6 +72,7 @@ class RecoveryStatus(Enum):
     MARK_AS_FAILED = 8
     CLEANUP_FAILED = 9
     RECOVERED_WITH_THREATS = 10
+
 
 class RecoveryReadiness(Enum):
     """
@@ -94,10 +90,12 @@ class RecoveryReadiness(Enum):
 
     #ai-gen-doc
     """
+
     NO_STATUS = 0
     NONE = 0
     NOT_READY = 1
     READY = 2
+
 
 class RecoveryStatusNotReadyCategory(Enum):
     """
@@ -114,6 +112,7 @@ class RecoveryStatusNotReadyCategory(Enum):
 
     #ai-gen-doc
     """
+
     NONE = 0
     INVALID_VM_NAME = 1
     INVALID_COPY = 2
@@ -124,6 +123,7 @@ class RecoveryStatusNotReadyCategory(Enum):
     LAST_BACKUP_NOT_READY = 64
     MANAGED_IDENTITY_ENABLED = 128
     AUTOSCALING_DISABLED = 256
+
 
 class ValidationStatus(Enum):
     """
@@ -141,11 +141,13 @@ class ValidationStatus(Enum):
 
     #ai-gen-doc
     """
+
     NONE = 0
     IN_PROGRESS = 1
     SUCCESS = 2
     FAILED = 3
     WARNING = 4
+
 
 class RecoveryEntities:
     """
@@ -163,7 +165,7 @@ class RecoveryEntities:
     #ai-gen-doc
     """
 
-    def __init__(self, recovery_group: object, commcell_object: 'Commcell') -> None:
+    def __init__(self, recovery_group: object, commcell_object: "Commcell") -> None:
         """Initialize the RecoveryEntities manager for a specific recovery group.
 
         Args:
@@ -177,8 +179,8 @@ class RecoveryEntities:
 
         #ai-gen-doc
         """
-        self._recovery_group_object = recovery_group # gets the recovery group object
-        self._commcell_object = commcell_object # gets commcell object
+        self._recovery_group_object = recovery_group  # gets the recovery group object
+        self._commcell_object = commcell_object  # gets commcell object
 
     def get(self, entity_id: int) -> object:
         """Retrieve the recovery entity object for the specified entity ID.
@@ -203,13 +205,17 @@ class RecoveryEntities:
         entity_id = int(entity_id)
         if self._recovery_group_object.recovery_group_name:
             if self.entity_exists(entity_id):
-                return RecoveryEntity(self._commcell_object, self._recovery_group_object,
-                                      entity_id)
-            raise SDKException('RecoveryEnity', '102',
-                               'No recovery entity exists with id: {0}'.format(entity_id))
-        raise SDKException('RecoveryGroup', '102',
-                               'Recovery group name is empty: {0}'.format(self._recovery_group_object.recovery_group_name))
-
+                return RecoveryEntity(
+                    self._commcell_object, self._recovery_group_object, entity_id
+                )
+            raise SDKException(
+                "RecoveryEnity", "102", f"No recovery entity exists with id: {entity_id}"
+            )
+        raise SDKException(
+            "RecoveryGroup",
+            "102",
+            f"Recovery group name is empty: {self._recovery_group_object.recovery_group_name}",
+        )
 
     def entity_exists(self, entity_id: int) -> bool:
         """Check if a recovery entity with the specified ID exists.
@@ -228,9 +234,10 @@ class RecoveryEntities:
         #ai-gen-doc
         """
         for entity in self._recovery_group_object.entities:
-            if entity['id'] == entity_id:
+            if entity["id"] == entity_id:
                 return True
         return False
+
 
 class RecoveryEntity:
     """
@@ -255,7 +262,9 @@ class RecoveryEntity:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', recovery_group_object: object, recovery_entity_id: int) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", recovery_group_object: object, recovery_entity_id: int
+    ) -> None:
         """Initialize a new instance of the RecoveryEntity class.
 
         Args:
@@ -273,8 +282,10 @@ class RecoveryEntity:
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
-        self._recovery_group =recovery_group_object
-        self._recovery_target = self._commcell_object.cleanroom_targets.get(self._recovery_group.target_name)
+        self._recovery_group = recovery_group_object
+        self._recovery_target = self._commcell_object.cleanroom_targets.get(
+            self._recovery_group.target_name
+        )
         self._recovery_entity_id = recovery_entity_id
 
         self._source_vm = None
@@ -301,9 +312,10 @@ class RecoveryEntity:
 
         self._properties = None
 
-        self._RECOVERY_ENTITY_URL = commcell_object._services['RECOVERY_ENTITY'] % self._recovery_entity_id
+        self._RECOVERY_ENTITY_URL = (
+            commcell_object._services["RECOVERY_ENTITY"] % self._recovery_entity_id
+        )
         self.refresh()
-
 
     def _get_entity_recovery_options(self) -> dict:
         """Retrieve the recovery options for the recovery entity.
@@ -324,7 +336,7 @@ class RecoveryEntity:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_ENTITY_URL)
+        flag, response = self._cvpysdk_object.make_request("GET", self._RECOVERY_ENTITY_URL)
 
         if flag:
             try:
@@ -332,74 +344,97 @@ class RecoveryEntity:
                 response_data = response.json()
 
                 if not response_data:
-                    raise SDKException('Response', '102', 'Response contains no data.')
+                    raise SDKException("Response", "102", "Response contains no data.")
 
                 # If data is present, process the response
                 self._properties = response_data
-                self._source_vm = self._properties['name']
-                self._destination_vm = self._properties['destinationName']
-                self._parent = self._properties.get('vmGroup', '')
-                self._destination_proxy_client_object = 'Automatic' if self._recovery_target.access_node == 'Automatic' else self._commcell_object.clients.get(
-                self._recovery_target.access_node['name']) if self._recovery_target.access_node[
-                                                                      'type'] == 'Client' else None
+                self._source_vm = self._properties["name"]
+                self._destination_vm = self._properties["destinationName"]
+                self._parent = self._properties.get("vmGroup", "")
+                self._destination_proxy_client_object = (
+                    "Automatic"
+                    if self._recovery_target.access_node == "Automatic"
+                    else self._commcell_object.clients.get(
+                        self._recovery_target.access_node["name"]
+                    )
+                    if self._recovery_target.access_node["type"] == "Client"
+                    else None
+                )
 
-                if self._properties['recoveryStatusNotReadyCategory'] != 0:
+                if self._properties["recoveryStatusNotReadyCategory"] != 0:
                     """In this case readiness status is Not Ready"""
-                    self._recovery_readiness_status = RecoveryStatusNotReadyCategory(self._properties['recoveryStatusNotReadyCategory']).name
+                    self._recovery_readiness_status = RecoveryStatusNotReadyCategory(
+                        self._properties["recoveryStatusNotReadyCategory"]
+                    ).name
                 else:
                     self._recovery_readiness_status = RecoveryReadiness.READY.name
-                self._last_recovery_job = self._properties['lastRecoveryJobId']
+                self._last_recovery_job = self._properties["lastRecoveryJobId"]
                 if self._last_recovery_job != 0:
                     recovery_job = RecoveryJob(self._commcell_object, self._last_recovery_job)
                     phases = recovery_job.get_phases().get(self._source_vm, [])
                     for phase in phases:
-                        if phase.get('phase_name').name == 'RESTORE_VM' and phase.get('job_id'):
-                            self._last_restore_job = phase.get('job_id')
-                self._recovery_status = RecoveryStatus(self._properties['recoveryStatus']).name
-                self._validation_status = ValidationStatus(self._properties['validationStatus']).name
+                        if phase.get("phase_name").name == "RESTORE_VM" and phase.get("job_id"):
+                            self._last_restore_job = phase.get("job_id")
+                self._recovery_status = RecoveryStatus(self._properties["recoveryStatus"]).name
+                self._validation_status = ValidationStatus(
+                    self._properties["validationStatus"]
+                ).name
                 # validation results are available for only threat scan/windows defender enabled recovery jobs
-                if 'validationResults' in self._properties.keys():
-                    validation_results = self._properties.get('validationResults', {})
+                if "validationResults" in self._properties.keys():
+                    validation_results = self._properties.get("validationResults", {})
                     self._validation_results = {
-                        'output': validation_results[0].get('output'),
-                        'failureReason': validation_results[0].get('failureReason'),
-                        'name': validation_results[0].get('name'),
-                        'validationStatus':validation_results[0].get('validationStatus'),
-                        'threatInfo': validation_results[0].get('threatInfo')
+                        "output": validation_results[0].get("output"),
+                        "failureReason": validation_results[0].get("failureReason"),
+                        "name": validation_results[0].get("name"),
+                        "validationStatus": validation_results[0].get("validationStatus"),
+                        "threatInfo": validation_results[0].get("threatInfo"),
                     }
                 else:
                     pass
-                recovery_point_details = self._properties.get('recoveryPointDetails', {})
+                recovery_point_details = self._properties.get("recoveryPointDetails", {})
                 self._recovery_point = {
-                        'entityRecoveryPointCategory': recovery_point_details.get('entityRecoveryPointCategory'),
-                        'entityRecoveryPoint': recovery_point_details.get('entityRecoveryPoint'),
-                        'inheritedFrom': recovery_point_details.get('inheritedFrom')
-                    }
-                self._workload = WORKLOADS[self._properties['workload']]
-                self._source_client = self._properties['client']['name']
-                self._source_agent = WORKLOADS[self._properties['workload']]
-                self._source_instance = self._properties['instance']['name']
-                self._source_subclient = self._properties['vmGroup']['name']
+                    "entityRecoveryPointCategory": recovery_point_details.get(
+                        "entityRecoveryPointCategory"
+                    ),
+                    "entityRecoveryPoint": recovery_point_details.get("entityRecoveryPoint"),
+                    "inheritedFrom": recovery_point_details.get("inheritedFrom"),
+                }
+                self._workload = WORKLOADS[self._properties["workload"]]
+                self._source_client = self._properties["client"]["name"]
+                self._source_agent = WORKLOADS[self._properties["workload"]]
+                self._source_instance = self._properties["instance"]["name"]
+                self._source_subclient = self._properties["vmGroup"]["name"]
                 self._destination_client = self._recovery_target.destination_hypervisor
-                self._destination_agent = WORKLOADS[self._properties['workload']]
+                self._destination_agent = WORKLOADS[self._properties["workload"]]
                 self._destination_instance = INSTANCES[self._recovery_target.target_instance]
                 """Returns a dict of all entities restore options"""
                 self._recovery_config_dict = {
-                     self._properties['name']: self._properties['recoveryConfiguration']['configuration'][RecoveryDestinationVendor[self._recovery_target.policy_type]]
+                    self._properties["name"]: self._properties["recoveryConfiguration"][
+                        "configuration"
+                    ][RecoveryDestinationVendor[self._recovery_target.policy_type]]
                 }
-                self._recovery_image = self._properties.get('recoveryConfiguration', {}).get('imageDetails', {}).get('vmTemplate', {}).get('name')
+                self._recovery_image = (
+                    self._properties.get("recoveryConfiguration", {})
+                    .get("imageDetails", {})
+                    .get("vmTemplate", {})
+                    .get("name")
+                )
 
             except JSONDecodeError:
-                raise SDKException('Response', '101', 'Failed to decode JSON from the response.')
+                raise SDKException("Response", "101", "Failed to decode JSON from the response.")
             except KeyError as e:
-                raise SDKException('Response', '101', f'Missing expected key in the response: {str(e)}')
+                raise SDKException(
+                    "Response", "101", f"Missing expected key in the response: {str(e)}"
+                )
 
         # If the request was unsuccessful, raise an exception
         else:
-            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException(
+                "Response", "101", self._commcell_object._update_response_(response.text)
+            )
 
     @property
-    def commcell(self) -> 'Commcell':
+    def commcell(self) -> "Commcell":
         """Get the Commcell object associated with this RecoveryEntity.
 
         Returns:
@@ -686,7 +721,6 @@ class RecoveryEntity:
         """
         return self._recovery_image
 
-
     @property
     def check_entity_id(self) -> bool:
         """Check if the recovery group exists and contains the specified entity.
@@ -702,7 +736,7 @@ class RecoveryEntity:
         #ai-gen-doc
         """
         if self._recovery_group.recovery_group_name is not None:
-            if self._properties['id'] == self._recovery_entity_id:
+            if self._properties["id"] == self._recovery_entity_id:
                 return True
             else:
                 return False
@@ -747,7 +781,7 @@ class RecoveryEntity:
     def source_instance(self) -> str:
         """Get the source instance type for the recovery entity.
 
-        This property returns the type of the source instance, such as 'Azure', 'AWS', etc., 
+        This property returns the type of the source instance, such as 'Azure', 'AWS', etc.,
         associated with the recovery entity.
 
         Returns:
@@ -835,7 +869,7 @@ class RecoveryEntity:
     def refresh(self) -> None:
         """Reload the properties of the live sync entity.
 
-        This method updates the internal state of the RecoveryEntity instance to reflect 
+        This method updates the internal state of the RecoveryEntity instance to reflect
         the latest properties and configuration from the source system.
 
         Example:

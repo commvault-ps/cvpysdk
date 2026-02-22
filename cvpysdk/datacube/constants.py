@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -56,62 +54,44 @@ class IndexServerConstants:
     CLOUD_ID = "cloudID"
     ROLES = "version"
     HOST_NAME = "hostName"
-    CLOUD_NAME = 'internalCloudName'
-    CLIENT_NAME = 'clientName'
-    CI_SERVER_URL = 'cIServerURL'
-    TYPE = 'type'
-    BASE_PORT = 'basePort'
-    CLIENT_ID = 'clientId'
-    SERVER_TYPE = 'serverType'
-    INDEX_SERVER_CLIENT_ID = 'indexServerClientId'
+    CLOUD_NAME = "internalCloudName"
+    CLIENT_NAME = "clientName"
+    CI_SERVER_URL = "cIServerURL"
+    TYPE = "type"
+    BASE_PORT = "basePort"
+    CLIENT_ID = "clientId"
+    SERVER_TYPE = "serverType"
+    INDEX_SERVER_CLIENT_ID = "indexServerClientId"
 
-    FSINDEX = 'fsindex_'
-    MULTINODE = '_multinode'
+    FSINDEX = "fsindex_"
+    MULTINODE = "_multinode"
 
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
 
-    DEFAULT_JVM_MAX_MEMORY = '8191'
-    DEFAULT_SOLR_PORT = '20000'
+    DEFAULT_JVM_MAX_MEMORY = "8191"
+    DEFAULT_SOLR_PORT = "20000"
 
-    SOLR_PORT_META_INFO = {
-        "name": "PORTNO",
-        "value": DEFAULT_SOLR_PORT
-    }
-    SOLR_JVM_META_INFO = {
-        "name": "JVMMAXMEMORY",
-        "value": DEFAULT_JVM_MAX_MEMORY
-    }
+    SOLR_PORT_META_INFO = {"name": "PORTNO", "value": DEFAULT_SOLR_PORT}
+    SOLR_JVM_META_INFO = {"name": "JVMMAXMEMORY", "value": DEFAULT_JVM_MAX_MEMORY}
 
-    UPDATE_ADD_ROLE = {
-        "roleName": "",
-        "operationType": OPERATION_ADD}
+    UPDATE_ADD_ROLE = {"roleName": "", "operationType": OPERATION_ADD}
 
     REQUEST_JSON = {
         "opType": OPERATION_ADD,
         "type": 1,
         "configureNodes": True,
-        "solrCloudInfo": {
-            "roles": []
-        },
+        "solrCloudInfo": {"roles": []},
         "cloudNodes": [],
         "cloudInfoEntity": {},
-        "cloudMetaInfos": []
-
+        "cloudMetaInfos": [],
     }
 
     PRUNE_REQUEST_JSON = {
         "forceDelete": False,
         "datasourceId": 0,
-        "collectionProperty": {
-            "nameValues": [
-                {
-                    "name": "PruneAllDataSources",
-                    "value": "true"
-                }
-            ]
-        }
+        "collectionProperty": {"nameValues": [{"name": "PruneAllDataSources", "value": "true"}]},
     }
 
 

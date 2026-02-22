@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -43,7 +41,7 @@ TwoFactorAuthentication Instance Attributes
                                     only if user group level tfa is enabled
 """
 
-from typing import Union, Optional, List, Dict, Any
+from typing import Any, Optional, Union
 
 from ..exception import SDKException
 
@@ -66,7 +64,9 @@ class TwoFactorAuthentication:
         >>> tfa = TwoFactorAuthentication(commcell)
     """
 
-    def __init__(self, commcell_object: object, organization_id: Optional[Union[int, str]] = None) -> None:
+    def __init__(
+        self, commcell_object: object, organization_id: Optional[Union[int, str]] = None
+    ) -> None:
         """
         Initializes TwoFactorAuthentication class object
 
@@ -94,7 +94,7 @@ class TwoFactorAuthentication:
             if isinstance(organization_id, (int, str)):
                 self._org_id = organization_id
             else:
-                raise SDKException('Security', '101')
+                raise SDKException("Security", "101")
         self.refresh()
 
     def refresh(self) -> None:
@@ -125,38 +125,41 @@ class TwoFactorAuthentication:
         Usage:
             >>> tfa._get_tfa_info()
         """
-        url = self._services['TFA']
+        url = self._services["TFA"]
 
         if self._org_id:
-            url = self._services['ORG_TFA'] % self._org_id
+            url = self._services["ORG_TFA"] % self._org_id
 
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', url
-        )
+        flag, response = self._cvpysdk_object.make_request("GET", url)
 
         if flag:
-            if response.json() and 'twoFactorAuthenticationInfo' in response.json():
-                info = response.json().get('twoFactorAuthenticationInfo')
+            if response.json() and "twoFactorAuthenticationInfo" in response.json():
+                info = response.json().get("twoFactorAuthenticationInfo")
 
-                if 'error' in response.json() and 'errorCode' in response.json().get('error'):
-                    if response.json().get('error').get('errorCode') != 0:
-                        error_msg = response.json().get('error').get('errorCode').get('errorString')
-                        raise SDKException('Security',
-                                           '102',
-                                           'Failed to get the tfa info. \nError {0}'.format(error_msg))
+                if "error" in response.json() and "errorCode" in response.json().get("error"):
+                    if response.json().get("error").get("errorCode") != 0:
+                        error_msg = (
+                            response.json().get("error").get("errorCode").get("errorString")
+                        )
+                        raise SDKException(
+                            "Security", "102", f"Failed to get the tfa info. \nError {error_msg}"
+                        )
 
-                if 'mode' in info:
-                    if info.get('mode') == 0:
+                if "mode" in info:
+                    if info.get("mode") == 0:
                         self._tfa_status, self._tfa_enabled_user_groups = False, []
-                    if info.get('mode') in (1, 2):
-                        self._tfa_status, self._tfa_enabled_user_groups = True, info.get('userGroups', [])
+                    if info.get("mode") in (1, 2):
+                        self._tfa_status, self._tfa_enabled_user_groups = (
+                            True,
+                            info.get("userGroups", []),
+                        )
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _process_response(self, flag: int, response: Any) -> None:
         """
@@ -176,22 +179,23 @@ class TwoFactorAuthentication:
         if flag:
             if response.json():
                 response_json = {}
-                if 'response' in response.json():
-                    response_json = response.json()['response'][0]
-                if 'error' in response.json():
-                    response_json = response.json().get('error')
-                if response_json.get('errorCode') != 0:
-                    error_msg = response_json.get('errorString')
-                    raise SDKException('Security',
-                                       '102',
-                                       'Failed to get the two factor authentication info.'
-                                       ' \nError {0}'.format(error_msg))
+                if "response" in response.json():
+                    response_json = response.json()["response"][0]
+                if "error" in response.json():
+                    response_json = response.json().get("error")
+                if response_json.get("errorCode") != 0:
+                    error_msg = response_json.get("errorString")
+                    raise SDKException(
+                        "Security",
+                        "102",
+                        f"Failed to get the two factor authentication info. \nError {error_msg}",
+                    )
                 self.refresh()
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def disable_tfa(self, otp: str = None) -> None:
         """
@@ -208,21 +212,24 @@ class TwoFactorAuthentication:
         Usage:
             >>> tfa.disable_tfa()
         """
-        url = self._services['TFA_DISABLE']
+        url = self._services["TFA_DISABLE"]
         if self._org_id:
-            url = self._services['ORG_TFA_DISABLE'] % self._org_id
+            url = self._services["ORG_TFA_DISABLE"] % self._org_id
         headers = None
         if otp:
             headers = self._commcell._headers.copy()
             headers["otp"] = otp
 
-        flag, response = self._cvpysdk_object.make_request(
-            'PUT', url, headers=headers
-        )
+        flag, response = self._cvpysdk_object.make_request("PUT", url, headers=headers)
         self._process_response(flag=flag, response=response)
 
-    def enable_tfa(self, user_groups: Optional[list] = None, usernameless: bool = False, passwordless: bool = False,
-                   otp: str = None) -> None:
+    def enable_tfa(
+        self,
+        user_groups: Optional[list] = None,
+        usernameless: bool = False,
+        passwordless: bool = False,
+        otp: str = None,
+    ) -> None:
         """
         Enables two factor authentication at commcell/organization level.
 
@@ -244,10 +251,10 @@ class TwoFactorAuthentication:
             >>> tfa.enable_tfa(user_groups=['group1', 'group2'])
             >>> tfa.enable_tfa(usernameless=True, passwordless=True)
         """
-        url = self._services['TFA_ENABLE']
+        url = self._services["TFA_ENABLE"]
 
         if self._org_id:
-            url = self._services['ORG_TFA_ENABLE'] % self._org_id
+            url = self._services["ORG_TFA_ENABLE"] % self._org_id
 
         user_groups_list = []
         if user_groups:
@@ -256,34 +263,28 @@ class TwoFactorAuthentication:
                     group_obj = self._commcell.user_groups.get(user_group_name=group)
                     user_groups_list.append({"userGroupName": group_obj.name})
             else:
-                raise SDKException('Security', '101')
+                raise SDKException("Security", "101")
 
         payload = {
             "twoFactorAuthenticationInfo": {
                 "mode": 2 if user_groups_list else 1,
                 "userGroups": user_groups_list,
-                'webAuthn': {
-                    'allowPasswordlessLogin': passwordless,
-                    'allowUsernamelessLogin': usernameless
-                }
+                "webAuthn": {
+                    "allowPasswordlessLogin": passwordless,
+                    "allowUsernamelessLogin": usernameless,
+                },
             }
         }
 
         if not self._org_id:
-            payload = {
-                "commCellInfo": {
-                    "generalInfo": payload
-                }
-            }
+            payload = {"commCellInfo": {"generalInfo": payload}}
 
         headers = None
         if otp:
             headers = self._commcell._headers.copy()
             headers["otp"] = otp
 
-        flag, response = self._cvpysdk_object.make_request(
-            'PUT', url, payload, headers=headers
-        )
+        flag, response = self._cvpysdk_object.make_request("PUT", url, payload, headers=headers)
         self._process_response(flag=flag, response=response)
 
     @property

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -59,13 +57,15 @@ NameChange:
                                                         commcell migration
 """
 
-import re
 from enum import Enum
+from typing import TYPE_CHECKING, Union
+
 from .exception import SDKException
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from .commcell import Commcell
     from .client import Client
+    from .commcell import Commcell
+
 
 class OperationType(Enum):
     """
@@ -83,13 +83,14 @@ class OperationType(Enum):
 
     #ai-gen-doc
     """
+
     COMMSERVER_HOSTNAME_REMOTE_CLIENTS = 147
     COMMSERVER_HOSTNAME_AFTER_DR = 139
     CLIENT_HOSTNAME = "CLIENT_HOSTNAME"
     COMMSERVER_HOSTNAME = "COMMSERVER_HOSTNAME"
 
 
-class NameChange(object):
+class NameChange:
     """
     Class for performing name change operations on clients and the commcell.
 
@@ -110,7 +111,7 @@ class NameChange(object):
     #ai-gen-doc
     """
 
-    def __init__(self, class_object: Union['Commcell', 'Client']) -> None:
+    def __init__(self, class_object: Union["Commcell", "Client"]) -> None:
         """Initialize a NameChange instance for performing name change operations.
 
         Args:
@@ -124,14 +125,17 @@ class NameChange(object):
 
         #ai-gen-doc
         """
-        from .commcell import Commcell
         from .client import Client
+        from .commcell import Commcell
+
         if isinstance(class_object, Commcell):
             self._commcell_object = class_object
-            self._display_name = self._commcell_object.clients.get(self._commcell_object.
-                                                                   commserv_hostname).display_name
-            self._commcell_name = self._commcell_object.clients.get(self._commcell_object.
-                                                                    commserv_hostname).commcell_name
+            self._display_name = self._commcell_object.clients.get(
+                self._commcell_object.commserv_hostname
+            ).display_name
+            self._commcell_name = self._commcell_object.clients.get(
+                self._commcell_object.commserv_hostname
+            ).commcell_name
             self._is_client = False
 
         elif isinstance(class_object, Client):
@@ -198,21 +202,24 @@ class NameChange(object):
         if self._is_client:
             if parameters_dict["operation"] == OperationType.CLIENT_HOSTNAME.value:
                 if parameters_dict["ClientHostname"] is None:
-                    raise SDKException('NameChange', '101')
+                    raise SDKException("NameChange", "101")
                 self._client_hostname = parameters_dict["ClientHostname"]
                 self._client_name_change_op()
             if parameters_dict["operation"] == OperationType.COMMSERVER_HOSTNAME.value:
                 if parameters_dict["CommserverHostname"] is None:
-                    raise SDKException('NameChange', '102')
+                    raise SDKException("NameChange", "102")
                 self._commcell_name = parameters_dict["CommserverHostname"]
                 self._client_name_change_op()
         else:
-            if parameters_dict["operation"] == OperationType.COMMSERVER_HOSTNAME_REMOTE_CLIENTS.value:
+            if (
+                parameters_dict["operation"]
+                == OperationType.COMMSERVER_HOSTNAME_REMOTE_CLIENTS.value
+            ):
                 parameters_dict["oldName"] = self._commcell_name
                 self._commcell_name_change_op(parameters_dict)
             elif parameters_dict["operation"] == OperationType.COMMSERVER_HOSTNAME_AFTER_DR.value:
                 if parameters_dict["clientIds"] is None:
-                    raise SDKException('NameChange', '105')
+                    raise SDKException("NameChange", "105")
                 parameters_dict["newName"] = self._commcell_name
                 self._commcell_name_change_op(parameters_dict)
 
@@ -255,13 +262,13 @@ class NameChange(object):
         #ai-gen-doc
         """
         if domains_dict["oldDomain"] is None:
-            raise SDKException('NameChange', '103')
+            raise SDKException("NameChange", "103")
         elif domains_dict["newDomain"] is None:
-            raise SDKException('NameChange', '104')
+            raise SDKException("NameChange", "104")
         dict_domains = {
             "oldName": domains_dict["oldDomain"],
             "newName": domains_dict["newDomain"],
-            "operation": 136
+            "operation": 136,
         }
         self._commcell_name_change_op(dict_domains)
 
@@ -361,65 +368,53 @@ class NameChange(object):
         #ai-gen-doc
         """
         request_json = {
-            "App_SetClientPropertiesRequest":
-            {
+            "App_SetClientPropertiesRequest": {
                 "clientProperties": {
                     "client": {
                         "displayName": self._display_name,
                         "clientEntity": {
                             "hostName": self._client_hostname,
                             "clientName": self._client_name,
-                            "commCellName": self._commcell_name
-                        }
+                            "commCellName": self._commcell_name,
+                        },
                     }
                 },
                 "association": {
-                    "entity": [
-                        {
-                            "clientName": self._client_name,
-                            "newName": self._new_name
-                        }
-                    ]
-                }
+                    "entity": [{"clientName": self._client_name, "newName": self._new_name}]
+                },
             }
         }
         flag, response = self._client_object._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._services["EXECUTE_QCOMMAND"], request_json
         )
 
         if flag:
             if response.json():
-                if 'errorMessage' in response.json():
+                if "errorMessage" in response.json():
                     # for errorMessage: "Operation Failed" errorCode: 7
                     # for errorMessage: "Error 0x911: Failed to process request due to invalid /
                     # entity information.Invalid clientId for clientName.\n"
                     # errorCode: 2 and others
 
-                    error_message = "Failed to do namechange on client, " \
-                                    "with errorCode [{0}], errorMessage [{1}]".format(
-                                        response.json().get('errorCode'),
-                                        response.json().get('errorMessage')
-                                    )
-                    raise SDKException('Client', '102', error_message)
+                    error_message = (
+                        "Failed to do namechange on client, "
+                        "with errorCode [{0}], errorMessage [{1}]".format(
+                            response.json().get("errorCode"), response.json().get("errorMessage")
+                        )
+                    )
+                    raise SDKException("Client", "102", error_message)
 
-                elif 'errorCode' in response.json().get('response')[0]:
-                    error_code = str(
-                        response.json().get('response')[0].get('errorCode'))
-                    if error_code != '0':
+                elif "errorCode" in response.json().get("response")[0]:
+                    error_code = str(response.json().get("response")[0].get("errorCode"))
+                    if error_code != "0":
                         error_message = "Failed to do namechange on client"
-                        raise SDKException('Client', '102', error_message)
+                        raise SDKException("Client", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException(
-                    'Response', '101', self._update_response_(
-                        response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _commcell_name_change_op(self, parameters_dict: dict) -> None:
         """Perform Commcell name change operations using the provided parameters.
@@ -457,8 +452,7 @@ class NameChange(object):
         """
 
         request_json = {
-            "EVGui_ClientNameControlReq":
-            {
+            "EVGui_ClientNameControlReq": {
                 "isPostMigration": "",
                 "newName": parameters_dict.get("newName", ""),
                 "destinationConfiguration": 0,
@@ -468,50 +462,45 @@ class NameChange(object):
                 "commCellId": 0,
                 "operation": parameters_dict.get("operation", 0),
                 "forceChangeName": 0,
-                "clientList": parameters_dict.get("clientIds", [])
-
+                "clientList": parameters_dict.get("clientIds", []),
             }
         }
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._services["EXECUTE_QCOMMAND"], request_json
         )
         if flag:
             if response.json():
-                if 'errorMessage' in response.json():
+                if "errorMessage" in response.json():
                     # for errorMessage: "Operation Failed" errorCode: 7
-                    error_message = "Failed to do namechange on commserver " \
-                                    "with errorCode [{0}], errorMessage [{1}]".format(
-                        response.json().get('errorCode'),
-                        response.json().get('errorMessage')
+                    error_message = (
+                        "Failed to do namechange on commserver "
+                        "with errorCode [{0}], errorMessage [{1}]".format(
+                            response.json().get("errorCode"), response.json().get("errorMessage")
+                        )
                     )
-                    raise SDKException('Client', '102', error_message)
-                
-                elif not 'errorMessage' in response.json():
+                    raise SDKException("Client", "102", error_message)
+
+                elif "errorMessage" not in response.json():
                     return True
 
-                elif 'errorCode' in response.json().get('error'):
-                    error_code = int(
-                        response.json().get('error').get('errorCode'))
+                elif "errorCode" in response.json().get("error"):
+                    error_code = int(response.json().get("error").get("errorCode"))
 
-                    error_message = "Failed to do namechange on commserver " \
-                                    "with errorCode [{0}], errorString [{1}]".format(
-                        response.json().get('error').get('errorCode'),
-                        response.json().get('error').get('errorString')
+                    error_message = (
+                        "Failed to do namechange on commserver "
+                        "with errorCode [{0}], errorString [{1}]".format(
+                            response.json().get("error").get("errorCode"),
+                            response.json().get("error").get("errorString"),
+                        )
                     )
-                    raise SDKException('Client', '102', error_message)
+                    raise SDKException("Client", "102", error_message)
 
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException(
-                    'Response', '101', self._update_response_(
-                        response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response. text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_clients_for_name_change_post_ccm(self) -> list:
         """Retrieve the list of clients available for name change after Commcell migration.
@@ -537,8 +526,9 @@ class NameChange(object):
             </EVGui_GetClientForNameControlReq>
         """
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], xml
+            "POST", self._services["EXECUTE_QCOMMAND"], xml
         )
+
         def get_clients(response):
             clients_list = []
             all_clients = response.json()["clientList"]
@@ -550,41 +540,38 @@ class NameChange(object):
                 if name + "." + domain != cs_host_name and name != cs_host_name:
                     clients_list.append({"csHostname": cs_host_name, "name": name})
             return clients_list
+
         if flag:
             if response.json():
-                if 'errorCode' in response.json().get('error'):
-                    error_code = int(
-                        response.json().get('error').get('errorCode'))
+                if "errorCode" in response.json().get("error"):
+                    error_code = int(response.json().get("error").get("errorCode"))
                     if error_code != 1:
                         # for errorString: "Failed to get clients for name change operation"
                         # errorCode: 0 or others
-                        error_message = "Failed to get clients for name change operation" \
-                                        "with errorCode [{0}], errorString [{1}]".format(
-                            response.json().get('error').get('errorCode'),
-                            response.json().get('error').get('errorString')
+                        error_message = (
+                            "Failed to get clients for name change operation"
+                            "with errorCode [{0}], errorString [{1}]".format(
+                                response.json().get("error").get("errorCode"),
+                                response.json().get("error").get("errorString"),
+                            )
                         )
-                        raise SDKException('Client', '102', error_message)
+                        raise SDKException("Client", "102", error_message)
                     elif error_code == 1:
                         return get_clients(response)
-                elif 'errorMessage' in response.json():
-                    error_message = "Failed to get clients for name change operation" \
-                                    "with errorCode [{0}], errorMessage [{1}]".format(
-                        response.json().get('errorCode'),
-                        response.json().get('errorMessage')
+                elif "errorMessage" in response.json():
+                    error_message = (
+                        "Failed to get clients for name change operation"
+                        "with errorCode [{0}], errorMessage [{1}]".format(
+                            response.json().get("errorCode"), response.json().get("errorMessage")
+                        )
                     )
-                    raise SDKException('Client', '102', error_message)
+                    raise SDKException("Client", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException(
-                    'Response', '101', self._update_response_(
-                        response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def name_change_post_ccm(self, parameters_dict: dict) -> None:
         """Perform a Commcell name change for clients after Commcell migration.
@@ -639,42 +626,40 @@ class NameChange(object):
         clients_string = ""
         for clients_id in parameters_dict.get("clientIds", []):
             clients_string += client_tag.format(clients_id)
-        name_change_xml = name_change_xml.format(parameters_dict["destinationCommcellHostname"],
-                                                 parameters_dict["sourceCommcellHostname"],
-                                                 clients_string)
+        name_change_xml = name_change_xml.format(
+            parameters_dict["destinationCommcellHostname"],
+            parameters_dict["sourceCommcellHostname"],
+            clients_string,
+        )
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], name_change_xml
+            "POST", self._services["EXECUTE_QCOMMAND"], name_change_xml
         )
         if flag:
             if response.json():
-                if 'errorCode' in response.json().get('error'):
-                    error_code = int(
-                        response.json().get('error').get('errorCode'))
+                if "errorCode" in response.json().get("error"):
+                    error_code = int(response.json().get("error").get("errorCode"))
                     if error_code != 1:
-                        error_message = "Failed to perform name change operation" \
-                                        "with errorCode [{0}], errorString [{1}]".format(
-                                        response.json().get('error').get('errorCode'),
-                                        response.json().get('error').get('errorString')
-                                        )
-                        raise SDKException('Client', '102', error_message)
+                        error_message = (
+                            "Failed to perform name change operation"
+                            "with errorCode [{0}], errorString [{1}]".format(
+                                response.json().get("error").get("errorCode"),
+                                response.json().get("error").get("errorString"),
+                            )
+                        )
+                        raise SDKException("Client", "102", error_message)
                     elif error_code == 1:
                         return True
-                elif 'errorMessage' in response.json():
-                    error_message = "Failed to get clients for name change operation" \
-                                    "with errorCode [{0}], errorMessage [{1}]".format(response.json().get('errorCode'),
-                                                                                      response.json().get(
-                                                                                          'errorMessage')
-                                                                                      )
-                    raise SDKException('Client', '102', error_message)
+                elif "errorMessage" in response.json():
+                    error_message = (
+                        "Failed to get clients for name change operation"
+                        "with errorCode [{0}], errorMessage [{1}]".format(
+                            response.json().get("errorCode"), response.json().get("errorMessage")
+                        )
+                    )
+                    raise SDKException("Client", "102", error_message)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException(
-                    'Response', '101', self._update_response_(
-                        response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))

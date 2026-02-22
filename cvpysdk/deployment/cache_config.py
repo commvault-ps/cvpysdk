@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -16,7 +14,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""" Main file for performing the software cache configuration related operations
+""" " Main file for performing the software cache configuration related operations
 
 CommserveCache   --  Class for performing operations on the CS cache
 RemoteCache      --  Class for performing operations on the remote cache
@@ -69,17 +67,17 @@ RemoteCache
 
     get_all_remote_cache()                --  get the list of all remote caches
 """
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from xml.etree import ElementTree as ET
+
 from ..exception import SDKException
-from .deploymentconstants import UnixDownloadFeatures
-from .deploymentconstants import WindowsDownloadFeatures
-from .deploymentconstants import OSNameIDMapping
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
-class CommServeCache(object):
+
+class CommServeCache:
     """class for downloading software packages
 
     Description:
@@ -95,7 +93,7 @@ class CommServeCache(object):
         >>> cs_cache = CommServeCache(commcell_object)
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize commcell_object of the Download class.
 
         Args:
@@ -151,25 +149,27 @@ class CommServeCache(object):
             response = self.commcell_object.get_gxglobalparam_value()
         except Exception:
             try:
-                response = self.commcell_object.get_gxglobalparam_value('Patch Directory')
+                response = self.commcell_object.get_gxglobalparam_value("Patch Directory")
             except Exception:
-                raise SDKException('Response', '101', 'Failed to execute api for get_cs_cache_path')
-            if response == '':
-                raise SDKException('Response', '102')
+                raise SDKException(
+                    "Response", "101", "Failed to execute api for get_cs_cache_path"
+                )
+            if response == "":
+                raise SDKException("Response", "102")
             return response
-        if response['error']['errorCode'] != 0:
-            error_message = "Failed with error: [{0}]".format(
-                response['error']['errorMessage']
-            )
+        if response["error"]["errorCode"] != 0:
+            error_message = "Failed with error: [{0}]".format(response["error"]["errorMessage"])
             raise SDKException(
-                'Response',
-                '101',
-                'Error Code:"{0}"\nError Message: "{1}"'.format(response['error']['errorCode'], error_message)
+                "Response",
+                "101",
+                'Error Code:"{0}"\nError Message: "{1}"'.format(
+                    response["error"]["errorCode"], error_message
+                ),
             )
         try:
-            return response['commserveSoftwareCache']['storePatchlocation']
+            return response["commserveSoftwareCache"]["storePatchlocation"]
         except Exception:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     def delete_cache(self) -> None:
         """Delete CS cache
@@ -184,19 +184,19 @@ class CommServeCache(object):
         """
         root = ET.fromstring(self.request_xml)
         uaInfo = root.find(".//uaInfo")
-        uaInfo.set('deletePackageCache', "1")
+        uaInfo.set("deletePackageCache", "1")
         uaInfo.set("deleteUpdateCache", "1")
         uaInfo.set("swAgentOpType", "1")
 
         response = self.commcell_object.qoperation_execute(ET.tostring(root))
-        if response.get('errorCode') != 0:
-            error_message = "Failed with error: [{0}]".format(
-                response.get('errorMessage')
-            )
+        if response.get("errorCode") != 0:
+            error_message = "Failed with error: [{0}]".format(response.get("errorMessage"))
             raise SDKException(
-                'Response',
-                '101',
-                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+                "Response",
+                "101",
+                'Error Code:"{0}"\nError Message: "{1}"'.format(
+                    response.get("errorCode"), error_message
+                ),
             )
 
     def commit_cache(self) -> None:
@@ -213,19 +213,19 @@ class CommServeCache(object):
 
         root = ET.fromstring(self.request_xml)
         uaInfo = root.find(".//uaInfo")
-        uaInfo.set('deletePackageCache', "0")
+        uaInfo.set("deletePackageCache", "0")
         uaInfo.set("deleteUpdateCache", "0")
         uaInfo.set("swAgentOpType", "4")
 
         response = self.commcell_object.qoperation_execute(ET.tostring(root))
-        if response.get('errorCode') != 0:
-            error_message = "Failed with error: [{0}]".format(
-                response.get('errorMessage')
-            )
+        if response.get("errorCode") != 0:
+            error_message = "Failed with error: [{0}]".format(response.get("errorMessage"))
             raise SDKException(
-                'Response',
-                '101',
-                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+                "Response",
+                "101",
+                'Error Code:"{0}"\nError Message: "{1}"'.format(
+                    response.get("errorCode"), error_message
+                ),
             )
 
     def get_remote_cache_clients(self) -> List[str]:
@@ -242,7 +242,9 @@ class CommServeCache(object):
         Usage:
             >>> cs_cache.get_remote_cache_clients()
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_REMOTE_CACHE_CLIENTS'])
+        flag, response = self._cvpysdk_object.make_request(
+            "GET", self._services["GET_REMOTE_CACHE_CLIENTS"]
+        )
 
         if flag:
             rc_client_names = []
@@ -250,18 +252,18 @@ class CommServeCache(object):
                 xml_tree = ET.fromstring(response.text)
                 if xml_tree.findall(".//client"):
                     # Find all 'client' elements
-                    client_elements = xml_tree.findall('.//client')
+                    client_elements = xml_tree.findall(".//client")
                     # Extract the client names
-                    rc_client_names = [client.get('clientName') for client in client_elements]
+                    rc_client_names = [client.get("clientName") for client in client_elements]
                     rc_client_names.remove(self.commcell_object.commserv_name)
                 return rc_client_names
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
 
-class RemoteCache(object):
+class RemoteCache:
     """class for downloading software packages
 
     Description:
@@ -278,7 +280,7 @@ class RemoteCache(object):
         >>> remote_cache = RemoteCache(commcell_object, 'client1')
     """
 
-    def __init__(self, commcell: 'Commcell', client_name: str) -> None:
+    def __init__(self, commcell: "Commcell", client_name: str) -> None:
         """Initialize commcell_object of the Download class.
 
         Args:
@@ -311,18 +313,18 @@ class RemoteCache(object):
         Usage:
             >>> remote_cache.get_remote_cache_path()
         """
-        request_xml = '<EVGui_GetUpdateAgentInfoReq />'
+        request_xml = "<EVGui_GetUpdateAgentInfoReq />"
         response = self.commcell.qoperation_execute(request_xml)
         if response:
             try:
                 for clients in response["uaInfo"]:
-                    if clients['client']['clientName'] == self.client_object.client_name:
+                    if clients["client"]["clientName"] == self.client_object.client_name:
                         return clients["uaCachePath"]
                 return None
             except Exception:
-                raise SDKException('Response', '101')
+                raise SDKException("Response", "101")
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     def configure_remotecache(self, cache_path: str, cs_version: Optional[int] = None) -> None:
         """Configures client as remote cache
@@ -350,51 +352,52 @@ class RemoteCache(object):
                 "associations": [],
                 "cache": {
                     "name": self.client_object.client_name,
-                    "id": int(self.client_object.client_id)
-                }
+                    "id": int(self.client_object.client_id),
+                },
             }
 
             flag, response = self._cvpysdk_object.make_request(
-                'POST', self._services['SOFTWARE_CACHE'], request_json
+                "POST", self._services["SOFTWARE_CACHE"], request_json
             )
 
             if flag:
                 if response.json():
-                    errorCode = response.json()['errorCode']
+                    errorCode = response.json()["errorCode"]
                     if errorCode != 0:
-                        raise SDKException(
-                            'Response',
-                            '101',
-                            'Error Code: "{0}"'.format(errorCode)
-                        )
+                        raise SDKException("Response", "101", f'Error Code: "{errorCode}"')
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101')
+                raise SDKException("Response", "101")
 
         # using qscript to configure machine as RC before SP34
         else:
             root = ET.fromstring(self.request_xml)
             uaInfo = root.find(".//uaInfo")
-            uaInfo.set('uaCachePath', cache_path)
-            uaInfo.set('uaOpCode', "5")
+            uaInfo.set("uaCachePath", cache_path)
+            uaInfo.set("uaOpCode", "5")
             uaInfo.attrib.pop("uaPackageCacheStatus")
-            uaInfo.attrib.pop('uaUpdateCacheStatus')
+            uaInfo.attrib.pop("uaUpdateCacheStatus")
             root.find("./uaInfo/uaName").set("id", self.client_object.client_id)
             root.find("./uaInfo/uaName").set("name", self.client_object.client_name)
             response = self.commcell.qoperation_execute(ET.tostring(root))
-            if response.get('errorCode') != 0:
-                error_message = "Failed with error: [{0}]".format(
-                    response.get('errorMessage')
-                )
+            if response.get("errorCode") != 0:
+                error_message = "Failed with error: [{0}]".format(response.get("errorMessage"))
                 raise SDKException(
-                    'Response',
-                    '101',
-                    'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+                    "Response",
+                    "101",
+                    'Error Code:"{0}"\nError Message: "{1}"'.format(
+                        response.get("errorCode"), error_message
+                    ),
                 )
 
-    def configure_packages_to_sync(self, win_os: Optional[List[str]] = None, win_package_list: Optional[List[str]] = None, unix_os: Optional[List[str]] = None,
-                                   unix_package_list: Optional[List[str]] = None) -> None:
+    def configure_packages_to_sync(
+        self,
+        win_os: Optional[List[str]] = None,
+        win_package_list: Optional[List[str]] = None,
+        unix_os: Optional[List[str]] = None,
+        unix_package_list: Optional[List[str]] = None,
+    ) -> None:
         """Configures packages to sync for the remote cache
 
         Args:
@@ -427,36 +430,47 @@ class RemoteCache(object):
         """
         if win_os:
             win_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in win_os]
-            win_packages = [eval(f"WindowsDownloadFeatures.{packages}.value") for packages in win_package_list]
+            win_packages = [
+                eval(f"WindowsDownloadFeatures.{packages}.value") for packages in win_package_list
+            ]
         if unix_os:
             unix_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in unix_os]
-            unix_packages = [eval(f"UnixDownloadFeatures.{packages}.value") for packages in unix_package_list]
+            unix_packages = [
+                eval(f"UnixDownloadFeatures.{packages}.value") for packages in unix_package_list
+            ]
 
         if not win_os and not unix_os:
-            qscript = f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncAll'''
+            qscript = f"""-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncAll"""
         elif not unix_os:
-            qscript = (f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom '''
-                       f'''-si {",".join(map(str, win_os_id))} -si {",".join(map(str, win_packages))}''')
+            qscript = (
+                f"""-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom """
+                f"""-si {",".join(map(str, win_os_id))} -si {",".join(map(str, win_packages))}"""
+            )
         elif not win_os:
-            qscript = (f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom '''
-                       f'''-si {",".join(map(str, unix_os_id))} -si {",".join(map(str, unix_packages))}''')
+            qscript = (
+                f"""-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom """
+                f"""-si {",".join(map(str, unix_os_id))} -si {",".join(map(str, unix_packages))}"""
+            )
         else:
-            qscript = (f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom '''
-                       f'''-si {",".join(map(str, win_os_id))} -si {",".join(map(str, win_packages))} '''
-                       f'''-si {",".join(map(str, unix_os_id))} -si {",".join(map(str, unix_packages))}''')
+            qscript = (
+                f"""-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom """
+                f"""-si {",".join(map(str, win_os_id))} -si {",".join(map(str, win_packages))} """
+                f"""-si {",".join(map(str, unix_os_id))} -si {",".join(map(str, unix_packages))}"""
+            )
 
         response = self.commcell._qoperation_execscript(qscript)
-        if response.get('CVGui_GenericResp'):
-            if response['CVGui_GenericResp']['@errorCode'] != 0:
+        if response.get("CVGui_GenericResp"):
+            if response["CVGui_GenericResp"]["@errorCode"] != 0:
                 error_message = "Failed with error: [{0}]".format(
-                    response['CVGui_GenericResp']['@errorMessage']
+                    response["CVGui_GenericResp"]["@errorMessage"]
                 )
             raise SDKException(
-                'Response',
-                '101',
+                "Response",
+                "101",
                 'Error Code:"{0}"\nError Message: "{1}"'.format(
-                    response['CVGui_GenericResp']['@errorCode'],
-                    error_message))
+                    response["CVGui_GenericResp"]["@errorCode"], error_message
+                ),
+            )
 
     def delete_remote_cache_contents(self) -> None:
         """Delete remote cache contents
@@ -471,24 +485,26 @@ class RemoteCache(object):
         """
         root = ET.fromstring(self.request_xml)
         uaInfo = root.find(".//uaInfo")
-        uaInfo.set('deletePackageCache', "1")
+        uaInfo.set("deletePackageCache", "1")
         uaInfo.set("deleteUpdateCache", "1")
         uaInfo.set("swAgentOpType", "1")
         root.find("./uaInfo/uaName").set("id", self.client_object.client_id)
         root.find("./uaInfo/uaName").set("name", self.client_object.client_name)
 
         response = self.commcell.qoperation_execute(ET.tostring(root))
-        if response.get('errorCode') != 0:
-            error_message = "Failed with error: [{0}]".format(
-                response.get('errorMessage')
-            )
+        if response.get("errorCode") != 0:
+            error_message = "Failed with error: [{0}]".format(response.get("errorMessage"))
             raise SDKException(
-                'Response',
-                '101',
-                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+                "Response",
+                "101",
+                'Error Code:"{0}"\nError Message: "{1}"'.format(
+                    response.get("errorCode"), error_message
+                ),
             )
 
-    def assoc_entity_to_remote_cache(self, client_name: Optional[str] = None, client_group_name: Optional[str] = None) -> None:
+    def assoc_entity_to_remote_cache(
+        self, client_name: Optional[str] = None, client_group_name: Optional[str] = None
+    ) -> None:
         """Points/Associates entity to the Remote Cache Client
 
         Args:
@@ -506,7 +522,9 @@ class RemoteCache(object):
         """
 
         if client_name is None and client_group_name is None:
-            raise Exception("No clients or client groups to associate; Please provide a valid name")
+            raise Exception(
+                "No clients or client groups to associate; Please provide a valid name"
+            )
 
         if client_name and client_name in self.commcell.clients.all_clients:
             entity_obj = self.commcell.clients.get(client_name)
@@ -521,51 +539,47 @@ class RemoteCache(object):
             entity_type = "1"
 
         else:
-            raise Exception("{0} does not exist".format(client_name if client_name else client_group_name))
+            raise Exception(f"{client_name if client_name else client_group_name} does not exist")
 
         request_json = {
-                "EVGui_SetUpdateAgentInfoReq" :{
+            "EVGui_SetUpdateAgentInfoReq": {
                 "uaInfo": {
                     "uaCachePath": self.get_remote_cache_path(),
                     "uaOpCode": "5",
                     "uaName": {
                         "id": self.client_object.client_id,
-                        "name": self.client_object.client_name
-                    }
+                        "name": self.client_object.client_name,
+                    },
                 },
                 "uaList": {
-                    "addedList": {
-                        "id": entity_id,
-                        "name": entity_name,
-                        "type": entity_type
-                    }
-                }
+                    "addedList": {"id": entity_id, "name": entity_name, "type": entity_type}
+                },
             }
         }
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+            "POST", self._services["EXECUTE_QCOMMAND"], request_json
         )
 
         if flag:
             if response.ok:
                 if response.json():
-                    if response.json().get('errorCode') != 0:
-                        error_code = response.json().get('errorCode')
+                    if response.json().get("errorCode") != 0:
+                        error_code = response.json().get("errorCode")
                         error_message = "Failed with error: [{0}]".format(
-                            response.json().get('errorMessage')
+                            response.json().get("errorMessage")
                         )
                         raise SDKException(
-                            'Response',
-                            '101',
-                            'Error Code:"{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                            "Response",
+                            "101",
+                            f'Error Code:"{error_code}"\nError Message: "{error_message}"',
                         )
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def get_remote_cache_details(self) -> Dict[str, Any]:
         """Retrieve details of the remote software cache.
@@ -589,16 +603,16 @@ class RemoteCache(object):
         """
 
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['SOFTWARE_CACHE']+f"/{self.client_object.client_id}"
+            "GET", self._services["SOFTWARE_CACHE"] + f"/{self.client_object.client_id}"
         )
 
         if flag:
             if response.json():
-                return response.json()['softwareCacheDetailList'][0]
+                return response.json()["softwareCacheDetailList"][0]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def get_qualified_servers_for_remote_cache(self) -> List[Dict[str, Any]]:
         """Retrieve all machines qualified to be configured as remote cache servers.
@@ -614,16 +628,16 @@ class RemoteCache(object):
             >>> qualified_servers = remote_cache.get_qualified_servers_for_remote_cache()
         """
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['QUALIFIED_SERVERS_SW']
+            "GET", self._services["QUALIFIED_SERVERS_SW"]
         )
 
         if flag:
             if response.json():
-                return response.json()['softwareCacheDetailList']
+                return response.json()["softwareCacheDetailList"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def update_cache_path(self, path: str) -> None:
         """Update the cache directory path for the remote cache.
@@ -643,25 +657,23 @@ class RemoteCache(object):
             # If the operation fails, SDKException will be raised.
         """
         request_json = {}
-        request_json['cacheDirectory'] = path
+        request_json["cacheDirectory"] = path
 
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", request_json
+            "PUT",
+            self._services["SOFTWARE_CACHE"] + f"/{self.client_object.client_id}",
+            request_json,
         )
 
         if flag:
             if response.json():
-                errorCode = response.json()['errorCode']
+                errorCode = response.json()["errorCode"]
                 if errorCode != 0:
-                    raise SDKException(
-                        'Response',
-                        '101',
-                        'Error Code: "{0}"'.format(errorCode)
-                    )
+                    raise SDKException("Response", "101", f'Error Code: "{errorCode}"')
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def enable_rc(self) -> None:
         """Enable the remote cache.
@@ -679,22 +691,20 @@ class RemoteCache(object):
             # If an error occurs, SDKException will be raised
         """
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", {'enabled' : True}
+            "PUT",
+            self._services["SOFTWARE_CACHE"] + f"/{self.client_object.client_id}",
+            {"enabled": True},
         )
 
         if flag:
             if response.json():
-                errorCode = response.json()['errorCode']
+                errorCode = response.json()["errorCode"]
                 if errorCode != 0:
-                    raise SDKException(
-                        'Response',
-                        '101',
-                        'Error Code: "{0}"'.format(errorCode)
-                    )
+                    raise SDKException("Response", "101", f'Error Code: "{errorCode}"')
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def disable_rc(self) -> None:
         """Disable the remote cache.
@@ -712,22 +722,20 @@ class RemoteCache(object):
             # If an error occurs, SDKException will be raised
         """
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", {'enabled': False}
+            "PUT",
+            self._services["SOFTWARE_CACHE"] + f"/{self.client_object.client_id}",
+            {"enabled": False},
         )
 
         if flag:
             if response.json():
-                errorCode = response.json()['errorCode']
+                errorCode = response.json()["errorCode"]
                 if errorCode != 0:
-                    raise SDKException(
-                        'Response',
-                        '101',
-                        'Error Code: "{0}"'.format(errorCode)
-                    )
+                    raise SDKException("Response", "101", f'Error Code: "{errorCode}"')
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def update_associations(self, associations: List[Dict[str, Any]]) -> None:
         """Update the remote cache associations with specified clients or client groups.
@@ -753,25 +761,23 @@ class RemoteCache(object):
         """
 
         request_json = {}
-        request_json['associations'] = associations
+        request_json["associations"] = associations
 
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", request_json
+            "PUT",
+            self._services["SOFTWARE_CACHE"] + f"/{self.client_object.client_id}",
+            request_json,
         )
 
         if flag:
             if response.json():
-                errorCode = response.json()['errorCode']
+                errorCode = response.json()["errorCode"]
                 if errorCode != 0:
-                    raise SDKException(
-                        'Response',
-                        '101',
-                        'Error Code: "{0}"'.format(errorCode)
-                    )
+                    raise SDKException("Response", "101", f'Error Code: "{errorCode}"')
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def delete_remote_cache(self) -> None:
         """Delete the remote cache.
@@ -789,22 +795,18 @@ class RemoteCache(object):
 
         """
         flag, response = self._cvpysdk_object.make_request(
-            'DELETE', self._services['SOFTWARE_CACHE']+f"/{self.client_object.client_id}"
+            "DELETE", self._services["SOFTWARE_CACHE"] + f"/{self.client_object.client_id}"
         )
 
         if flag:
             if response.json():
-                errorCode = response.json()['errorCode']
+                errorCode = response.json()["errorCode"]
                 if errorCode != 0:
-                    raise SDKException(
-                        'Response',
-                        '101',
-                        'Error Code: "{0}"'.format(errorCode)
-                    )
+                    raise SDKException("Response", "101", f'Error Code: "{errorCode}"')
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")
 
     def get_all_remote_cache(self) -> List[Dict[str, Any]]:
         """Retrieve all remote cache names and their details.
@@ -823,16 +825,14 @@ class RemoteCache(object):
             >>> remote_cache = RemoteCache(...)
             >>> caches = remote_cache.get_all_remote_cache()
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['SOFTWARE_CACHE']
-        )
+        flag, response = self._cvpysdk_object.make_request("GET", self._services["SOFTWARE_CACHE"])
 
         if flag:
             if response.json():
-                return response.json()['softwareCacheDetailList']
+                return response.json()["softwareCacheDetailList"]
             elif response.status_code == 200:
                 return []
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101')
+            raise SDKException("Response", "101")

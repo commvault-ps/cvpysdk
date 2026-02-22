@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -41,14 +40,12 @@ ActivityControl:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from typing import Any, Dict
 
 from .exception import SDKException
 
-class ActivityControl(object):
+
+class ActivityControl:
     """
     Class for managing and controlling activity operations within a CommCell environment.
 
@@ -111,7 +108,7 @@ class ActivityControl(object):
 
         #ai-gen-doc
         """
-        representation_string = 'ActivityControl class instance'
+        representation_string = "ActivityControl class instance"
         return representation_string
 
     def _request_json_(self, activity_type: str, enable_time: int) -> Dict[str, Any]:
@@ -158,8 +155,12 @@ class ActivityControl(object):
                             "activityType": self._activity_type_dict[activity_type],
                             "enableAfterADelay": True,
                             "enableActivityType": False,
-                            "dateTime": {
-                                "time": enable_time}}]}}}
+                            "dateTime": {"time": enable_time},
+                        }
+                    ]
+                }
+            }
+        }
 
         return request_json
 
@@ -186,27 +187,25 @@ class ActivityControl(object):
 
         #ai-gen-doc
         """
-        set_request = self._commcell_object._services['SET_ACTIVITY_CONTROL'] % (
-            str(self._activity_type_dict[activity_type]), str(action))
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', set_request
+        set_request = self._commcell_object._services["SET_ACTIVITY_CONTROL"] % (
+            str(self._activity_type_dict[activity_type]),
+            str(action),
         )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", set_request)
 
         if flag:
             if response.json():
-                error_code = str(response.json()['errorCode'])
-                if error_code == '0':
+                error_code = str(response.json()["errorCode"])
+                if error_code == "0":
                     self._get_activity_control_status()
                     return
                 else:
-                    raise SDKException(
-                        'CVPySDK', '102', response.json()['errorMessage'])
+                    raise SDKException("CVPySDK", "102", response.json()["errorMessage"])
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def enable_after_delay(self, activity_type: str, enable_time: str) -> None:
         """Disable the specified activity if not already disabled, and enable it at the given time.
@@ -233,32 +232,29 @@ class ActivityControl(object):
         """
         request_json = self._request_json_(activity_type, enable_time)
 
-        set_request = self._commcell_object._services['SET_COMMCELL_PROPERTIES']
+        set_request = self._commcell_object._services["SET_COMMCELL_PROPERTIES"]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', set_request, request_json
+            "PUT", set_request, request_json
         )
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"][0]["errorCode"]
 
                 if error_code == 0:
                     self._get_activity_control_status()
                     return
-                elif 'errorMessage' in response.json()['response'][0]:
-                    error_message = response.json(
-                    )['response'][0]['errorMessage']
+                elif "errorMessage" in response.json()["response"][0]:
+                    error_message = response.json()["response"][0]["errorMessage"]
 
-                    o_str = 'Failed to enable activity control \
-                                after a delay\nError: "{0}"'.format(
-                                    error_message)
-                    raise SDKException('CVPySDK', '102', o_str)
+                    o_str = f'Failed to enable activity control \
+                                after a delay\nError: "{error_message}"'
+                    raise SDKException("CVPySDK", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def _get_activity_control_status(self) -> None:
         """Retrieve and update the activity control status for the Commcell.
@@ -276,21 +272,17 @@ class ActivityControl(object):
 
         #ai-gen-doc
         """
-        get_request = self._commcell_object._services['GET_ACTIVITY_CONTROL']
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', get_request
-        )
+        get_request = self._commcell_object._services["GET_ACTIVITY_CONTROL"]
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", get_request)
 
         if flag:
-            if response.json() and 'acObjects' in response.json():
-                self._activity_control_properties_list = response.json()[
-                    'acObjects']
+            if response.json() and "acObjects" in response.json():
+                self._activity_control_properties_list = response.json()["acObjects"]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException("Response", "101", response_string)
 
     def is_enabled(self, activity_type: str) -> bool:
         """Check if a specific activity type is enabled and update related properties.
@@ -328,16 +320,14 @@ class ActivityControl(object):
         """
         self._get_activity_control_status()
         for each_activity in self._activity_control_properties_list:
-            if int(each_activity['activityType']) == \
-                    self._activity_type_dict[activity_type]:
-                self._reEnableTime = each_activity['reEnableTime']
-                self._noSchedEnable = each_activity['noSchedEnable']
-                self._reenableTimeZone = each_activity['reenableTimeZone']
-                return each_activity['enabled']
+            if int(each_activity["activityType"]) == self._activity_type_dict[activity_type]:
+                self._reEnableTime = each_activity["reEnableTime"]
+                self._noSchedEnable = each_activity["noSchedEnable"]
+                self._reenableTimeZone = each_activity["reenableTimeZone"]
+                return each_activity["enabled"]
 
-        o_str = 'Failed to find activity type:"{0}" in the response'.format(
-            activity_type)
-        raise SDKException('Client', '102', o_str)
+        o_str = f'Failed to find activity type:"{activity_type}" in the response'
+        raise SDKException("Client", "102", o_str)
 
     @property
     def reEnableTime(self) -> str:

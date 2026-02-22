@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -58,14 +56,11 @@ CVPySDK:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from xml.parsers.expat import ExpatError
 
 import requests
-import xmltodict
 import urllib3
+import xmltodict
 
 try:
     # Python 2 import
@@ -77,10 +72,10 @@ except ImportError:
 from .exception import SDKException
 
 
-class CVPySDK(object):
+class CVPySDK:
     """Helper class for login, and logout operations.
 
-        Also contains common method for running all HTTP requests.
+    Also contains common method for running all HTTP requests.
     """
 
     def __init__(self, commcell_object, certificate_path=None, verify_ssl=True, trace_parent=None):
@@ -109,7 +104,7 @@ class CVPySDK(object):
         Returns:
             object  -   instance of the CVPySDK class
 
-    """
+        """
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
@@ -122,25 +117,25 @@ class CVPySDK(object):
     def _is_valid_service(self):
         """Checks if the service url is a valid url or not.
 
-            Returns:
-                True    -   if the service url is valid
+        Returns:
+            True    -   if the service url is valid
 
-                False   -   if the service url is invalid
+            False   -   if the service url is invalid
 
-            Raises:
-                requests Connection Error:
-                    requests.exceptions.ConnectionError
+        Raises:
+            requests Connection Error:
+                requests.exceptions.ConnectionError
 
-                requests Timeout Error:
-                    requests.exceptions.Timeout
+            requests Timeout Error:
+                requests.exceptions.Timeout
 
         """
         try:
             response = self._request(
-                method='GET',
+                method="GET",
                 url=self._commcell_object._web_service,
                 timeout=10,
-                headers=self._commcell_object._headers
+                headers=self._commcell_object._headers,
             )
 
             # Valid service if the status code is 200 and response is True
@@ -151,25 +146,24 @@ class CVPySDK(object):
     def _login(self):
         """Posts a login request to the server.
 
-            Returns:
-                str     -   Authtoken received from the WebServer upon successfull login
+        Returns:
+            str     -   Authtoken received from the WebServer upon successfull login
 
-            Raises:
-                SDKException:
-                    if login failed
+        Raises:
+            SDKException:
+                if login failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-                requests Connection Error:
-                    requests.exceptions.ConnectionError
+            requests Connection Error:
+                requests.exceptions.ConnectionError
 
         """
         try:
             if isinstance(self._commcell_object._password, dict):
-                raise SDKException('CVPySDK', '104')
-
+                raise SDKException("CVPySDK", "104")
 
             if self._commcell_object.is_service_commcell:
                 json_login_request = {
@@ -177,8 +171,8 @@ class CVPySDK(object):
                     "clientType": 30,
                     "autoLogin": {
                         "autoLoginType": 5,
-                        "encryptedMessage": self._commcell_object.master_saml_token
-                    }
+                        "encryptedMessage": self._commcell_object.master_saml_token,
+                    },
                 }
 
             else:
@@ -187,133 +181,147 @@ class CVPySDK(object):
                     "username": self._commcell_object._user,
                     "password": self._commcell_object._password,
                     "deviceId": self._commcell_object.device_id,
-                    "clientType": 30
+                    "clientType": 30,
                 }
 
             flag, response = self.make_request(
-                'POST', self._commcell_object._services['LOGIN'], json_login_request
+                "POST", self._commcell_object._services["LOGIN"], json_login_request
             )
 
             if flag:
                 if response.json():
                     if "userName" in response.json() and "token" in response.json():
-                        return response.json()['token']
+                        return response.json()["token"]
                     else:
-                        error_message = response.json()['errList'][0]['errLogMessage']
-                        err_msg = 'Error: "{0}"'.format(error_message)
-                        if response.json().get('isAccountLocked', False) and response.json().get('remainingLockTime',0) > 0:
-                            locktime = response.json().get('remainingLockTime',0)
+                        error_message = response.json()["errList"][0]["errLogMessage"]
+                        err_msg = f'Error: "{error_message}"'
+                        if (
+                            response.json().get("isAccountLocked", False)
+                            and response.json().get("remainingLockTime", 0) > 0
+                        ):
+                            locktime = response.json().get("remainingLockTime", 0)
                             lock_hours = locktime // 3600
                             rem_secs = locktime % 3600
                             lock_mins = rem_secs // 60
-                            err_msg = 'Error: "User account is locked for {0} hour(s) {1} minute(s)."'.format(lock_hours,lock_mins)
-                        raise SDKException('CVPySDK', '101', err_msg)
+                            err_msg = f'Error: "User account is locked for {lock_hours} hour(s) {lock_mins} minute(s)."'
+                        raise SDKException("CVPySDK", "101", err_msg)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 if response is not None:
                     response_json = response.json()
-                    if ("errorMessage" in response_json and "Access denied" in response_json["errorMessage"] and
-                        "errorCode" in response_json and response_json["errorCode"] == 5):
-                        raise SDKException('Response', '101', "Commcell was reachable "
+                    if (
+                        "errorMessage" in response_json
+                        and "Access denied" in response_json["errorMessage"]
+                        and "errorCode" in response_json
+                        and response_json["errorCode"] == 5
+                    ):
+                        raise SDKException(
+                            "Response",
+                            "101",
+                            "Commcell was reachable "
                             "but there may be a problem with the SSL certificate. "
                             "You can try providing the certificate file using the certificate_path parameter. "
-                            "Alternatively, you can ignore this check by setting verify_ssl=False.")
+                            "Alternatively, you can ignore this check by setting verify_ssl=False.",
+                        )
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
     def _renew_login_token(self, attempts):
         """Posts a Renew Login-Token request to the server.
 
-            Args:
-                attempts    (int)   --  number of attempts made with the same request
-                
-            Returns:
-                str     -   new token received from the WebServer
+        Args:
+            attempts    (int)   --  number of attempts made with the same request
 
-            Raises:
-                SDKException:
-                    if token renew failed
+        Returns:
+            str     -   new token received from the WebServer
 
-                    if response is empty
+        Raises:
+            SDKException:
+                if token renew failed
 
-                    if response is not success
+                if response is empty
 
-                requests Connection Error:
-                    requests.exceptions.ConnectionError
+                if response is not success
+
+            requests Connection Error:
+                requests.exceptions.ConnectionError
 
         """
         try:
             if self._commcell_object._is_saml_login:
                 if not self._commcell_object.master_commcell:
-                    raise SDKException('CVPySDK', '106')
+                    raise SDKException("CVPySDK", "106")
                 else:
                     return self._commcell_object.master_commcell.get_saml_token()
 
             token_renew_request = {
-                "sessionId": self._commcell_object._headers['Authtoken'],
-                "deviceId": self._commcell_object.device_id
+                "sessionId": self._commcell_object._headers["Authtoken"],
+                "deviceId": self._commcell_object.device_id,
             }
 
             flag, response = self.make_request(
-                'POST', self._commcell_object._services['RENEW_LOGIN_TOKEN'], token_renew_request, attempts
+                "POST",
+                self._commcell_object._services["RENEW_LOGIN_TOKEN"],
+                token_renew_request,
+                attempts,
             )
 
             if flag:
                 if response.json():
                     if "token" in response.json():
-                        return response.json()['token']
+                        return response.json()["token"]
                     else:
-                        error_message = response.json()['error']['errLogMessage']
+                        error_message = response.json()["error"]["errLogMessage"]
                         err_msg = f'Error: "{error_message}"'
-                        raise SDKException('CVPySDK', '101', err_msg)
+                        raise SDKException("CVPySDK", "101", err_msg)
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('CVPySDK', '108', response_string)
+                raise SDKException("CVPySDK", "108", response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
     def _logout(self):
         """Posts a logout request to the server.
 
-            Returns:
-                str     -   response string from server upon logout success
+        Returns:
+            str     -   response string from server upon logout success
 
         """
-        flag, response = self.make_request('POST', self._commcell_object._services['LOGOUT'])
+        flag, response = self.make_request("POST", self._commcell_object._services["LOGOUT"])
 
         if flag:
-            self._commcell_object._headers['Authtoken'] = None
+            self._commcell_object._headers["Authtoken"] = None
 
             if response.status_code == httplib.OK:
                 return response.text
             else:
-                return 'Failed to logout the user'
+                return "Failed to logout the user"
         else:
-            return 'User already logged out'
+            return "User already logged out"
 
     def _request(self, **kwargs):
         """Executes the request on the Server with the given parameters.
 
-            If the certificate path is given and the Web Service starts with **https**,
-            it adds the **verify** parameter to the request, and passes the certificate path as
-            its value.
+        If the certificate path is given and the Web Service starts with **https**,
+        it adds the **verify** parameter to the request, and passes the certificate path as
+        its value.
 
-            Args:
-                **kwargs    --  dict of keyword arguments, same as accepted by the
+        Args:
+            **kwargs    --  dict of keyword arguments, same as accepted by the
 
-                    **requests.request** method
-
-            Returns:
-                object  -   **requests.Response** class instance, as received from calling the
                 **requests.request** method
 
+        Returns:
+            object  -   **requests.Response** class instance, as received from calling the
+            **requests.request** method
+
         """
-        if self._certificate_path and self._commcell_object._web_service.startswith('https'):
+        if self._certificate_path and self._commcell_object._web_service.startswith("https"):
             return requests.request(verify=self._certificate_path, **kwargs)
         else:
             return requests.request(verify=self._verify_ssl, **kwargs)
@@ -321,120 +329,121 @@ class CVPySDK(object):
     def who_am_i(self, authtoken=None):
         """Get the username of the user, to whom the Authtoken belongs to.
 
-            Args:
-                authtoken   (str)   --  QSDK or SAML authentication token
+        Args:
+            authtoken   (str)   --  QSDK or SAML authentication token
 
-            Returns:
-                str     -   username of the user respective to the token
+        Returns:
+            str     -   username of the user respective to the token
 
-            Raises:
-                SDKException:
-                    if no user mapping found
+        Raises:
+            SDKException:
+                if no user mapping found
 
         """
         temp_headers = self._commcell_object._headers.copy()
 
         if authtoken:
-            temp_headers['Authtoken'] = authtoken
+            temp_headers["Authtoken"] = authtoken
 
         flag, response = self.make_request(
-            'POST', self._commcell_object._services['WHO_AM_I'], headers=temp_headers
+            "POST", self._commcell_object._services["WHO_AM_I"], headers=temp_headers
         )
 
         if flag:
-            if 'application/json' in response.headers['Content-Type']:
-                if response.json().get('errorCode', 0) == 0:
-                    return response.json()['user']['userName']
+            if "application/json" in response.headers["Content-Type"]:
+                if response.json().get("errorCode", 0) == 0:
+                    return response.json()["user"]["userName"]
                 else:
-                    raise SDKException('CVPySDK', '107')
+                    raise SDKException("CVPySDK", "107")
             else:
                 user_dict = xmltodict.parse(response.content)
 
-                if 'CvEntities_ProcessingInstructionInfo' in user_dict:
-                    return user_dict['CvEntities_ProcessingInstructionInfo']['user']['@userName']
+                if "CvEntities_ProcessingInstructionInfo" in user_dict:
+                    return user_dict["CvEntities_ProcessingInstructionInfo"]["user"]["@userName"]
                 else:
-                    raise SDKException('CVPySDK', '107')
+                    raise SDKException("CVPySDK", "107")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def make_request(
-            self,
-            method,
-            url,
-            payload=None,
-            attempts=0,
-            headers=None,
-            stream=False,
-            files=None,
-            **kwargs):
+        self,
+        method,
+        url,
+        payload=None,
+        attempts=0,
+        headers=None,
+        stream=False,
+        files=None,
+        **kwargs,
+    ):
         """Makes the request of the type specified in the argument 'method'.
 
-            Args:
-                method      (str)           --  HTTP operation to perform
+        Args:
+            method      (str)           --  HTTP operation to perform
 
-                    e.g.:
+                e.g.:
 
-                    -   GET
+                -   GET
 
-                    -   POST
+                -   POST
 
-                    -   PUT
+                -   PUT
 
-                    -   DELETE
+                -   DELETE
 
-                url         (str)           --  the web url or service to run the HTTP request on
-
-
-                payload     (dict / str)    --  data to be passed along with the request
-
-                    default: None
+            url         (str)           --  the web url or service to run the HTTP request on
 
 
-                attempts    (int)           --  number of attempts made with the same request
+            payload     (dict / str)    --  data to be passed along with the request
 
-                    default: 0
-
-
-                headers     (dict)          --  dict of request headers for the request
-
-                        if not specified we use default headers
-
-                    default: None
+                default: None
 
 
-                stream      (bool)          --  boolean specifying whether the request should get
-                data via stream or normal get
+            attempts    (int)           --  number of attempts made with the same request
 
-                    default: False
+                default: 0
 
 
-                files       (dict)          --  file to upload in the form of
+            headers     (dict)          --  dict of request headers for the request
 
-                        {
-                            'file': open('report.txt', 'rb')
-                        }
+                    if not specified we use default headers
 
-                    default: None
+                default: None
 
-                Kwargs supported values:
 
-                    remove_processing_info  (bool)      --  removes the processing instruction info from response.json()
+            stream      (bool)          --  boolean specifying whether the request should get
+            data via stream or normal get
 
-            Returns:
-                tuple:
-                    (True, response)    -   in case of success
+                default: False
 
-                    (False, response)   -   in case of failure
 
-            Raises:
-                SDKException:
-                    if the method passed is incorrect / not supported
+            files       (dict)          --  file to upload in the form of
 
-                    if the number of attempts exceed 3
+                    {
+                        'file': open('report.txt', 'rb')
+                    }
 
-                requests Connection Error:
-                    requests.exceptions.ConnectionError
+                default: None
+
+            Kwargs supported values:
+
+                remove_processing_info  (bool)      --  removes the processing instruction info from response.json()
+
+        Returns:
+            tuple:
+                (True, response)    -   in case of success
+
+                (False, response)   -   in case of failure
+
+        Raises:
+            SDKException:
+                if the method passed is incorrect / not supported
+
+                if the number of attempts exceed 3
+
+            requests Connection Error:
+                requests.exceptions.ConnectionError
 
         """
         try:
@@ -442,9 +451,9 @@ class CVPySDK(object):
                 headers = self._commcell_object._headers.copy()
 
             if self.trace_parent:
-                headers['traceParent'] = self.trace_parent
+                headers["traceParent"] = self.trace_parent
 
-            if method == 'POST':
+            if method == "POST":
                 if isinstance(payload, (dict, list)):
                     if files is not None:
                         response = self._request(method=method, url=url, files=files, data=payload)
@@ -461,47 +470,58 @@ class CVPySDK(object):
                         # pass silently if payload is alredy encoded in bytes
                         pass
 
-                    if 'Content-type' in headers and headers['Content-type'] not in [
-                            'application/x-www-form-urlencoded']:
+                    if "Content-type" in headers and headers["Content-type"] not in [
+                        "application/x-www-form-urlencoded"
+                    ]:
                         try:
                             if payload is not None:
                                 xmltodict.parse(payload)
-                            headers['Content-type'] = 'application/xml'
+                            headers["Content-type"] = "application/xml"
                         except ExpatError:
-                            headers['Content-type'] = 'text/plain'
+                            headers["Content-type"] = "text/plain"
 
                     response = self._request(
                         method=method, url=url, headers=headers, data=payload, stream=stream
                     )
-            elif method == 'GET':
+            elif method == "GET":
                 response = self._request(method=method, url=url, headers=headers, stream=stream)
-            elif method == 'PUT':
+            elif method == "PUT":
                 response = self._request(method=method, url=url, headers=headers, json=payload)
-            elif method == 'DELETE':
+            elif method == "DELETE":
                 response = self._request(method=method, url=url, headers=headers)
             else:
-                raise SDKException('CVPySDK', '102', 'HTTP method {} not supported'.format(method))
+                raise SDKException("CVPySDK", "102", f"HTTP method {method} not supported")
 
             # Processinginfo removal from response. It is under try catch to handle different response cases
             # (Eg:DownloadStream API will return file stream in response)
             self._response_headers = response.headers
             try:
-                if kwargs.get('remove_processing_info', True) and 'processinginstructioninfo' in response.json():
-                    del response.json()['processinginstructioninfo']
-            except Exception as e:
+                if (
+                    kwargs.get("remove_processing_info", True)
+                    and "processinginstructioninfo" in response.json()
+                ):
+                    del response.json()["processinginstructioninfo"]
+            except Exception:
                 pass
 
-            if response.status_code == httplib.UNAUTHORIZED and headers.get('Authtoken') is not None:
-                if headers['Authtoken'].startswith('Bearer '):
-                    raise SDKException('CVPySDK', '106')
+            if (
+                response.status_code == httplib.UNAUTHORIZED
+                and headers.get("Authtoken") is not None
+            ):
+                if headers["Authtoken"].startswith("Bearer "):
+                    raise SDKException("CVPySDK", "106")
                 if attempts < 3:
-                    self._commcell_object._headers['Authtoken'] = self._renew_login_token(attempts + 1)
+                    self._commcell_object._headers["Authtoken"] = self._renew_login_token(
+                        attempts + 1
+                    )
                     return self.make_request(method, url, payload, attempts + 1)
                 else:
                     # Raise max attempts exception, if attempts exceeds 3
-                    raise SDKException('CVPySDK', '103')
+                    raise SDKException("CVPySDK", "103")
 
-            if (response.status_code == httplib.OK or response.status_code == httplib.CREATED) and response.ok:
+            if (
+                response.status_code == httplib.OK or response.status_code == httplib.CREATED
+            ) and response.ok:
                 return (True, response)
             else:
                 return (False, response)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright  Commvault Systems, Inc.
 # See LICENSE.txt in the project root for
@@ -24,15 +22,15 @@ OpenshiftSubclient:
 """
 
 from ..vssubclient import VirtualServerSubclient
-from ...exception import SDKException
 
 
 class OpenshiftSubclient(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient Base class.
-       This represents a OpenShift virtual server subclient,
-       and can perform restore operations on only that subclient.
+    This represents a OpenShift virtual server subclient,
+    and can perform restore operations on only that subclient.
 
     """
+
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialize the Instance object for the given Virtual Server instance.
         Args
@@ -41,5 +39,4 @@ class OpenshiftSubclient(VirtualServerSubclient):
 
         """
 
-        super(OpenshiftSubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)

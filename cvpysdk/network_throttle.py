@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -42,14 +40,12 @@ NetworkThrottle:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from typing import Any, Dict, List
 
 from .exception import SDKException
 
-class NetworkThrottle(object):
+
+class NetworkThrottle:
     """
     Class for managing and configuring network throttling operations for clients and client groups.
 
@@ -124,24 +120,29 @@ class NetworkThrottle(object):
         #ai-gen-doc
         """
         if self.is_client:
-            throttle_prop = self._client_object._properties['clientProps']
+            throttle_prop = self._client_object._properties["clientProps"]
 
         elif self.is_client_group:
             throttle_prop = self._clientgroup_object._properties
 
-        if 'networkThrottle' in throttle_prop:
-            self._enable_network_throttling = (throttle_prop['networkThrottle']['enableThrottle'])
+        if "networkThrottle" in throttle_prop:
+            self._enable_network_throttling = throttle_prop["networkThrottle"]["enableThrottle"]
 
-            self._share_bandwidth = (throttle_prop.get(
-                'networkThrottle').get('throttle', {}).get('shareBandwidth', True))
+            self._share_bandwidth = (
+                throttle_prop.get("networkThrottle")
+                .get("throttle", {})
+                .get("shareBandwidth", True)
+            )
 
-            self._throttle_schedules = (throttle_prop.get(
-                'networkThrottle').get('throttle', {}).get('throttle', []))
+            self._throttle_schedules = (
+                throttle_prop.get("networkThrottle").get("throttle", {}).get("throttle", [])
+            )
 
-            self._remote_client_groups = (throttle_prop.get('networkThrottle').get(
-                'clientGroupList', []))
+            self._remote_client_groups = throttle_prop.get("networkThrottle").get(
+                "clientGroupList", []
+            )
 
-            self._remote_clients = (throttle_prop.get('networkThrottle').get('clientList', []))
+            self._remote_clients = throttle_prop.get("networkThrottle").get("clientList", [])
 
     @property
     def enable_network_throttle(self) -> bool:
@@ -228,7 +229,7 @@ class NetworkThrottle(object):
         clients = []
 
         for client in self._remote_clients:
-            clients.append(client['clientName'])
+            clients.append(client["clientName"])
         return clients
 
     @remote_clients.setter
@@ -247,9 +248,7 @@ class NetworkThrottle(object):
         """
 
         for client in clients:
-            client_dict = {
-                "clientName": client
-            }
+            client_dict = {"clientName": client}
             self._remote_clients.append(client_dict)
 
         self.enable_network_throttle = True
@@ -271,7 +270,7 @@ class NetworkThrottle(object):
         client_groups = []
 
         for client_group in self._remote_client_groups:
-            client_groups.append(client_group['clientGroupName'])
+            client_groups.append(client_group["clientGroupName"])
         return client_groups
 
     @remote_client_groups.setter
@@ -290,9 +289,7 @@ class NetworkThrottle(object):
         """
 
         for client_group in client_groups:
-            client_group_dict = {
-                "clientGroupName": client_group
-            }
+            client_group_dict = {"clientGroupName": client_group}
             self._remote_client_groups.append(client_group_dict)
 
         self.enable_network_throttle = True
@@ -367,18 +364,18 @@ class NetworkThrottle(object):
         """
 
         for throttle_rule in throttle_rules:
-            days = int(throttle_rule.get('days', '1111111'), 2)
+            days = int(throttle_rule.get("days", "1111111"), 2)
             throttle_rule_dict = {
-                "sendRate": throttle_rule.get('sendRate', 1024),
-                "sendEnabled": throttle_rule.get('sendEnabled', False),
-                "receiveEnabled": throttle_rule.get('receiveEnabled', False),
-                "recvRate": throttle_rule.get('recvRate', 1024),
+                "sendRate": throttle_rule.get("sendRate", 1024),
+                "sendEnabled": throttle_rule.get("sendEnabled", False),
+                "receiveEnabled": throttle_rule.get("receiveEnabled", False),
+                "recvRate": throttle_rule.get("recvRate", 1024),
                 "days": days,
-                "isAbsolute": throttle_rule.get('isAbsolute', True),
+                "isAbsolute": throttle_rule.get("isAbsolute", True),
                 "startTime": 0,
                 "endTime": 0,
-                "sendRatePercent": throttle_rule.get('sendRatePercent', 40),
-                "recvRatePercent": throttle_rule.get('recvRatePercent', 40)
+                "sendRatePercent": throttle_rule.get("sendRatePercent", 40),
+                "recvRatePercent": throttle_rule.get("recvRatePercent", 40),
             }
 
             self._throttle_schedules.append(throttle_rule_dict)
@@ -411,10 +408,7 @@ class NetworkThrottle(object):
             request_url = self._client_object._CLIENT
             if not self._enable_network_throttling:
                 update_networkconfig_dict = {
-                    "networkThrottle":
-                        {
-                            "enableThrottle": self._enable_network_throttling
-                        }
+                    "networkThrottle": {"enableThrottle": self._enable_network_throttling}
                 }
 
             else:
@@ -423,12 +417,10 @@ class NetworkThrottle(object):
                         "enableThrottle": self._enable_network_throttling,
                         "throttle": {
                             "shareBandwidth": self._share_bandwidth,
-                            "throttle": self._throttle_schedules
+                            "throttle": self._throttle_schedules,
                         },
-                        "clientGroupList":
-                            self._remote_client_groups,
-
-                        "clientList": self._remote_clients
+                        "clientGroupList": self._remote_client_groups,
+                        "clientList": self._remote_clients,
                     }
                 }
 
@@ -447,9 +439,8 @@ class NetworkThrottle(object):
                         },
                         "networkThrottle": {
                             "enableThrottle": self._enable_network_throttling,
-
-                        }
-                    }
+                        },
+                    },
                 }
 
             else:
@@ -458,48 +449,49 @@ class NetworkThrottle(object):
                     "clientGroupDetail": {
                         "clientGroup": {
                             "clientGroupName": self._clientgroup_object._clientgroup_name
-                            },
+                        },
                         "networkThrottle": {
                             "enableThrottle": self._enable_network_throttling,
                             "throttle": {
                                 "shareBandwidth": self._share_bandwidth,
-                                "throttle": self._throttle_schedules
+                                "throttle": self._throttle_schedules,
                             },
                             "clientGroupList": self._remote_client_groups,
+                            "clientList": self._remote_clients,
+                        },
+                    },
+                }
 
-                            "clientList": self._remote_clients
-                        }
-
-                    }}
-
-        flag, response = (self._commcell_object._cvpysdk_object.make_request(
-            'POST', request_url, request_json))
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", request_url, request_json
+        )
 
         if flag:
-            if response.json() and 'response' in response.json():
-                self.error_code = response.json()['response'][0]['errorCode']
+            if response.json() and "response" in response.json():
+                self.error_code = response.json()["response"][0]["errorCode"]
 
             elif response.json():
-                self.error_code = str(response.json()['errorCode'])
+                self.error_code = str(response.json()["errorCode"])
 
-                if self.error_code == 0 or self.error_code == '0':
+                if self.error_code == 0 or self.error_code == "0":
                     update_props_call()
 
-                elif 'errorMessage' in response.json():
-                    error_message = response.json()['errorMessage']
+                elif "errorMessage" in response.json():
+                    error_message = response.json()["errorMessage"]
                     update_props_call()
-                    raise SDKException('Client', '102', error_message)
+                    raise SDKException("Client", "102", error_message)
 
-                elif self.error_code != '0' and self.is_client_group:
+                elif self.error_code != "0" and self.is_client_group:
                     update_props_call()
-                    raise SDKException('ClientGroup', '102',
-                                       'Client group properties were not updated')
+                    raise SDKException(
+                        "ClientGroup", "102", "Client group properties were not updated"
+                    )
 
             else:
                 update_props_call()
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
             update_props_call()
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)

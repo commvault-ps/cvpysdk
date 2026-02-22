@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -31,26 +29,24 @@ CloudAppsSubclient:
 
 """
 
-from __future__ import unicode_literals
-
-from ..subclient import Subclient
 from ..exception import SDKException
+from ..subclient import Subclient
 
 
 class CloudAppsSubclient(Subclient):
     """Class for representing a subclient of the Cloud Apps agent."""
 
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
-        from .cloudapps.salesforce_subclient import SalesforceSubclient
-        from .cloudapps.google_subclient import GoogleSubclient
-        from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
-        from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
-        from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
-        from .cloudapps.teams_subclient import TeamsSubclient
-        from .cloudapps.spanner_subclient import GoogleSpannerSubclient
-        from .cloudapps.onedrive_subclient import OneDriveSubclient
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
+        from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
+        from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
+        from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
+        from .cloudapps.google_subclient import GoogleSubclient
+        from .cloudapps.onedrive_subclient import OneDriveSubclient
         from .cloudapps.powerbi_subclient import PowerBISubclient
+        from .cloudapps.salesforce_subclient import SalesforceSubclient
+        from .cloudapps.spanner_subclient import GoogleSpannerSubclient
+        from .cloudapps.teams_subclient import TeamsSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -72,17 +68,18 @@ class CloudAppsSubclient(Subclient):
             35: MSDynamics365Subclient,  # Office 365 Apps -> MS Dynamics 365 Subclient
             36: TeamsSubclient,  # Office 365 Apps -> MS Teams
             37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
-            44: AzureCosmosDBSubclient, # Azure Cosmos DB Cloud Apps Instance
+            44: AzureCosmosDBSubclient,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBSubclient,  # Azure Cosmos DB MongoDBAPI Instance
-            60: PowerBISubclient    # Power Platform PowerBi Subclient
+            60: PowerBISubclient,  # Power Platform PowerBi Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
-            'cloudAppsInstance']['instanceType']
+            "cloudAppsInstance"
+        ]["instanceType"]
 
         if cloud_apps_instance_type in instance_types:
             instance_type = instance_types[cloud_apps_instance_type]
         else:
-            raise SDKException('Subclient', '112')
+            raise SDKException("Subclient", "112")
 
         return object.__new__(instance_type)

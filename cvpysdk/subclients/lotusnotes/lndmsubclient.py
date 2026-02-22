@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -32,16 +30,13 @@ LNDmSubclient:
     backup()                            --  run a backup job for the subclient
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from typing import TYPE_CHECKING
 
 from .lnsubclient import LNSubclient
-from ...exception import SDKException
 
 if TYPE_CHECKING:
     from ...job import Job
+
 
 class LNDmSubclient(LNSubclient):
     """
@@ -62,15 +57,15 @@ class LNDmSubclient(LNSubclient):
     """
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore specified files or folders to their original location (in-place restore).
 
         This method initiates an in-place restore operation for the provided list of file or folder paths.
@@ -111,27 +106,22 @@ class LNDmSubclient(LNSubclient):
 
         #ai-gen-doc
         """
-        return super(LNDmSubclient, self).restore_in_place(
-            paths,
-            overwrite,
-            restore_data_and_acl,
-            copy_precedence,
-            from_time,
-            to_time,
-            **kwargs)
+        return super().restore_in_place(
+            paths, overwrite, restore_data_and_acl, copy_precedence, from_time, to_time, **kwargs
+        )
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            **kwargs
-        ) -> 'Job':
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        **kwargs,
+    ) -> "Job":
         """Restore specified files or folders to a different client and destination path.
 
         This method restores the files or folders listed in `paths` to the specified `destination_path`
@@ -177,7 +167,7 @@ class LNDmSubclient(LNSubclient):
 
         #ai-gen-doc
         """
-        return super(LNDmSubclient, self).restore_out_of_place(
+        return super().restore_out_of_place(
             client,
             destination_path,
             paths,
@@ -186,4 +176,5 @@ class LNDmSubclient(LNSubclient):
             copy_precedence,
             from_time,
             to_time,
-            **kwargs)
+            **kwargs,
+        )

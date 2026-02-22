@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -176,9 +174,6 @@ Subclient Instance Attributes:
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import copy
 import math
 import time
@@ -186,12 +181,11 @@ from base64 import b64encode
 from typing import Any, Dict, List, Optional, Union
 
 from .exception import SDKException
-from .job import Job
-from .job import JobController
-from .schedules import SchedulePattern
-from .schedules import Schedules
+from .job import Job, JobController
+from .schedules import SchedulePattern, Schedules
 
-class Subclients(object):
+
+class Subclients:
     """
     Manages and interacts with all subclients associated with a client.
 
@@ -233,13 +227,13 @@ class Subclients(object):
         #ai-gen-doc
         """
         from .agent import Agent
-        from .instance import Instance
         from .backupset import Backupset
+        from .instance import Instance
 
         self._agent_object = None
         self._instance_object = None
         self._backupset_object = None
-        self._url_param = ''
+        self._url_param = ""
 
         if isinstance(class_object, Agent):
             self._agent_object = class_object
@@ -248,8 +242,8 @@ class Subclients(object):
         elif isinstance(class_object, Instance):
             self._instance_object = class_object
             self._agent_object = self._instance_object._agent_object
-            self._url_param += '{0}&instanceId={1}'.format(
-                self._agent_object.agent_id, self._instance_object.instance_id
+            self._url_param += (
+                f"{self._agent_object.agent_id}&instanceId={self._instance_object.instance_id}"
             )
 
         elif isinstance(class_object, Backupset):
@@ -257,11 +251,9 @@ class Subclients(object):
             self._instance_object = class_object._instance_object
             self._agent_object = self._instance_object._agent_object
             self._url_param += self._agent_object.agent_id
-            self._url_param += '&backupsetId={0}'.format(
-                self._backupset_object.backupset_id
-            )
+            self._url_param += f"&backupsetId={self._backupset_object.backupset_id}"
         else:
-            raise SDKException('Subclient', '115')
+            raise SDKException("Subclient", "115")
 
         self._client_object = self._agent_object._client_object
         self._commcell_object = self._agent_object._commcell_object
@@ -270,28 +262,27 @@ class Subclients(object):
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-        self._SUBCLIENTS = self._services['GET_ALL_SUBCLIENTS'] % (
-            self._client_object.client_id, self._url_param
+        self._SUBCLIENTS = self._services["GET_ALL_SUBCLIENTS"] % (
+            self._client_object.client_id,
+            self._url_param,
         )
 
-        self._ADD_SUBCLIENT = self._services['ADD_SUBCLIENT']
+        self._ADD_SUBCLIENT = self._services["ADD_SUBCLIENT"]
 
         self._default_subclient = None
 
         # sql server subclient type dict
         self._sqlsubclient_type_dict = {
-            'DATABASE': 1,
-            'FILE_FILEGROUP': 2,
+            "DATABASE": 1,
+            "FILE_FILEGROUP": 2,
         }
 
         # this will work only for `Exchange Database` Agent, as only an object of
         # ExchangeDatabaseAgent class has these attributes
-        if self._instance_object is None and hasattr(
-                self._agent_object, '_instance_object'):
+        if self._instance_object is None and hasattr(self._agent_object, "_instance_object"):
             self._instance_object = self._agent_object._instance_object
 
-        if self._backupset_object is None and hasattr(
-                self._agent_object, '_backupset_object'):
+        if self._backupset_object is None and hasattr(self._agent_object, "_backupset_object"):
             self._backupset_object = self._agent_object._backupset_object
 
         self.refresh()
@@ -299,7 +290,7 @@ class Subclients(object):
     def __str__(self) -> str:
         """Return a string representation of all subclients in the backupset.
 
-        This method provides a human-readable summary listing all subclients 
+        This method provides a human-readable summary listing all subclients
         associated with the backupset for an agent of a client.
 
         Returns:
@@ -314,18 +305,18 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Subclient', 'Backupset', 'Instance', 'Agent', 'Client'
+        representation_string = "{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n".format(
+            "S. No.", "Subclient", "Backupset", "Instance", "Agent", "Client"
         )
 
         for index, subclient in enumerate(self._subclients):
-            sub_str = '{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\t{:20}\n'.format(
+            sub_str = "{:^5}\t{:20}\t{:20}\t{:20}\t{:20}\t{:20}\n".format(
                 index + 1,
-                subclient.split('\\')[-1],
-                self._subclients[subclient]['backupset'],
+                subclient.split("\\")[-1],
+                self._subclients[subclient]["backupset"],
                 self._instance_object.instance_name,
                 self._agent_object.agent_name,
-                self._client_object.client_name
+                self._client_object.client_name,
             )
             representation_string += sub_str
 
@@ -348,22 +339,13 @@ class Subclients(object):
         """
         if self._backupset_object is not None:
             o_str = (
-                'Subclients class instance for Backupset: "{0}", '
-                'of Instance: "{1}", for Agent: "{2}"'
-            ).format(
-                self._backupset_object.backupset_name,
-                self._instance_object.instance_name,
-                self._agent_object.agent_name
+                f'Subclients class instance for Backupset: "{self._backupset_object.backupset_name}", '
+                f'of Instance: "{self._instance_object.instance_name}", for Agent: "{self._agent_object.agent_name}"'
             )
         elif self._instance_object is not None:
-            o_str = 'Subclients class instance for Instance: "{0}", of Agent: "{1}"'.format(
-                self._instance_object.instance_name,
-                self._agent_object.agent_name
-            )
+            o_str = f'Subclients class instance for Instance: "{self._instance_object.instance_name}", of Agent: "{self._agent_object.agent_name}"'
         else:
-            o_str = 'Subclients class instance for Agent: "{0}"'.format(
-                self._agent_object.agent_name
-            )
+            o_str = f'Subclients class instance for Agent: "{self._agent_object.agent_name}"'
 
         return o_str
 
@@ -381,7 +363,7 @@ class Subclients(object):
         """
         return len(self.all_subclients)
 
-    def __getitem__(self, value: 'Union[str, int]') -> 'Union[str, dict]':
+    def __getitem__(self, value: "Union[str, int]") -> "Union[str, dict]":
         """Retrieve subclient information by name or ID.
 
         If a subclient ID (int) is provided, returns the name of the corresponding subclient.
@@ -416,11 +398,11 @@ class Subclients(object):
             return self.all_subclients[value]
         else:
             try:
-                return list(
-                    filter(lambda x: x[1]['id'] == value, self.all_subclients.items())
-                )[0][0]
+                return list(filter(lambda x: x[1]["id"] == value, self.all_subclients.items()))[0][
+                    0
+                ]
             except IndexError:
-                raise IndexError('No subclient exists with the given Name / Id')
+                raise IndexError("No subclient exists with the given Name / Id")
 
     def _get_subclients(self) -> dict:
         """Retrieve all subclients associated with the client specified by the backupset object.
@@ -450,114 +432,85 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._SUBCLIENTS)
+        flag, response = self._cvpysdk_object.make_request("GET", self._SUBCLIENTS)
 
         if flag:
-            if response.json() and 'subClientProperties' in response.json():
+            if response.json() and "subClientProperties" in response.json():
                 return_dict = {}
 
-                for dictionary in response.json()['subClientProperties']:
+                for dictionary in response.json()["subClientProperties"]:
                     # store the agent, instance, and backupset name for the current subclient
                     # the API call returns the subclients for all Agents, so we need to filter
                     # them out based on the Agent / Instance / Backupset that had been selected
                     # by the user earlier
-                    agent = dictionary['subClientEntity']['appName'].lower()
-                    instance = dictionary['subClientEntity']['instanceName'].lower(
-                    )
-                    backupset = dictionary['subClientEntity']['backupsetName'].lower(
-                    )
+                    agent = dictionary["subClientEntity"]["appName"].lower()
+                    instance = dictionary["subClientEntity"]["instanceName"].lower()
+                    backupset = dictionary["subClientEntity"]["backupsetName"].lower()
 
                     # filter subclients for all entities: Agent, Instance, and Backupset
                     # as the instance of the Backupset class was passed for Subclients instance
                     # creation
                     if self._backupset_object is not None:
-                        if (self._backupset_object.backupset_name in backupset and
-                                self._instance_object.instance_name in instance and
-                                self._agent_object.agent_name in agent):
-                            temp_name = dictionary['subClientEntity']['subclientName'].lower(
-                            )
-                            temp_id = str(
-                                dictionary['subClientEntity']['subclientId']).lower()
+                        if (
+                            self._backupset_object.backupset_name in backupset
+                            and self._instance_object.instance_name in instance
+                            and self._agent_object.agent_name in agent
+                        ):
+                            temp_name = dictionary["subClientEntity"]["subclientName"].lower()
+                            temp_id = str(dictionary["subClientEntity"]["subclientId"]).lower()
 
-                            return_dict[temp_name] = {
-                                "id": temp_id,
-                                "backupset": backupset
-                            }
+                            return_dict[temp_name] = {"id": temp_id, "backupset": backupset}
 
-                            if dictionary['commonProperties'].get(
-                                    'isDefaultSubclient'):
+                            if dictionary["commonProperties"].get("isDefaultSubclient"):
                                 self._default_subclient = temp_name
 
                     elif self._instance_object is not None:
-                        if (self._instance_object.instance_name in instance and
-                                self._agent_object.agent_name in agent):
-                            temp_name = dictionary['subClientEntity']['subclientName'].lower(
-                            )
-                            temp_id = str(
-                                dictionary['subClientEntity']['subclientId']).lower()
+                        if (
+                            self._instance_object.instance_name in instance
+                            and self._agent_object.agent_name in agent
+                        ):
+                            temp_name = dictionary["subClientEntity"]["subclientName"].lower()
+                            temp_id = str(dictionary["subClientEntity"]["subclientId"]).lower()
 
-                            if len(
-                                    self._instance_object.backupsets.all_backupsets) > 1:
-                                temp_name = "{0}\\{1}".format(
-                                    backupset, temp_name)
+                            if len(self._instance_object.backupsets.all_backupsets) > 1:
+                                temp_name = f"{backupset}\\{temp_name}"
 
-                            return_dict[temp_name] = {
-                                "id": temp_id,
-                                "backupset": backupset
-                            }
+                            return_dict[temp_name] = {"id": temp_id, "backupset": backupset}
 
-                            if dictionary['commonProperties'].get(
-                                    'isDefaultSubclient'):
+                            if dictionary["commonProperties"].get("isDefaultSubclient"):
                                 self._default_subclient = temp_name
 
                     elif self._agent_object is not None:
                         if self._agent_object.agent_name in agent:
-                            temp_name = dictionary['subClientEntity']['subclientName'].lower(
-                            )
-                            temp_id = str(
-                                dictionary['subClientEntity']['subclientId']).lower()
+                            temp_name = dictionary["subClientEntity"]["subclientName"].lower()
+                            temp_id = str(dictionary["subClientEntity"]["subclientId"]).lower()
 
                             if len(self._agent_object.instances.all_instances) > 1:
-                                if len(
-                                        self._instance_object.backupsets.all_backupsets) > 1:
-                                    temp_name = "{0}\\{1}\\{2}".format(
-                                        instance, backupset, temp_name
-                                    )
+                                if len(self._instance_object.backupsets.all_backupsets) > 1:
+                                    temp_name = f"{instance}\\{backupset}\\{temp_name}"
                                 else:
-                                    temp_name = "{0}\\{1}".format(
-                                        instance, temp_name)
+                                    temp_name = f"{instance}\\{temp_name}"
                             else:
-                                if len(
-                                        self._instance_object.backupsets.all_backupsets) > 1:
-                                    temp_name = "{0}\\{1}".format(
-                                        backupset, temp_name)
+                                if len(self._instance_object.backupsets.all_backupsets) > 1:
+                                    temp_name = f"{backupset}\\{temp_name}"
 
-                            return_dict[temp_name] = {
-                                "id": temp_id,
-                                "backupset": backupset
-                            }
+                            return_dict[temp_name] = {"id": temp_id, "backupset": backupset}
 
-                            if dictionary['commonProperties'].get(
-                                    'isDefaultSubclient'):
+                            if dictionary["commonProperties"].get("isDefaultSubclient"):
                                 self._default_subclient = temp_name
 
                 return return_dict
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
     def all_subclients(self) -> dict:
         """Get a dictionary of all subclients configured on this backupset.
 
         Returns:
-            dict: A dictionary where each key is a subclient name and the value is a dictionary 
+            dict: A dictionary where each key is a subclient name and the value is a dictionary
             containing the subclient's ID and associated backupset. The structure is as follows:
 
                 {
@@ -602,11 +555,11 @@ class Subclients(object):
         #ai-gen-doc
         """
         if not isinstance(subclient_name, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         return self._subclients and subclient_name.lower() in self._subclients
 
-    def _process_add_request(self, request_json: dict) -> 'Subclient':
+    def _process_add_request(self, request_json: dict) -> "Subclient":
         """Send a request to add a new subclient and return the resulting Subclient instance.
 
         Args:
@@ -636,37 +589,42 @@ class Subclients(object):
         #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._ADD_SUBCLIENT, request_json
+            "POST", self._ADD_SUBCLIENT, request_json
         )
 
         if flag:
-            if response.json() and 'response' in response.json():
-                error_code = response.json()['response']['errorCode']
+            if response.json() and "response" in response.json():
+                error_code = response.json()["response"]["errorCode"]
 
                 if error_code != 0:
-                    error_string = response.json()['response']['errorString']
+                    error_string = response.json()["response"]["errorString"]
                     raise SDKException(
-                        'Subclient',
-                        '102',
-                        'Failed to create subclient\nError: "{0}"'.format(error_string)
+                        "Subclient", "102", f'Failed to create subclient\nError: "{error_string}"'
                     )
                 else:
                     # initialize the subclients again so the subclient object has all the subclients
                     self.refresh()
 
-                    subclient_name = request_json['subClientProperties']['subClientEntity']['subclientName']
+                    subclient_name = request_json["subClientProperties"]["subClientEntity"][
+                        "subclientName"
+                    ]
 
                     return self.get(subclient_name)
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def add(self, subclient_name: str, storage_policy: Optional[str] = None,
-            subclient_type: Optional[str] = None, description: str = '',
-            advanced_options: Optional[Dict[str, Any]] = None,
-            pre_scan_cmd: Optional[str] = None) -> 'Subclient':
+    def add(
+        self,
+        subclient_name: str,
+        storage_policy: Optional[str] = None,
+        subclient_type: Optional[str] = None,
+        description: str = "",
+        advanced_options: Optional[Dict[str, Any]] = None,
+        pre_scan_cmd: Optional[str] = None,
+    ) -> "Subclient":
         """Add a new subclient to the backupset.
 
         This method creates a new subclient with the specified name and optional properties,
@@ -704,33 +662,27 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(subclient_name, str) and
-                isinstance(description, str)):
-            raise SDKException('Subclient', '101')
+        if not (isinstance(subclient_name, str) and isinstance(description, str)):
+            raise SDKException("Subclient", "101")
 
         if self.has_subclient(subclient_name):
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
-                    subclient_name)
-            )
+            raise SDKException("Subclient", "102", f'Subclient "{subclient_name}" already exists.')
 
         if self._backupset_object is None:
-            if self._instance_object.backupsets.has_backupset(
-                    'defaultBackupSet'):
-                self._backupset_object = self._instance_object.backupsets.get(
-                    'defaultBackupSet')
+            if self._instance_object.backupsets.has_backupset("defaultBackupSet"):
+                self._backupset_object = self._instance_object.backupsets.get("defaultBackupSet")
             else:
                 self._backupset_object = self._instance_object.backupsets.get(
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
                 )
 
         if storage_policy and not self._commcell_object.storage_policies.has_policy(
-                storage_policy):
+            storage_policy
+        ):
             raise SDKException(
-                'Subclient',
-                '102',
-                'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                    storage_policy)
+                "Subclient",
+                "102",
+                f'Storage Policy: "{storage_policy}" does not exist in the Commcell',
             )
 
         if advanced_options:
@@ -749,18 +701,16 @@ class Subclients(object):
                     "appName": self._agent_object.agent_name,
                     "instanceName": self._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
-                    "subclientName": subclient_name
+                    "subclientName": subclient_name,
                 },
                 "commonProperties": {
                     "description": description,
                     "enableBackup": True,
                     "onDemandSubClient": ondemand_value,
                     "storageDevice": {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": storage_policy
-                        }
+                        "dataBackupStoragePolicy": {"storagePolicyName": storage_policy}
                     },
-                }
+                },
             }
         }
 
@@ -770,27 +720,27 @@ class Subclients(object):
         if pre_scan_cmd is not None:
             request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = {
                 "runAs": 1,
-                "preScanCommand": pre_scan_cmd
+                "preScanCommand": pre_scan_cmd,
             }
 
-        if self._agent_object.agent_name == 'sql server':
-            request_json['subClientProperties']['mssqlSubClientProp'] = {
-                'sqlSubclientType': self._sqlsubclient_type_dict[subclient_type]
+        if self._agent_object.agent_name == "sql server":
+            request_json["subClientProperties"]["mssqlSubClientProp"] = {
+                "sqlSubclientType": self._sqlsubclient_type_dict[subclient_type]
             }
 
         return self._process_add_request(request_json)
 
     def add_oracle_logical_dump_subclient(
-            self,
-            subclient_name: str,
-            storage_policy: str,
-            dump_dir: str,
-            user_name: str,
-            domain_name: str,
-            password: str,
-            full_mode: bool,
-            schema_value: Optional[list] = None
-        ) -> 'Subclient':
+        self,
+        subclient_name: str,
+        storage_policy: str,
+        dump_dir: str,
+        user_name: str,
+        domain_name: str,
+        password: str,
+        full_mode: bool,
+        schema_value: Optional[list] = None,
+    ) -> "Subclient":
         """Add a subclient for Oracle logical dump backup.
 
         This method creates a subclient for Oracle logical dump in either full mode or schema mode:
@@ -845,41 +795,35 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
-                isinstance(dump_dir, str) and
-                isinstance(user_name, str) and
-                isinstance(domain_name, str) and
-                isinstance(password, str) and
-                isinstance(full_mode, bool)):
-            raise SDKException('Subclient', '101')
-        if (full_mode == False and not
-        isinstance(schema_value, list)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(subclient_name, str)
+            and isinstance(storage_policy, str)
+            and isinstance(dump_dir, str)
+            and isinstance(user_name, str)
+            and isinstance(domain_name, str)
+            and isinstance(password, str)
+            and isinstance(full_mode, bool)
+        ):
+            raise SDKException("Subclient", "101")
+        if full_mode == False and not isinstance(schema_value, list):
+            raise SDKException("Subclient", "101")
 
         if self.has_subclient(subclient_name):
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
-                    subclient_name)
-            )
+            raise SDKException("Subclient", "102", f'Subclient "{subclient_name}" already exists.')
 
         if self._backupset_object is None:
-            if self._instance_object.backupsets.has_backupset(
-                    'defaultBackupSet'):
-                self._backupset_object = self._instance_object.backupsets.get(
-                    'defaultBackupSet')
+            if self._instance_object.backupsets.has_backupset("defaultBackupSet"):
+                self._backupset_object = self._instance_object.backupsets.get("defaultBackupSet")
             else:
                 self._backupset_object = self._instance_object.backupsets.get(
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
                 )
 
-        if not self._commcell_object.storage_policies.has_policy(
-                storage_policy):
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
-                'Subclient',
-                '102',
-                'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                    storage_policy)
+                "Subclient",
+                "102",
+                f'Storage Policy: "{storage_policy}" does not exist in the Commcell',
             )
 
         request_json = {
@@ -889,7 +833,7 @@ class Subclients(object):
                     "instanceName": self._instance_object.instance_name,
                     "appName": self._agent_object.agent_name,
                     "backupsetName": self._backupset_object.backupset_name,
-                    "subclientName": subclient_name
+                    "subclientName": subclient_name,
                 },
                 "oracleSubclientProp": {
                     "data": False,
@@ -912,7 +856,7 @@ class Subclients(object):
                         "snapToTapeProxyToUseSource": False,
                         "isSnapBackupEnabled": False,
                         "IsOracleSposDriverEnabled": False,
-                        "isRMANEnableForTapeMovement": False
+                        "isRMANEnableForTapeMovement": False,
                     },
                     "dbDumpConfig": {
                         "fullMode": True,
@@ -923,35 +867,35 @@ class Subclients(object):
                         "sqlConnect": {
                             "password": b64encode(password.encode()).decode(),
                             "domainName": domain_name,
-                            "userName": user_name
-                        }
+                            "userName": user_name,
+                        },
                     },
                     "storageDevice": {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": storage_policy
-                        },
-                        "deDuplicationOptions": {
-                            "enableDeduplication": True
-                        }
-                    }
-                }
+                        "dataBackupStoragePolicy": {"storagePolicyName": storage_policy},
+                        "deDuplicationOptions": {"enableDeduplication": True},
+                    },
+                },
             }
         }
 
-        if (full_mode == False):
-            request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["fullMode"] = False
-            request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["schema"] = schema_value
+        if full_mode == False:
+            request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["fullMode"] = (
+                False
+            )
+            request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["schema"] = (
+                schema_value
+            )
 
         return self._process_add_request(request_json)
 
     def add_postgresql_subclient(
-            self,
-            subclient_name: str,
-            storage_policy: str,
-            contents: list,
-            no_of_streams: int = 1,
-            collect_object_list: bool = False
-        ) -> 'Subclient':
+        self,
+        subclient_name: str,
+        storage_policy: str,
+        contents: list,
+        no_of_streams: int = 1,
+        collect_object_list: bool = False,
+    ) -> "Subclient":
         """Add a new PostgreSQL subclient to the backup set.
 
         This method creates a new PostgreSQL subclient with the specified name, associates it with a storage policy,
@@ -991,32 +935,25 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
-                isinstance(contents, list)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(subclient_name, str)
+            and isinstance(storage_policy, str)
+            and isinstance(contents, list)
+        ):
+            raise SDKException("Subclient", "101")
 
         if self.has_subclient(subclient_name):
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
-                    subclient_name)
-            )
+            raise SDKException("Subclient", "102", f'Subclient "{subclient_name}" already exists.')
 
-        if not self._commcell_object.storage_policies.has_policy(
-                storage_policy):
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
-                'Subclient',
-                '102',
-                'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                    storage_policy)
+                "Subclient",
+                "102",
+                f'Storage Policy: "{storage_policy}" does not exist in the Commcell',
             )
 
         if not contents:
-            raise SDKException(
-                'Subclient',
-                '102',
-                'Content list cannot be empty'
-            )
+            raise SDKException("Subclient", "102", "Content list cannot be empty")
 
         content_list = []
         for content in contents:
@@ -1030,32 +967,26 @@ class Subclients(object):
                     "appName": self._agent_object.agent_name,
                     "instanceName": self._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
-                    "subclientName": subclient_name
+                    "subclientName": subclient_name,
                 },
                 "commonProperties": {
                     "storageDevice": {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": storage_policy
-                        }
+                        "dataBackupStoragePolicy": {"storagePolicyName": storage_policy}
                     },
                 },
                 "postgreSQLSubclientProp": {
                     "numberOfBackupStreams": no_of_streams,
-                    "collectObjectListDuringBackup": collect_object_list
+                    "collectObjectListDuringBackup": collect_object_list,
                 },
-                "content": content_list
+                "content": content_list,
             }
         }
 
         return self._process_add_request(request_json)
 
     def add_mysql_subclient(
-            self,
-            subclient_name: str,
-            storage_policy: str,
-            contents: list,
-            **kwargs: dict
-    ) -> 'Subclient':
+        self, subclient_name: str, storage_policy: str, contents: list, **kwargs: dict
+    ) -> "Subclient":
         """Add a new MySQL subclient to the instance.
 
         This method creates a new MySQL subclient with the specified name, associates it with a storage policy,
@@ -1096,32 +1027,25 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
-                isinstance(contents, list)):
-            raise SDKException('Subclient', '101')
+        if not (
+            isinstance(subclient_name, str)
+            and isinstance(storage_policy, str)
+            and isinstance(contents, list)
+        ):
+            raise SDKException("Subclient", "101")
 
         if self.has_subclient(subclient_name):
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
-                    subclient_name)
-            )
+            raise SDKException("Subclient", "102", f'Subclient "{subclient_name}" already exists.')
 
-        if not self._commcell_object.storage_policies.has_policy(
-                storage_policy):
+        if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
-                'Subclient',
-                '102',
-                'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                    storage_policy)
+                "Subclient",
+                "102",
+                f'Storage Policy: "{storage_policy}" does not exist in the Commcell',
             )
 
         if not contents:
-            raise SDKException(
-                'Subclient',
-                '102',
-                'Content list cannot be empty'
-            )
+            raise SDKException("Subclient", "102", "Content list cannot be empty")
 
         content_list = []
         for content in contents:
@@ -1135,32 +1059,27 @@ class Subclients(object):
                     "appName": self._agent_object.agent_name,
                     "instanceName": self._instance_object.instance_name,
                     "backupsetName": "defaultDummyBackupSet",
-                    "subclientName": subclient_name
+                    "subclientName": subclient_name,
                 },
                 "commonProperties": {
                     "storageDevice": {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": storage_policy
-                        }
+                        "dataBackupStoragePolicy": {"storagePolicyName": storage_policy}
                     },
                 },
                 "mySqlSubclientProp": {
-                    "numberOfBackupStreams": kwargs.get('no_of_backup_streams', 1),
-                    "numberOfTransactionLogStreams": kwargs.get('no_of_log_backup_streams', 1),
-                    "fullInstanceXtraBackup": kwargs.get('full_instance_xtrabackup', False)
+                    "numberOfBackupStreams": kwargs.get("no_of_backup_streams", 1),
+                    "numberOfTransactionLogStreams": kwargs.get("no_of_log_backup_streams", 1),
+                    "fullInstanceXtraBackup": kwargs.get("full_instance_xtrabackup", False),
                 },
-                "content": content_list
+                "content": content_list,
             }
         }
 
         return self._process_add_request(request_json)
 
     def add_virtual_server_subclient(
-            self,
-            subclient_name: str,
-            subclient_content: list,
-            **kwargs: dict
-    ) -> 'Subclient':
+        self, subclient_name: str, subclient_content: list, **kwargs: dict
+    ) -> "Subclient":
         """Add a new virtual server subclient to the backupset.
 
         This method creates a new virtual server subclient with the specified name and content.
@@ -1206,21 +1125,15 @@ class Subclients(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(subclient_name, str) and
-                isinstance(subclient_content, list)):
-            raise SDKException('Subclient', '101')
+        if not (isinstance(subclient_name, str) and isinstance(subclient_content, list)):
+            raise SDKException("Subclient", "101")
 
         if self.has_subclient(subclient_name):
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
-                    subclient_name)
-            )
+            raise SDKException("Subclient", "102", f'Subclient "{subclient_name}" already exists.')
 
         if self._backupset_object is None:
-            if self._instance_object.backupsets.has_backupset(
-                    'defaultBackupSet'):
-                self._backupset_object = self._instance_object.backupsets.get(
-                    'defaultBackupSet')
+            if self._instance_object.backupsets.has_backupset("defaultBackupSet"):
+                self._backupset_object = self._instance_object.backupsets.get("defaultBackupSet")
             else:
                 self._backupset_object = self._instance_object.backupsets.get(
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
@@ -1246,25 +1159,27 @@ class Subclients(object):
 
             """
             return {
-                "equalsOrNotEquals": item_content.get('equal_value', True),
-                "name": item_content.get('id', ''),
-                "displayName": item_content.get('display_name', ''),
-                "path": item_content.get('path', ''),
-                "allOrAnyChildren": item.get('allOrAnyChildren', True),
-                "type": item_content['type'] if isinstance(item_content['type'], int) else item_content['type'].value
+                "equalsOrNotEquals": item_content.get("equal_value", True),
+                "name": item_content.get("id", ""),
+                "displayName": item_content.get("display_name", ""),
+                "path": item_content.get("path", ""),
+                "allOrAnyChildren": item.get("allOrAnyChildren", True),
+                "type": item_content["type"]
+                if isinstance(item_content["type"], int)
+                else item_content["type"].value,
             }
 
         for item in subclient_content:
             _temp_list = []
             _temp_dict = {}
-            allOrAnyChildren = item.get('allOrAnyChildren', None)
-            if 'content' in item:
-                nested_content = item['content']
+            allOrAnyChildren = item.get("allOrAnyChildren", None)
+            if "content" in item:
+                nested_content = item["content"]
                 for each_condition in nested_content:
                     temp_dict = set_content(each_condition)
                     _temp_list.append(temp_dict)
-                _temp_dict['allOrAnyChildren'] = allOrAnyChildren
-                _temp_dict['children'] = _temp_list
+                _temp_dict["allOrAnyChildren"] = allOrAnyChildren
+                _temp_dict["children"] = _temp_list
                 content.append(_temp_dict)
             else:
                 temp_dict = set_content(item)
@@ -1273,56 +1188,55 @@ class Subclients(object):
         request_json = {
             "subClientProperties": {
                 "vmContentOperationType": 2,
-                "vmContent": {
-                    "children": content
-                },
+                "vmContent": {"children": content},
                 "subClientEntity": {
                     "clientName": self._client_object.client_name,
                     "appName": self._agent_object.agent_name,
                     "instanceName": self._instance_object.instance_name,
                     "backupsetName": self._backupset_object.backupset_name,
-                    "subclientName": subclient_name
+                    "subclientName": subclient_name,
                 },
                 "commonProperties": {
-                    "description": kwargs.get('description'),
-                    "enableBackup": True
-                }
+                    "description": kwargs.get("description"),
+                    "enableBackup": True,
+                },
             }
         }
 
         if kwargs.get("customSnapshotResourceGroup"):
-            request_json["subClientProperties"]["vsaSubclientProp"] = \
-                {"customSnapshotResourceGroup": kwargs.get("customSnapshotResourceGroup")}
-
-        if kwargs.get('plan_name'):
-            if not self._commcell_object.plans.has_plan(kwargs['plan_name']):
-                raise SDKException(
-                    'Subclient',
-                    '102',
-                    'Plan: "{0}" does not exist in the Commcell'.format(kwargs['plan_name'])
-                )
-            request_json['subClientProperties']['planEntity'] = {
-                "planName": kwargs['plan_name']
+            request_json["subClientProperties"]["vsaSubclientProp"] = {
+                "customSnapshotResourceGroup": kwargs.get("customSnapshotResourceGroup")
             }
 
-        elif kwargs.get('storage_policy'):
-            if not self._commcell_object.storage_policies.has_policy(kwargs.get('storage_policy')):
+        if kwargs.get("plan_name"):
+            if not self._commcell_object.plans.has_plan(kwargs["plan_name"]):
                 raise SDKException(
-                    'Subclient',
-                    '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(kwargs.get('storage_policy'))
+                    "Subclient",
+                    "102",
+                    'Plan: "{0}" does not exist in the Commcell'.format(kwargs["plan_name"]),
                 )
-            request_json['subClientProperties']['commonProperties']['storageDevice'] = {
-                "dataBackupStoragePolicy": {
-                    "storagePolicyName": kwargs.get('storage_policy')
-                }
+            request_json["subClientProperties"]["planEntity"] = {"planName": kwargs["plan_name"]}
+
+        elif kwargs.get("storage_policy"):
+            if not self._commcell_object.storage_policies.has_policy(kwargs.get("storage_policy")):
+                raise SDKException(
+                    "Subclient",
+                    "102",
+                    'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                        kwargs.get("storage_policy")
+                    ),
+                )
+            request_json["subClientProperties"]["commonProperties"]["storageDevice"] = {
+                "dataBackupStoragePolicy": {"storagePolicyName": kwargs.get("storage_policy")}
             }
         else:
-            raise SDKException('Subclient', '102', 'Either Plan or Storage policy should be given as input')
+            raise SDKException(
+                "Subclient", "102", "Either Plan or Storage policy should be given as input"
+            )
 
         return self._process_add_request(request_json)
 
-    def add_onedrive_subclient(self, subclient_name: str, server_plan: str) -> 'Subclient':
+    def add_onedrive_subclient(self, subclient_name: str, server_plan: str) -> "Subclient":
         """Add a new OneDrive subclient to the backup set.
 
         Creates a new subclient with the specified name and associates it with the given server plan.
@@ -1351,21 +1265,19 @@ class Subclients(object):
         #ai-gen-doc
         """
 
-        if not (isinstance(subclient_name, str) and
-                isinstance(server_plan, str)):
-            raise SDKException('Subclient', '101')
+        if not (isinstance(subclient_name, str) and isinstance(server_plan, str)):
+            raise SDKException("Subclient", "101")
 
         if self.has_subclient(subclient_name):
-            raise SDKException(
-                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
-                    subclient_name)
-            )
+            raise SDKException("Subclient", "102", f'Subclient "{subclient_name}" already exists.')
 
         if self._backupset_object is None:
             if self._instance_object.backupsets.has_backupset(
-                    self._instance_object.backupsets.default_backup_set):
+                self._instance_object.backupsets.default_backup_set
+            ):
                 self._backupset_object = self._instance_object.backupsets.get(
-                    self._instance_object.backupsets.default_backup_set)
+                    self._instance_object.backupsets.default_backup_set
+                )
             else:
                 self._backupset_object = self._instance_object.backupsets.get(
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
@@ -1375,7 +1287,7 @@ class Subclients(object):
             server_plan_object = self._commcell_object.plans.get(server_plan)
             server_plan_id = int(server_plan_object.plan_id)
         else:
-            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+            raise SDKException("Plan", "102", "Provide Valid Plan Name")
 
         request_json = {
             "subClientProperties": {
@@ -1387,30 +1299,21 @@ class Subclients(object):
                     "clientId": int(self._client_object.client_id),
                     "appName": self._agent_object.agent_name,
                     "applicationId": 134,
-                    "subclientName": subclient_name
+                    "subclientName": subclient_name,
                 },
-                "planEntity": {
-                    "planId": server_plan_id
-                },
+                "planEntity": {"planId": server_plan_id},
                 "cloudAppsSubClientProp": {
                     "instanceType": 7,
-                    "oneDriveSubclient": {
-                        "enableOneNote": False,
-                        "isEnterprise": True
-                    }
+                    "oneDriveSubclient": {"enableOneNote": False, "isEnterprise": True},
                 },
-                "cloudconnectorSubclientProp": {
-                    "isAutoDiscoveryEnabled": False
-                },
-                "commonProperties": {
-                    "enableBackup": True
-                }
+                "cloudconnectorSubclientProp": {"isAutoDiscoveryEnabled": False},
+                "commonProperties": {"enableBackup": True},
             }
         }
 
         return self._process_add_request(request_json)
 
-    def get(self, subclient_name: str) -> 'Subclient':
+    def get(self, subclient_name: str) -> "Subclient":
         """Retrieve a Subclient object by its name.
 
         Args:
@@ -1430,23 +1333,21 @@ class Subclients(object):
         #ai-gen-doc
         """
         if not isinstance(subclient_name, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
         else:
             subclient_name = subclient_name.lower()
 
             if self.has_subclient(subclient_name):
-
                 if self._backupset_object is None:
                     self._backupset_object = self._instance_object.backupsets.get(
-                        self._subclients[subclient_name]['backupset']
+                        self._subclients[subclient_name]["backupset"]
                     )
                 return Subclient(
-                    self._backupset_object, subclient_name, self._subclients[subclient_name]['id']
+                    self._backupset_object, subclient_name, self._subclients[subclient_name]["id"]
                 )
 
             raise SDKException(
-                'Subclient', '102', 'No subclient exists with name: {0}'.format(
-                    subclient_name)
+                "Subclient", "102", f"No subclient exists with name: {subclient_name}"
             )
 
     def delete(self, subclient_name: str) -> None:
@@ -1470,61 +1371,57 @@ class Subclients(object):
         #ai-gen-doc
         """
         if not isinstance(subclient_name, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
         else:
             subclient_name = subclient_name.lower()
 
         if self.has_subclient(subclient_name):
-            delete_subclient_service = self._services['SUBCLIENT'] % (
-                self._subclients[subclient_name]['id']
+            delete_subclient_service = (
+                self._services["SUBCLIENT"] % (self._subclients[subclient_name]["id"])
             )
 
-            flag, response = self._cvpysdk_object.make_request(
-                'DELETE', delete_subclient_service)
+            flag, response = self._cvpysdk_object.make_request("DELETE", delete_subclient_service)
 
             if flag:
                 if response.json():
-                    if 'response' in response.json():
-                        response_value = response.json()['response'][0]
-                        error_code = str(response_value['errorCode'])
+                    if "response" in response.json():
+                        response_value = response.json()["response"][0]
+                        error_code = str(response_value["errorCode"])
                         error_message = None
 
-                        if 'errorString' in response_value:
-                            error_message = response_value['errorString']
+                        if "errorString" in response_value:
+                            error_message = response_value["errorString"]
 
                         if error_message:
                             o_str = 'Failed to delete subclient\nError: "{0}"'
-                            raise SDKException(
-                                'Subclient', '102', o_str.format(error_message))
+                            raise SDKException("Subclient", "102", o_str.format(error_message))
                         else:
-                            if error_code == '0':
+                            if error_code == "0":
                                 # initialize the subclients again
                                 # so the subclient object has all the
                                 # subclients
                                 self.refresh()
                             else:
-                                o_str = ('Failed to delete subclient with Error Code: "{0}"\n'
-                                         'Please check the documentation for '
-                                         'more details on the error')
-                                raise SDKException(
-                                    'Subclient', '102', o_str.format(error_code))
+                                o_str = (
+                                    'Failed to delete subclient with Error Code: "{0}"\n'
+                                    "Please check the documentation for "
+                                    "more details on the error"
+                                )
+                                raise SDKException("Subclient", "102", o_str.format(error_code))
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException(
-                    'Response', '101', self._update_response_(
-                        response.text))
+                raise SDKException("Response", "101", self._update_response_(response.text))
         else:
             raise SDKException(
-                'Subclient', '102', 'No subclient exists with name: {0}'.format(
-                    subclient_name)
+                "Subclient", "102", f"No subclient exists with name: {subclient_name}"
             )
 
     def refresh(self) -> None:
         """Reload the subclients associated with the Backupset or Instance.
 
-        This method refreshes the internal cache of subclients, ensuring that any changes 
-        made on the Commcell are reflected in the current object. Use this method to 
+        This method refreshes the internal cache of subclients, ensuring that any changes
+        made on the Commcell are reflected in the current object. Use this method to
         update the subclient list after adding, removing, or modifying subclients.
 
         Example:
@@ -1553,7 +1450,7 @@ class Subclients(object):
         return self._default_subclient
 
 
-class Subclient(object):
+class Subclient:
     """
     Base class for managing Subclient entities within a backup and restore framework.
 
@@ -1584,7 +1481,9 @@ class Subclient(object):
     #ai-gen-doc
     """
 
-    def __new__(cls, backupset_object: object, subclient_name: str, subclient_id: str = None) -> 'Subclient':
+    def __new__(
+        cls, backupset_object: object, subclient_name: str, subclient_id: str = None
+    ) -> "Subclient":
         """Create a new instance of the Subclient class.
 
         This method is responsible for constructing a new Subclient object associated with a specific backupset.
@@ -1604,59 +1503,58 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        from .subclients.fssubclient import FileSystemSubclient
-        from .subclients.bigdataappssubclient import BigDataAppsSubclient
-        from .subclients.vssubclient import VirtualServerSubclient
-        from .subclients.casubclient import CloudAppsSubclient
-        from .subclients.sqlsubclient import SQLServerSubclient
-        from .subclients.nassubclient import NASSubclient
-        from .subclients.hanasubclient import SAPHANASubclient
-        from .subclients.oraclesubclient import OracleSubclient
-        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
-        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
-        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
-        from .subclients.sybasesubclient import SybaseSubclient
-        from .subclients.saporaclesubclient import SAPOracleSubclient
-        from .subclients.exchsubclient import ExchangeSubclient
-        from .subclients.mysqlsubclient import MYSQLSubclient
-        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
-        from .subclients.postgressubclient import PostgresSubclient
-        from .subclients.informixsubclient import InformixSubclient
-        from .subclients.adsubclient import ADSubclient
-        from .subclients.sharepointsubclient import SharepointSubclient
-        from .subclients.sharepointsubclient import SharepointV1Subclient
-        from .subclients.vminstancesubclient import VMInstanceSubclient
-        from .subclients.db2subclient import DB2Subclient
-        from .subclients.casesubclient import CaseSubclient
         from .subclients.aadsubclient import AzureAdSubclient
+        from .subclients.adsubclient import ADSubclient
+        from .subclients.bigdataappssubclient import BigDataAppsSubclient
+        from .subclients.casesubclient import CaseSubclient
+        from .subclients.casubclient import CloudAppsSubclient
+        from .subclients.db2subclient import DB2Subclient
+        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
+        from .subclients.exchsubclient import ExchangeSubclient
+        from .subclients.fssubclient import FileSystemSubclient
+        from .subclients.hanasubclient import SAPHANASubclient
+        from .subclients.informixsubclient import InformixSubclient
+        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
+        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
+        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
+        from .subclients.mysqlsubclient import MYSQLSubclient
+        from .subclients.nassubclient import NASSubclient
+        from .subclients.oraclesubclient import OracleSubclient
+        from .subclients.postgressubclient import PostgresSubclient
+        from .subclients.saporaclesubclient import SAPOracleSubclient
+        from .subclients.sharepointsubclient import SharepointSubclient, SharepointV1Subclient
+        from .subclients.sqlsubclient import SQLServerSubclient
+        from .subclients.sybasesubclient import SybaseSubclient
+        from .subclients.vminstancesubclient import VMInstanceSubclient
+        from .subclients.vssubclient import VirtualServerSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         _subclients_dict = {
-            'big data apps': BigDataAppsSubclient,
-            'file system': FileSystemSubclient,
-            'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
-            'cloud apps': CloudAppsSubclient,
-            'sql server': SQLServerSubclient,
-            'nas': NASSubclient,  # SP11 or lower CS honors NAS as the Agent Name
-            'ndmp': NASSubclient,  # SP12 and above honors NDMP as the Agent Name
-            'sap hana': SAPHANASubclient,
-            'oracle': OracleSubclient,
-            'oracle rac': OracleSubclient,
-            'notes database': LNDbSubclient,
-            'notes document': LNDocSubclient,
-            'domino mailbox archiver': LNDmSubclient,
-            'sybase': SybaseSubclient,
-            'sap for oracle': SAPOracleSubclient,
+            "big data apps": BigDataAppsSubclient,
+            "file system": FileSystemSubclient,
+            "virtual server": [VirtualServerSubclient, VMInstanceSubclient],
+            "cloud apps": CloudAppsSubclient,
+            "sql server": SQLServerSubclient,
+            "nas": NASSubclient,  # SP11 or lower CS honors NAS as the Agent Name
+            "ndmp": NASSubclient,  # SP12 and above honors NDMP as the Agent Name
+            "sap hana": SAPHANASubclient,
+            "oracle": OracleSubclient,
+            "oracle rac": OracleSubclient,
+            "notes database": LNDbSubclient,
+            "notes document": LNDocSubclient,
+            "domino mailbox archiver": LNDmSubclient,
+            "sybase": SybaseSubclient,
+            "sap for oracle": SAPOracleSubclient,
             "exchange mailbox": [ExchangeSubclient, CaseSubclient],
-            'mysql': MYSQLSubclient,
-            'exchange database': ExchangeDatabaseSubclient,
-            'postgresql': PostgresSubclient,
-            'db2': DB2Subclient,
-            'informix': InformixSubclient,
-            'active directory': ADSubclient,
-            'sharepoint server': [SharepointV1Subclient, SharepointSubclient],
-            "azure ad": AzureAdSubclient
+            "mysql": MYSQLSubclient,
+            "exchange database": ExchangeDatabaseSubclient,
+            "postgresql": PostgresSubclient,
+            "db2": DB2Subclient,
+            "informix": InformixSubclient,
+            "active directory": ADSubclient,
+            "sharepoint server": [SharepointV1Subclient, SharepointSubclient],
+            "azure ad": AzureAdSubclient,
         }
 
         agent_object = backupset_object._agent_object
@@ -1683,7 +1581,9 @@ class Subclient(object):
             return object.__new__(_class)
         return _class.__new__(_class, backupset_object, subclient_name, subclient_id)
 
-    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: str = None) -> None:
+    def __init__(
+        self, backupset_object: object, subclient_name: str, subclient_id: str = None
+    ) -> None:
         """Initialize a Subclient object.
 
         Args:
@@ -1699,7 +1599,7 @@ class Subclient(object):
         #ai-gen-doc
         """
         self._backupset_object = backupset_object
-        self._subclient_name = subclient_name.split('\\')[-1].lower()
+        self._subclient_name = subclient_name.split("\\")[-1].lower()
 
         self._commcell_object = self._backupset_object._commcell_object
 
@@ -1712,45 +1612,40 @@ class Subclient(object):
         self._client_object = self._agent_object._client_object
 
         self._restore_methods = [
-            '_process_restore_response',
-            '_filter_paths',
-            '_process_search_response',
-            '_restore_json',
-            '_impersonation_json',
-            '_restore_browse_option_json',
-            '_restore_common_options_json',
-            '_restore_destination_json',
-            '_restore_fileoption_json',
-            '_json_restore_subtask'
+            "_process_restore_response",
+            "_filter_paths",
+            "_process_search_response",
+            "_restore_json",
+            "_impersonation_json",
+            "_restore_browse_option_json",
+            "_restore_common_options_json",
+            "_restore_destination_json",
+            "_restore_fileoption_json",
+            "_json_restore_subtask",
         ]
 
         self._restore_options_json = [
-            '_impersonation_json_',
-            '_browse_restore_json',
-            '_destination_restore_json',
-            '_commonoption_restore_json',
-            '_fileoption_restore_json',
-
+            "_impersonation_json_",
+            "_browse_restore_json",
+            "_destination_restore_json",
+            "_commonoption_restore_json",
+            "_fileoption_restore_json",
         ]
 
-        self._backupcopy_interfaces = {
-            'FILESYSTEM': 1,
-            'RMAN': 2,
-            'VOLUME': 3
-        }
+        self._backupcopy_interfaces = {"FILESYSTEM": 1, "RMAN": 2, "VOLUME": 3}
 
         if subclient_id:
             self._subclient_id = str(subclient_id)
         else:
             self._subclient_id = self._get_subclient_id()
 
-        self._SUBCLIENT = self._services['SUBCLIENT'] % (self.subclient_id)
+        self._SUBCLIENT = self._services["SUBCLIENT"] % (self.subclient_id)
 
-        self._BROWSE = self._services['BROWSE']
+        self._BROWSE = self._services["BROWSE"]
 
-        self._RESTORE = self._services['RESTORE']
+        self._RESTORE = self._services["RESTORE"]
 
-        self._PREVIEW_CONTENT = self._services['GET_DOC_PREVIEW']
+        self._PREVIEW_CONTENT = self._services["GET_DOC_PREVIEW"]
 
         self._subclient_properties = {}
         self._content = []
@@ -1778,7 +1673,7 @@ class Subclient(object):
         if attribute in self._restore_options_json:
             return getattr(self._backupset_object, attribute)
 
-        return super(Subclient, self).__getattribute__(attribute)
+        return super().__getattribute__(attribute)
 
     def __repr__(self) -> str:
         """Return the string representation of the Subclient instance.
@@ -1835,34 +1730,28 @@ class Subclient(object):
         #ai-gen-doc
         """
 
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._SUBCLIENT)
+        flag, response = self._cvpysdk_object.make_request("GET", self._SUBCLIENT)
 
         if flag:
-            if response.json() and 'subClientProperties' in response.json():
-                self._subclient_properties = response.json()[
-                    'subClientProperties'][0]
+            if response.json() and "subClientProperties" in response.json():
+                self._subclient_properties = response.json()["subClientProperties"][0]
 
-                if 'commonProperties' in self._subclient_properties:
-                    self._commonProperties = self._subclient_properties['commonProperties']
+                if "commonProperties" in self._subclient_properties:
+                    self._commonProperties = self._subclient_properties["commonProperties"]
 
-                if 'subClientEntity' in self._subclient_properties:
-                    self._subClientEntity = self._subclient_properties['subClientEntity']
+                if "subClientEntity" in self._subclient_properties:
+                    self._subClientEntity = self._subclient_properties["subClientEntity"]
 
-                if 'proxyClient' in self._subclient_properties:
-                    self._proxyClient = self._subclient_properties['proxyClient']
+                if "proxyClient" in self._subclient_properties:
+                    self._proxyClient = self._subclient_properties["proxyClient"]
 
-                if 'planEntity' in self._subclient_properties:
-                    self._planEntity = self._subclient_properties['planEntity']
+                if "planEntity" in self._subclient_properties:
+                    self._planEntity = self._subclient_properties["planEntity"]
 
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _set_subclient_properties(self, attr_name: str, value: str) -> None:
         """Set a property of the subclient and update its value upon a successful POST call.
@@ -1884,15 +1773,15 @@ class Subclient(object):
         #ai-gen-doc
         """
         try:
-            backup = eval('self.%s' % attr_name)  # Take backup of old value
+            backup = eval("self.%s" % attr_name)  # Take backup of old value
         except (AttributeError, KeyError):
             backup = None
 
-        exec("self.%s = %s" % (attr_name, 'value'))  # set new value
+        exec("self.%s = %s" % (attr_name, "value"))  # set new value
 
         request_json = self._get_subclient_properties_json()
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._SUBCLIENT, request_json)
 
         output = self._process_update_response(flag, response)
 
@@ -1904,7 +1793,7 @@ class Subclient(object):
             # Restore original value from backup on failure
             exec("self.%s = %s" % (attr_name, backup))
 
-            raise SDKException('Subclient', '102', o_str.format(output[2]))
+            raise SDKException("Subclient", "102", o_str.format(output[2]))
 
     @staticmethod
     def _convert_size(input_size: float) -> str:
@@ -1930,13 +1819,13 @@ class Subclient(object):
         #ai-gen-doc
         """
         if input_size == 0:
-            return '0B'
+            return "0B"
 
         size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
         i = int(math.floor(math.log(input_size, 1024)))
         power = math.pow(1024, i)
         size = round(input_size / power, 2)
-        return '%s %s' % (size, size_name[i])
+        return "%s %s" % (size, size_name[i])
 
     def _process_update_response(self, flag: bool, response: dict) -> tuple:
         """Process the response from a subclient property update request.
@@ -1967,8 +1856,7 @@ class Subclient(object):
         if flag:
             if response.json():
                 if "response" in response.json():
-                    error_code = str(
-                        response.json()["response"][0]["errorCode"])
+                    error_code = str(response.json()["response"][0]["errorCode"])
 
                     if error_code == "0":
                         return (True, "0", "")
@@ -1976,16 +1864,15 @@ class Subclient(object):
                         error_message = ""
 
                         if "errorString" in response.json()["response"][0]:
-                            error_message = response.json(
-                            )["response"][0]["errorString"]
+                            error_message = response.json()["response"][0]["errorString"]
 
                         if error_message:
                             return (False, error_code, error_message)
                         else:
                             return (False, error_code, "")
                 elif "errorCode" in response.json():
-                    error_code = str(response.json()['errorCode'])
-                    error_message = response.json()['errorMessage']
+                    error_code = str(response.json()["errorCode"])
+                    error_message = response.json()["errorMessage"]
 
                     if error_code == "0":
                         return (True, "0", "")
@@ -1995,15 +1882,11 @@ class Subclient(object):
                     else:
                         return (False, error_code, "")
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _process_backup_response(self, flag: str, response: dict) -> object:
         """Process the backup response for a subclient and return the corresponding job or schedule object.
@@ -2032,38 +1915,34 @@ class Subclient(object):
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    if len(response.json()['jobIds']) == 1:
-                        return Job(self._commcell_object,
-                                   response.json()['jobIds'][0])
+                    if len(response.json()["jobIds"]) == 1:
+                        return Job(self._commcell_object, response.json()["jobIds"][0])
                     else:
                         joblist = []
-                        for jobids in response.json()['jobIds']:
+                        for jobids in response.json()["jobIds"]:
                             joblist.append(Job(self._commcell_object, jobids))
                         return joblist
                 elif "taskId" in response.json():
-                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+                    return Schedules(self._commcell_object).get(task_id=response.json()["taskId"])
                 elif "errorCode" in response.json():
                     o_str = 'Initializing backup failed\nError: "{0}"'.format(
-                        response.json()['errorMessage']
+                        response.json()["errorMessage"]
                     )
-                    raise SDKException('Subclient', '102', o_str)
+                    raise SDKException("Subclient", "102", o_str)
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            raise SDKException(
-                'Response',
-                '101',
-                self._update_response_(
-                    response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def _backup_json(self,
-                     backup_level: str,
-                     incremental_backup: bool,
-                     incremental_level: str,
-                     advanced_options: Optional[Dict[str, Any]] = None,
-                     schedule_pattern: Optional[Dict[str, Any]] = None,
-                     common_backup_options: Optional[Dict[str, Any]] = None
-                     ) -> Dict[str, Any]:
+    def _backup_json(
+        self,
+        backup_level: str,
+        incremental_backup: bool,
+        incremental_level: str,
+        advanced_options: Optional[Dict[str, Any]] = None,
+        schedule_pattern: Optional[Dict[str, Any]] = None,
+        common_backup_options: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Construct the JSON request payload for a backup operation based on user-selected options.
 
         Args:
@@ -2107,21 +1986,20 @@ class Subclient(object):
                             "backupOpts": {
                                 "backupLevel": backup_level,
                                 "incLevel": incremental_level,
-                                "runIncrementalBackup": incremental_backup
+                                "runIncrementalBackup": incremental_backup,
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
 
         advanced_options_dict = {}
 
         if advanced_options:
-            if advanced_options.get('impersonate_gui'):
-                request_json['taskInfo']['task']['initiatedFrom'] = 1
-            advanced_options_dict = self._advanced_backup_options(
-                advanced_options)
+            if advanced_options.get("impersonate_gui"):
+                request_json["taskInfo"]["task"]["initiatedFrom"] = 1
+            advanced_options_dict = self._advanced_backup_options(advanced_options)
 
         if advanced_options_dict:
             request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
@@ -2131,11 +2009,12 @@ class Subclient(object):
         advance_job_option_dict = {}
 
         if common_backup_options:
-            advance_job_option_dict = self._common_backup_options(
-                common_backup_options)
+            advance_job_option_dict = self._common_backup_options(common_backup_options)
 
         if advance_job_option_dict:
-            request_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = advance_job_option_dict
+            request_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = (
+                advance_job_option_dict
+            )
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
@@ -2189,7 +2068,7 @@ class Subclient(object):
         """
         return options
 
-    def _process_index_delete_response(self, flag: bool, response: object) -> 'Job':
+    def _process_index_delete_response(self, flag: bool, response: object) -> "Job":
         """Process the response for an index delete job and return the corresponding Job object.
 
         This method handles the response from an index delete request for a subclient. It validates the response,
@@ -2215,20 +2094,20 @@ class Subclient(object):
         if flag:
             if response.json():
                 if "resp" in response.json():
-                    error_code = response.json()['resp']['errorCode']
+                    error_code = response.json()["resp"]["errorCode"]
                     if error_code != 0:
-                        error_string = response.json().get('response', {}).get('errorString', str())
-                        o_str = 'Failed to Delete Documents\nError: "{0}"'.format(error_string)
-                        raise SDKException('Subclient', '102', o_str)
-                elif 'errorMessage' in response.json():
-                    error_string = response.json()['errorMessage']
-                    o_str = 'Failed to Delete Documents\nError: "{0}"'.format(error_string)
-                    raise SDKException('Subclient', '102', o_str)
+                        error_string = response.json().get("response", {}).get("errorString", "")
+                        o_str = f'Failed to Delete Documents\nError: "{error_string}"'
+                        raise SDKException("Subclient", "102", o_str)
+                elif "errorMessage" in response.json():
+                    error_string = response.json()["errorMessage"]
+                    o_str = f'Failed to Delete Documents\nError: "{error_string}"'
+                    raise SDKException("Subclient", "102", o_str)
                 if "jobIds" in response.json():
                     return Job(self._commcell_object, response.json()["jobIds"][0])
             return None
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def update_properties(self, properties_dict: dict) -> None:
         """Update the properties of the subclient using the provided dictionary.
@@ -2255,24 +2134,28 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        request_json = {
-            "subClientProperties": {}
-        }
+        request_json = {"subClientProperties": {}}
 
-        request_json['subClientProperties'].update(properties_dict)
+        request_json["subClientProperties"].update(properties_dict)
 
         # check if subclient name is updated in the request
         # if subclient name is updated set the newName field in the request
-        if properties_dict.get('subClientEntity', {}).get('subclientName') and properties_dict.get(
-                'subClientEntity', {}).get('subclientName') != self._subClientEntity.get('subclientName'):
-            request_json['newName'] = properties_dict.get('subClientEntity', {}).get('subclientName')
-        flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
+        if properties_dict.get("subClientEntity", {}).get("subclientName") and properties_dict.get(
+            "subClientEntity", {}
+        ).get("subclientName") != self._subClientEntity.get("subclientName"):
+            request_json["newName"] = properties_dict.get("subClientEntity", {}).get(
+                "subclientName"
+            )
+        flag, response = self._cvpysdk_object.make_request("POST", self._SUBCLIENT, request_json)
         status, _, error_string = self._process_update_response(flag, response)
         self.refresh()
 
         if not status:
-            raise SDKException('Subclient', '102', 'Failed to update subclient properties\nError: "{}"'.format(
-                error_string))
+            raise SDKException(
+                "Subclient",
+                "102",
+                f'Failed to update subclient properties\nError: "{error_string}"',
+            )
 
     @property
     def properties(self) -> dict:
@@ -2305,7 +2188,7 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        return self._subclient_properties['subClientEntity']['subclientName']
+        return self._subclient_properties["subClientEntity"]["subclientName"]
 
     @property
     def display_name(self) -> str:
@@ -2337,7 +2220,7 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        return self._subclient_properties.get('subClientEntity', {}).get('subclientGUID')
+        return self._subclient_properties.get("subClientEntity", {}).get("subclientGUID")
 
     @display_name.setter
     def display_name(self, display_name: str) -> None:
@@ -2352,7 +2235,7 @@ class Subclient(object):
         #ai-gen-doc
         """
         update_properties = self.properties
-        update_properties['subClientEntity']['subclientName'] = display_name
+        update_properties["subClientEntity"]["subclientName"] = display_name
         self.update_properties(update_properties)
 
     @name.setter
@@ -2392,9 +2275,7 @@ class Subclient(object):
             "initiatedFrom": 2,
             "taskType": 1,
             "policyType": 0,
-            "taskFlags": {
-                "disabled": False
-            }
+            "taskFlags": {"disabled": False},
         }
 
         return _taks_option_json
@@ -2403,7 +2284,7 @@ class Subclient(object):
     def _json_backup_subtasks(self) -> dict:
         """Get the backup subtask information for use in restore JSON.
 
-        This property provides a read-only dictionary containing the subtask details 
+        This property provides a read-only dictionary containing the subtask details
         required for backup operations in the restore JSON format.
 
         Returns:
@@ -2418,10 +2299,7 @@ class Subclient(object):
         #ai-gen-doc
         """
 
-        _backup_subtask = {
-            "subTaskType": 2,
-            "operationType": 2
-        }
+        _backup_subtask = {"subTaskType": 2, "operationType": 2}
 
         return _backup_subtask
 
@@ -2472,11 +2350,9 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'lastBackupTime' in self._commonProperties:
-            if self._commonProperties['lastBackupTime'] != 0:
-                _last_backup_time = time.ctime(
-                    self._commonProperties['lastBackupTime']
-                )
+        if "lastBackupTime" in self._commonProperties:
+            if self._commonProperties["lastBackupTime"] != 0:
+                _last_backup_time = time.ctime(self._commonProperties["lastBackupTime"])
                 return _last_backup_time
         return 0
 
@@ -2494,11 +2370,9 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'nextBackupTime' in self._commonProperties:
-            if self._commonProperties['nextBackupTime'] != 0:
-                _next_backup = time.ctime(
-                    self._commonProperties['nextBackupTime']
-                )
+        if "nextBackupTime" in self._commonProperties:
+            if self._commonProperties["nextBackupTime"] != 0:
+                _next_backup = time.ctime(self._commonProperties["nextBackupTime"])
                 return _next_backup
 
     @property
@@ -2517,8 +2391,8 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'enableBackup' in self._commonProperties:
-            return self._commonProperties['enableBackup']
+        if "enableBackup" in self._commonProperties:
+            return self._commonProperties["enableBackup"]
 
     @property
     def is_intelli_snap_enabled(self) -> bool:
@@ -2536,9 +2410,9 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'snapCopyInfo' in self._commonProperties:
-            snap_copy_info = self._commonProperties.get('snapCopyInfo')
-            return snap_copy_info.get('isSnapBackupEnabled')
+        if "snapCopyInfo" in self._commonProperties:
+            snap_copy_info = self._commonProperties.get("snapCopyInfo")
+            return snap_copy_info.get("isSnapBackupEnabled")
 
     @property
     def is_blocklevel_backup_enabled(self) -> bool:
@@ -2556,8 +2430,11 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        return bool(self._subclient_properties.get(
-            'postgreSQLSubclientProp', {}).get('isUseBlockLevelBackup', False))
+        return bool(
+            self._subclient_properties.get("postgreSQLSubclientProp", {}).get(
+                "isUseBlockLevelBackup", False
+            )
+        )
 
     @property
     def snapshot_engine_name(self) -> str:
@@ -2574,16 +2451,14 @@ class Subclient(object):
         #ai-gen-doc
         """
         if self.is_intelli_snap_enabled:
-            if 'snapCopyInfo' in self._commonProperties:
-                snap_copy_info = self._commonProperties.get('snapCopyInfo', "")
-                if 'snapToTapeSelectedEngine' in snap_copy_info:
-                    if 'snapShotEngineName' in snap_copy_info.get('snapToTapeSelectedEngine', ""):
-                        return snap_copy_info['snapToTapeSelectedEngine'].get(
-                            'snapShotEngineName', "")
-        raise SDKException(
-            'Subclient',
-            '102',
-            'Cannot fetch snap engine name.')
+            if "snapCopyInfo" in self._commonProperties:
+                snap_copy_info = self._commonProperties.get("snapCopyInfo", "")
+                if "snapToTapeSelectedEngine" in snap_copy_info:
+                    if "snapShotEngineName" in snap_copy_info.get("snapToTapeSelectedEngine", ""):
+                        return snap_copy_info["snapToTapeSelectedEngine"].get(
+                            "snapShotEngineName", ""
+                        )
+        raise SDKException("Subclient", "102", "Cannot fetch snap engine name.")
 
     @property
     def is_trueup_enabled(self) -> bool:
@@ -2601,14 +2476,14 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'isTrueUpOptionEnabled' in self._commonProperties:
-            return self._commonProperties['isTrueUpOptionEnabled']
+        if "isTrueUpOptionEnabled" in self._commonProperties:
+            return self._commonProperties["isTrueUpOptionEnabled"]
 
     @property
     def is_on_demand_subclient(self) -> bool:
         """Indicate whether this subclient is an on-demand subclient.
 
-        This property provides a read-only boolean value that specifies if the subclient 
+        This property provides a read-only boolean value that specifies if the subclient
         is configured as an on-demand subclient.
 
         Returns:
@@ -2641,8 +2516,8 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'description' in self._commonProperties:
-            return self._commonProperties['description']
+        if "description" in self._commonProperties:
+            return self._commonProperties["description"]
 
     @property
     def storage_policy(self) -> str:
@@ -2658,11 +2533,11 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        storage_device = self._commonProperties['storageDevice']
-        if 'dataBackupStoragePolicy' in storage_device:
-            data_backup_storage_policy = storage_device['dataBackupStoragePolicy']
-            if 'storagePolicyName' in data_backup_storage_policy:
-                return data_backup_storage_policy['storagePolicyName']
+        storage_device = self._commonProperties["storageDevice"]
+        if "dataBackupStoragePolicy" in storage_device:
+            data_backup_storage_policy = storage_device["dataBackupStoragePolicy"]
+            if "storagePolicyName" in data_backup_storage_policy:
+                return data_backup_storage_policy["storagePolicyName"]
 
     @property
     def storage_ma(self) -> str:
@@ -2677,18 +2552,18 @@ class Subclient(object):
             >>> print(f"Storage Media Agent: {ma_name}")
         #ai-gen-doc
         """
-        storage_device = self._commonProperties['storageDevice']
-        if 'performanceMode' in storage_device:
-            data_backup_storage_device = storage_device['performanceMode']
+        storage_device = self._commonProperties["storageDevice"]
+        if "performanceMode" in storage_device:
+            data_backup_storage_device = storage_device["performanceMode"]
             data_storage_details = data_backup_storage_device["perfCRCDetails"][0]
-            if 'perfMa' in data_storage_details:
-                return data_storage_details['perfMa']
+            if "perfMa" in data_storage_details:
+                return data_storage_details["perfMa"]
 
     @property
     def storage_ma_id(self) -> int:
         """Get the storage media agent ID associated with this subclient.
 
-        This property provides read-only access to the storage media agent (MA) ID 
+        This property provides read-only access to the storage media agent (MA) ID
         for the subclient, which uniquely identifies the media agent used for storage operations.
 
         Returns:
@@ -2701,12 +2576,12 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        storage_device = self._commonProperties['storageDevice']
-        if 'performanceMode' in storage_device:
-            data_backup_storage_device = storage_device['performanceMode']
+        storage_device = self._commonProperties["storageDevice"]
+        if "performanceMode" in storage_device:
+            data_backup_storage_device = storage_device["performanceMode"]
             data_storage_details = data_backup_storage_device["perfCRCDetails"][0]
-            if 'perfMaId' in data_storage_details:
-                return data_storage_details['perfMaId']
+            if "perfMaId" in data_storage_details:
+                return data_storage_details["perfMaId"]
 
     @property
     def data_readers(self) -> int:
@@ -2722,10 +2597,8 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'numberOfBackupStreams' in self._commonProperties:
-            return int(
-                self._commonProperties['numberOfBackupStreams']
-            )
+        if "numberOfBackupStreams" in self._commonProperties:
+            return int(self._commonProperties["numberOfBackupStreams"])
 
     @data_readers.setter
     def data_readers(self, value: int) -> None:
@@ -2747,18 +2620,15 @@ class Subclient(object):
         #ai-gen-doc
         """
         if isinstance(value, int):
-            self._set_subclient_properties(
-                "_commonProperties['numberOfBackupStreams']", value)
+            self._set_subclient_properties("_commonProperties['numberOfBackupStreams']", value)
         else:
-            raise SDKException(
-                'Subclient', '102', 'Subclient data readers should be an int value'
-            )
+            raise SDKException("Subclient", "102", "Subclient data readers should be an int value")
 
     @property
     def allow_multiple_readers(self) -> bool:
         """Indicate whether multiple readers are allowed for this Subclient.
 
-        This property provides read-only access to the setting that determines if multiple readers 
+        This property provides read-only access to the setting that determines if multiple readers
         can access the Subclient simultaneously, which may improve backup performance in certain scenarios.
 
         Returns:
@@ -2773,10 +2643,8 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'allowMultipleDataReaders' in self._commonProperties:
-            return bool(
-                self._commonProperties['allowMultipleDataReaders']
-            )
+        if "allowMultipleDataReaders" in self._commonProperties:
+            return bool(self._commonProperties["allowMultipleDataReaders"])
 
     @allow_multiple_readers.setter
     def allow_multiple_readers(self, value: bool) -> None:
@@ -2800,17 +2668,14 @@ class Subclient(object):
         """
         # Has to be initialized for new subclient as attribute is not present
         # default value is False
-        if 'allowMultipleDataReaders' not in self._commonProperties:
-            self._commonProperties['allowMultipleDataReaders'] = False
+        if "allowMultipleDataReaders" not in self._commonProperties:
+            self._commonProperties["allowMultipleDataReaders"] = False
 
         if isinstance(value, bool):
-            self._set_subclient_properties(
-                "_commonProperties['allowMultipleDataReaders']",
-                value)
+            self._set_subclient_properties("_commonProperties['allowMultipleDataReaders']", value)
         else:
             raise SDKException(
-                'Subclient', '102',
-                'Subclient allow multple readers should be a bool value'
+                "Subclient", "102", "Subclient allow multple readers should be a bool value"
             )
 
     @property
@@ -2826,10 +2691,8 @@ class Subclient(object):
             >>> print(f"Read buffer size: {buffer_size} bytes")
         #ai-gen-doc
         """
-        if 'readBuffersize' in self._commonProperties:
-            return int(
-                self._commonProperties['readBuffersize']
-            )
+        if "readBuffersize" in self._commonProperties:
+            return int(self._commonProperties["readBuffersize"])
 
     @property
     def is_default_subclient(self) -> bool:
@@ -2847,7 +2710,7 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        return self._commonProperties.get('isDefaultSubclient')
+        return self._commonProperties.get("isDefaultSubclient")
 
     @read_buffer_size.setter
     def read_buffer_size(self, value: int) -> None:
@@ -2869,17 +2732,14 @@ class Subclient(object):
         """
         # Has to be initialized for new subclient as attribute is not present
         # default value is 0
-        if 'readBuffersize' not in self._commonProperties:
-            self._commonProperties['readBuffersize'] = 0
+        if "readBuffersize" not in self._commonProperties:
+            self._commonProperties["readBuffersize"] = 0
 
         if isinstance(value, int):
-            self._set_subclient_properties(
-                "_commonProperties['readBuffersize']",
-                value)
+            self._set_subclient_properties("_commonProperties['readBuffersize']", value)
         else:
             raise SDKException(
-                'Subclient', '102',
-                'Subclient read buffer size should be an int value'
+                "Subclient", "102", "Subclient read buffer size should be an int value"
             )
 
     @description.setter
@@ -2902,11 +2762,10 @@ class Subclient(object):
         #ai-gen-doc
         """
         if isinstance(value, str):
-            self._set_subclient_properties(
-                "_commonProperties['description']", value)
+            self._set_subclient_properties("_commonProperties['description']", value)
         else:
             raise SDKException(
-                'Subclient', '102', 'Subclient description should be a string value'
+                "Subclient", "102", "Subclient description should be a string value"
             )
 
     @storage_policy.setter
@@ -2934,9 +2793,7 @@ class Subclient(object):
 
             if not self._commcell_object.storage_policies.has_policy(value):
                 raise SDKException(
-                    'Subclient',
-                    '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(value)
+                    "Subclient", "102", f'Storage Policy: "{value}" does not exist in the Commcell'
                 )
 
             self._set_subclient_properties(
@@ -2945,11 +2802,11 @@ class Subclient(object):
                     "storagePolicyName": value,
                     "storagePolicyId": int(
                         self._commcell_object.storage_policies.all_storage_policies[value]
-                    )
-                }
+                    ),
+                },
             )
         else:
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
     def enable_backup(self) -> None:
         """Enable backup operations for the subclient.
@@ -2980,17 +2837,17 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if 'isTrueUpOptionEnabled' in self._commonProperties:
+        if "isTrueUpOptionEnabled" in self._commonProperties:
             self._set_subclient_properties("_commonProperties['isTrueUpOptionEnabled']", True)
 
     def enable_trueup_days(self, days: int = 30) -> None:
         """Enable the TrueUp option and set the number of days for reconciliation.
 
-        This method configures the TrueUp feature for the subclient, specifying 
+        This method configures the TrueUp feature for the subclient, specifying
         the number of days after which reconciliation should occur.
 
         Args:
-            days: The number of days after which the TrueUp reconciliation is performed. 
+            days: The number of days after which the TrueUp reconciliation is performed.
                 Defaults to 30.
 
         Example:
@@ -3006,8 +2863,8 @@ class Subclient(object):
     def enable_backup_at_time(self, enable_time: str) -> None:
         """Schedule the subclient to enable backup at a specified UTC time.
 
-        This method disables backup if it is not already disabled, and then schedules 
-        the backup to be enabled at the provided UTC time. The time must be specified 
+        This method disables backup if it is not already disabled, and then schedules
+        the backup to be enabled at the provided UTC time. The time must be specified
         in 24-hour format as 'YYYY-MM-DD HH:mm:ss'.
 
         Note:
@@ -3032,13 +2889,13 @@ class Subclient(object):
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
             if time.mktime(time_tuple) < time.time():
-                raise SDKException('Subclient', '108')
+                raise SDKException("Subclient", "108")
         except ValueError:
-            raise SDKException('Subclient', '109')
+            raise SDKException("Subclient", "109")
 
         enable_backup_at_time = {
             "TimeZoneName": self._commcell_object.default_timezone,
-            "timeValue": enable_time
+            "timeValue": enable_time,
         }
 
         self._set_subclient_properties(
@@ -3061,8 +2918,7 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        self._set_subclient_properties(
-            "_commonProperties['enableBackup']", False)
+        self._set_subclient_properties("_commonProperties['enableBackup']", False)
 
     def exclude_from_sla(self) -> None:
         """Exclude this subclient from Service Level Agreement (SLA) compliance.
@@ -3079,10 +2935,11 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        self._set_subclient_properties(
-            "_commonProperties['excludeFromSLA']", True)
+        self._set_subclient_properties("_commonProperties['excludeFromSLA']", True)
 
-    def enable_intelli_snap(self, snap_engine_name: str, proxy_options: Optional[dict] = None) -> None:
+    def enable_intelli_snap(
+        self, snap_engine_name: str, proxy_options: Optional[dict] = None
+    ) -> None:
         """Enable IntelliSnap for the subclient using the specified snap engine.
 
         Args:
@@ -3106,9 +2963,7 @@ class Subclient(object):
 
         properties_dict = {
             "isSnapBackupEnabled": True,
-            "snapToTapeSelectedEngine": {
-                "snapShotEngineName": snap_engine_name
-            }
+            "snapToTapeSelectedEngine": {"snapShotEngineName": snap_engine_name},
         }
 
         if proxy_options is not None:
@@ -3126,8 +2981,7 @@ class Subclient(object):
             if "use_source_if_proxy_unreachable" in proxy_options:
                 properties_dict["snapToTapeProxyToUseSource"] = True
 
-        self._set_subclient_properties(
-            "_commonProperties['snapCopyInfo']", properties_dict)
+        self._set_subclient_properties("_commonProperties['snapCopyInfo']", properties_dict)
 
     def disable_intelli_snap(self) -> None:
         """Disable IntelliSnap for the subclient.
@@ -3169,12 +3023,12 @@ class Subclient(object):
         if not isinstance(proxy_name, str):
             raise SDKException("Subclient", "101")
 
-        properties_dict = {
-            "clientName": proxy_name
-        }
+        properties_dict = {"clientName": proxy_name}
 
         update_properties = self.properties
-        update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
+        update_properties["commonProperties"]["snapCopyInfo"]["snapToTapeProxyToUse"] = (
+            properties_dict
+        )
         self.update_properties(update_properties)
 
     def unset_proxy_for_snap(self) -> None:
@@ -3191,15 +3045,15 @@ class Subclient(object):
         #ai-gen-doc
         """
 
-        properties_dict = {
-            "clientId": 0
-        }
+        properties_dict = {"clientId": 0}
         update_properties = self.properties
-        update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
+        update_properties["commonProperties"]["snapCopyInfo"]["snapToTapeProxyToUse"] = (
+            properties_dict
+        )
         self.update_properties(update_properties)
 
     def set_proxy_for_backup_copy(self, proxy_name):
-        """ method to set separate proxy server for backup copy for IntelliSnap subclient
+        """method to set separate proxy server for backup copy for IntelliSnap subclient
 
         Args:
             proxy_name(str) -- Name of the proxy to be used
@@ -3208,32 +3062,34 @@ class Subclient(object):
         if not isinstance(proxy_name, str):
             raise SDKException("Subclient", "101")
 
-        properties_dict = {
-            "clientName": proxy_name
-        }
+        properties_dict = {"clientName": proxy_name}
 
         update_properties = self.properties
-        update_properties['commonProperties']['snapCopyInfo']['separateProxyForSnapToTape'] = properties_dict
+        update_properties["commonProperties"]["snapCopyInfo"]["separateProxyForSnapToTape"] = (
+            properties_dict
+        )
         self.update_properties(update_properties)
 
     def unset_proxy_for_backup_copy(self):
-        """ method to unset separate proxy server for backup copy for IntelliSnap subclient """
+        """method to unset separate proxy server for backup copy for IntelliSnap subclient"""
 
-        properties_dict = {
-            "clientId": 0
-        }
+        properties_dict = {"clientId": 0}
         update_properties = self.properties
-        update_properties['commonProperties']['snapCopyInfo']['separateProxyForSnapToTape'] = properties_dict
+        update_properties["commonProperties"]["snapCopyInfo"]["separateProxyForSnapToTape"] = (
+            properties_dict
+        )
         self.update_properties(update_properties)
 
-    def backup(self,
-               backup_level: str = "Incremental",
-               incremental_backup: bool = False,
-               incremental_level: str = 'BEFORE_SYNTH',
-               collect_metadata: bool = False) -> 'Job':
+    def backup(
+        self,
+        backup_level: str = "Incremental",
+        incremental_backup: bool = False,
+        incremental_level: str = "BEFORE_SYNTH",
+        collect_metadata: bool = False,
+    ) -> "Job":
         """Run a backup job for the subclient at the specified backup level.
 
-        This method initiates a backup operation for the subclient, allowing you to specify the backup level 
+        This method initiates a backup operation for the subclient, allowing you to specify the backup level
         and additional options for synthetic full backups.
 
         Args:
@@ -3266,27 +3122,29 @@ class Subclient(object):
         """
         backup_level = backup_level.lower()
 
-        if backup_level not in ['full', 'incremental', 'transaction_log',
-                                'differential', 'synthetic_full']:
-            raise SDKException('Subclient', '103')
+        if backup_level not in [
+            "full",
+            "incremental",
+            "transaction_log",
+            "differential",
+            "synthetic_full",
+        ]:
+            raise SDKException("Subclient", "103")
 
         backup_request = backup_level
 
-        if backup_level == 'synthetic_full':
+        if backup_level == "synthetic_full":
             if incremental_backup:
-                backup_request += '&runIncrementalBackup=True'
-                backup_request += '&incrementalLevel=%s' % (
-                    incremental_level.lower())
+                backup_request += "&runIncrementalBackup=True"
+                backup_request += "&incrementalLevel=%s" % (incremental_level.lower())
             else:
-                backup_request += '&runIncrementalBackup=False'
+                backup_request += "&runIncrementalBackup=False"
 
-        backup_request += '&collectMetaInfo=%s' % collect_metadata
+        backup_request += "&collectMetaInfo=%s" % collect_metadata
 
-        backup_service = self._services['SUBCLIENT_BACKUP'] % (
-            self.subclient_id, backup_request)
+        backup_service = self._services["SUBCLIENT_BACKUP"] % (self.subclient_id, backup_request)
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', backup_service)
+        flag, response = self._cvpysdk_object.make_request("POST", backup_service)
 
         return self._process_backup_response(flag, response)
 
@@ -3306,12 +3164,12 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        storage = self._subclient_properties['commonProperties']['storageDevice']
-        if 'performanceMode' in storage:
-            data_backup_storage_device = storage['performanceMode']["perfCRCDetails"]
+        storage = self._subclient_properties["commonProperties"]["storageDevice"]
+        if "performanceMode" in storage:
+            data_backup_storage_device = storage["performanceMode"]["perfCRCDetails"]
             malist = []
             for each_ma in data_backup_storage_device:
-                malist.append(each_ma['perfMa'])
+                malist.append(each_ma["perfMa"])
             return malist
 
     def browse(self, *args: Any, **kwargs: Any) -> tuple[list, dict]:
@@ -3347,7 +3205,7 @@ class Subclient(object):
             >>> print(metadata)
 
         Returns:
-            tuple[list, dict]: 
+            tuple[list, dict]:
                 - list: List of file and folder paths from the browse response.
                 - dict: Dictionary containing all paths with additional metadata from the browse operation.
 
@@ -3358,15 +3216,15 @@ class Subclient(object):
         else:
             options = kwargs
 
-        options['_subclient_id'] = self._subclient_id
+        options["_subclient_id"] = self._subclient_id
 
         return self._backupset_object.browse(options)
 
     def find(self, *args: Any, **kwargs: Any) -> tuple[list, dict]:
         """Search for files or folders in the backed up content of the subclient.
 
-        This method allows you to search for files and folders that match specified filters 
-        within the subclient's backup content. You can provide search criteria either as a 
+        This method allows you to search for files and folders that match specified filters
+        within the subclient's backup content. You can provide search criteria either as a
         dictionary of browse options or as keyword arguments.
 
         Supported options include:
@@ -3378,7 +3236,7 @@ class Subclient(object):
             - file_size_lt (int): Find files with size less than the specified value (in bytes).
             - file_size_et (int): Find files with size equal to the specified value (in bytes).
 
-        For a complete list of supported options, refer to the 
+        For a complete list of supported options, refer to the
         `default_browse_options`_ documentation.
 
         Args:
@@ -3386,7 +3244,7 @@ class Subclient(object):
             **kwargs: Optional keyword arguments specifying browse options.
 
         Returns:
-            tuple[list, dict]: 
+            tuple[list, dict]:
                 - A list of file and folder paths matching the search criteria.
                 - A dictionary containing all matched paths with additional metadata from the browse operation.
 
@@ -3418,24 +3276,24 @@ class Subclient(object):
         else:
             options = kwargs
 
-        options['_subclient_id'] = self._subclient_id
+        options["_subclient_id"] = self._subclient_id
 
         return self._backupset_object.find(options)
 
     def list_media(self, *args: Any, **kwargs: Any) -> Union[List[Any], Dict[str, Any]]:
         """List the media required to browse and restore backed up data from the subclient.
 
-        This method retrieves a list of all media needed for browsing and restoring data, 
-        based on the provided options. Options can be supplied either as a single dictionary 
+        This method retrieves a list of all media needed for browsing and restoring data,
+        based on the provided options. Options can be supplied either as a single dictionary
         argument or as keyword arguments.
 
         Args:
-            *args: Optional positional arguments. Typically, a single dictionary containing 
+            *args: Optional positional arguments. Typically, a single dictionary containing
                 browse options such as 'path', 'show_deleted', 'from_time', and 'to_time'.
             **kwargs: Optional keyword arguments specifying browse options directly.
 
         Returns:
-            Union[List[Any], Dict[str, Any]]: 
+            Union[List[Any], Dict[str, Any]]:
                 - A list of all media required for the specified options.
                 - A dictionary containing the total size of the media.
 
@@ -3474,23 +3332,23 @@ class Subclient(object):
         else:
             options = kwargs
 
-        options['_subclient_id'] = self._subclient_id
+        options["_subclient_id"] = self._subclient_id
 
         return self._backupset_object.list_media(options)
 
     def restore_in_place(
-            self,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            fs_options: dict = None,
-            schedule_pattern: dict = None,
-            proxy_client: str = None,
-            advanced_options: dict = None
-        ) -> object:
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        fs_options: dict = None,
+        schedule_pattern: dict = None,
+        proxy_client: str = None,
+        advanced_options: dict = None,
+    ) -> object:
         """Restore files or folders to their original location on the client.
 
         This method restores the specified files or folders (provided in the `paths` list) to their original location
@@ -3540,9 +3398,9 @@ class Subclient(object):
 
         if fs_options is None or not fs_options:
             fs_options = {}
-            fs_options['no_of_streams'] = 10
-        elif 'no_of_streams' not in fs_options:
-            fs_options['no_of_streams'] = 10
+            fs_options["no_of_streams"] = 10
+        elif "no_of_streams" not in fs_options:
+            fs_options["no_of_streams"] = 10
 
         return self._instance_object._restore_in_place(
             paths=paths,
@@ -3554,24 +3412,24 @@ class Subclient(object):
             fs_options=fs_options,
             schedule_pattern=schedule_pattern,
             proxy_client=proxy_client,
-            advanced_options=advanced_options
+            advanced_options=advanced_options,
         )
 
     def restore_out_of_place(
-            self,
-            client: object,
-            destination_path: str,
-            paths: list,
-            overwrite: bool = True,
-            restore_data_and_acl: bool = True,
-            copy_precedence: int = None,
-            from_time: str = None,
-            to_time: str = None,
-            fs_options: dict = None,
-            schedule_pattern: dict = None,
-            proxy_client: str = None,
-            advanced_options: dict = None
-        ) -> object:
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        fs_options: dict = None,
+        schedule_pattern: dict = None,
+        proxy_client: str = None,
+        advanced_options: dict = None,
+    ) -> object:
         """Restore specified files or folders to a different client and destination path.
 
         This method restores the files or folders listed in `paths` to the specified `destination_path`
@@ -3615,15 +3473,15 @@ class Subclient(object):
         """
         self._instance_object._restore_association = self._subClientEntity
 
-        if fs_options and 'proxy_client' in fs_options:
-            proxy_client = fs_options['proxy_client']
+        if fs_options and "proxy_client" in fs_options:
+            proxy_client = fs_options["proxy_client"]
 
         # restore to use default 10 streams
         if fs_options is None or not fs_options:
             fs_options = {}
-            fs_options['no_of_streams'] = 10
-        elif 'no_of_streams' not in fs_options:
-            fs_options['no_of_streams'] = 10
+            fs_options["no_of_streams"] = 10
+        elif "no_of_streams" not in fs_options:
+            fs_options["no_of_streams"] = 10
 
         return self._instance_object._restore_out_of_place(
             client=client,
@@ -3637,7 +3495,7 @@ class Subclient(object):
             fs_options=fs_options,
             schedule_pattern=schedule_pattern,
             proxy_client=proxy_client,
-            advanced_options=advanced_options
+            advanced_options=advanced_options,
         )
 
     def set_backup_nodes(self, data_access_nodes: list) -> None:
@@ -3666,14 +3524,12 @@ class Subclient(object):
         request_json = {
             "subClientProperties": {
                 "fsSubClientProp": {
-                    "backupConfiguration": {
-                        "backupDataAccessNodes": data_access_nodes_json
-                    }
+                    "backupConfiguration": {"backupDataAccessNodes": data_access_nodes_json}
                 }
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
+        flag, response = self._cvpysdk_object.make_request("POST", self._SUBCLIENT, request_json)
 
         output = self._process_update_response(flag, response)
 
@@ -3681,19 +3537,19 @@ class Subclient(object):
             return
         else:
             o_str = 'Failed to update properties of subclient\nError: "{0}"'
-            raise SDKException('Subclient', '102', o_str.format(output[2]))
+            raise SDKException("Subclient", "102", o_str.format(output[2]))
 
     def find_latest_job(
-            self,
-            include_active: bool = True,
-            include_finished: bool = True,
-            lookup_time: int = 1,
-            job_filter: str = 'Backup,SYNTHFULL'
-        ) -> 'Job':
+        self,
+        include_active: bool = True,
+        include_finished: bool = True,
+        lookup_time: int = 1,
+        job_filter: str = "Backup,SYNTHFULL",
+    ) -> "Job":
         """Find the latest job for the subclient, including currently running jobs.
 
-        This method retrieves the most recent job associated with the subclient, 
-        optionally including active (running) and/or finished jobs, filtered by job type 
+        This method retrieves the most recent job associated with the subclient,
+        optionally including active (running) and/or finished jobs, filtered by job type
         and limited to jobs executed within a specified time window.
 
         Args:
@@ -3727,53 +3583,51 @@ class Subclient(object):
         #ai-gen-doc
         """
         job_controller = JobController(self._commcell_object)
-        entity_dict = {
-            "subclientId": int(self.subclient_id)
-        }
+        entity_dict = {"subclientId": int(self.subclient_id)}
         if include_active and include_finished:
             client_jobs = job_controller.all_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
                 job_filter=job_filter,
-                entity=entity_dict
+                entity=entity_dict,
             )
         elif include_active:
             client_jobs = job_controller.active_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
                 job_filter=job_filter,
-                entity=entity_dict
+                entity=entity_dict,
             )
         elif include_finished:
             client_jobs = job_controller.finished_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
                 job_filter=job_filter,
-                entity=entity_dict
+                entity=entity_dict,
             )
         else:
             raise SDKException(
-                'Subclient',
-                '102',
-                "Either active or finished job must be included"
+                "Subclient", "102", "Either active or finished job must be included"
             )
 
         latest_jobid = 0
         for job in client_jobs:
-            if client_jobs[job]['subclient_id'] == int(self._subclient_id):
+            if client_jobs[job]["subclient_id"] == int(self._subclient_id):
                 if int(job) > latest_jobid:
                     latest_jobid = int(job)
 
         if latest_jobid == 0:
-            raise SDKException('Subclient', '102', "No jobs found")
+            raise SDKException("Subclient", "102", "No jobs found")
 
         return Job(self._commcell_object, latest_jobid)
 
-    def run_content_indexing(self,
-                            pick_failed_items: bool = False,
-                            pick_only_failed_items: bool = False,
-                            streams: int = 4,
-                            proxies: Optional[list] = None) -> 'Job':
+    def run_content_indexing(
+        self,
+        pick_failed_items: bool = False,
+        pick_only_failed_items: bool = False,
+        streams: int = 4,
+        proxies: Optional[list] = None,
+    ) -> "Job":
         """Run a content indexing job on the subclient.
 
         This method initiates a content indexing operation for the subclient, allowing you to specify
@@ -3799,9 +3653,8 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        if not (isinstance(pick_failed_items, bool) and
-                isinstance(pick_only_failed_items, bool)):
-            raise SDKException('Subclient', '101')
+        if not (isinstance(pick_failed_items, bool) and isinstance(pick_only_failed_items, bool)):
+            raise SDKException("Subclient", "101")
 
         if proxies is None:
             proxies = {}
@@ -3813,19 +3666,16 @@ class Subclient(object):
                 "maxNumberOfStreams": streams,
                 "allCopies": True,
                 "useMaximumStreams": False,
-                "proxies": proxies
-            }
+                "proxies": proxies,
+            },
         }
 
-        self._content_indexing_option_json= {
+        self._content_indexing_option_json = {
             "reanalyze": False,
             "fileAnalytics": False,
-            "subClientBasedAnalytics": False
+            "subClientBasedAnalytics": False,
         }
-        self._subtask_restore_json = {
-            "subTaskType": 1,
-            "operationType": 5020
-        }
+        self._subtask_restore_json = {"subTaskType": 1, "operationType": 5020}
 
         request_json = {
             "taskInfo": {
@@ -3836,23 +3686,17 @@ class Subclient(object):
                         "subTaskOperation": 1,
                         "subTask": self._subtask_restore_json,
                         "options": {
-                            "backupOpts": {
-                                "mediaOpt": self._media_option_json
-                            },
+                            "backupOpts": {"mediaOpt": self._media_option_json},
                             "adminOpts": {
                                 "contentIndexingOption": self._content_indexing_option_json
                             },
                             "restoreOptions": {
-                                "virtualServerRstOption": {
-                                    "isBlockLevelReplication": False
-                                },
-                                "browseOption": {
-                                    "backupset": {}
-                                }
-                            }
-                        }
+                                "virtualServerRstOption": {"isBlockLevelReplication": False},
+                                "browseOption": {"backupset": {}},
+                            },
+                        },
                     }
-                ]
+                ],
             }
         }
 
@@ -3889,17 +3733,12 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        mapping = {
-            0: 'ON_CLIENT',
-            1: 'ON_MEDIAAGENT',
-            2: 'USE_STORAGE_POLICY_SETTINGS',
-            4: 'OFF'
-        }
+        mapping = {0: "ON_CLIENT", 1: "ON_MEDIAAGENT", 2: "USE_STORAGE_POLICY_SETTINGS", 4: "OFF"}
 
         try:
-            return mapping[self._commonProperties['storageDevice']['softwareCompression']]
+            return mapping[self._commonProperties["storageDevice"]["softwareCompression"]]
         except KeyError:
-            return self._commonProperties['storageDevice']['softwareCompression']
+            return self._commonProperties["storageDevice"]["softwareCompression"]
 
     @software_compression.setter
     def software_compression(self, value: str) -> None:
@@ -3926,7 +3765,7 @@ class Subclient(object):
                 "_commonProperties['storageDevice']['softwareCompression']", value
             )
         else:
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
     @property
     def network_agent(self) -> bool:
@@ -3942,7 +3781,7 @@ class Subclient(object):
 
         #ai-gen-doc
         """
-        return self._commonProperties['storageDevice']['networkAgents']
+        return self._commonProperties["storageDevice"]["networkAgents"]
 
     @network_agent.setter
     def network_agent(self, value: int) -> None:
@@ -3963,9 +3802,11 @@ class Subclient(object):
         """
 
         if isinstance(value, int):
-            self._set_subclient_properties("_commonProperties['storageDevice']['networkAgents']", value)
+            self._set_subclient_properties(
+                "_commonProperties['storageDevice']['networkAgents']", value
+            )
         else:
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
     @property
     def encryption_flag(self) -> int:
@@ -3982,16 +3823,16 @@ class Subclient(object):
         #ai-gen-doc
         """
         mapping = {
-            0: 'ENC_NONE',
-            1: 'ENC_MEDIA_ONLY',
-            2: 'ENC_NETWORK_AND_MEDIA',
-            3: 'ENC_NETWORK_ONLY'
+            0: "ENC_NONE",
+            1: "ENC_MEDIA_ONLY",
+            2: "ENC_NETWORK_AND_MEDIA",
+            3: "ENC_NETWORK_ONLY",
         }
 
         try:
-            return mapping[self._commonProperties['encryptionFlag']]
+            return mapping[self._commonProperties["encryptionFlag"]]
         except KeyError:
-            return self._commonProperties['encryptionFlag']
+            return self._commonProperties["encryptionFlag"]
 
     @encryption_flag.setter
     def encryption_flag(self, value: str) -> None:
@@ -4021,7 +3862,7 @@ class Subclient(object):
         if isinstance(value, str):
             self._set_subclient_properties("_commonProperties['encryptionFlag']", value)
         else:
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
     @property
     def deduplication_options(self) -> dict:
@@ -4042,22 +3883,19 @@ class Subclient(object):
             0: False,
             1: True,
         }
-        mapping_signature = {
-            1: "ON_CLIENT",
-            2: "ON_MEDIA_AGENT"
-        }
+        mapping_signature = {1: "ON_CLIENT", 2: "ON_MEDIA_AGENT"}
 
-        dedupe_options = self._commonProperties['storageDevice']['deDuplicationOptions']
+        dedupe_options = self._commonProperties["storageDevice"]["deDuplicationOptions"]
 
         if "enableDeduplication" in dedupe_options:
-            if dedupe_options['enableDeduplication'] == 0:
-                return mapping_dedupe[dedupe_options['enableDeduplication']]
+            if dedupe_options["enableDeduplication"] == 0:
+                return mapping_dedupe[dedupe_options["enableDeduplication"]]
             else:
-                if 'generateSignature' in dedupe_options:
+                if "generateSignature" in dedupe_options:
                     try:
-                        return mapping_signature[dedupe_options['generateSignature']]
+                        return mapping_signature[dedupe_options["generateSignature"]]
                     except KeyError:
-                        return dedupe_options['generateSignature']
+                        return dedupe_options["generateSignature"]
 
     @deduplication_options.setter
     def deduplication_options(self, enable_dedupe: tuple) -> None:
@@ -4088,17 +3926,17 @@ class Subclient(object):
                     "_commonProperties['storageDevice']['deDuplicationOptions']",
                     {
                         "enableDeduplication": enable_dedupe[0],
-                        "generateSignature": enable_dedupe[1]
-                    }
+                        "generateSignature": enable_dedupe[1],
+                    },
                 )
             else:
-                raise SDKException('Subclient', '102', "Input data is not correct")
+                raise SDKException("Subclient", "102", "Input data is not correct")
         else:
             self._set_subclient_properties(
                 "_commonProperties['storageDevice']['deDuplicationOptions']",
                 {
                     "enableDeduplication": enable_dedupe[0],
-                }
+                },
             )
 
     @property
@@ -4119,18 +3957,18 @@ class Subclient(object):
         #ai-gen-doc
         """
 
-        if 'planEntity' in self._subclient_properties:
-            planEntity = self._subclient_properties['planEntity']
+        if "planEntity" in self._subclient_properties:
+            planEntity = self._subclient_properties["planEntity"]
 
-            if bool(planEntity) and 'planName' in planEntity:
-                return planEntity['planName']
+            if bool(planEntity) and "planName" in planEntity:
+                return planEntity["planName"]
             else:
                 return None
         else:
-            raise SDKException('Subclient', '112')
+            raise SDKException("Subclient", "112")
 
     @plan.setter
-    def plan(self, value: 'Union[object, str, None]') -> None:
+    def plan(self, value: "Union[object, str, None]") -> None:
         """Associate or remove a plan from the subclient.
 
         This setter allows you to associate a plan with the subclient by providing either a Plan object,
@@ -4155,33 +3993,26 @@ class Subclient(object):
         #ai-gen-doc
         """
         from .plan import Plan
+
         if isinstance(value, Plan):
             if self._commcell_object.plans.has_plan(value.plan_name):
-                self.update_properties({
-                    'planEntity': {
-                        'planName': value.plan_name
-                    },
-                    "useContentFromPlan": True
-                })
+                self.update_properties(
+                    {"planEntity": {"planName": value.plan_name}, "useContentFromPlan": True}
+                )
             else:
-                raise SDKException('Subclient', '102', 'Plan does not exist')
+                raise SDKException("Subclient", "102", "Plan does not exist")
         elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
-                self.update_properties({
-                    'planEntity': {
-                        'planName': value
-                    },
-                    "useContentFromPlan": True
-                })
+                self.update_properties(
+                    {"planEntity": {"planName": value}, "useContentFromPlan": True}
+                )
             else:
-                raise SDKException('Subclient', '102', 'Plan does not exist')
-                
+                raise SDKException("Subclient", "102", "Plan does not exist")
+
         elif value is None:
-            self.update_properties({
-                'removePlanAssociation': True
-            })
+            self.update_properties({"removePlanAssociation": True})
         else:
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
     def _get_preview_metadata(self, file_path: str) -> Optional[dict]:
         """Retrieve the preview metadata for a specified file in the subclient.
@@ -4234,35 +4065,31 @@ class Subclient(object):
         """
         metadata = self._get_preview_metadata(file_path)
         if metadata is None:
-            raise SDKException('Subclient', '123')
+            raise SDKException("Subclient", "123")
 
         if metadata["type"] != "File":
-            raise SDKException('Subclient', '124')
+            raise SDKException("Subclient", "124")
 
         if metadata["size"] == 0:
-            raise SDKException('Subclient', '125')
+            raise SDKException("Subclient", "125")
 
         if metadata["size"] > 20 * 1024 * 1024:
-            raise SDKException('Subclient', '126')
+            raise SDKException("Subclient", "126")
 
         request_json = {
             "filters": [
-                {
-                    "field": "CONTENTID",
-                    "fieldValues": {
-                        "values": [
-
-                        ]
-                    }
-                },
+                {"field": "CONTENTID", "fieldValues": {"values": []}},
                 {
                     "field": "COMMCELL_NUMBER",
                     "fieldValues": {
                         "values": [
-                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
-                                    "commcellNumber"])
+                            str(
+                                metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                    "commcellNumber"
+                                ]
+                            )
                         ]
-                    }
+                    },
                 },
                 {
                     "field": "CLIENT_ID",
@@ -4270,66 +4097,36 @@ class Subclient(object):
                         "values": [
                             str(metadata["advanced_data"]["sourceCommServer"]["commCellId"])
                         ]
-                    }
+                    },
                 },
                 {
                     "field": "SUBCLIENT_ID",
                     "fieldValues": {
-                        "values": [
-                            str(metadata["advanced_data"]["subclient"]["applicationId"])
-                        ]
-                    }
+                        "values": [str(metadata["advanced_data"]["subclient"]["applicationId"])]
+                    },
                 },
-                {
-                    "field": "MODIFIED_TIME",
-                    "fieldValues": {
-                        "values": [
-                            metadata["modified_time"]
-                        ]
-                    }
-                },
-                {
-                    "field": "ITEM_PATH",
-                    "fieldValues": {
-                        "values": [
-                            file_path
-                        ]
-                    }
-                },
-                {
-                    "field": "ITEM_SIZE",
-                    "fieldValues": {
-                        "values": [
-                            str(metadata["size"])
-                        ]
-                    }
-                },
+                {"field": "MODIFIED_TIME", "fieldValues": {"values": [metadata["modified_time"]]}},
+                {"field": "ITEM_PATH", "fieldValues": {"values": [file_path]}},
+                {"field": "ITEM_SIZE", "fieldValues": {"values": [str(metadata["size"])]}},
                 {
                     "field": "ARCHIVE_FILE_ID",
-                    "fieldValues": {
-                        "values": [
-                            str(metadata["advanced_data"]["archiveFileId"])
-                        ]
-                    }
+                    "fieldValues": {"values": [str(metadata["advanced_data"]["archiveFileId"])]},
                 },
                 {
                     "field": "ARCHIVE_FILE_OFFSET",
-                    "fieldValues": {
-                        "values": [
-                            str(metadata["advanced_data"]["offset"])
-                        ]
-                    }
-                }
+                    "fieldValues": {"values": [str(metadata["advanced_data"]["offset"])]},
+                },
             ]
         }
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._PREVIEW_CONTENT, request_json)
+            "POST", self._PREVIEW_CONTENT, request_json
+        )
 
         if flag:
             if "Preview not available" not in response.text:
                 return response.text
             else:
-                raise SDKException('Subclient', '127')
+                raise SDKException("Subclient", "127")
         else:
-            raise SDKException('Subclient', '102', self._update_response_(response.text))
+            raise SDKException("Subclient", "102", self._update_response_(response.text))

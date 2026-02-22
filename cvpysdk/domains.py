@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -68,11 +66,7 @@ Domain:
     set_domain_status           --  Enables/Disables the domain
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from base64 import b64encode
-
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
@@ -81,7 +75,7 @@ if TYPE_CHECKING:
 from .exception import SDKException
 
 
-class Domains(object):
+class Domains:
     """
     Manages and interacts with all domains associated with a Commcell.
 
@@ -104,7 +98,7 @@ class Domains(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell') -> None:
+    def __init__(self, commcell_object: "Commcell") -> None:
         """Initialize a Domains object with a Commcell connection.
 
         Args:
@@ -124,7 +118,7 @@ class Domains(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
-        self._DOMAIN_CONTROLER = self._services['DOMAIN_CONTROLER']
+        self._DOMAIN_CONTROLER = self._services["DOMAIN_CONTROLER"]
 
         self._domains = None
         self.refresh()
@@ -148,10 +142,10 @@ class Domains(object):
 
         #ai-gen-doc
         """
-        representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'Domain')
+        representation_string = "{:^5}\t{:^50}\n\n".format("S. No.", "Domain")
 
         for index, domain_name in enumerate(self._domains):
-            sub_str = '{:^5}\t{:30}\n'.format(index + 1, domain_name)
+            sub_str = f"{index + 1:^5}\t{domain_name:30}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -221,9 +215,9 @@ class Domains(object):
             return self.all_domains[value]
         else:
             try:
-                return list(filter(lambda x: x[1]['id'] == value, self.all_domains.items()))[0][0]
+                return list(filter(lambda x: x[1]["id"] == value, self.all_domains.items()))[0][0]
             except IndexError:
-                raise IndexError('No domain exists with the given Name / Id')
+                raise IndexError("No domain exists with the given Name / Id")
 
     def _get_domains(self) -> Dict[str, Dict[str, Any]]:
         """Retrieve all domains associated with the Commcell.
@@ -245,23 +239,23 @@ class Domains(object):
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._DOMAIN_CONTROLER)
+        flag, response = self._cvpysdk_object.make_request("GET", self._DOMAIN_CONTROLER)
 
         if flag:
             domains_dict = {}
 
-            if response.json() and 'providers' in response.json():
-                response_value = response.json()['providers']
+            if response.json() and "providers" in response.json():
+                response_value = response.json()["providers"]
 
                 for temp in response_value:
-                    temp_name = temp['shortName']['domainName'].lower()
+                    temp_name = temp["shortName"]["domainName"].lower()
                     temp_details = temp
                     domains_dict[temp_name] = temp_details
 
             return domains_dict
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     @property
     def all_domains(self) -> Dict[str, Dict[str, Any]]:
@@ -303,11 +297,11 @@ class Domains(object):
         #ai-gen-doc
         """
         if not isinstance(domain_name, str):
-            raise SDKException('Domain', '101')
+            raise SDKException("Domain", "101")
 
         return self._domains and domain_name.lower() in self._domains
 
-    def get(self, domain_name: str) -> 'Domain':
+    def get(self, domain_name: str) -> "Domain":
         """Retrieve a domain object by its name.
 
         Args:
@@ -328,14 +322,17 @@ class Domains(object):
         #ai-gen-doc
         """
         if not isinstance(domain_name, str):
-            raise SDKException('Domain', '101')
+            raise SDKException("Domain", "101")
         if not self.has_domain(domain_name):
             raise SDKException(
-                'Domain', '102', "Domain {0} doesn't exists on this commcell.".format(
-                    domain_name)
+                "Domain", "102", f"Domain {domain_name} doesn't exists on this commcell."
             )
 
-        return Domain(self._commcell_object, domain_name, self._domains[domain_name.lower()]['shortName']['id'])
+        return Domain(
+            self._commcell_object,
+            domain_name,
+            self._domains[domain_name.lower()]["shortName"]["id"],
+        )
 
     def delete(self, domain_name: str) -> None:
         """Delete a domain from the Commcell.
@@ -360,18 +357,18 @@ class Domains(object):
         """
 
         if not isinstance(domain_name, str):
-            raise SDKException('Domain', '101')
+            raise SDKException("Domain", "101")
         else:
             domain_name = domain_name.lower()
 
             if self.has_domain(domain_name):
                 domain_id = str(self._domains[domain_name]["shortName"]["id"])
-                delete_domain = self._services['DELETE_DOMAIN_CONTROLER'] % (domain_id)
+                delete_domain = self._services["DELETE_DOMAIN_CONTROLER"] % (domain_id)
 
-                flag, response = self._cvpysdk_object.make_request('DELETE', delete_domain)
+                flag, response = self._cvpysdk_object.make_request("DELETE", delete_domain)
 
                 if flag:
-                    if response.json() and 'errorCode' in response.json():
+                    if response.json() and "errorCode" in response.json():
                         error_code = response.json()["errorCode"]
 
                         if error_code == 0:
@@ -379,21 +376,19 @@ class Domains(object):
                             # so the domains object has all the domains
                             self.refresh()
                         else:
-                            o_str = ('Failed to delete domain with error code: "{0}"'
-                                     '\nPlease check the documentation for '
-                                     'more details on the error')
-                            raise SDKException(
-                                'Domain', '102', o_str.format(error_code)
+                            o_str = (
+                                'Failed to delete domain with error code: "{0}"'
+                                "\nPlease check the documentation for "
+                                "more details on the error"
                             )
+                            raise SDKException("Domain", "102", o_str.format(error_code))
                     else:
-                        raise SDKException('Response', '102')
+                        raise SDKException("Response", "102")
                 else:
                     response_string = self._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
+                    raise SDKException("Response", "101", response_string)
             else:
-                raise SDKException(
-                    'Domain', '102', 'No domain exists with name: {0}'.format(domain_name)
-                )
+                raise SDKException("Domain", "102", f"No domain exists with name: {domain_name}")
 
     def refresh(self) -> None:
         """Reload the domain information associated with the Commcell.
@@ -411,18 +406,20 @@ class Domains(object):
         """
         self._domains = self._get_domains()
 
-    def add(self,
-            domain_name: str,
-            netbios_name: str,
-            user_name: Optional[str] = None,
-            password: Optional[str] = None,
-            credential_id: Optional[int] = None,
-            use_local_system_account: Optional[bool] = None,
-            company_id: str = "",
-            ad_proxy_list: Optional[List[str]] = None,
-            enable_sso: bool = True,
-            type_of_server: str = "active directory",
-            **kwargs: Any) -> Dict[str, Any]:
+    def add(
+        self,
+        domain_name: str,
+        netbios_name: str,
+        user_name: Optional[str] = None,
+        password: Optional[str] = None,
+        credential_id: Optional[int] = None,
+        use_local_system_account: Optional[bool] = None,
+        company_id: str = "",
+        ad_proxy_list: Optional[List[str]] = None,
+        enable_sso: bool = True,
+        type_of_server: str = "active directory",
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         """Add a new domain to the Commcell environment.
 
         This method registers a new domain (such as Active Directory, LDAP, etc.) with the Commcell,
@@ -475,20 +472,26 @@ class Domains(object):
 
         #ai-gen-doc
         """
-        service_type_mapping = {"active directory": 2, "apple directory": 8, "oracle ldap": 9, "open ldap": 10,
-                                "ldap server": 14}
+        service_type_mapping = {
+            "active directory": 2,
+            "apple directory": 8,
+            "oracle ldap": 9,
+            "open ldap": 10,
+            "ldap server": 14,
+        }
         service_type = service_type_mapping.get(type_of_server.lower())
         if not service_type:
-            raise SDKException('Domain', "102", "please pass valid server type")
-        if not (isinstance(domain_name, str) and
-                isinstance(netbios_name, str) and
-                (
-                        isinstance(use_local_system_account, bool) or
-                        isinstance(credential_id, int) or
-                        (isinstance(user_name, str) and isinstance(password, str))
-                )
+            raise SDKException("Domain", "102", "please pass valid server type")
+        if not (
+            isinstance(domain_name, str)
+            and isinstance(netbios_name, str)
+            and (
+                isinstance(use_local_system_account, bool)
+                or isinstance(credential_id, int)
+                or (isinstance(user_name, str) and isinstance(password, str))
+            )
         ):
-            raise SDKException('Domain', '101')
+            raise SDKException("Domain", "101")
         else:
             domain_name = domain_name.lower()
 
@@ -500,10 +503,10 @@ class Domains(object):
         if ad_proxy_list:
             if isinstance(ad_proxy_list, list):
                 proxy_information = {
-                    'adProxyList': [{"clientName": client} for client in ad_proxy_list]
+                    "adProxyList": [{"clientName": client} for client in ad_proxy_list]
                 }
             else:
-                raise SDKException('Domain', '101')
+                raise SDKException("Domain", "101")
 
         domain_create_request = {
             "operation": 1,
@@ -517,23 +520,21 @@ class Domains(object):
                 "tppm": {
                     "enable": True if ad_proxy_list else False,
                     "tppmType": 4,
-                    "proxyInformation": proxy_information
+                    "proxyInformation": proxy_information,
                 },
-                "shortName": {
-                    "domainName": netbios_name
-                }
-            }
+                "shortName": {"domainName": netbios_name},
+            },
         }
 
         if user_name and password:
-            domain_create_request["provider"]['login'] = user_name
-            domain_create_request["provider"]['bLogin'] = user_name
-            domain_create_request["provider"]['bPassword'] = b64encode(password.encode()).decode()
+            domain_create_request["provider"]["login"] = user_name
+            domain_create_request["provider"]["bLogin"] = user_name
+            domain_create_request["provider"]["bPassword"] = b64encode(password.encode()).decode()
         elif use_local_system_account:
-            domain_create_request["provider"]['login'] = 'LocalSystemAccount'
-            domain_create_request["provider"]['bLogin'] = 'LocalSystemAccount'
+            domain_create_request["provider"]["login"] = "LocalSystemAccount"
+            domain_create_request["provider"]["bLogin"] = "LocalSystemAccount"
         else:
-            domain_create_request["provider"]['domainCredInfo'] = {"credentialId": credential_id}
+            domain_create_request["provider"]["domainCredInfo"] = {"credentialId": credential_id}
 
         if kwargs:
             custom_provider = {
@@ -543,57 +544,59 @@ class Domains(object):
                         "attrId": 6,
                         "attributeName": "User group filter",
                         "staticAttributeString": "(objectClass=group)",
-                        "customAttributeString": kwargs.get('group_filter', ''),
-                        "attrTypeFlags": 1
+                        "customAttributeString": kwargs.get("group_filter", ""),
+                        "attrTypeFlags": 1,
                     },
                     {
                         "attrId": 7,
                         "attributeName": "User filter",
                         "staticAttributeString": "(&(objectCategory=User)(sAMAccountName=*))",
-                        "customAttributeString": kwargs.get('user_filter', ''),
-                        "attrTypeFlags": 1
+                        "customAttributeString": kwargs.get("user_filter", ""),
+                        "attrTypeFlags": 1,
                     },
                     {
                         "attrId": 9,
                         "attributeName": "Unique identifier",
                         "staticAttributeString": "sAMAccountName",
-                        "customAttributeString": kwargs.get('unique_identifier', ''),
-                        "attrTypeFlags": 1
+                        "customAttributeString": kwargs.get("unique_identifier", ""),
+                        "attrTypeFlags": 1,
                     },
                     {
                         "attrId": 10,
                         "attributeName": "base DN",
                         "staticAttributeString": "baseDN",
-                        "customAttributeString": kwargs.get('base_dn', ''),
-                        "attrTypeFlags": 1
+                        "customAttributeString": kwargs.get("base_dn", ""),
+                        "attrTypeFlags": 1,
                     },
                     {
                         "attrTypeFlags": 6,
-                        "customAttributeString": kwargs.get('email_attribute', 'mail'),
+                        "customAttributeString": kwargs.get("email_attribute", "mail"),
                         "attrId": 3,
                         "attributeName": "Email",
-                        "staticAttributeString": "mail"
+                        "staticAttributeString": "mail",
                     },
                     {
                         "attrTypeFlags": 6,
-                        "customAttributeString": kwargs.get('guid_attribute', 'objectGUID'),
+                        "customAttributeString": kwargs.get("guid_attribute", "objectGUID"),
                         "attrId": 4,
                         "attributeName": "GUID",
-                        "staticAttributeString": "objectGUID"
-                    }
-                ]
+                        "staticAttributeString": "objectGUID",
+                    },
+                ],
             }
             domain_create_request["provider"]["customProvider"] = custom_provider
 
-        if kwargs.get('additional_settings'):
-            domain_create_request["provider"]['additionalSettings'] = kwargs.get('additional_settings')
+        if kwargs.get("additional_settings"):
+            domain_create_request["provider"]["additionalSettings"] = kwargs.get(
+                "additional_settings"
+            )
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._DOMAIN_CONTROLER, domain_create_request
+            "POST", self._DOMAIN_CONTROLER, domain_create_request
         )
 
         if flag:
-            if response.json() and 'errorCode' in response.json():
+            if response.json() and "errorCode" in response.json():
                 error_code = response.json()["errorCode"]
 
                 if error_code == 0:
@@ -602,19 +605,18 @@ class Domains(object):
                     self.refresh()
                 else:
                     error_message = response.json()["errorMessage"]
-                    o_str = ('Failed to add domain with error code: "{0}"'
-                             '\nWith error message: "{1}"')
-                    raise SDKException(
-                        'Domain', '102', o_str.format(error_code, error_message)
+                    o_str = (
+                        'Failed to add domain with error code: "{0}"\nWith error message: "{1}"'
                     )
+                    raise SDKException("Domain", "102", o_str.format(error_code, error_message))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
 
-class Domain(object):
+class Domain:
     """
     Represents a specific domain configured on a CommCell.
 
@@ -636,7 +638,9 @@ class Domain(object):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: 'Commcell', domain_name: str, domain_id: Optional[str] = None) -> None:
+    def __init__(
+        self, commcell_object: "Commcell", domain_name: str, domain_id: Optional[str] = None
+    ) -> None:
         """Initialize a Domain object for the specified domain.
 
         Args:
@@ -660,8 +664,8 @@ class Domain(object):
         else:
             self._domain_id = domain_id
 
-        self._domain = self._commcell_object._services['DOMAIN_PROPERTIES'] % (self._domain_id)
-        self._DOMAIN_CONTROLER = self._commcell_object._services['DOMAIN_CONTROLER']
+        self._domain = self._commcell_object._services["DOMAIN_PROPERTIES"] % (self._domain_id)
+        self._DOMAIN_CONTROLER = self._commcell_object._services["DOMAIN_CONTROLER"]
         self._properties = None
         self._get_domain_properties()
 
@@ -726,18 +730,16 @@ class Domain(object):
         #ai-gen-doc
         """
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._domain
-        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", self._domain)
 
         if flag:
-            if response.json() and 'providers' in response.json():
-                self._properties = response.json().get('providers', [{}])[0]
+            if response.json() and "providers" in response.json():
+                self._properties = response.json().get("providers", [{}])[0]
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Reload the properties of the domain to ensure up-to-date information.
@@ -779,27 +781,31 @@ class Domain(object):
         """
 
         if not isinstance(flag, bool):
-            raise SDKException('Domain', '101')
+            raise SDKException("Domain", "101")
         request_json = {"enableSSO": flag}
         username = kwargs.get("username", None)
         password = kwargs.get("password", None)
         if username and password:
             if not (isinstance(username, str) and isinstance(password, str)):
-                raise SDKException('Domain', '101')
+                raise SDKException("Domain", "101")
             request_json["username"] = username
             request_json["password"] = b64encode(password.encode()).decode()
-        url = self._commcell_object._services['DOMAIN_SSO'] % self.domain_id
+        url = self._commcell_object._services["DOMAIN_SSO"] % self.domain_id
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', url, request_json
+            "PUT", url, request_json
         )
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode', 0)
+                error_code = response.json().get("errorCode", 0)
                 if error_code != 0:
-                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+                    raise SDKException(
+                        "Response", "101", self._commcell_object._update_response_(response.text)
+                    )
                 return
-            raise SDKException('Response', '102')
-        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            raise SDKException("Response", "102")
+        raise SDKException(
+            "Response", "101", self._commcell_object._update_response_(response.text)
+        )
 
     def set_properties(self, req_body: Dict[str, Any]) -> None:
         """Modify the properties of the domain using the provided payload.
@@ -822,20 +828,20 @@ class Domain(object):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'PUT', self._commcell_object._services['DOMAIN_SSO'] % self.domain_id, req_body
+            "PUT", self._commcell_object._services["DOMAIN_SSO"] % self.domain_id, req_body
         )
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode', 0)
+                error_code = response.json().get("errorCode", 0)
                 if error_code != 0:
                     raise SDKException(
-                        'Response', '101',
-                        self._commcell_object._update_response_(response.text)
+                        "Response", "101", self._commcell_object._update_response_(response.text)
                     )
                 return
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         raise SDKException(
-            'Response', '101', self._commcell_object._update_response_(response.text))
+            "Response", "101", self._commcell_object._update_response_(response.text)
+        )
 
     def set_domain_status(self, enable: bool) -> None:
         """Enable or disable the domain.
@@ -857,24 +863,28 @@ class Domain(object):
         #ai-gen-doc
         """
 
-        self._properties['enabled'] = 1 if enable else 0
-        req_json = {"operation": 3,
-                    "provider": self._properties}
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DOMAIN_CONTROLER, req_json)
+        self._properties["enabled"] = 1 if enable else 0
+        req_json = {"operation": 3, "provider": self._properties}
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", self._DOMAIN_CONTROLER, req_json
+        )
         if flag:
             if response.json():
-                error_code = response.json().get('errorCode', 0)
+                error_code = response.json().get("errorCode", 0)
                 if error_code != 0:
                     raise SDKException(
-                        'Domain', '102',
-                        response.json().get('errorMessage', 'Unable to update domain status')
+                        "Domain",
+                        "102",
+                        response.json().get("errorMessage", "Unable to update domain status"),
                     )
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             raise SDKException(
-                'Response', '101',
-                response.json().get('errorMessage', 'Unable to update domain status'))
+                "Response",
+                "101",
+                response.json().get("errorMessage", "Unable to update domain status"),
+            )
 
     @property
     def domain_name(self) -> str:
@@ -889,7 +899,7 @@ class Domain(object):
             >>> print(f"Domain name: {name}")
         #ai-gen-doc
         """
-        return self._properties['shortName']['domainName']
+        return self._properties["shortName"]["domainName"]
 
     @property
     def domain_id(self) -> str:
@@ -905,4 +915,4 @@ class Domain(object):
 
         #ai-gen-doc
         """
-        return self._properties['shortName']['id']
+        return self._properties["shortName"]["id"]

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -78,10 +76,9 @@ import time
 from typing import Any, Dict, List, Optional
 
 from ...exception import SDKException
-
-from ..o365apps_subclient import O365AppsSubclient
-from ..casubclient import CloudAppsSubclient
 from ...job import Job
+from ..o365apps_subclient import O365AppsSubclient
+
 
 class MSDynamics365Subclient(O365AppsSubclient):
     """
@@ -104,7 +101,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
     #ai-gen-doc
     """
 
-    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -> None:
+    def __init__(
+        self, backupset_object: object, subclient_name: str, subclient_id: int = None
+    ) -> None:
         """Initialize an MSDynamics365Subclient instance.
 
         Args:
@@ -120,8 +119,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        super(MSDynamics365Subclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
         self._instance_object = backupset_object._instance_object
         self._client_object = self._instance_object._agent_object._client_object
@@ -132,7 +130,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
         self._instance_type: int = 35
         self._app_id: int = 134
         # App ID for cloud apps
-        self._Dynamics365_SET_USER_POLICY_ASSOCIATION = self._commcell_object._services['SET_USER_POLICY_ASSOCIATION']
+        self._Dynamics365_SET_USER_POLICY_ASSOCIATION = self._commcell_object._services[
+            "SET_USER_POLICY_ASSOCIATION"
+        ]
 
     def _get_subclient_properties(self) -> dict:
         """Retrieve the properties specific to the MS Dynamics 365 subclient.
@@ -148,7 +148,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        super(MSDynamics365Subclient, self)._get_subclient_properties()
+        super()._get_subclient_properties()
 
     def _get_subclient_properties_json(self) -> dict:
         """Retrieve all properties related to this MSDynamics365 subclient as a dictionary.
@@ -165,7 +165,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         #ai-gen-doc
         """
 
-        return {'subClientProperties': self._subclient_properties}
+        return {"subClientProperties": self._subclient_properties}
 
     def discover_tables(self) -> dict:
         """Retrieve the tables discovered from the MS Dynamics 365 CRM subclient.
@@ -181,7 +181,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        self._discovered_tables = self._instance_object.discover_content(environment_discovery=False)
+        self._discovered_tables = self._instance_object.discover_content(
+            environment_discovery=False
+        )
         return self._discovered_tables
 
     def discover_environments(self) -> dict:
@@ -197,7 +199,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        self._discovered_environments = self._instance_object.discover_content(environment_discovery=True)
+        self._discovered_environments = self._instance_object.discover_content(
+            environment_discovery=True
+        )
         return self._discovered_environments
 
     @property
@@ -249,7 +253,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
             self.discover_tables()
         return self._discovered_tables
 
-    def _get_associated_content(self, is_environment: bool = False, max_retries: int = 3, retry_delay: int = 5) -> list[dict]:
+    def _get_associated_content(
+        self, is_environment: bool = False, max_retries: int = 3, retry_delay: int = 5
+    ) -> list[dict]:
         """Retrieve the content associated with a Dynamics 365 CRM subclient.
 
         This method fetches either the environments or tables associated with the subclient,
@@ -279,24 +285,22 @@ class MSDynamics365Subclient(O365AppsSubclient):
         else:
             discover_by_type = 14
 
-        _GET_ASSOCIATED_CONTENT = self._services['USER_POLICY_ASSOCIATION']
+        _GET_ASSOCIATED_CONTENT = self._services["USER_POLICY_ASSOCIATION"]
         request_json = {
             "discoverByType": discover_by_type,
             "bIncludeDeleted": False,
-            "cloudAppAssociation": {
-                "subclientEntity": {
-                    "subclientId": int(self.subclient_id)
-                }
-            }
+            "cloudAppAssociation": {"subclientEntity": {"subclientId": int(self.subclient_id)}},
         }
 
         for attempt in range(max_retries):
-            flag, response = self._cvpysdk_object.make_request('POST', _GET_ASSOCIATED_CONTENT, request_json)
+            flag, response = self._cvpysdk_object.make_request(
+                "POST", _GET_ASSOCIATED_CONTENT, request_json
+            )
 
             if flag:
                 try:
                     if response and response.json():
-                        associations = response.json().get('associations', [])
+                        associations = response.json().get("associations", [])
                         content_list = []
 
                         if discover_by_type == 5:  # Environments
@@ -307,7 +311,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
                                     "id": environment.get("groups", {}).get("id"),
                                     "userAccountInfo": environment.get("userAccountInfo", {}),
                                     "plan": environment.get("plan", {}),
-                                    "is_environment": True
+                                    "is_environment": True,
                                 }
                                 content_list.append(env_dict)
 
@@ -316,10 +320,12 @@ class MSDynamics365Subclient(O365AppsSubclient):
                                 table_name = table.get("userAccountInfo", {}).get("displayName")
                                 table_dict = {
                                     "name": table_name,
-                                    "environment_name": table.get("userAccountInfo", {}).get("ParentWebGuid", ""),
+                                    "environment_name": table.get("userAccountInfo", {}).get(
+                                        "ParentWebGuid", ""
+                                    ),
                                     "userAccountInfo": table.get("userAccountInfo", {}),
                                     "plan": table.get("plan", {}),
-                                    "is_environment": False
+                                    "is_environment": False,
                                 }
                                 content_list.append(table_dict)
 
@@ -330,10 +336,10 @@ class MSDynamics365Subclient(O365AppsSubclient):
                     else:
                         time.sleep(retry_delay)
                 except ValueError as e:
-                    raise SDKException('Response', '102', f"Invalid JSON response: {str(e)}")
+                    raise SDKException("Response", "102", f"Invalid JSON response: {str(e)}")
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException("Response", "101", response_string)
 
         return []
 
@@ -434,18 +440,17 @@ class MSDynamics365Subclient(O365AppsSubclient):
         #ai-gen-doc
         """
         set_content_association_json = {
-                                            "LaunchAutoDiscovery": is_environment,
-                                            "cloudAppAssociation": {
-                                            "accountStatus": 0,
-                                            "cloudAppDiscoverinfo": {
-                                                "userAccounts": [
-                                                ],
-                                                "groups": [],
-                                                "discoverByType": 14 if is_environment is False else 15
-                                            },
-                                            "subclientEntity": self._subClientEntity
-                                            }
-                                        }
+            "LaunchAutoDiscovery": is_environment,
+            "cloudAppAssociation": {
+                "accountStatus": 0,
+                "cloudAppDiscoverinfo": {
+                    "userAccounts": [],
+                    "groups": [],
+                    "discoverByType": 14 if is_environment is False else 15,
+                },
+                "subclientEntity": self._subClientEntity,
+            },
+        }
 
         return set_content_association_json
 
@@ -470,25 +475,23 @@ class MSDynamics365Subclient(O365AppsSubclient):
         #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._Dynamics365_SET_USER_POLICY_ASSOCIATION, content_json
+            "POST", self._Dynamics365_SET_USER_POLICY_ASSOCIATION, content_json
         )
 
         if flag:
             try:
                 if response.json():
-                    if response.json().get('resp', {}).get('errorCode', 0) != 0:
-                        error_message = response.json()['errorMessage']
+                    if response.json().get("resp", {}).get("errorCode", 0) != 0:
+                        error_message = response.json()["errorMessage"]
                         output_string = 'Failed to Create Association for a Dynamics 365 CRM client\nError: "{0}"'
-                        raise SDKException(
-                            'Subclient', '102', output_string.format(error_message)
-                        )
+                        raise SDKException("Subclient", "102", output_string.format(error_message))
                     else:
                         self.refresh()
             except ValueError:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _table_association_info_json(self, tables_list: list[tuple[str, str]]) -> list[dict]:
         """Create the association JSON metadata for associating tables to a Dynamics 365 CRM client.
@@ -526,8 +529,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         tables_dict = {}
 
         if not bool(_discovered_tables):
-            raise SDKException('Subclient', '101',
-                               "Discovered Tables is Empty.")
+            raise SDKException("Subclient", "101", "Discovered Tables is Empty.")
 
         for table in _discovered_tables:
             if table["ParentWebGuid"] in tables_dict:
@@ -541,18 +543,28 @@ class MSDynamics365Subclient(O365AppsSubclient):
                 if table_name in tables_dict[env_name]:
                     tables_info.append(tables_dict[env_name][table_name])
                 else:
-                    raise SDKException("Subclient", "101",
-                                       "Table {} not found in the environment {}".format(table_name, env_name))
+                    raise SDKException(
+                        "Subclient",
+                        "101",
+                        f"Table {table_name} not found in the environment {env_name}",
+                    )
             else:
-                raise SDKException("Subclient", "101",
-                                   "Environment {} not found in the list of discovered environments".format(env_name))
+                raise SDKException(
+                    "Subclient",
+                    "101",
+                    f"Environment {env_name} not found in the list of discovered environments",
+                )
 
         if len(tables_info) != len(tables_list):
-            raise SDKException("Subclient", "101", "All of the input tables were in the list of discovered tables")
+            raise SDKException(
+                "Subclient", "101", "All of the input tables were in the list of discovered tables"
+            )
 
         return tables_info
 
-    def set_table_associations(self, tables_list: list[tuple[str, str]], plan_name: str = "") -> None:
+    def set_table_associations(
+        self, tables_list: list[tuple[str, str]], plan_name: str = ""
+    ) -> None:
         """Add table associations to a Dynamics 365 CRM client.
 
         This method associates specified tables with the Dynamics 365 CRM subclient content.
@@ -579,10 +591,10 @@ class MSDynamics365Subclient(O365AppsSubclient):
         tables_info = self._table_association_info_json(tables_list=tables_list)
 
         _table_association_json = self._set_association_json(is_environment=False)
-        _table_association_json["cloudAppAssociation"]["plan"] = {
-            "planId": plan_id
-        }
-        _table_association_json["cloudAppAssociation"]["cloudAppDiscoverinfo"]["userAccounts"] = tables_info
+        _table_association_json["cloudAppAssociation"]["plan"] = {"planId": plan_id}
+        _table_association_json["cloudAppAssociation"]["cloudAppDiscoverinfo"]["userAccounts"] = (
+            tables_info
+        )
         self._set_content_association(content_json=_table_association_json)
 
     def _environment_association_info_json(self, environments_name: list[str]) -> list[dict]:
@@ -608,8 +620,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         _discovered_envs = self.discovered_environments
 
         if not bool(_discovered_envs):
-            raise SDKException('Subclient', '101',
-                               "Discovered Environments List is Empty")
+            raise SDKException("Subclient", "101", "Discovered Environments List is Empty")
 
         for environment in _discovered_envs:
             if environment["displayName"] in environments_name:
@@ -620,12 +631,17 @@ class MSDynamics365Subclient(O365AppsSubclient):
                 environments_info.append(_env_assoc_info)
 
         if len(environments_info) == 0:
-            raise SDKException("Subclient", "101",
-                               "None of the input environments were in the list of discovered environments")
+            raise SDKException(
+                "Subclient",
+                "101",
+                "None of the input environments were in the list of discovered environments",
+            )
 
         return environments_info
 
-    def set_environment_associations(self, environments_name: list[str], plan_name: str = "") -> None:
+    def set_environment_associations(
+        self, environments_name: list[str], plan_name: str = ""
+    ) -> None:
         """Add environment associations to a Dynamics 365 CRM client.
 
         Associates the specified list of environment names with the content of the Dynamics 365 CRM client,
@@ -644,23 +660,26 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        environments_info: list = self._environment_association_info_json(environments_name=environments_name)
+        environments_info: list = self._environment_association_info_json(
+            environments_name=environments_name
+        )
 
         if self._commcell_object.plans.has_plan(plan_name.lower()):
             plan_id = int(self._commcell_object.plans[plan_name.lower()])
 
         else:
-            raise SDKException("Subclient", "101",
-                               "Dynamics 365 Plan does not exist")
+            raise SDKException("Subclient", "101", "Dynamics 365 Plan does not exist")
 
         _env_association_json = self._set_association_json(is_environment=True)
-        _env_association_json["cloudAppAssociation"]["plan"] = {
-            "planId": plan_id
-        }
-        _env_association_json["cloudAppAssociation"]["cloudAppDiscoverinfo"]["userAccounts"] = environments_info
+        _env_association_json["cloudAppAssociation"]["plan"] = {"planId": plan_id}
+        _env_association_json["cloudAppAssociation"]["cloudAppDiscoverinfo"]["userAccounts"] = (
+            environments_info
+        )
         self._set_content_association(content_json=_env_association_json)
 
-    def _json_for_backup_task(self, content_list: list, is_environment: bool = False, force_full_backup: bool = False) -> list:
+    def _json_for_backup_task(
+        self, content_list: list, is_environment: bool = False, force_full_backup: bool = False
+    ) -> list:
         """Create the association JSON for backing up content in a Dynamics 365 subclient.
 
         This method generates the JSON structure required to initiate a backup task for the specified content
@@ -692,21 +711,22 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        _backup_task_json = self._backup_json('Full', False, '')
+        _backup_task_json = self._backup_json("Full", False, "")
         backup_options = {
-            'backupLevel': 2,  # Incremental
-            'cloudAppOptions': {
-            }
+            "backupLevel": 2,  # Incremental
+            "cloudAppOptions": {},
         }
 
         if len(content_list) > 0:
-            _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
-            backup_options['cloudAppOptions']['userAccounts'] = _sub_client_content_json
+            _sub_client_content_json = self._backup_content_json(
+                content_list=content_list, is_environment=is_environment
+            )
+            backup_options["cloudAppOptions"]["userAccounts"] = _sub_client_content_json
 
         if force_full_backup is True:
-            backup_options['cloudAppOptions']['forceFullBackup'] = True
+            backup_options["cloudAppOptions"]["forceFullBackup"] = True
 
-        _backup_task_json['taskInfo']['subTasks'][0]['options']['backupOpts'] = backup_options
+        _backup_task_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = backup_options
         return _backup_task_json
 
     def _backup_content_json(self, content_list: list, is_environment: bool = False) -> list:
@@ -751,18 +771,26 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         elif is_environment is False:
             for _table in self.get_associated_tables(refresh=True):
-                _table_name, _parent_env_name = _table["name"].lower(), _table["environment_name"].lower()
+                _table_name, _parent_env_name = (
+                    _table["name"].lower(),
+                    _table["environment_name"].lower(),
+                )
                 try:
                     if (_parent_env_name, _table_name) in content_list:
                         _table_bkp_info = _table["userAccountInfo"]
                         _bkp_content_json.append(_table_bkp_info)
                 except TypeError:
-                    raise SDKException('Subclient', '101',
-                                       "For backing up tables, content list should be a list of tuples")
+                    raise SDKException(
+                        "Subclient",
+                        "101",
+                        "For backing up tables, content list should be a list of tuples",
+                    )
 
         return _bkp_content_json
 
-    def _run_backup(self, backup_content: list, is_environment: bool = False, force_full_backup: bool = False) -> 'Job':
+    def _run_backup(
+        self, backup_content: list, is_environment: bool = False, force_full_backup: bool = False
+    ) -> "Job":
         """Run a backup job for the specified content of a Dynamics 365 subclient.
 
         Args:
@@ -791,13 +819,21 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment, force_full_backup=force_full_backup)
-        backup_endpoint = self._services['CREATE_TASK']
+        _backup_json = self._json_for_backup_task(
+            content_list=backup_content,
+            is_environment=is_environment,
+            force_full_backup=force_full_backup,
+        )
+        backup_endpoint = self._services["CREATE_TASK"]
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", backup_endpoint, _backup_json)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "POST", backup_endpoint, _backup_json
+        )
         return self._process_backup_response(flag, response)
 
-    def backup_tables(self, tables_list: list[tuple[str, str]], force_full_backup: bool = False) -> 'Job':
+    def backup_tables(
+        self, tables_list: list[tuple[str, str]], force_full_backup: bool = False
+    ) -> "Job":
         """Run a backup job for the specified tables of a Dynamics 365 subclient.
 
         Args:
@@ -819,9 +855,11 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        return self._run_backup(backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup)
+        return self._run_backup(
+            backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup
+        )
 
-    def backup_environments(self, environments_list: List[str]) -> 'Job':
+    def backup_environments(self, environments_list: List[str]) -> "Job":
         """Run a backup operation for the specified Dynamics 365 environments in this subclient.
 
         Args:
@@ -842,7 +880,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
         return self._run_backup(backup_content=environments_list, is_environment=True)
 
-    def launch_client_level_full_backup(self) -> 'Job':
+    def launch_client_level_full_backup(self) -> "Job":
         """Run a full backup for the Dynamics 365 subclient.
 
         Initiates a client-level full backup operation for the Dynamics 365 subclient and returns
@@ -876,40 +914,29 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
         _restore_task_json = {
             "taskInfo": {
-                "associations": [self._subclient_properties['subClientEntity']],
-                "task": {
-                    "taskType": 1,
-                    "initiatedFrom": 2,
-                    "policyType": 0
-                },
+                "associations": [self._subclient_properties["subClientEntity"]],
+                "task": {"taskType": 1, "initiatedFrom": 2, "policyType": 0},
                 "subTasks": [
                     {
-                        "subTask": {
-                            "subTaskType": 3,
-                            "operationType": 1001
-                        },
+                        "subTask": {"subTaskType": 3, "operationType": 1001},
                         "options": {
                             "restoreOptions": {
-                                "browseOption": {
-                                    "timeRange": {}
-                                },
+                                "browseOption": {"timeRange": {}},
                                 "commonOptions": {
                                     "skip": True,
                                     "overwriteFiles": False,
-                                    "unconditionalOverwrite": False
+                                    "unconditionalOverwrite": False,
                                 },
                                 "destination": {
                                     "destAppId": self._app_id,
                                     "inPlace": True,
                                     "destClient": {
                                         "clientId": int(self._client_object.client_id),
-                                        "clientName": self._client_object.client_name
+                                        "clientName": self._client_object.client_name,
                                     },
-                                    "destPath": []
+                                    "destPath": [],
                                 },
-                                "fileOption": {
-                                    "sourceItem": list()
-                                },
+                                "fileOption": {"sourceItem": list()},
                                 "cloudAppsRestoreOptions": {
                                     "instanceType": self._instance_type,
                                     "d365RestoreOptions": {
@@ -917,13 +944,13 @@ class MSDynamics365Subclient(O365AppsSubclient):
                                         "restoreToDynamics365": True,
                                         "overWriteItems": False,
                                         "destLocation": "",
-                                        "restoreUsingFindQuery": False
-                                    }
-                                }
+                                        "restoreUsingFindQuery": False,
+                                    },
+                                },
                             }
-                        }
+                        },
                     }
-                ]
+                ],
             }
         }
         return _restore_task_json
@@ -968,19 +995,25 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         elif is_environment is False:
             for _table in self.get_associated_tables(refresh=True):
-                _table_name, _parent_env_name = _table["name"].lower(), _table["environment_name"].lower()
+                _table_name, _parent_env_name = (
+                    _table["name"].lower(),
+                    _table["environment_name"].lower(),
+                )
 
                 try:
                     if (_parent_env_name, _table_name) in content_list:
-                        _id = _table.get("userAccountInfo").get("smtpAddress").split('/')
+                        _id = _table.get("userAccountInfo").get("smtpAddress").split("/")
                         _table_id = _id[-1]
                         _env_id = _id[-2]
                         _restore_id = f"{_env_id}/{_table_id}"
                         __restore_content_list.append(_restore_id)
 
                 except TypeError:
-                    raise SDKException('Subclient', '101',
-                                       "For restoring the tables, content list should be a list of tuples")
+                    raise SDKException(
+                        "Subclient",
+                        "101",
+                        "For restoring the tables, content list should be a list of tuples",
+                    )
         __restore_content_list = list(
             map(lambda _restore_id: f"/tenant/{_restore_id}", __restore_content_list)
         )
@@ -995,7 +1028,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         job_id: int = None,
         is_environment: bool = False,
         is_out_of_place_restore: bool = False,
-        destination_environment: str = str()
+        destination_environment: str = "",
     ) -> dict:
         """Prepare the JSON (Python dict) payload for an in-place or out-of-place restore operation.
 
@@ -1039,49 +1072,58 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
         _restore_content_json = self._restore_content_json()
         if restore_path is None:
-            restore_path = self._get_restore_item_path(content_list=restore_content, is_environment=is_environment)
+            restore_path = self._get_restore_item_path(
+                content_list=restore_content, is_environment=is_environment
+            )
 
-        _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"][
-            "sourceItem"] = restore_path
+        _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "fileOption"
+        ]["sourceItem"] = restore_path
 
         if job_id is not None:
             _job = self._commcell_object.job_controller.get(job_id)
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]["timeRange"][
-                "toTime"] = _job.end_timestamp
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "browseOption"
+            ]["timeRange"]["toTime"] = _job.end_timestamp
 
         if overwrite is True:
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["commonOptions"]["overwriteFiles"] = True
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["commonOptions"][
-                "skip"] = False
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["commonOptions"][
-                "unconditionalOverwrite"] = True
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["cloudAppsRestoreOptions"] \
-                ["d365RestoreOptions"]["overWriteItems"] = True
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "commonOptions"
+            ]["overwriteFiles"] = True
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "commonOptions"
+            ]["skip"] = False
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "commonOptions"
+            ]["unconditionalOverwrite"] = True
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "cloudAppsRestoreOptions"
+            ]["d365RestoreOptions"]["overWriteItems"] = True
 
         if is_out_of_place_restore:
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["destination"]["destPath"] = [destination_environment]
-            _instance_id = self._get_environment_id_for_oop_restore(environment_name=destination_environment)
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["cloudAppsRestoreOptions"] \
-                ["d365RestoreOptions"]["destLocation"] = _instance_id
-            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
-                ["restoreOptions"]["destination"]["inPlace"] = False
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "destination"
+            ]["destPath"] = [destination_environment]
+            _instance_id = self._get_environment_id_for_oop_restore(
+                environment_name=destination_environment
+            )
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "cloudAppsRestoreOptions"
+            ]["d365RestoreOptions"]["destLocation"] = _instance_id
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                "destination"
+            ]["inPlace"] = False
 
         return _restore_content_json
 
     def restore_in_place(
-            self,
-            restore_content: Optional[list] = None,
-            restore_path: Optional[list] = None,
-            is_environment: bool = False,
-            overwrite: bool = True,
-            job_id: Optional[int] = None
-        ) -> 'Job':
+        self,
+        restore_content: Optional[list] = None,
+        restore_path: Optional[list] = None,
+        is_environment: bool = False,
+        overwrite: bool = True,
+        job_id: Optional[int] = None,
+    ) -> "Job":
         """Run an in-place restore for the specified Microsoft Dynamics 365 content.
 
         This method initiates an in-place restore operation for the provided content or paths.
@@ -1126,7 +1168,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
 
         if restore_content is None and restore_path is None:
-            raise SDKException("Subclient", "101", "Need to have either of restore content or restore path")
+            raise SDKException(
+                "Subclient", "101", "Need to have either of restore content or restore path"
+            )
 
         _restore_json = self._prepare_restore_json(
             restore_content=restore_content,
@@ -1134,7 +1178,8 @@ class MSDynamics365Subclient(O365AppsSubclient):
             is_environment=is_environment,
             job_id=job_id,
             overwrite=overwrite,
-            is_out_of_place_restore=False)
+            is_out_of_place_restore=False,
+        )
 
         return self._process_restore_response(_restore_json)
 
@@ -1159,35 +1204,31 @@ class MSDynamics365Subclient(O365AppsSubclient):
         #ai-gen-doc
         """
 
-        _LAUNCH_LICENSING = self._services['LAUNCH_O365_LICENSING']
+        _LAUNCH_LICENSING = self._services["LAUNCH_O365_LICENSING"]
 
         request_json = {
-            "subClient": {
-                "clientId": int(self._client_object.client_id)
-            },
+            "subClient": {"clientId": int(self._client_object.client_id)},
             "runForAllClients": run_for_all_clients,
-            "appType": 6
+            "appType": 6,
         }
 
-        flag, response = self._cvpysdk_object.make_request(
-            'POST', _LAUNCH_LICENSING, request_json
-        )
+        flag, response = self._cvpysdk_object.make_request("POST", _LAUNCH_LICENSING, request_json)
 
         if flag:
             try:
                 if response.json():
-                    if response.json().get('resp', {}).get('errorCode', 0) != 0:
-                        error_message = response.json()['errorMessage']
+                    if response.json().get("resp", {}).get("errorCode", 0) != 0:
+                        error_message = response.json()["errorMessage"]
                         output_string = 'Failed to Launch Licensing Thread\nError: "{0}"'
-                        raise SDKException('Subclient', '102', output_string.format(error_message))
+                        raise SDKException("Subclient", "102", output_string.format(error_message))
                     else:
                         self.refresh()
             except ValueError:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
 
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _get_environment_id_for_oop_restore(self, environment_name: str) -> str:
         """Retrieve the environment ID for a specified environment name for Out of Place Restore operations.
@@ -1206,21 +1247,21 @@ class MSDynamics365Subclient(O365AppsSubclient):
         #ai-gen-doc
         """
         for environment in self.discovered_environments:
-            if environment['displayName'] == environment_name:
+            if environment["displayName"] == environment_name:
                 _env_xml = environment.get("xmlGeneric")
                 _env_json = json.loads(_env_xml)
                 _env_id = _env_json.get("_instanceName")
         return _env_id
 
     def restore_out_of_place(
-            self,
-            restore_content: list = None,
-            restore_path: list = None,
-            is_environment: bool = False,
-            overwrite: bool = True,
-            job_id: int = None,
-            destination_environment: str = str()
-        ) -> 'Job':
+        self,
+        restore_content: list = None,
+        restore_path: list = None,
+        is_environment: bool = False,
+        overwrite: bool = True,
+        job_id: int = None,
+        destination_environment: str = "",
+    ) -> "Job":
         """Run an out-of-place restore for the specified MSDynamics365 content.
 
         This method initiates an out-of-place restore operation for the provided content or paths.
@@ -1259,7 +1300,9 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
 
         if restore_content is None and restore_path is None:
-            raise SDKException("Subclient", "101", "Need to have either of restore content or restore path")
+            raise SDKException(
+                "Subclient", "101", "Need to have either of restore content or restore path"
+            )
 
         _restore_json = self._prepare_restore_json(
             restore_content=restore_content,
@@ -1268,14 +1311,17 @@ class MSDynamics365Subclient(O365AppsSubclient):
             job_id=job_id,
             overwrite=overwrite,
             is_out_of_place_restore=True,
-            destination_environment=destination_environment)
+            destination_environment=destination_environment,
+        )
 
         return self._process_restore_response(_restore_json)
 
-    def browse(self,
-               browse_path: Optional[list[str]] = None,
-               include_deleted_items: bool = False,
-               till_time: int = -1) -> dict:
+    def browse(
+        self,
+        browse_path: Optional[list[str]] = None,
+        include_deleted_items: bool = False,
+        till_time: int = -1,
+    ) -> dict:
         """Browse the backed up content for a Dynamics 365 subclient.
 
         Args:
@@ -1302,10 +1348,14 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        _parent_path = str()
+        _parent_path = ""
 
-        _environments = self._perform_browse(parent_path=_parent_path, till_time=till_time, item_type=2,
-                                             include_deleted_items=include_deleted_items)
+        _environments = self._perform_browse(
+            parent_path=_parent_path,
+            till_time=till_time,
+            item_type=2,
+            include_deleted_items=include_deleted_items,
+        )
         _browse_response = copy.deepcopy(_environments)
 
         if browse_path:
@@ -1313,11 +1363,17 @@ class MSDynamics365Subclient(O365AppsSubclient):
             for path in browse_path:
                 _parent_path = self._get_guid_for_path(_browse_response, path)
                 if not _parent_path:
-                    raise SDKException('Subclient', '101',
-                                       f"Path: {path} not found in browse content: {_browse_response}")
-                _browse_response = self._perform_browse(parent_path=_parent_path, till_time=till_time,
-                                                        item_type=_item_type,
-                                                        include_deleted_items=include_deleted_items)
+                    raise SDKException(
+                        "Subclient",
+                        "101",
+                        f"Path: {path} not found in browse content: {_browse_response}",
+                    )
+                _browse_response = self._perform_browse(
+                    parent_path=_parent_path,
+                    till_time=till_time,
+                    item_type=_item_type,
+                    include_deleted_items=include_deleted_items,
+                )
                 _item_type += 1
 
         return _browse_response
@@ -1344,22 +1400,27 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         #ai-gen-doc
         """
-        guid: str = str()
+        guid: str = ""
         for item in browse_response:
             if item.get("appSpecific").get("d365Item").get("displayName") == path:
                 guid = item.get("cvObjectGuid")
         return guid
 
-    def _perform_browse(self, parent_path: str = str(), till_time: int = -1, item_type: int = 2,
-                        include_deleted_items: bool = False):
+    def _perform_browse(
+        self,
+        parent_path: str = "",
+        till_time: int = -1,
+        item_type: int = 2,
+        include_deleted_items: bool = False,
+    ):
         """
-            Perform a browse of the backed up content
-            Arguments:
-                parent_path         (str)   --      GUID for the parent path
-                include_deleted_items
-                                    (bool)  --      Whether to include deleted items in the browse response
-                till_time           (int)   --      Time-stamp for point in time browse
-                item_type           (int)   --      Item type to be browsed
+        Perform a browse of the backed up content
+        Arguments:
+            parent_path         (str)   --      GUID for the parent path
+            include_deleted_items
+                                (bool)  --      Whether to include deleted items in the browse response
+            till_time           (int)   --      Time-stamp for point in time browse
+            item_type           (int)   --      Item type to be browsed
         """
         _browse_default_params = self._get_dynamics365_browse_params(item_type=item_type)
 
@@ -1372,11 +1433,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             _parent_path_filter = {
                 "field": "PARENT_GUID",
                 "intraFieldOp": 0,
-                "fieldValues": {
-                    "values": [
-                        f"{parent_path}"
-                    ]
-                }
+                "fieldValues": {"values": [f"{parent_path}"]},
             }
             _file_filter.append(_parent_path_filter)
 
@@ -1384,12 +1441,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             _backup_time_filter = {
                 "field": "BACKUPTIME",
                 "intraFieldOp": 0,
-                "fieldValues": {
-                    "values": [
-                        "0",
-                        f"{till_time}"
-                    ]
-                }
+                "fieldValues": {"values": ["0", f"{till_time}"]},
             }
             _file_filter.append(_backup_time_filter)
 
@@ -1398,19 +1450,16 @@ class MSDynamics365Subclient(O365AppsSubclient):
                 "groupType": 0,
                 "field": "CISTATE",
                 "intraFieldOp": 0,
-                "fieldValues": {
-                    "values": [
-                        "1",
-                        "3333",
-                        "3334",
-                        "3335"
-                    ]
-                }
+                "fieldValues": {"values": ["1", "3333", "3334", "3335"]},
             }
             _common_filters[0] = _common_filter
 
-        return self.do_web_search(query_params=_query_params, file_filter=_file_filter, sort_param=_sort_params,
-                                  common_filters=_common_filters)
+        return self.do_web_search(
+            query_params=_query_params,
+            file_filter=_file_filter,
+            sort_param=_sort_params,
+            common_filters=_common_filters,
+        )
 
     def _get_dynamics365_browse_params(self, item_type: int = 2) -> dict:
         """Generate the default dictionary of browse parameters for a Dynamics 365 browse query.
@@ -1430,69 +1479,49 @@ class MSDynamics365Subclient(O365AppsSubclient):
         #ai-gen-doc
         """
         _query_params: list = [
-            {
-                "param": "ENABLE_MIXEDVIEW",
-                "value": "true"
-            },
+            {"param": "ENABLE_MIXEDVIEW", "value": "true"},
             {
                 "param": "RESPONSE_FIELD_LIST",
                 "value": "D365_ENTITY_DISP_NAME,D365_ENTITY_DISP_NAME,CONTENTID,CV_OBJECT_GUID,CV_TURBO_GUID,"
-                         "PARENT_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,APPID,D365_ID,D365_DISPLAYNAME,"
-                         "FILE_CREATEDTIME,MODIFIEDTIME,BACKUPTIME,D365_OBJECT_TYPE,D365_CONTENTHASH,D365_FLAGS,"
-                         "D365_ENTITYSET_ID,D365_ENTITYSET_NAME,D365_INSTANCE_ID,D365_INSTANCE_NAME,"
-                         "D365_CREATEDBY_GUID,D365_CREATEDBY_NAME,D365_MODIFIEDBY_GUID,D365_MODIFIEDBY_NAME,"
-                         "D365_OWNER_GUID,D365_OWNER_NAME,DATE_DELETED,CISTATE "
+                "PARENT_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,APPID,D365_ID,D365_DISPLAYNAME,"
+                "FILE_CREATEDTIME,MODIFIEDTIME,BACKUPTIME,D365_OBJECT_TYPE,D365_CONTENTHASH,D365_FLAGS,"
+                "D365_ENTITYSET_ID,D365_ENTITYSET_NAME,D365_INSTANCE_ID,D365_INSTANCE_NAME,"
+                "D365_CREATEDBY_GUID,D365_CREATEDBY_NAME,D365_MODIFIEDBY_GUID,D365_MODIFIEDBY_NAME,"
+                "D365_OWNER_GUID,D365_OWNER_NAME,DATE_DELETED,CISTATE ",
             },
-            {
-                "param": "COLLAPSE_FIELD",
-                "value": "CV_OBJECT_GUID"
-            }]
-
-        _sort_params: list = [
-            {
-                "sortDirection": 0,
-                "sortField": "D365_DISPLAYNAME"
-            }
+            {"param": "COLLAPSE_FIELD", "value": "CV_OBJECT_GUID"},
         ]
+
+        _sort_params: list = [{"sortDirection": 0, "sortField": "D365_DISPLAYNAME"}]
 
         _common_filters: list = [
             {
                 "groupType": 0,
                 "field": "CISTATE",
                 "intraFieldOp": 0,
-                "fieldValues": {
-                    "values": [
-                        "1"
-                    ]
-                }
+                "fieldValues": {"values": ["1"]},
             },
             {
                 "field": "IS_VISIBLE",
                 "intraFieldOpStr": "None",
                 "intraFieldOp": 0,
-                "fieldValues": {
-                    "isMoniker": False,
-                    "isRange": False,
-                    "values": [
-                        "true"
-                    ]
-                }
-            }
+                "fieldValues": {"isMoniker": False, "isRange": False, "values": ["true"]},
+            },
         ]
 
         _file_filter: list = [
             {
                 "field": "D365_OBJECT_TYPE",
                 "intraFieldOp": 0,
-                "fieldValues": {
-                    "values": [
-                        f"{item_type}"
-                    ]
-                }
+                "fieldValues": {"values": [f"{item_type}"]},
             }
         ]
-        return {"query_params": _query_params, "file_filter": _file_filter, "sort_param": _sort_params,
-                "common_filters": _common_filters}
+        return {
+            "query_params": _query_params,
+            "file_filter": _file_filter,
+            "sort_param": _sort_params,
+            "common_filters": _common_filters,
+        }
 
     @property
     def browse_item_type(self) -> dict[str, int]:
@@ -1507,7 +1536,5 @@ class MSDynamics365Subclient(O365AppsSubclient):
             >>> print(f"Dynamics 365 item type: {item_type}")
         #ai-gen-doc
         """
-        _browse_item_type = {"environment": 2,
-                             "table": 3,
-                             "record": 4}
+        _browse_item_type = {"environment": 2, "table": 3, "record": 4}
         return _browse_item_type

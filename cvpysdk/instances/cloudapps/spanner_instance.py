@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -41,6 +39,7 @@ GoogleSpannerInstance Attributes:
     project_id              --  Returns the cloud spanner project id
 
 """
+
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 
@@ -81,7 +80,7 @@ class GoogleSpannerInstance(CloudAppsInstance):
 
         #ai-gen-doc
         """
-        super(GoogleSpannerInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
         self._ca_instance_type = None
         self._proxy_client = None
 
@@ -89,33 +88,48 @@ class GoogleSpannerInstance(CloudAppsInstance):
         self._staging_path = None
         self._project_id = None
 
-        if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
-            self._ca_instance_type = cloud_apps_instance['instanceType']
+        if "cloudAppsInstance" in self._properties:
+            cloud_apps_instance = self._properties["cloudAppsInstance"]
+            self._ca_instance_type = cloud_apps_instance["instanceType"]
 
-            if 'generalCloudProperties' in cloud_apps_instance:
-                if 'proxyServers' in cloud_apps_instance['generalCloudProperties']:
-                    self._proxy_client = cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('proxyServers', [{}])[0].get('clientName')
+            if "generalCloudProperties" in cloud_apps_instance:
+                if "proxyServers" in cloud_apps_instance["generalCloudProperties"]:
+                    self._proxy_client = (
+                        cloud_apps_instance.get("generalCloudProperties", {})
+                        .get("proxyServers", [{}])[0]
+                        .get("clientName")
+                    )
                 else:
-                    if 'clientName' in cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientName')
+                    if "clientName" in cloud_apps_instance.get("generalCloudProperties", {}).get(
+                        "memberServers", [{}]
+                    )[0].get("client"):
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientName")
+                        )
                     else:
-                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
-                            'memberServers', [{}])[0].get('client', {}).get('clientGroupName')
+                        self._proxy_client = (
+                            cloud_apps_instance.get("generalCloudProperties", {})
+                            .get("memberServers", [{}])[0]
+                            .get("client", {})
+                            .get("clientGroupName")
+                        )
 
                 if self._proxy_client is None:
-                    raise SDKException('Instance', '102', 'Access Node has not been configured')
+                    raise SDKException("Instance", "102", "Access Node has not been configured")
 
-            if 'cloudSpannerInstance' in cloud_apps_instance:
-                self._google_instance_id = cloud_apps_instance.get(
-                    'cloudSpannerInstance', {}).get('instanceId')
-                self._staging_path = cloud_apps_instance.get(
-                    'cloudSpannerInstance', {}).get('cloudStagingPath')
-                self._project_id = cloud_apps_instance.get(
-                    'cloudSpannerInstance', {}).get('projectId')
+            if "cloudSpannerInstance" in cloud_apps_instance:
+                self._google_instance_id = cloud_apps_instance.get("cloudSpannerInstance", {}).get(
+                    "instanceId"
+                )
+                self._staging_path = cloud_apps_instance.get("cloudSpannerInstance", {}).get(
+                    "cloudStagingPath"
+                )
+                self._project_id = cloud_apps_instance.get("cloudSpannerInstance", {}).get(
+                    "projectId"
+                )
 
     @property
     def instance_type(self) -> int:

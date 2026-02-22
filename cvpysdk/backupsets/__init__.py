@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -18,4 +16,4 @@
 
 """Initialize Backupsets for the SDK."""
 
-__author__ = 'Commvault Systems Inc.'
+__author__ = "Commvault Systems Inc."

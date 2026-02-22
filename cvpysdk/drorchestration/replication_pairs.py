@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -62,6 +60,7 @@ ReplicationPair Attributes:
 
 **reverse_replication_schedule_id -- Returns the ID of the reverse replication schedule
 """
+
 from ..exception import SDKException
 from ..subclients.virtualserver.livesync.vsa_live_sync import LiveSyncVMPair
 
@@ -87,17 +86,17 @@ class ReplicationPairs:
 
         self._filter_args = kwargs
 
-        self._REPLICATION_PAIRS = self._services['GET_REPLICATION_PAIRS']
-        if self._filter_args.get('application_id'):
-            self._REPLICATION_PAIRS += f'applicationId={self._filter_args.get("application_id")}&'
-        if self._filter_args.get('instance_id'):
-            self._REPLICATION_PAIRS += f'instanceId={self._filter_args.get("instance_id")}&'
-        if self._filter_args.get('subclient_id'):
-            self._REPLICATION_PAIRS += f'subclientId={self._filter_args.get("subclient_id")}&'
-        if self._filter_args.get('schedule_id'):
-            self._REPLICATION_PAIRS += f'taskId={self._filter_args.get("schedule_id")}&'
-        if self._filter_args.get('failover_group_id'):
-            self._REPLICATION_PAIRS += f'vAppId={self._filter_args.get("failover_group_id")}&'
+        self._REPLICATION_PAIRS = self._services["GET_REPLICATION_PAIRS"]
+        if self._filter_args.get("application_id"):
+            self._REPLICATION_PAIRS += f"applicationId={self._filter_args.get('application_id')}&"
+        if self._filter_args.get("instance_id"):
+            self._REPLICATION_PAIRS += f"instanceId={self._filter_args.get('instance_id')}&"
+        if self._filter_args.get("subclient_id"):
+            self._REPLICATION_PAIRS += f"subclientId={self._filter_args.get('subclient_id')}&"
+        if self._filter_args.get("schedule_id"):
+            self._REPLICATION_PAIRS += f"taskId={self._filter_args.get('schedule_id')}&"
+        if self._filter_args.get("failover_group_id"):
+            self._REPLICATION_PAIRS += f"vAppId={self._filter_args.get('failover_group_id')}&"
 
         self._replication_pairs = {}
 
@@ -108,23 +107,26 @@ class ReplicationPairs:
         Representation string consisting of all Replication VM pairs.
         Returns: (str) table of all replication pairs
         """
-        representation_string = ('{:^5}\t{:^20}\t{:^25}\t{:^25}\n\n'
-                                 .format('S. No.', 'Replication ID', 'Source Name', 'Destination Name'))
+        representation_string = "{:^5}\t{:^20}\t{:^25}\t{:^25}\n\n".format(
+            "S. No.", "Replication ID", "Source Name", "Destination Name"
+        )
 
         for index, replication_pair in enumerate(self.replication_pairs):
             replication_pair_dict = self.replication_pairs[replication_pair]
-            sub_str = ('{:^5}\t{:^20}\t{:^25}\t{:^25}\n\n'
-                       .format(index + 1,
-                               replication_pair,
-                               replication_pair_dict.get('source_vm'),
-                               replication_pair_dict.get('destination_vm')
-                               ))
+            sub_str = "{:^5}\t{:^20}\t{:^25}\t{:^25}\n\n".format(
+                index + 1,
+                replication_pair,
+                replication_pair_dict.get("source_vm"),
+                replication_pair_dict.get("destination_vm"),
+            )
             representation_string += sub_str
         return representation_string.strip()
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = f'ReplicationPairs class instance for Filters: "{self._filter_args}"'
+        representation_string = (
+            f'ReplicationPairs class instance for Filters: "{self._filter_args}"'
+        )
         return representation_string
 
     def refresh(self):
@@ -150,22 +152,22 @@ class ReplicationPairs:
                 if response is empty
                 if response is not success
         """
-        flag, response = self._cypysdk_object.make_request('GET', self._REPLICATION_PAIRS)
+        flag, response = self._cypysdk_object.make_request("GET", self._REPLICATION_PAIRS)
 
         if flag:
-            if response.json() and 'siteInfo' in response.json():
+            if response.json() and "siteInfo" in response.json():
                 replication_pairs = {}
-                for site_info in response.json().get('siteInfo', []):
-                    replication_pairs[str(site_info.get('replicationId', 0))] = {
-                        'source_vm': site_info.get('sourceName', '').lower(),
-                        'destination_vm': site_info.get('destinationName', '').lower()
+                for site_info in response.json().get("siteInfo", []):
+                    replication_pairs[str(site_info.get("replicationId", 0))] = {
+                        "source_vm": site_info.get("sourceName", "").lower(),
+                        "destination_vm": site_info.get("destinationName", "").lower(),
                     }
                 return replication_pairs
 
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException('Response', '101', response_string)
+        raise SDKException("Response", "101", response_string)
 
     @property
     def replication_pairs(self):
@@ -192,7 +194,7 @@ class ReplicationPairs:
         """
         if replication_id in self.replication_pairs:
             return ReplicationPair(self._commcell_object, str(replication_id))
-        raise Exception('ReplicationPairs', '103')
+        raise Exception("ReplicationPairs", "103")
 
 
 class ReplicationPair(LiveSyncVMPair):
@@ -211,9 +213,7 @@ class ReplicationPair(LiveSyncVMPair):
 
         self._vm_pair_id = str(replication_pair_id)
 
-        self._VM_PAIR = self._services['GET_REPLICATION_PAIR'] % (
-            self._vm_pair_id
-        )
+        self._VM_PAIR = self._services["GET_REPLICATION_PAIR"] % (self._vm_pair_id)
 
         self._properties = {}
         self._replication_guid = None
@@ -243,36 +243,42 @@ class ReplicationPair(LiveSyncVMPair):
     def __str__(self):
         """String representation of the instance of replication pair"""
         if self._source_vm and self._destination_vm:
-            return f'Replication pair: {self._source_vm} -> {self._destination_vm}'
-        return f'Replication pair ID: {self._vm_pair_id}'
+            return f"Replication pair: {self._source_vm} -> {self._destination_vm}"
+        return f"Replication pair ID: {self._vm_pair_id}"
 
     def _populate_live_sync(self):
-        """ Method used to populate live sync classes"""
-        subclient_dict = self._properties.get('parentSubclient', {})
-        subtask_dict = self._properties.get('subTask', {})
+        """Method used to populate live sync classes"""
+        subclient_dict = self._properties.get("parentSubclient", {})
+        subtask_dict = self._properties.get("subTask", {})
 
-        client_name = subclient_dict.get('clientName')
-        agent_name = self._properties.get('entity', {}).get('appName')
-        self._subclient_id = str(subclient_dict.get('subclientId', ''))
+        client_name = subclient_dict.get("clientName")
+        agent_name = self._properties.get("entity", {}).get("appName")
+        self._subclient_id = str(subclient_dict.get("subclientId", ""))
 
         client_object = self._commcell_object.clients.get(client_name)
         self._agent_object = client_object.agents.get(agent_name)
 
-        instance_name = [name for name, instance_id in
-                         self._agent_object.instances.all_instances.items()
-                         if instance_id == str(subclient_dict.get('instanceId', ''))][0]
+        instance_name = [
+            name
+            for name, instance_id in self._agent_object.instances.all_instances.items()
+            if instance_id == str(subclient_dict.get("instanceId", ""))
+        ][0]
         instance_object = self._agent_object.instances.get(instance_name)
-        subclient = [(name, subclient_info.get('backupset')) for name, subclient_info in
-                     instance_object.subclients.all_subclients.items()
-                     if subclient_info.get('id') == self._subclient_id][0]
+        subclient = [
+            (name, subclient_info.get("backupset"))
+            for name, subclient_info in instance_object.subclients.all_subclients.items()
+            if subclient_info.get("id") == self._subclient_id
+        ][0]
 
         backupset_object = instance_object.backupsets.get(subclient[-1])
-        self._subclient_object = backupset_object.subclients.get(subclient[0].split('\\')[-1])
+        self._subclient_object = backupset_object.subclients.get(subclient[0].split("\\")[-1])
         self._subclient_name = self._subclient_object.name
 
-        live_sync = [live_sync_name for live_sync_name, live_sync_dict in
-                     self._subclient_object.live_sync.live_sync_pairs.items()
-                     if live_sync_dict.get('id') == str(subtask_dict.get('taskId', ''))][0]
+        live_sync = [
+            live_sync_name
+            for live_sync_name, live_sync_dict in self._subclient_object.live_sync.live_sync_pairs.items()
+            if live_sync_dict.get("id") == str(subtask_dict.get("taskId", ""))
+        ][0]
 
         self.live_sync_pair = self._subclient_object.live_sync.get(live_sync)
         self._vm_pair_name = self._source_vm

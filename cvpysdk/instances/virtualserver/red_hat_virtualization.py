@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -41,9 +39,10 @@ RhevInstance:
 
 """
 
+from typing import TYPE_CHECKING
+
 from ..vsinstance import VirtualServerInstance
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...agent import Agent
 
@@ -65,7 +64,7 @@ class RhevInstance(VirtualServerInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
+    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: str = None) -> None:
         """Initialize a RhevInstance object for the specified Virtual Server instance.
 
         Args:
@@ -83,7 +82,7 @@ class RhevInstance(VirtualServerInstance):
         self._vendor_id = 501
         self._server_name = []
         self._server_host_name = []
-        super(RhevInstance, self).__init__(agent_object, instance_name, instance_id)
+        super().__init__(agent_object, instance_name, instance_id)
 
     def _get_instance_properties(self) -> None:
         """Retrieve and update the properties of this RhevInstance.
@@ -96,12 +95,12 @@ class RhevInstance(VirtualServerInstance):
 
         #ai-gen-doc
         """
-        super(RhevInstance, self)._get_instance_properties()
+        super()._get_instance_properties()
 
         if "vmwareVendor" in self._virtualserverinstance:
-            self._vmwarvendor = self._virtualserverinstance['vmwareVendor']['virtualCenter']
+            self._vmwarvendor = self._virtualserverinstance["vmwareVendor"]["virtualCenter"]
 
-            self._server_name.append(self._instance['clientName'])
+            self._server_name.append(self._instance["clientName"])
 
             self._server_host_name.append(self._vmwarvendor["domainName"])
 
@@ -119,10 +118,10 @@ class RhevInstance(VirtualServerInstance):
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
                 "virtualServerInstance": {
-                    "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
-                    "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": self._virtualserverinstance['vmwareVendor']
-                }
+                    "vsInstanceType": self._virtualserverinstance["vsInstanceType"],
+                    "associatedClients": self._virtualserverinstance["associatedClients"],
+                    "vmwareVendor": self._virtualserverinstance["vmwareVendor"],
+                },
             }
         }
 

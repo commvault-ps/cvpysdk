@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -33,9 +31,8 @@ nutanixsubclient:
                                                         user to the same location
 """
 
-
-from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
+from ..vssubclient import VirtualServerSubclient
 
 
 class nutanixsubclient(VirtualServerSubclient):
@@ -50,76 +47,77 @@ class nutanixsubclient(VirtualServerSubclient):
 
         """
         self.diskExtension = ["none"]
-        super(nutanixsubclient, self).__init__(
-            backupset_object, subclient_name, subclient_id)
+        super().__init__(backupset_object, subclient_name, subclient_id)
 
-    def full_vm_restore_out_of_place(self,
-                                     vm_to_restore=None,
-                                     host=None,
-                                     container=None,
-                                     proxy_client=None,
-                                     restore_new_name=None,
-                                     overwrite=True,
-                                     power_on=True,
-                                     copy_precedence=0,
-                                     restore_option=None,
-                                     vcenter_client=None,
-                                     run_security_scan=False,
-                                     **kwargs):
+    def full_vm_restore_out_of_place(
+        self,
+        vm_to_restore=None,
+        host=None,
+        container=None,
+        proxy_client=None,
+        restore_new_name=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        restore_option=None,
+        vcenter_client=None,
+        run_security_scan=False,
+        **kwargs,
+    ):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
-                    at the specified destination location.
+                at the specified destination location.
 
-            Args:
+        Args:
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+            vm_to_restore         (list)       --  provide the VM name to restore
 
-                host                  (str)        -- ESX host for Vm to restore
+            host                  (str)        -- ESX host for Vm to restore
 
-                container             (str)        -- provide the storage account to restore
+            container             (str)        -- provide the storage account to restore
 
-                proxy_client          (str)        -- provide the proxy client to restore
+            proxy_client          (str)        -- provide the proxy client to restore
 
-                restore_new_name      (str)        -- provide the new restore name
+            restore_new_name      (str)        -- provide the new restore name
 
-                overwrite               (bool)       --  overwrite the existing VM
-                                                        default: True
+            overwrite               (bool)       --  overwrite the existing VM
+                                                    default: True
 
-                power_on                (bool)       --  power on the  restored VM
-                                                        default: True
+            power_on                (bool)       --  power on the  restored VM
+                                                    default: True
 
-                copy_precedence       (int)         --  copy precedence value
-                                                        default: 0
+            copy_precedence       (int)         --  copy precedence value
+                                                    default: 0
 
-                restore_option        (dict)       --  complete dictionary with
-                                                       all advanced option
+            restore_option        (dict)       --  complete dictionary with
+                                                   all advanced option
 
-                vcenter_client        (str)        --  name of the vcenter client where the VM
-                                                        should be restored
-                                                        default: {}
+            vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                    should be restored
+                                                    default: {}
 
-                run_security_scan       (bool)       -- run threat analysis on VM
-                                                        default:False
+            run_security_scan       (bool)       -- run threat analysis on VM
+                                                    default:False
 
-                **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                     full_vm_restore_out_of_place
-                    eg:
-                    v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if destination_path is not a string
+                if destination_path is not a string
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
-                """
+                if response is not success
+        """
         # restore options
         if restore_option is None:
             restore_option = {}
@@ -127,9 +125,8 @@ class nutanixsubclient(VirtualServerSubclient):
 
         # check input parameters are correct
         if bool(restore_option):
-            if not (isinstance(overwrite, bool) and
-                    isinstance(power_on, bool)):
-                raise SDKException('Subclient', '101')
+            if not (isinstance(overwrite, bool) and isinstance(power_on, bool)):
+                raise SDKException("Subclient", "101")
 
         self._set_restore_inputs(
             restore_option,
@@ -153,51 +150,47 @@ class nutanixsubclient(VirtualServerSubclient):
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
-    def full_vm_restore_in_place(self,
-                                 vm_to_restore=None,
-                                 overwrite=True,
-                                 power_on=True,
-                                 copy_precedence=0,
-                                 **kwargs):
+    def full_vm_restore_in_place(
+        self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, **kwargs
+    ):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
-            to the location same as source .
+        to the location same as source .
 
-            Args:
-                vm_to_restore          (list)      --  provide the VM name to restore
+        Args:
+            vm_to_restore          (list)      --  provide the VM name to restore
 
-                overwrite               (bool)      --  overwrite the existing VM
-                                                        default: True
+            overwrite               (bool)      --  overwrite the existing VM
+                                                    default: True
 
-                power_on                (bool)      --  power on the  restored VM
-                                                        default: True
+            power_on                (bool)      --  power on the  restored VM
+                                                    default: True
 
-                copy_precedence        (int)       -- storage policy copy precedence
-                                                      from which browse has to be performed
+            copy_precedence        (int)       -- storage policy copy precedence
+                                                  from which browse has to be performed
 
-                **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                     full_vm_restore_in_place
-                    eg:
-                    v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Returns:
+            object - instance of the Job class for this restore job
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException:
 
-                    if failed to initialize job
+                if failed to initialize job
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         restore_option = {"v2_details": kwargs.get("v2_details", None)}
         # check mandatory input parameters are correct
-        if not (isinstance(overwrite, bool) and
-                isinstance(power_on, bool)):
-            raise SDKException('Subclient', '101')
+        if not (isinstance(overwrite, bool) and isinstance(power_on, bool)):
+            raise SDKException("Subclient", "101")
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
@@ -206,26 +199,26 @@ class nutanixsubclient(VirtualServerSubclient):
             power_on=power_on,
             copy_precedence=copy_precedence,
             volume_level_restore=1,
-            in_place=True
+            in_place=True,
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
     def full_vm_conversion_vmware(
-            self,
-            vcenter_client,
-            destination_os_name,
-            vm_to_restore=None,
-            esx_host=None,
-            datastore=None,
-            overwrite=True,
-            power_on=True,
-            copy_precedence=0,
-            disk_option='Original',
-            transport_mode='Auto',
-            proxy_client=None,
-            destination_network=None
-        ):
+        self,
+        vcenter_client,
+        destination_os_name,
+        vm_to_restore=None,
+        esx_host=None,
+        datastore=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        disk_option="Original",
+        transport_mode="Auto",
+        proxy_client=None,
+        destination_network=None,
+    ):
         """
         Conversion from AHV VM to VMware
         Args:
@@ -301,7 +294,7 @@ class nutanixsubclient(VirtualServerSubclient):
         transport_mode_value = subclient._transport_mode[transport_mode]
         esx_server = instance.server_host_name[0]
 
-        #setting restore vms
+        # setting restore vms
         vm_list = None
         if vm_to_restore:
             vm_list = list(vm_to_restore.keys())
@@ -324,37 +317,39 @@ class nutanixsubclient(VirtualServerSubclient):
             destination_instance=instance.instance_name,
             backupset_client_name=instance._agent_object._client_object.client_name,
             destination_network=destination_network,
-            destination_os_name=destination_os_name
+            destination_os_name=destination_os_name,
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
-            'diskLevelVMRestoreOption']
-        for disk_info in disk_options['advancedRestoreOptions'][0]['disks']:
-            disk_info['newName'] = ''
+        disk_options = request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "virtualServerRstOption"
+        ]["diskLevelVMRestoreOption"]
+        for disk_info in disk_options["advancedRestoreOptions"][0]["disks"]:
+            disk_info["newName"] = ""
 
         return self._process_restore_response(request_json)
 
     def full_vm_conversion_azurerm(
-            self,
-            destination_client,
-            vm_to_restore=None,
-            resource_group=None,
-            storage_account=None,
-            datacenter=None,
-            proxy_client=None,
-            restore_new_name=None,
-            overwrite=True,
-            power_on=True,
-            run_security_scan=False,
-            instance_size=None,
-            public_ip=False,
-            restore_as_managed=True,
-            copy_precedence=0,
-            disk_type=None,
-            restore_option=None,
-            subnet_id=None,
-            **kwargs):
+        self,
+        destination_client,
+        vm_to_restore=None,
+        resource_group=None,
+        storage_account=None,
+        datacenter=None,
+        proxy_client=None,
+        restore_new_name=None,
+        overwrite=True,
+        power_on=True,
+        run_security_scan=False,
+        instance_size=None,
+        public_ip=False,
+        restore_as_managed=True,
+        copy_precedence=0,
+        disk_type=None,
+        restore_option=None,
+        subnet_id=None,
+        **kwargs,
+    ):
         """Perform full VM conversion from Nutanix AHV to Azure Resource Manager.
 
         This method converts Nutanix AHV virtual machines to Azure Resource Manager (ARM)
@@ -458,16 +453,15 @@ class nutanixsubclient(VirtualServerSubclient):
 
         # check input parameters are correct
         if bool(restore_option):
-            if not (isinstance(overwrite, bool) and
-                    isinstance(power_on, bool)):
-                raise SDKException('Subclient', '101')
+            if not (isinstance(overwrite, bool) and isinstance(power_on, bool)):
+                raise SDKException("Subclient", "101")
 
         if vm_to_restore and not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
 
         # check mandatory input parameters are correct
         if not isinstance(destination_client, str):
-            raise SDKException('Subclient', '101')
+            raise SDKException("Subclient", "101")
 
         self._set_restore_inputs(
             restore_option,
@@ -488,7 +482,7 @@ class nutanixsubclient(VirtualServerSubclient):
             disk_type=disk_type,
             vmSize=instance_size,
             restore_new_name=restore_new_name,
-            subnet_id=subnet_id
+            subnet_id=subnet_id,
         )
 
         # set attr for all the option in restore xml from user inputs
@@ -506,7 +500,8 @@ class nutanixsubclient(VirtualServerSubclient):
         copy_precedence=0,
         disk_uuids=None,
         destination_vm=None,
-        destination_vm_guid=None):
+        destination_vm_guid=None,
+    ):
         """Attach restored disks from a protected VM to a destination AHV VM.
             - Browse available VMs and their associated disks
             - Attach one or more disks from backup to a specified target VM
@@ -519,8 +514,8 @@ class nutanixsubclient(VirtualServerSubclient):
             proxy_client (str): Destination proxy client to use.
             copy_precedence (int): Storage policy copy precedence for the restore.
             disk_uuids (list): Specific disk names to attach.
-            destination_vm (str): Destination VM name 
-            destination_vm_guid (str): Destination VM GUID/UUID 
+            destination_vm (str): Destination VM name
+            destination_vm_guid (str): Destination VM GUID/UUID
         Returns:
             Job: Instance of the Job class representing the running restore job.
         Raises:
@@ -530,59 +525,62 @@ class nutanixsubclient(VirtualServerSubclient):
         # Resolve VM ids/names from browse
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _attach_disk_restore_option = {}
-    
+
         # Normalize / validate inputs (mirror OpenStack implementation style)
         if disk_uuids is None:
             disk_uuids = []
-    
+
         if copy_precedence:
-            _attach_disk_restore_option['copy_precedence_applicable'] = True
-    
+            _attach_disk_restore_option["copy_precedence_applicable"] = True
+
         # Fetch all disks available for the source VM
         if vm_name not in vm_ids:
             available_vms = list(vm_ids.keys())
             raise SDKException(
-                'Subclient',
-                '101',
-                (f"VM '{vm_name}' was not found. "
-                 f"Available VMs: {available_vms}"))
-    
+                "Subclient",
+                "101",
+                (f"VM '{vm_name}' was not found. Available VMs: {available_vms}"),
+            )
+
         disk_list, disk_info_dict = self.disk_level_browse(f"\\{vm_ids[vm_name]}")
-    
+
         # If no disk list provided, attach all; else validate requested names exist
         if not disk_uuids:
             for each_disk_path in disk_list:
-                disk_uuids.append(each_disk_path.split('\\')[-1])
+                disk_uuids.append(each_disk_path.split("\\")[-1])
         else:
             for each_disk in disk_uuids:
                 expected_path = f"\\{vm_name}\\{each_disk}"
                 if expected_path not in disk_list:
-                    available_disks = [p.split('\\')[-1] for p in disk_list]
+                    available_disks = [p.split("\\")[-1] for p in disk_list]
                     raise SDKException(
-                        'Subclient',
-                        '111',
-                        (f"Disk '{each_disk}' was not found for VM '{vm_name}'. "
-                         f"Available disks: {available_disks}"))
+                        "Subclient",
+                        "111",
+                        (
+                            f"Disk '{each_disk}' was not found for VM '{vm_name}'. "
+                            f"Available disks: {available_disks}"
+                        ),
+                    )
         # Choose proxy client
         if proxy_client is not None:
-            _attach_disk_restore_option['client'] = proxy_client
+            _attach_disk_restore_option["client"] = proxy_client
         else:
-            _attach_disk_restore_option['client'] = (
+            _attach_disk_restore_option["client"] = (
                 self._backupset_object._instance_object.co_ordinator
             )
-    
+
         # Build source item list for the disks
         src_item_list = []
         for each_disk in disk_uuids:
             disk_name = each_disk.split("\\")[-1]
             src_item_list.append(f"\\{vm_ids[vm_name]}\\{disk_name}")
         # Set options required by the attach-disk workflow
-        _attach_disk_restore_option['paths'] = src_item_list
-        _attach_disk_restore_option['newName'] = destination_vm
-        _attach_disk_restore_option['newGUID'] = destination_vm_guid
-        _attach_disk_restore_option['userName'] = host_user
-        _attach_disk_restore_option['password'] = host_pass
-    
+        _attach_disk_restore_option["paths"] = src_item_list
+        _attach_disk_restore_option["newName"] = destination_vm
+        _attach_disk_restore_option["newGUID"] = destination_vm_guid
+        _attach_disk_restore_option["userName"] = host_user
+        _attach_disk_restore_option["password"] = host_pass
+
         self._set_restore_inputs(
             _attach_disk_restore_option,
             in_place=False,
@@ -591,10 +589,8 @@ class nutanixsubclient(VirtualServerSubclient):
             esxHost=host,
             datastore=container,
             paths=src_item_list,
-            volume_level_restore=6
+            volume_level_restore=6,
         )
         # Prepare and submit the attach-disk restore
-        request_json = self._prepare_attach_disk_restore_json(
-            _attach_disk_restore_option
-        )
+        request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
         return self._process_restore_response(request_json)

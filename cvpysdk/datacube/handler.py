@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -56,14 +54,10 @@ Handler:
 
 """
 
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from ..exception import SDKException
 
 
-class Handlers(object):
+class Handlers:
     """
     Manages all handlers associated with a datasource.
 
@@ -102,8 +96,8 @@ class Handlers(object):
 
         self._datasource_object = datasource_object
         self.commcell_obj = self._datasource_object._commcell_object
-        self._create_handler = self.commcell_obj._services['CREATE_HANDLER']
-        self._get_handler = self.commcell_obj._services['GET_HANDLERS'] % (
+        self._create_handler = self.commcell_obj._services["CREATE_HANDLER"]
+        self._get_handler = self.commcell_obj._services["GET_HANDLERS"] % (
             self._datasource_object.datasource_id
         )
 
@@ -126,9 +120,9 @@ class Handlers(object):
 
         #ai-gen-doc
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Handler')
+        representation_string = "{:^5}\t{:^20}\n\n".format("S. No.", "Handler")
         for index, handler in enumerate(self._handlers):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, handler)
+            sub_str = f"{index + 1:^5}\t{handler:20}\n"
             representation_string += sub_str
 
         return representation_string.strip()
@@ -148,8 +142,8 @@ class Handlers(object):
             <Handlers object at 0x7f8b2c1d2e80>
         #ai-gen-doc
         """
-        return "Handlers class instance for Datasource: '{0}'".format(
-            self._datasource_object.datasource_name
+        return (
+            f"Handlers class instance for Datasource: '{self._datasource_object.datasource_name}'"
         )
 
     def _get_handlers(self) -> dict:
@@ -178,18 +172,18 @@ class Handlers(object):
         """
 
         flag, response = self._datasource_object._commcell_object._cvpysdk_object.make_request(
-            'GET', self._get_handler)
+            "GET", self._get_handler
+        )
         if flag:
-            if response.json() and 'handlerInfos' in response.json():
+            if response.json() and "handlerInfos" in response.json():
                 handlers_dict = {}
-                for dictionary in response.json()['handlerInfos']:
-                    temp_name = dictionary['handlerName']
+                for dictionary in response.json()["handlerInfos"]:
+                    temp_name = dictionary["handlerName"]
                     handlers_dict[temp_name] = dictionary
                 return handlers_dict
-            raise SDKException('Response', '102')
-        response_string = self._datasource_object._commcell_object._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "102")
+        response_string = self._datasource_object._commcell_object._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def has_handler(self, handler_name: str) -> bool:
         """Check if a handler with the specified name exists in the datasource.
@@ -212,7 +206,7 @@ class Handlers(object):
         #ai-gen-doc
         """
         if not isinstance(handler_name, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         return self._handlers and handler_name.lower() in map(str.lower, self._handlers)
 
@@ -235,7 +229,7 @@ class Handlers(object):
         """
         return self._handlers[handler_name]
 
-    def get(self, handler_name: str) -> 'Handler':
+    def get(self, handler_name: str) -> "Handler":
         """Retrieve a handler object by its name.
 
         Args:
@@ -253,12 +247,12 @@ class Handlers(object):
         #ai-gen-doc
         """
         if not isinstance(handler_name, str):
-            raise SDKException('Datacube', '101')
+            raise SDKException("Datacube", "101")
 
         if self.has_handler(handler_name):
-            handler_id = self.get_properties(handler_name)['handlerId']
+            handler_id = self.get_properties(handler_name)["handlerId"]
             return Handler(self._datasource_object, handler_name, handler_id)
-        raise SDKException('Datacube', '102', "Unable to get handler class object")
+        raise SDKException("Datacube", "102", "Unable to get handler class object")
 
     def delete(self, handler_name: str) -> None:
         """Delete the handler associated with this handler object.
@@ -277,32 +271,34 @@ class Handlers(object):
         #ai-gen-doc
         """
         handler_id = self.get(handler_name).handler_id
-        self._delete_handler = self.commcell_obj._services['DELETE_HANDLER'] % (
-            handler_id)
+        self._delete_handler = self.commcell_obj._services["DELETE_HANDLER"] % (handler_id)
 
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'POST', self._delete_handler)
+            "POST", self._delete_handler
+        )
 
         if flag:
-            if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
-                error_message = response.json()['errLogMessage']
-                o_str = 'Failed to Delete handler on datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
-            elif 'errorCode' in response.json() and response.json()['errorCode'] == 0:
+            if "errorCode" in response.json() and response.json()["errorCode"] != 0:
+                error_message = response.json()["errLogMessage"]
+                o_str = f'Failed to Delete handler on datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
+            elif "errorCode" in response.json() and response.json()["errorCode"] == 0:
                 return
             else:
-                raise SDKException('Datacube', '102', "Empty Response with no errorCode")
-        raise SDKException('Response', '101', response.text)
+                raise SDKException("Datacube", "102", "Empty Response with no errorCode")
+        raise SDKException("Response", "101", response.text)
 
-    def add(self,
-            handler_name: str,
-            search_query: list,
-            filter_query: list = None,
-            facet_field: list = None,
-            facet_query: list = None,
-            rows: int = 10,
-            response_type: str = "json",
-            sort_column: list = []) -> None:
+    def add(
+        self,
+        handler_name: str,
+        search_query: list,
+        filter_query: list = None,
+        facet_field: list = None,
+        facet_query: list = None,
+        rows: int = 10,
+        response_type: str = "json",
+        sort_column: list = [],
+    ) -> None:
         """Add a new handler to the Commcell datastore.
 
         This method registers a new handler with the specified configuration, including search and filter queries,
@@ -346,49 +342,48 @@ class Handlers(object):
                     "q": search_query,
                     "fq": filter_query,
                     "sort": sort_column,
-                    "facet": [
-                        "true" if facet_field or facet_query else "false"
-                    ],
+                    "facet": ["true" if facet_field or facet_query else "false"],
                     "facet.field": facet_field,
                     "facet.query": facet_query,
                     "rows": [rows],
-                    "wt": [response_type]
+                    "wt": [response_type],
                 },
                 "appendParams": {},
                 "rawDefaultParams": [],
                 "rawAppendParams": [],
                 "rawInvariantParams": [],
-                "alwaysDecode": "true"
-            }
+                "alwaysDecode": "true",
+            },
         }
 
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'POST', self._create_handler, request_json
+            "POST", self._create_handler, request_json
         )
         if flag:
             if response.json():
-                if 'error' in response.json() and (response.json()['error'] == 'None' or response.json()['error'] is None):
+                if "error" in response.json() and (
+                    response.json()["error"] == "None" or response.json()["error"] is None
+                ):
                     self.refresh()  # reload new list.
                     return
-                elif 'error' in response.json():
-                    error_code = response.json()['error'].get('errorCode',0)
+                elif "error" in response.json():
+                    error_code = response.json()["error"].get("errorCode", 0)
                     if error_code == 0:
                         self.refresh()  # reload new list.
                         return
-                    error_message = response.json()['error']['errLogMessage']
-                    o_str = 'Failed to create handler\nError: "{0}"'.format(error_message)
-                    raise SDKException('Response', '102', o_str)
+                    error_message = response.json()["error"]["errLogMessage"]
+                    o_str = f'Failed to create handler\nError: "{error_message}"'
+                    raise SDKException("Response", "102", o_str)
                 self.refresh()  # reload new list.
                 return
-            raise SDKException('Response', '102')
-        response_string = self.commcell_obj._update_response_(
-            response.text)
-        raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "102")
+        response_string = self.commcell_obj._update_response_(response.text)
+        raise SDKException("Response", "101", response_string)
 
     def refresh(self) -> None:
         """Reload the handlers associated with the Datasource.
 
-        This method refreshes the internal state of the handlers, ensuring that any changes 
+        This method refreshes the internal state of the handlers, ensuring that any changes
         to the underlying Datasource are reflected in the handler objects.
 
         Example:
@@ -401,7 +396,7 @@ class Handlers(object):
         self._handlers = self._get_handlers()
 
 
-class Handler(object):
+class Handler:
     """
     Handler class for managing and operating on individual handler instances.
 
@@ -420,7 +415,9 @@ class Handler(object):
     #ai-gen-doc
     """
 
-    def __init__(self, datasource_object: object, handler_name: str, handler_id: int = None) -> None:
+    def __init__(
+        self, datasource_object: object, handler_name: str, handler_id: int = None
+    ) -> None:
         """Initialize a Handler object for managing data sources.
 
         Args:
@@ -443,7 +440,7 @@ class Handler(object):
         else:
             self._handler_id = handler_id
         self.commcell_obj = self._datasource_object._commcell_object
-        self._share_handler = self.commcell_obj._services['SHARE_HANDLER']
+        self._share_handler = self.commcell_obj._services["SHARE_HANDLER"]
 
     @property
     def handler_id(self) -> int:
@@ -482,20 +479,20 @@ class Handler(object):
         """
 
         handlers = self.commcell_obj.Datacube.datasources.ds_handlers
-        return handlers.get_properties(handler_name=handler_name)['handlerId']
+        return handlers.get_properties(handler_name=handler_name)["handlerId"]
 
     def get_handler_data(self, handler_filter: str = "") -> dict:
         """Execute the handler to fetch data with an optional filter.
 
         Args:
-            handler_filter: Optional string filter to apply during handler execution. 
+            handler_filter: Optional string filter to apply during handler execution.
                 If not provided, all handler data will be fetched.
 
         Returns:
             dict: Dictionary containing the values fetched from the handler execution.
 
         Raises:
-            SDKExpception: 
+            SDKExpception:
                 If the response is empty, not successful, or if there is an error fetching handler data.
 
         Example:
@@ -508,23 +505,33 @@ class Handler(object):
         """
 
         if not isinstance(handler_filter, str):
-            raise SDKException('Datacube', '101')
-        self._execute_handler = self.commcell_obj._services['EXECUTE_HANDLER'] % (
-            self.handler_id, self._handler_name, handler_filter
+            raise SDKException("Datacube", "101")
+        self._execute_handler = self.commcell_obj._services["EXECUTE_HANDLER"] % (
+            self.handler_id,
+            self._handler_name,
+            handler_filter,
         )
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'GET', self._execute_handler)
+            "GET", self._execute_handler
+        )
         if flag:
-            if response.json() and 'response' in response.json():
-                return response.json()['response']
-            if 'error' in response.json():
-                error_message = response.json()['error']['errLogMessage']
-                o_str = 'Failed to execute handler on datasource\nError: "{0}"'.format(error_message)
-                raise SDKException('Datacube', '102', o_str)
-            raise SDKException('Datacube', '102', "No response object in Json")
-        raise SDKException('Response', '101', response.text)
+            if response.json() and "response" in response.json():
+                return response.json()["response"]
+            if "error" in response.json():
+                error_message = response.json()["error"]["errLogMessage"]
+                o_str = f'Failed to execute handler on datasource\nError: "{error_message}"'
+                raise SDKException("Datacube", "102", o_str)
+            raise SDKException("Datacube", "102", "No response object in Json")
+        raise SDKException("Response", "101", response.text)
 
-    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -> None:
+    def share(
+        self,
+        permission_list: list,
+        operation_type: int,
+        user_id: int,
+        user_name: str,
+        user_type: int,
+    ) -> None:
         """Share the handler with a specified user or user group.
 
         This method assigns or removes permissions for a user or user group on the handler,
@@ -550,16 +557,10 @@ class Handler(object):
 
         category_permission_list = []
         for permission in permission_list:
-            category_permission_list.append({'permissionId': permission, '_type_': 122})
+            category_permission_list.append({"permissionId": permission, "_type_": 122})
         request_json = {
             "entityAssociated": {
-                "entity": [
-                    {
-                        "entityType": 157,
-                        "_type_": 150,
-                        "entityId": self.handler_id
-                    }
-                ]
+                "entity": [{"entityType": 157, "_type_": 150, "entityId": self.handler_id}]
             },
             "securityAssociations": {
                 "processHiddenPermission": 1,
@@ -567,31 +568,28 @@ class Handler(object):
                 "associations": [
                     {
                         "userOrGroup": [
-                            {
-                                "userId": user_id,
-                                "_type_": user_type,
-                                "userName": user_name
-                            }
+                            {"userId": user_id, "_type_": user_type, "userName": user_name}
                         ],
                         "properties": {
                             "categoryPermission": {
                                 "categoriesPermissionList": category_permission_list
                             }
-                        }
+                        },
                     }
-                ]
-            }
+                ],
+            },
         }
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
-            'POST', self._share_handler, request_json)
+            "POST", self._share_handler, request_json
+        )
         if flag:
-            if 'response' in response.json():
-                resp = response.json()['response']
+            if "response" in response.json():
+                resp = response.json()["response"]
                 resp = resp[0]
-                if resp.get('errorCode') != 0:
-                    error_message = resp['errorString']
-                    o_str = 'Failed to share handler on datasource\nError: "{0}"'.format(error_message)
-                    raise SDKException('Datacube', '102', o_str)
-                return response.json()['response']
-            raise SDKException('Datacube', '102', "Empty Response")
-        raise SDKException('Response', '101', response.text)
+                if resp.get("errorCode") != 0:
+                    error_message = resp["errorString"]
+                    o_str = f'Failed to share handler on datasource\nError: "{error_message}"'
+                    raise SDKException("Datacube", "102", o_str)
+                return response.json()["response"]
+            raise SDKException("Datacube", "102", "Empty Response")
+        raise SDKException("Response", "101", response.text)

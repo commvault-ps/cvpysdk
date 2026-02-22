@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -55,29 +53,29 @@ Classes:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, TYPE_CHECKING
-from .constants import AssetProvider
-from .connections import Connections, Connection, AWSConnections, AzureConnections
-from .resources import DiscoveredResources
+from typing import TYPE_CHECKING, Any, Dict
+
 from ..exception import SDKException
+from .connections import AWSConnections, AzureConnections, Connections
+from .constants import AssetProvider
+from .resources import DiscoveredResources
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
     from ..credential_manager import Credentials
 
 
-
 class CloudDiscovery(ABC):
     """Base class for cloud discovery operations.
-    
+
     This abstract base class provides the common interface for cloud discovery
     operations across different asset providers. It manages connections, resources,
     and credential management for cloud environments.
     """
 
-    def __init__(self, commcell:'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize the CloudDiscovery instance.
-        
+
         Args:
             commcell: The Commcell object for API operations
         """
@@ -87,7 +85,7 @@ class CloudDiscovery(ABC):
         elif self.asset_provider == AssetProvider.AZURE:
             self._connections = AzureConnections(commcell)
         else:
-            raise SDKException('Discovery', '104')
+            raise SDKException("Discovery", "104")
         self._resources = DiscoveredResources(commcell, self.asset_provider)
         self._credentials = commcell.credentials
         self._cvpysdk_object = self._commcell._cvpysdk_object
@@ -98,7 +96,7 @@ class CloudDiscovery(ABC):
     @abstractmethod
     def asset_provider(self) -> AssetProvider:
         """Get the asset provider for this cloud discovery instance.
-        
+
         Returns:
             The AssetProvider enum value
         """
@@ -107,7 +105,7 @@ class CloudDiscovery(ABC):
     @property
     def connections(self) -> Connections:
         """Get the connections manager for this cloud discovery instance.
-        
+
         Returns:
             The Connections manager object
         """
@@ -116,16 +114,16 @@ class CloudDiscovery(ABC):
     @property
     def resources(self) -> DiscoveredResources:
         """Get the resources manager for this cloud discovery instance.
-        
+
         Returns:
             The DiscoveredResources manager object
         """
         return self._resources
 
     @property
-    def credentials(self) -> 'Credentials':
+    def credentials(self) -> "Credentials":
         """Get the credentials for this cloud discovery instance.
-        
+
         Returns:
             The credential manager object or None
         """
@@ -141,42 +139,42 @@ class CloudDiscovery(ABC):
             SDKException:
                         Response was not success
         """
-        url = self._services['START_DISCOVERY']
-        flag, response = self._cvpysdk_object.make_request('POST', url=url)
+        url = self._services["START_DISCOVERY"]
+        flag, response = self._cvpysdk_object.make_request("POST", url=url)
         if flag:
             if response.json():
-                errorcode = response.json().get('errorCode', 0)
+                errorcode = response.json().get("errorCode", 0)
                 if errorcode == 0:
                     get_jobId = self.get_discovery_job()
                     return get_jobId
                 else:
-                    raise SDKException('Discovery', '101')
-            raise SDKException('Response', '102')
+                    raise SDKException("Discovery", "101")
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     def get_discovery_job(self) -> int:
         """
-            Retrieve the discovery job ID for the given credential.
+        Retrieve the discovery job ID for the given credential.
 
-            Returns:
-                int: The job ID of the discovery process.
+        Returns:
+            int: The job ID of the discovery process.
 
-            Raises:
-                SDKException: If the job ID is not found or the response is invalid.
+        Raises:
+            SDKException: If the job ID is not found or the response is invalid.
         """
-        url = self._services['GET_DISCOVERY_JOB']
-        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        url = self._services["GET_DISCOVERY_JOB"]
+        flag, response = self._cvpysdk_object.make_request("GET", url=url)
         if flag:
             if response.json():
-                if not response.json().get('errorMessage', None):
-                    if response.json().get('jobId', None):
-                        return response.json().get('jobId')
+                if not response.json().get("errorMessage", None):
+                    if response.json().get("jobId", None):
+                        return response.json().get("jobId")
                     else:
                         raise SDKException("Discovery", "101")
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @abstractmethod
     def estimate_cost(self) -> Dict[str, Any]:
@@ -201,15 +199,15 @@ class CloudDiscovery(ABC):
 
 class AzureDiscovery(CloudDiscovery):
     """Azure cloud discovery implementation.
-    
+
     This class provides Azure-specific cloud discovery operations including
     resource discovery, connection management, and cost estimation using
     Azure pricing models.
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize the AzureDiscovery instance.
-        
+
         Args:
             commcell: The Commcell object for API operations
         """
@@ -218,7 +216,7 @@ class AzureDiscovery(CloudDiscovery):
     @property
     def asset_provider(self) -> AssetProvider:
         """Get the asset provider for Azure discovery.
-        
+
         Returns:
             AssetProvider.AZURE
         """
@@ -255,15 +253,15 @@ class AzureDiscovery(CloudDiscovery):
 
 class AWSDiscovery(CloudDiscovery):
     """AWS cloud discovery implementation.
-    
+
     This class provides AWS-specific cloud discovery operations including
     resource discovery, connection management, and cost estimation using
     AWS pricing models.
     """
 
-    def __init__(self, commcell: 'Commcell') -> None:
+    def __init__(self, commcell: "Commcell") -> None:
         """Initialize the AWSDiscovery instance.
-        
+
         Args:
             commcell: The Commcell object for API operations
         """
@@ -272,7 +270,7 @@ class AWSDiscovery(CloudDiscovery):
     @property
     def asset_provider(self) -> AssetProvider:
         """Get the asset provider for AWS discovery.
-        
+
         Returns:
             AssetProvider.AWS
         """
@@ -303,4 +301,3 @@ class AWSDiscovery(CloudDiscovery):
             NotImplementedError: This method is not yet implemented
         """
         raise NotImplementedError("AWS cost estimation is not yet implemented")
-

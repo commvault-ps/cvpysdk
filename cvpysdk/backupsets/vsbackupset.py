@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -39,18 +37,17 @@ For eg:
     The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 """
 
-from __future__ import unicode_literals
-
 import re
 import time
 from importlib import import_module
-from inspect import isabstract, isclass, getmembers
+from inspect import getmembers, isabstract, isclass
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ..backupset import Backupset
 from ..client import Client
 from ..exception import SDKException
 from ..subclient import Subclient as subclient
-from typing import Any, Optional, List, Dict, Union, Tuple
+
 
 class VSBackupset(Backupset):
     """
@@ -72,47 +69,52 @@ class VSBackupset(Backupset):
     #ai-gen-doc
     """
 
-    def __new__(cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -> Any:
+    def __new__(
+        cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None
+    ) -> Any:
         """Create a new VSBackupset instance based on the provided instance object.
 
-        This method dynamically determines the appropriate backupset class to instantiate
-        based on the type and name of the given instance_object. If a matching backupset
-    class is found, an instance of that class is created; otherwise, a generic VSBackupset
-        instance is returned.
+            This method dynamically determines the appropriate backupset class to instantiate
+            based on the type and name of the given instance_object. If a matching backupset
+        class is found, an instance of that class is created; otherwise, a generic VSBackupset
+            instance is returned.
 
-        Args:
-        instance_object: The instance object representing the virtual server environment.
-        backupset_name: The name of the backupset as a string.
-        backupset_id: Optional identifier for the backupset.
+            Args:
+            instance_object: The instance object representing the virtual server environment.
+            backupset_name: The name of the backupset as a string.
+            backupset_id: Optional identifier for the backupset.
 
-        Returns:
-        An instance of the appropriate backupset class, or a generic VSBackupset instance
-        if no specific class is found.
+            Returns:
+            An instance of the appropriate backupset class, or a generic VSBackupset instance
+            if no specific class is found.
 
-        Example:
-        >>> instance = VirtualServerInstance(...)
-        >>> backupset = VSBackupset(instance, "DailyBackup", backupset_id="12345")
-        >>> print(type(backupset))
-        >>> # The returned object will be of the correct backupset subclass based on the instance
+            Example:
+            >>> instance = VirtualServerInstance(...)
+            >>> backupset = VSBackupset(instance, "DailyBackup", backupset_id="12345")
+            >>> print(type(backupset))
+            >>> # The returned object will be of the correct backupset subclass based on the instance
 
-        #ai-gen-doc
+            #ai-gen-doc
         """
         instance_name = instance_object.instance_name
-        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
+        instance_name = re.sub("[^A-Za-z0-9_]+", "", instance_name.replace(" ", "_"))
 
         try:
-            backupset_module = import_module("cvpysdk.backupsets._virtual_server.{}".format(instance_name))
+            backupset_module = import_module(f"cvpysdk.backupsets._virtual_server.{instance_name}")
         except ImportError:
             return object.__new__(cls)
 
         classes = getmembers(backupset_module, lambda m: isclass(m) and not isabstract(m))
 
         for name, _class in classes:
-            if issubclass(_class, Backupset) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
+            if (
+                issubclass(_class, Backupset)
+                and _class.__module__.rsplit(".", 1)[-1] == instance_name
+            ):
                 return object.__new__(_class)
 
     @property
-    def hidden_subclient(self) -> 'subclient':
+    def hidden_subclient(self) -> "subclient":
         """Get the hidden subclient object associated with this VSBackupset.
 
         This property creates and returns the hidden subclient if it does not already exist.
@@ -130,25 +132,28 @@ class VSBackupset(Backupset):
         #ai-gen-doc
         """
         if not self._hidden_subclient:
-            hidden_subclient_service = self._commcell_object._services['VSA_HIDDEN_SUBCLIENT'] % (
-                self._client_object.client_name, self.backupset_name)
+            hidden_subclient_service = self._commcell_object._services["VSA_HIDDEN_SUBCLIENT"] % (
+                self._client_object.client_name,
+                self.backupset_name,
+            )
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                "GET", hidden_subclient_service)
+                "GET", hidden_subclient_service
+            )
             if flag:
                 if response.json():
-                    hidden_subclient_id = response.json().get('subclientId')
+                    hidden_subclient_id = response.json().get("subclientId")
                 else:
-                    raise SDKException('Response', '102')
+                    raise SDKException("Response", "102")
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
-            self._hidden_subclient = subclient(self, 'Do Not Backup', hidden_subclient_id)
+                raise SDKException("Response", "101", self._update_response_(response.text))
+            self._hidden_subclient = subclient(self, "Do Not Backup", hidden_subclient_id)
         return self._hidden_subclient
 
     def browse(self, *args: Any, **kwargs: Any) -> Tuple[List[str], Dict[str, Any]]:
         """Browse the content of the backupset using specified options.
 
-        This method allows you to retrieve file and folder paths from the backupset, 
-        along with additional metadata. You can specify browse options either as a 
+        This method allows you to retrieve file and folder paths from the backupset,
+        along with additional metadata. You can specify browse options either as a
         dictionary or as keyword arguments.
 
         Args:
@@ -200,10 +205,12 @@ class VSBackupset(Backupset):
         else:
             options = kwargs
 
-        options['retry_count'] = 0
+        options["retry_count"] = 0
         return self._do_browse(options)
 
-    def _process_browse_response(self, flag: bool, response: Any, options: Dict[str, Any]) -> Union[List[str], Tuple[List[str], Dict[str, Any]]]:
+    def _process_browse_response(
+        self, flag: bool, response: Any, options: Dict[str, Any]
+    ) -> Union[List[str], Tuple[List[str], Dict[str, Any]]]:
         """Process the browse response and retrieve file or folder paths with metadata.
 
         This method analyzes the browse response from the server and extracts a list of file or folder paths,
@@ -240,108 +247,121 @@ class VSBackupset(Backupset):
         result_set = None
         browse_result = None
         error_message = None
-        options['retry_count'] = options['retry_count'] + 1
-        show_deleted = options.get('show_deleted', False)
+        options["retry_count"] = options["retry_count"] + 1
+        show_deleted = options.get("show_deleted", False)
 
         if flag:
             response_json = response.json()
-            if response_json and 'browseResponses' in response_json:
-                _browse_responses = response_json['browseResponses']
+            if response_json and "browseResponses" in response_json:
+                _browse_responses = response_json["browseResponses"]
                 if not isinstance(_browse_responses, list):
                     _browse_responses = [_browse_responses]
                 for browse_response in _browse_responses:
-                    resp_type = browse_response['respType']
-                    if 'messages' in browse_response:
+                    resp_type = browse_response["respType"]
+                    if "messages" in browse_response:
                         # checking if it is not a list, then converting it to list
-                        if not isinstance(browse_response['messages'], list):
-                            browse_response['messages'] = [browse_response['messages']]
-                        message = browse_response['messages'][0]
-                        error_message = message['errorMessage']
-                        if resp_type == 2 or resp_type == 3 and 'No items found in the index, possibly index is being rebuilt' in \
-                                error_message:
-                            if options['retry_count'] <= 3:
+                        if not isinstance(browse_response["messages"], list):
+                            browse_response["messages"] = [browse_response["messages"]]
+                        message = browse_response["messages"][0]
+                        error_message = message["errorMessage"]
+                        if (
+                            resp_type == 2
+                            or resp_type == 3
+                            and "No items found in the index, possibly index is being rebuilt"
+                            in error_message
+                        ):
+                            if options["retry_count"] <= 3:
                                 time.sleep(180)
                                 return self._do_browse(options)
                             else:
                                 err = "Maximum browse attemps exhausted. Browse did not give full results"
                                 raise Exception(err)
                     if "browseResult" in browse_response:
-                        browse_result = browse_response['browseResult']
-                        if 'dataResultSet' in browse_result:
-                            result_set = browse_result['dataResultSet']
+                        browse_result = browse_response["browseResult"]
+                        if "dataResultSet" in browse_result:
+                            result_set = browse_result["dataResultSet"]
                             if not isinstance(result_set, list):
                                 result_set = [result_set]
                             break
                 if not browse_result:
-                    if not isinstance(response_json['browseResponses'], list):
-                        response_json['browseResponses'] = [response_json['browseResponses']]
-                    if 'messages' in response_json['browseResponses'][0]:
-                        if not isinstance(response_json['browseResponses'][0]['messages'], list):
-                            response_json['browseResponses'][0]['messages'] = [
-                                response_json['browseResponses'][0]['messages']]
-                        message = response_json['browseResponses'][0]['messages'][0]
-                        error_message = message['errorMessage']
-                        if error_message == 'Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.':
+                    if not isinstance(response_json["browseResponses"], list):
+                        response_json["browseResponses"] = [response_json["browseResponses"]]
+                    if "messages" in response_json["browseResponses"][0]:
+                        if not isinstance(response_json["browseResponses"][0]["messages"], list):
+                            response_json["browseResponses"][0]["messages"] = [
+                                response_json["browseResponses"][0]["messages"]
+                            ]
+                        message = response_json["browseResponses"][0]["messages"][0]
+                        error_message = message["errorMessage"]
+                        if (
+                            error_message
+                            == "Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window."
+                        ):
                             return [], {}
-                        raise SDKException('Backupset', '102', str(error_message))
+                        raise SDKException("Backupset", "102", str(error_message))
 
                     else:
                         return [], {}
 
                 if not result_set:
-                    raise SDKException('Backupset', '108', "Failed to browse for subclient backup content")
+                    raise SDKException(
+                        "Backupset", "108", "Failed to browse for subclient backup content"
+                    )
 
-                if 'all_versions' in options['operation']:
-                    return self._process_browse_all_versions_response(result_set,options)
+                if "all_versions" in options["operation"]:
+                    return self._process_browse_all_versions_response(result_set, options)
 
                 for result in result_set:
-                    name = result.get('displayName')
-                    snap_display_name = result.get('name')
+                    name = result.get("displayName")
+                    snap_display_name = result.get("name")
 
-                    if 'path' in result:
-                        path = result['path']
+                    if "path" in result:
+                        path = result["path"]
                     else:
-                        path = '\\'.join([options['path'], name])
+                        path = "\\".join([options["path"], name])
 
-                    if 'modificationTime' in result and int(result['modificationTime']) > 0:
-                        mod_time = time.localtime(int(result['modificationTime']))
-                        mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
+                    if "modificationTime" in result and int(result["modificationTime"]) > 0:
+                        mod_time = time.localtime(int(result["modificationTime"]))
+                        mod_time = time.strftime("%d/%m/%Y %H:%M:%S", mod_time)
                     else:
                         mod_time = None
 
-                    if 'backupTime' in result['advancedData'] and int(result['advancedData']['backupTime']) > 0:
-                        bkp_time = time.localtime(int(result['advancedData']['backupTime']))
-                        bkp_time = time.strftime('%d/%m/%Y %H:%M:%S', bkp_time)
+                    if (
+                        "backupTime" in result["advancedData"]
+                        and int(result["advancedData"]["backupTime"]) > 0
+                    ):
+                        bkp_time = time.localtime(int(result["advancedData"]["backupTime"]))
+                        bkp_time = time.strftime("%d/%m/%Y %H:%M:%S", bkp_time)
                     else:
                         bkp_time = None
 
-                    if 'file' in result['flags']:
-                        if result['flags']['file'] is True or result['flags']['file'] == "1":
-                            file_or_folder = 'File'
+                    if "file" in result["flags"]:
+                        if result["flags"]["file"] is True or result["flags"]["file"] == "1":
+                            file_or_folder = "File"
                         else:
-                            file_or_folder = 'Folder'
+                            file_or_folder = "Folder"
                     else:
-                        file_or_folder = 'Folder'
+                        file_or_folder = "Folder"
 
-                    if 'size' in result:
-                        size = result['size']
+                    if "size" in result:
+                        size = result["size"]
                     else:
                         size = None
-                        
-                    if show_deleted and 'deleted' in result.get('flags'):
-                        deleted = True if result['flags'].get('deleted') in (True, '1') else False
+
+                    if show_deleted and "deleted" in result.get("flags"):
+                        deleted = True if result["flags"].get("deleted") in (True, "1") else False
                     else:
                         deleted = None
 
                     paths_dict[path] = {
-                        'name': name,
-                        'snap_display_name': snap_display_name,
-                        'size': size,
-                        'modified_time': mod_time,
-                        'type': file_or_folder,
-                        'backup_time': bkp_time,
-                        'advanced_data': result['advancedData'],
-                        'deleted': deleted
+                        "name": name,
+                        "snap_display_name": snap_display_name,
+                        "size": size,
+                        "modified_time": mod_time,
+                        "type": file_or_folder,
+                        "backup_time": bkp_time,
+                        "advanced_data": result["advancedData"],
+                        "deleted": deleted,
                     }
 
                     paths.append(path)
@@ -349,10 +369,10 @@ class VSBackupset(Backupset):
                 return paths, paths_dict
 
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
-    def index_server(self) -> Optional['Client']:
+    def index_server(self) -> Optional["Client"]:
         """Get the index server client configured for this backupset.
 
         Returns:
@@ -371,9 +391,9 @@ class VSBackupset(Backupset):
 
         client_name = None
 
-        if 'indexSettings' in self._properties:
-            if 'currentIndexServer' in self._properties['indexSettings']:
-                client_name = self._properties['indexSettings']['currentIndexServer']['clientName']
+        if "indexSettings" in self._properties:
+            if "currentIndexServer" in self._properties["indexSettings"]:
+                client_name = self._properties["indexSettings"]["currentIndexServer"]["clientName"]
 
         if client_name is not None:
             return Client(self._commcell_object, client_name=client_name)
@@ -381,7 +401,7 @@ class VSBackupset(Backupset):
         return None
 
     @index_server.setter
-    def index_server(self, value: 'Client') -> None:
+    def index_server(self, value: "Client") -> None:
         """Set the index server client for the backupset.
 
         This property setter assigns a Client object as the index server for the backupset.
@@ -404,38 +424,38 @@ class VSBackupset(Backupset):
         """
 
         if not isinstance(value, Client):
-            raise SDKException('Backupset', '106')
+            raise SDKException("Backupset", "106")
 
         properties = self._properties
         index_server_id = int(value.client_id)
         index_server_name = value.client_name
 
-        if 'indexSettings' in properties:
+        if "indexSettings" in properties:
             qualified_index_servers = []
-            if 'qualifyingIndexServers' in properties['indexSettings']:
-                for index_server in properties['indexSettings']['qualifyingIndexServers']:
-                    qualified_index_servers.append(index_server['clientId'])
+            if "qualifyingIndexServers" in properties["indexSettings"]:
+                for index_server in properties["indexSettings"]["qualifyingIndexServers"]:
+                    qualified_index_servers.append(index_server["clientId"])
 
             if index_server_id in qualified_index_servers:
-                properties['indexSettings']['currentIndexServer'] = {
-                    'clientId': index_server_id,
-                    'clientName': index_server_name
+                properties["indexSettings"]["currentIndexServer"] = {
+                    "clientId": index_server_id,
+                    "clientName": index_server_name,
                 }
             else:
                 raise SDKException(
-                    'Backupset', '102', '{0} is not a qualified IndexServer client'.format(
-                        index_server_name))
+                    "Backupset",
+                    "102",
+                    f"{index_server_name} is not a qualified IndexServer client",
+                )
         else:
-            properties['indexSettings'] = {
-                'currentIndexServer': {
-                    'clientId': index_server_id,
-                    'clientName': index_server_name
+            properties["indexSettings"] = {
+                "currentIndexServer": {
+                    "clientId": index_server_id,
+                    "clientName": index_server_name,
                 }
             }
 
-        request_json = {
-            'backupsetProperties': properties
-        }
+        request_json = {"backupsetProperties": properties}
 
         self._process_update_reponse(request_json)
 

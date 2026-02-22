@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
@@ -107,49 +105,60 @@ Example for modifying a rule:
         client_operation_window_details.modify_operation_window(name="Modified operation window example on clientLevel")
 """
 
-from __future__ import absolute_import
-import time
-import datetime
 import calendar
+import datetime
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Union
-from .exception import SDKException
-from .clientgroup import ClientGroup
-from .client import Client
+
 from .agent import Agent
-from .instance import Instance
 from .backupset import Backupset
+from .client import Client
+from .clientgroup import ClientGroup
+from .exception import SDKException
+from .instance import Instance
 from .subclient import Subclient
 
-DAY_OF_WEEK_MAPPING = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-WEEK_OF_THE_MONTH_MAPPING = {"all": 32,
-                             "first": 1,
-                             "second": 2,
-                             "third": 4,
-                             "fourth": 8,
-                             "last": 16}
-OPERATION_MAPPING = {"FULL_DATA_MANAGEMENT": 1,
-                     "NON_FULL_DATA_MANAGEMENT": 2,
-                     "SYNTHETIC_FULL": 4,
-                     "DATA_RECOVERY": 8,
-                     "AUX_COPY": 16,
-                     "DR_BACKUP": 32,
-                     "DATA_VERIFICATION": 64,
-                     "ERASE_SPARE_MEDIA": 128,
-                     "SHELF_MANAGEMENT": 256,
-                     "DELETE_DATA_BY_BROWSING": 512,
-                     "DELETE_ARCHIVED_DATA": 1024,
-                     "OFFLINE_CONTENT_INDEXING": 2048,
-                     "ONLINE_CONTENT_INDEXING": 4096,
-                     "SRM": 8192,
-                     "INFORMATION_MANAGEMENT": 16384,
-                     "MEDIA_REFRESHING": 32768,
-                     "DATA_ANALYTICS": 65536,
-                     "DATA_PRUNING": 131072,
-                     "BACKUP_COPY": 262144,
-                     "UPDATE_SOFTWARE": 2097152,
-                     "CLEANUP_OPERATION": 524288,
-                     "ALL": 1048576}
+DAY_OF_WEEK_MAPPING = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+]
+WEEK_OF_THE_MONTH_MAPPING = {
+    "all": 32,
+    "first": 1,
+    "second": 2,
+    "third": 4,
+    "fourth": 8,
+    "last": 16,
+}
+OPERATION_MAPPING = {
+    "FULL_DATA_MANAGEMENT": 1,
+    "NON_FULL_DATA_MANAGEMENT": 2,
+    "SYNTHETIC_FULL": 4,
+    "DATA_RECOVERY": 8,
+    "AUX_COPY": 16,
+    "DR_BACKUP": 32,
+    "DATA_VERIFICATION": 64,
+    "ERASE_SPARE_MEDIA": 128,
+    "SHELF_MANAGEMENT": 256,
+    "DELETE_DATA_BY_BROWSING": 512,
+    "DELETE_ARCHIVED_DATA": 1024,
+    "OFFLINE_CONTENT_INDEXING": 2048,
+    "ONLINE_CONTENT_INDEXING": 4096,
+    "SRM": 8192,
+    "INFORMATION_MANAGEMENT": 16384,
+    "MEDIA_REFRESHING": 32768,
+    "DATA_ANALYTICS": 65536,
+    "DATA_PRUNING": 131072,
+    "BACKUP_COPY": 262144,
+    "UPDATE_SOFTWARE": 2097152,
+    "CLEANUP_OPERATION": 524288,
+    "ALL": 1048576,
+}
 
 
 class OperationWindow:
@@ -210,8 +219,8 @@ class OperationWindow:
             self._commcell_object = generic_entity_obj._commcell_object
 
         self._commcell_services = self._commcell_object._services
-        self._operation_window = self._commcell_services['OPERATION_WINDOW']
-        self._list_operation_window = self._commcell_services['LIST_OPERATION_WINDOW']
+        self._operation_window = self._commcell_services["OPERATION_WINDOW"]
+        self._list_operation_window = self._commcell_services["LIST_OPERATION_WINDOW"]
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._update_response = self._commcell_object._update_response_
 
@@ -221,8 +230,8 @@ class OperationWindow:
         self.instance_id = 0
         self.backupset_id = 0
         self.subclient_id = 0
-        self.entity_type = ''
-        self.entity_id = ''
+        self.entity_type = ""
+        self.entity_id = ""
         self.entity_details = dict()
 
         self.generic_entity_obj = generic_entity_obj
@@ -254,8 +263,9 @@ class OperationWindow:
             self.entity_id = self.instance_id
             self.entity_details["entity_level"] = self.entity_type[:-2]
         elif isinstance(generic_entity_obj, Backupset):
-            self.client_id = generic_entity_obj._instance_object._agent_object. \
-                _client_object.client_id
+            self.client_id = (
+                generic_entity_obj._instance_object._agent_object._client_object.client_id
+            )
             self.agent_id = generic_entity_obj._instance_object._agent_object.agent_id
             self.instance_id = generic_entity_obj._instance_object.instance_id
             self.backupset_id = generic_entity_obj.backupset_id
@@ -263,10 +273,10 @@ class OperationWindow:
             self.entity_id = self.backupset_id
             self.entity_details["entity_level"] = self.entity_type[:-2]
         elif isinstance(generic_entity_obj, Subclient):
-            self.client_id = generic_entity_obj._backupset_object._instance_object. \
-                _agent_object._client_object.client_id
-            self.agent_id = generic_entity_obj._backupset_object. \
-                _instance_object._agent_object.agent_id
+            self.client_id = generic_entity_obj._backupset_object._instance_object._agent_object._client_object.client_id
+            self.agent_id = (
+                generic_entity_obj._backupset_object._instance_object._agent_object.agent_id
+            )
             self.instance_id = generic_entity_obj._backupset_object._instance_object.instance_id
             self.backupset_id = generic_entity_obj._backupset_object.backupset_id
             self.subclient_id = generic_entity_obj.subclient_id
@@ -274,35 +284,45 @@ class OperationWindow:
             self.entity_id = self.subclient_id
             self.entity_details["entity_level"] = self.entity_type[:-2]
         else:
-            raise SDKException('Response', '101', "Invalid instance passed")
+            raise SDKException("Response", "101", "Invalid instance passed")
 
-        self.entity_details.update({"clientGroupId": self.clientgroup_id,
-                                    "clientId": self.client_id,
-                                    "applicationId": self.agent_id,
-                                    "instanceId": self.instance_id,
-                                    "backupsetId": self.backupset_id,
-                                    "subclientId": self.subclient_id})
+        self.entity_details.update(
+            {
+                "clientGroupId": self.clientgroup_id,
+                "clientId": self.client_id,
+                "applicationId": self.agent_id,
+                "instanceId": self.instance_id,
+                "backupsetId": self.backupset_id,
+                "subclientId": self.subclient_id,
+            }
+        )
 
         # append the entity type and entity id to end of list operation window REST API.
         # For commcell it will empty string
-        self.connect_string = self._list_operation_window.split('?')[0] + '?' + self.entity_type + "=" + self.entity_id
+        self.connect_string = (
+            self._list_operation_window.split("?")[0]
+            + "?"
+            + self.entity_type
+            + "="
+            + self.entity_id
+        )
 
     def create_operation_window(
-            self,
-            name: str,
-            start_date: Optional[int] = None,
-            end_date: Optional[int] = None,
-            operations: Optional[List[str]] = None,
-            day_of_week: Optional[List[str]] = None,
-            start_time: Optional[Union[int, List[int]]] = None,
-            end_time: Optional[Union[int, List[int]]] = None,
-            week_of_the_month: Optional[List[str]] = None,
-            do_not_submit_job: bool = False
-        ):
+        self,
+        name: str,
+        start_date: Optional[int] = None,
+        end_date: Optional[int] = None,
+        operations: Optional[List[str]] = None,
+        day_of_week: Optional[List[str]] = None,
+        start_time: Optional[Union[int, List[int]]] = None,
+        end_time: Optional[Union[int, List[int]]] = None,
+        week_of_the_month: Optional[List[str]] = None,
+        do_not_submit_job: bool = False,
+    ):
         """Create an operation window rule for the initialized Commcell entity.
 
-        This method creates a new operation window rule, specifying when certain operations 
-        are allowed or restricted for the associated Commcell entity. The rule can be customized 
+        This method creates a new operation window rule, specifying when certain operations
+        are allowed or restricted for the associated Commcell entity. The rule can be customized
         by specifying the operations, days of the week, time intervals, and other scheduling options.
 
         Args:
@@ -315,7 +335,7 @@ class OperationWindow:
                 'DELETE_ARCHIVED_DATA', 'OFFLINE_CONTENT_INDEXING', 'ONLINE_CONTENT_INDEXING', 'SRM', 'INFORMATION_MANAGEMENT',
                 'MEDIA_REFRESHING', 'DATA_ANALYTICS', 'DATA_PRUNING', 'BACKUP_COPY', 'CLEANUP_OPERATION'.
                 Defaults to ['FULL_DATA_MANAGEMENT'].
-            day_of_week: List of days of the week to apply the rule. Acceptable values: 'sunday', 'monday', 'tuesday', 
+            day_of_week: List of days of the week to apply the rule. Acceptable values: 'sunday', 'monday', 'tuesday',
                 'wednesday', 'thursday', 'friday', 'saturday'. Defaults to weekdays ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].
             start_time: Start time for the "do not run" interval. Can be a single UNIX timestamp (int) for all days, or a list of timestamps (List[int]) for each day in day_of_week.
                 Defaults to 28800 (8 AM).
@@ -370,17 +390,17 @@ class OperationWindow:
             for operation in operations:
                 if operation not in OPERATION_MAPPING:
                     response_string = "Invalid input %s for operation is passed" % operation
-                    raise SDKException('OperationWindow', '102', response_string)
+                    raise SDKException("OperationWindow", "102", response_string)
                 operations_list.append(OPERATION_MAPPING[operation.upper()])
 
         day_of_week_list = []
         if day_of_week is None:
-            day_of_week_list = [1, 2, 3, 4, 5]      # defaults to weekdays
+            day_of_week_list = [1, 2, 3, 4, 5]  # defaults to weekdays
         else:
             for day in day_of_week:
                 if day.lower() not in DAY_OF_WEEK_MAPPING:
                     response_string = "Invalid input value %s for day_of_week" % day
-                    raise SDKException('OperationWindow', '102', response_string)
+                    raise SDKException("OperationWindow", "102", response_string)
                 day_of_week_list.append(DAY_OF_WEEK_MAPPING.index(day.lower()))
 
         week_of_the_month_list = []
@@ -388,7 +408,7 @@ class OperationWindow:
             for week in week_of_the_month:
                 if week.lower() not in WEEK_OF_THE_MONTH_MAPPING:
                     response_string = "Invalid input %s for week_of_the_month" % week
-                    raise SDKException('OperationWindow', '102', response_string)
+                    raise SDKException("OperationWindow", "102", response_string)
                 week_of_the_month_list.append(WEEK_OF_THE_MONTH_MAPPING[week.lower()])
 
         daytime_list = []
@@ -399,25 +419,27 @@ class OperationWindow:
                     "startTime": start_time,
                     "endTime": end_time,
                     "weekOfTheMonth": week_of_the_month_list,
-                    "dayOfWeek": day_of_week_list
+                    "dayOfWeek": day_of_week_list,
                 }
             )
         elif isinstance(start_time, list) and isinstance(end_time, list):
-            if not(num_of_days == len(start_time) == len(end_time)):
-                response_string = "did not specify start time and end time for all the given week days"
-                raise SDKException('OperationWindow', '102', response_string)
+            if not (num_of_days == len(start_time) == len(end_time)):
+                response_string = (
+                    "did not specify start time and end time for all the given week days"
+                )
+                raise SDKException("OperationWindow", "102", response_string)
             for week_day in range(num_of_days):
                 daytime_list.append(
                     {
                         "startTime": start_time[week_day],
                         "endTime": end_time[week_day],
                         "weekOfTheMonth": week_of_the_month_list,
-                        "dayOfWeek": [day_of_week_list[week_day]]
+                        "dayOfWeek": [day_of_week_list[week_day]],
                     }
                 )
         else:
             response_string = "Both start_time and end_time should be of same type."
-            raise SDKException('OperationWindow', '102', response_string)
+            raise SDKException("OperationWindow", "102", response_string)
 
         payload = {
             "operationWindow": {
@@ -427,7 +449,7 @@ class OperationWindow:
                 "endDate": end_date,
                 "name": name,
                 "operations": operations_list,
-                "dayTime": daytime_list
+                "dayTime": daytime_list,
             },
             "entity": {
                 "clientGroupId": int(self.clientgroup_id),
@@ -435,22 +457,27 @@ class OperationWindow:
                 "applicationId": int(self.agent_id),
                 "instanceId": int(self.instance_id),
                 "backupsetId": int(self.backupset_id),
-                "subclientId": int(self.subclient_id)
-            }
+                "subclientId": int(self.subclient_id),
+            },
         }
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._operation_window, payload=payload)
+            "POST", self._operation_window, payload=payload
+        )
         if flag:
             if response.json():
-                error_code = response.json().get("error", {}).get('errorCode')
+                error_code = response.json().get("error", {}).get("errorCode")
                 if int(error_code) == 0:
-                    return self.get(rule_id=int(response.json().get('operationWindow', {}).get('ruleId')))
-                raise SDKException('OperationWindow', '101')
-            raise SDKException('Response', '102')
+                    return self.get(
+                        rule_id=int(response.json().get("operationWindow", {}).get("ruleId"))
+                    )
+                raise SDKException("OperationWindow", "101")
+            raise SDKException("Response", "102")
         response_string = self._update_response(response.text)
-        raise SDKException('Response', '102', response_string)
+        raise SDKException("Response", "102", response_string)
 
-    def delete_operation_window(self, rule_id: Optional[int] = None, name: Optional[str] = None) -> None:
+    def delete_operation_window(
+        self, rule_id: Optional[int] = None, name: Optional[str] = None
+    ) -> None:
         """Delete the operation window rule by rule ID or name.
 
         Either the rule ID or the name must be provided to identify the operation window to delete.
@@ -476,30 +503,27 @@ class OperationWindow:
         """
 
         if not name and not rule_id:
-            raise SDKException(
-                'OperationWindow',
-                '102',
-                'Either Name or Rule Id is needed')
+            raise SDKException("OperationWindow", "102", "Either Name or Rule Id is needed")
 
         if name and not isinstance(name, str) or rule_id and not isinstance(rule_id, int):
-            raise SDKException('OperationWindow', '106')
+            raise SDKException("OperationWindow", "106")
 
         if name:
             rule_id = self.get(name=name).rule_id
 
         flag, response = self._cvpysdk_object.make_request(
-            'DELETE', self._operation_window + '/' + str(rule_id))
+            "DELETE", self._operation_window + "/" + str(rule_id)
+        )
         if flag:
             if response.json():
-                error_code = response.json().get("error", {}).get('errorCode')
+                error_code = response.json().get("error", {}).get("errorCode")
                 if int(error_code):
-                    raise SDKException('OperationWindow', '103')
+                    raise SDKException("OperationWindow", "103")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
-            response_string = self._update_response(
-                response.text)
-            raise SDKException('Response', '102', response_string)
+            response_string = self._update_response(response.text)
+            raise SDKException("Response", "102", response_string)
 
     def list_operation_window(self) -> List[Dict[str, Any]]:
         """List the operation rules configured for the associated Commcell entity.
@@ -522,36 +546,52 @@ class OperationWindow:
 
         #ai-gen-doc
         """
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self.connect_string)
+        flag, response = self._cvpysdk_object.make_request("GET", self.connect_string)
         if flag:
             if response.json():
-                error_code = response.json().get("error", {}).get('errorCode')
+                error_code = response.json().get("error", {}).get("errorCode")
                 if int(error_code) == 0:
                     list_of_rules = response.json().get("operationWindow")
-                    operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
-                    wotm_reverse_mapping = {value: key for key, value in WEEK_OF_THE_MONTH_MAPPING.items()}
+                    operation_reverse_mapping = {
+                        value: key for key, value in OPERATION_MAPPING.items()
+                    }
+                    wotm_reverse_mapping = {
+                        value: key for key, value in WEEK_OF_THE_MONTH_MAPPING.items()
+                    }
                     if list_of_rules is not None:
                         for operation_rule in list_of_rules:
                             operations = operation_rule.get("operations")
                             if operations is not None:
-                                operation_rule["operations"] = [operation_reverse_mapping[operation] for operation in
-                                                                operations]
+                                operation_rule["operations"] = [
+                                    operation_reverse_mapping[operation]
+                                    for operation in operations
+                                ]
                             day_time_list = operation_rule.get("dayTime", [])
                             for day_time in day_time_list:
-                                if day_time.get("weekOfTheMonth"): # if we have weekOfTheMonth, we replace it with name.
-                                    day_time['weekOfTheMonth'] = [wotm_reverse_mapping[week] for week in day_time.get("weekOfTheMonth")]
+                                if day_time.get(
+                                    "weekOfTheMonth"
+                                ):  # if we have weekOfTheMonth, we replace it with name.
+                                    day_time["weekOfTheMonth"] = [
+                                        wotm_reverse_mapping[week]
+                                        for week in day_time.get("weekOfTheMonth")
+                                    ]
 
-                                if day_time.get("dayTime"): # if we have dayTime, we replace it with name.
-                                    day_time['dayTime'] = [DAY_OF_WEEK_MAPPING[day] for day in day_time['dayTime']]
-                            operation_rule['dayTime'] = day_time_list
+                                if day_time.get(
+                                    "dayTime"
+                                ):  # if we have dayTime, we replace it with name.
+                                    day_time["dayTime"] = [
+                                        DAY_OF_WEEK_MAPPING[day] for day in day_time["dayTime"]
+                                    ]
+                            operation_rule["dayTime"] = day_time_list
                     return list_of_rules
-                raise SDKException('OperationWindow', '104')
-            raise SDKException('Response', '102')
+                raise SDKException("OperationWindow", "104")
+            raise SDKException("Response", "102")
         response_string = self._update_response(response.text)
-        raise SDKException('Response', '102', response_string)
+        raise SDKException("Response", "102", response_string)
 
-    def get(self, rule_id: Optional[int] = None, name: Optional[str] = None) -> 'OperationWindowDetails':
+    def get(
+        self, rule_id: Optional[int] = None, name: Optional[str] = None
+    ) -> "OperationWindowDetails":
         """Retrieve the operation window rule object by rule ID or name.
 
         Either the rule ID or the name must be provided to identify the operation window.
@@ -580,28 +620,32 @@ class OperationWindow:
         #ai-gen-doc
         """
         if not name and not rule_id:
-            raise SDKException(
-                'OperationWindow',
-                '102',
-                'Either Name or Rule Id is needed')
+            raise SDKException("OperationWindow", "102", "Either Name or Rule Id is needed")
 
         if name and not isinstance(name, str) or rule_id and not isinstance(rule_id, int):
-            raise SDKException('OperationWindow', '106')
+            raise SDKException("OperationWindow", "106")
 
         list_of_rules = self.list_operation_window()
         if rule_id:
             for operation_rule in list_of_rules:
                 if operation_rule.get("ruleId") == rule_id:
-                    return OperationWindowDetails(self.generic_entity_obj, rule_id, self.entity_details)
-            raise Exception("No such operation window with rule id as {0} exists".format(rule_id))
+                    return OperationWindowDetails(
+                        self.generic_entity_obj, rule_id, self.entity_details
+                    )
+            raise Exception(f"No such operation window with rule id as {rule_id} exists")
         if name:
-            rules = [operation_rule.get("ruleId") for operation_rule in list_of_rules
-                     if operation_rule.get("name") == name]
+            rules = [
+                operation_rule.get("ruleId")
+                for operation_rule in list_of_rules
+                if operation_rule.get("name") == name
+            ]
             if not rules:
-                raise Exception("No such operation window with name as {0} exists".format(name))
+                raise Exception(f"No such operation window with name as {name} exists")
             if len(rules) == 1:
-                return OperationWindowDetails(self.generic_entity_obj, rules[0], self.entity_details)
-            raise Exception("More than one operation window are named as {0} exists".format(name))
+                return OperationWindowDetails(
+                    self.generic_entity_obj, rules[0], self.entity_details
+                )
+            raise Exception(f"More than one operation window are named as {name} exists")
 
 
 class OperationWindowDetails:
@@ -660,6 +704,7 @@ class OperationWindowDetails:
         #ai-gen-doc
         """
         from .commcell import Commcell
+
         if isinstance(generic_entity_obj, Commcell):
             self._commcell_object = generic_entity_obj
         else:
@@ -668,7 +713,7 @@ class OperationWindowDetails:
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._update_response = self._commcell_object._update_response_
         self._commcell_services = self._commcell_object._services
-        self._operation_window = self._commcell_services['OPERATION_WINDOW']
+        self._operation_window = self._commcell_services["OPERATION_WINDOW"]
 
         self._rule_id = rule_id
         self._name = None
@@ -762,7 +807,9 @@ class OperationWindowDetails:
 
         week_of_the_month_list = []
         if week_of_the_month:
-            week_of_the_month_list = [WEEK_OF_THE_MONTH_MAPPING[week.lower()] for week in week_of_the_month]
+            week_of_the_month_list = [
+                WEEK_OF_THE_MONTH_MAPPING[week.lower()] for week in week_of_the_month
+            ]
 
         day_of_week_list = [DAY_OF_WEEK_MAPPING.index(day.lower()) for day in day_of_week]
         daytime_list = []
@@ -773,25 +820,27 @@ class OperationWindowDetails:
                     "startTime": start_time,
                     "endTime": end_time,
                     "weekOfTheMonth": week_of_the_month_list,
-                    "dayOfWeek": day_of_week_list
+                    "dayOfWeek": day_of_week_list,
                 }
             )
         elif isinstance(start_time, list) and isinstance(end_time, list):
             if not (num_of_days == len(start_time) == len(end_time)):
-                response_string = "did not specify start time and end time for all the given week days"
-                raise SDKException('OperationWindow', '102', response_string)
+                response_string = (
+                    "did not specify start time and end time for all the given week days"
+                )
+                raise SDKException("OperationWindow", "102", response_string)
             for week_day in range(num_of_days):
                 daytime_list.append(
                     {
                         "startTime": start_time[week_day],
                         "endTime": end_time[week_day],
                         "weekOfTheMonth": week_of_the_month_list,
-                        "dayOfWeek": [day_of_week_list[week_day]]
+                        "dayOfWeek": [day_of_week_list[week_day]],
                     }
                 )
         else:
             response_string = "Both start_time and end_time should be of same type."
-            raise SDKException('OperationWindow', '102', response_string)
+            raise SDKException("OperationWindow", "102", response_string)
         payload = {
             "operationWindow": {
                 "ruleEnabled": True,
@@ -801,7 +850,7 @@ class OperationWindowDetails:
                 "name": name,
                 "ruleId": int(self.rule_id),
                 "operations": operations_list,
-                "dayTime": daytime_list
+                "dayTime": daytime_list,
             },
             "entity": {
                 "clientGroupId": int(self._clientgroup_id),
@@ -809,24 +858,25 @@ class OperationWindowDetails:
                 "applicationId": int(self._agent_id),
                 "instanceId": int(self._instance_id),
                 "backupsetId": int(self._backupset_id),
-                "subclientId": int(self._subclient_id)
-            }
+                "subclientId": int(self._subclient_id),
+            },
         }
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._operation_window, payload=payload)
+            "PUT", self._operation_window, payload=payload
+        )
         if flag:
             if response.json():
-                error_code = response.json().get("error", {}).get('errorCode')
+                error_code = response.json().get("error", {}).get("errorCode")
                 if int(error_code) == 0:
-                    int(response.json().get('operationWindow', {}).get('ruleId'))
+                    int(response.json().get("operationWindow", {}).get("ruleId"))
                     self._refresh()
                 else:
-                    raise SDKException('OperationWindow', '105')
+                    raise SDKException("OperationWindow", "105")
             else:
-                raise SDKException('Response', '102')
+                raise SDKException("Response", "102")
         else:
             response_string = self._update_response(response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException("Response", "101", response_string)
 
     def _refresh(self) -> None:
         """Reload the properties of the operation window rule.
@@ -863,24 +913,32 @@ class OperationWindowDetails:
 
         #ai-gen-doc
         """
-        xml = "<Api_GetOperationWindowReq><ruleId>" + str(self.rule_id) + "</ruleId></Api_GetOperationWindowReq>"
+        xml = (
+            "<Api_GetOperationWindowReq><ruleId>"
+            + str(self.rule_id)
+            + "</ruleId></Api_GetOperationWindowReq>"
+        )
         response_json = self._commcell_object._qoperation_execute(xml)
         if response_json:
-            error_code = response_json.get("error", {}).get('errorCode')
+            error_code = response_json.get("error", {}).get("errorCode")
             if int(error_code) == 0:
-                response_json = response_json.get('operationWindow', {})[0]
-                self._do_not_submit_job = response_json.get('doNotSubmitJob')
-                self._name = response_json.get('name')
-                self._start_date = response_json.get('startDate')
-                self._end_date = response_json.get('endDate')
-                operations = response_json.get('operations')
-                operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
-                self._operations = [operation_reverse_mapping[operation] for operation in operations]
-                week_of_the_month = response_json.get("dayTime", [{}])[0].get('weekOfTheMonth', [])
+                response_json = response_json.get("operationWindow", {})[0]
+                self._do_not_submit_job = response_json.get("doNotSubmitJob")
+                self._name = response_json.get("name")
+                self._start_date = response_json.get("startDate")
+                self._end_date = response_json.get("endDate")
+                operations = response_json.get("operations")
+                operation_reverse_mapping = {
+                    value: key for key, value in OPERATION_MAPPING.items()
+                }
+                self._operations = [
+                    operation_reverse_mapping[operation] for operation in operations
+                ]
+                week_of_the_month = response_json.get("dayTime", [{}])[0].get("weekOfTheMonth", [])
                 if len(response_json.get("dayTime", [])) == 1:
-                    start_time = response_json.get("dayTime", [{}])[0].get('startTime')
-                    end_time = response_json.get("dayTime", [{}])[0].get('endTime')
-                    day_of_week = response_json.get("dayTime", [{}])[0].get('dayOfWeek')
+                    start_time = response_json.get("dayTime", [{}])[0].get("startTime")
+                    end_time = response_json.get("dayTime", [{}])[0].get("endTime")
+                    day_of_week = response_json.get("dayTime", [{}])[0].get("dayOfWeek")
                 else:
                     day_of_week = []
                     start_time = []
@@ -892,16 +950,21 @@ class OperationWindowDetails:
                             start_time.append(week_day.get("startTime"))
                         if week_day.get("endTime") is not None:
                             end_time.append(week_day.get("endTime"))
-                wotm_reverse_mapping = {value: key for key, value in WEEK_OF_THE_MONTH_MAPPING.items()}
-                self._week_of_the_month = [wotm_reverse_mapping[week] for week in week_of_the_month]
+                wotm_reverse_mapping = {
+                    value: key for key, value in WEEK_OF_THE_MONTH_MAPPING.items()
+                }
+                self._week_of_the_month = [
+                    wotm_reverse_mapping[week] for week in week_of_the_month
+                ]
                 self._day_of_week = [DAY_OF_WEEK_MAPPING[day] for day in day_of_week]
                 self._start_time = start_time
                 self._end_time = end_time
             else:
-                raise SDKException('OperationWindow', '102',
-                                   response_json.get("error", {}).get('errorMessage'))
+                raise SDKException(
+                    "OperationWindow", "102", response_json.get("error", {}).get("errorMessage")
+                )
         else:
-            raise SDKException('Response', '102')
+            raise SDKException("Response", "102")
 
     @property
     def do_not_submit_job(self) -> bool:
@@ -1213,11 +1276,11 @@ class OperationWindowDetails:
     def end_time(self, end_time: Union[int, List[int]]) -> None:
         """Set the end time for the operation window rule.
 
-        The end time can be specified as a single UNIX timestamp (seconds since January 1, 1970) 
+        The end time can be specified as a single UNIX timestamp (seconds since January 1, 1970)
         or as a list of timestamps for each weekday mentioned in the day_of_week list.
 
         Args:
-            end_time: The end time for the "do not run" interval. 
+            end_time: The end time for the "do not run" interval.
                 - If an integer, sets a single end time for all applicable days.
                 - If a list of integers, sets individual end times for each weekday.
 
@@ -1361,8 +1424,8 @@ class OperationWindowDetails:
     def entity_level(self) -> str:
         """Get the entity level associated with the operation window details.
 
-        This property provides read-only access to the entity level, which typically 
-        indicates the scope or type of entity (such as client, subclient, or backupset) 
+        This property provides read-only access to the entity level, which typically
+        indicates the scope or type of entity (such as client, subclient, or backupset)
         for which the operation window is defined.
 
         Returns:
