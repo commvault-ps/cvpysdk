@@ -38,3 +38,5 @@ __pycache__
 */*/*/*/*/.pyc
 */*/*/*/*/CVS
 */*/*/*/*/__pycache__
+
+.ruff_cache

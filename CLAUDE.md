@@ -49,8 +49,11 @@ Examples:
 ## Code Style
 
 - PEP8 with **line-length=99** (not the default 79)
-- Format with `autopep8 --max-line-length=99`
+- Lint with `ruff check .` and auto-fix with `ruff check --fix .`
+- Format with `ruff format .` (or check formatting with `ruff format --check .`)
+- Legacy: `autopep8 --max-line-length=99` is also accepted
 - Inline pylint disables are used where needed (e.g., `# pylint: disable=R1705`)
+- Pre-commit hook: run `pre-commit install` to enable automatic linting on commit
 
 ## Architecture
 
