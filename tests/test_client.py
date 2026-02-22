@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -20,12 +19,12 @@ from cvpysdk.exception import SDKException
 
 class ClientTest(testlib.SDKTestCase):
     def setUp(self):
-        super(ClientTest, self).setUp()
+        super().setUp()
         self.client_name = self.commcell_object.commserv_name
         self.client = self.commcell_object.clients.get(self.client_name)
 
     def tearDown(self):
-        super(ClientTest, self).tearDown()
+        super().tearDown()
 
     def test_client_init(self):
         self.assertRaises(SDKException, self.commcell_object.clients.get, "abc123")
@@ -61,7 +60,7 @@ class ClientTest(testlib.SDKTestCase):
         """
         import re
 
-        self.assertRegexpMatches(
+        self.assertRegex(
             self.client.execute_command("mkdir !:")[1], re.compile("\w*cannot find\w*")
         )
 
