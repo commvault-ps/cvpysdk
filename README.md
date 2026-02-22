@@ -16,10 +16,10 @@ CVPySDK uses REST APIs to perform CommCell operations.
 
 ## Installing CVPySDK
 
-CVPySDK can be installed directly from PyPI using pip:
+CVPySDK can be installed directly from PyPI using uv:
 
 ```python
-pip install cvpysdk
+uv pip install cvpysdk
 ```
 
 CVPySDK is available on GitHub [here](https://github.com/Commvault/cvpysdk)
@@ -29,7 +29,7 @@ It can also be installed from source.
 After downloading, from within the `cvpysdk` directory, execute:
 
 ```python
-pip install .
+uv pip install .
 ```
 
 ## Using CVPySDK
@@ -173,10 +173,10 @@ On Windows, if CVPySDK was installed using an `.exe` or `.msi`
 installer, simply use the uninstall feature of "**Add/Remove Programs**" in the
 Control Panel.
 
-Alternatively, you can uninstall using the **pip** command:
+Alternatively, you can uninstall using **uv**:
 
 ```python
-pip uninstall cvpysdk
+uv pip uninstall cvpysdk
 ```
 
 ## Subclient Support
