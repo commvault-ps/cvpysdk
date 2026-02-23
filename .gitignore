@@ -41,3 +41,4 @@ __pycache__
 
 .ruff_cache
 .claude/worktrees/
+.coverage
