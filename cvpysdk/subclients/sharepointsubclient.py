@@ -1257,8 +1257,8 @@ class SharepointSubclient(SharepointSuperSubclient):
 
              paths     (list)   --  list of sites or webs to be restored
              Example: [
-                "MB\\<tenant-url>/sites/TestSite\Contents\Shared Documents",
-                "MB\\<tenant-url>/sites/TestSite\Contents\Test Automation List"
+                "MB\\<tenant-url>/sites/TestSite\\Contents\\Shared Documents",
+                "MB\\<tenant-url>/sites/TestSite\\Contents\\Test Automation List"
                 ]
 
              fast_restore_point   (booL)  -- Whether to use fast restore point or not

@@ -151,7 +151,7 @@ Schedule:
 """
 
 import calendar
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from .exception import SDKException
@@ -249,9 +249,9 @@ class SchedulePattern:
         try:
             if utc_to_epoch:
                 date_time = datetime.strptime(_time, time_format)
-                return int((date_time - datetime.utcfromtimestamp(0)).total_seconds())
+                return int((date_time - datetime(1970, 1, 1)).total_seconds())
 
-            utc_time = datetime.utcfromtimestamp(_time)
+            utc_time = datetime.fromtimestamp(_time, tz=timezone.utc)
             return utc_time.strftime(time_format)
 
         except ValueError:
