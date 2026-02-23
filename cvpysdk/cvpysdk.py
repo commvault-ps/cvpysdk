@@ -56,18 +56,12 @@ CVPySDK:
 
 """
 
+import http.client as httplib
 from xml.parsers.expat import ExpatError
 
 import requests
 import urllib3
 import xmltodict
-
-try:
-    # Python 2 import
-    import httplib
-except ImportError:
-    # Python 3 import
-    import http.client as httplib
 
 from .exception import SDKException
 
@@ -454,7 +448,7 @@ class CVPySDK:
                 headers["traceParent"] = self.trace_parent
 
             if method == "POST":
-                if isinstance(payload, (dict, list)):
+                if isinstance(payload, dict | list):
                     if files is not None:
                         response = self._request(method=method, url=url, files=files, data=payload)
                     else:

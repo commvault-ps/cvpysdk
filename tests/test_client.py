@@ -6,12 +6,9 @@
 # license information.
 # --------------------------------------------------------------------------
 
-import testlib
+import unittest
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import testlib
 
 from cvpysdk.client import Client
 from cvpysdk.exception import SDKException

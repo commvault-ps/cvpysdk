@@ -9,13 +9,8 @@
 """Shared unit test utilities."""
 
 import json
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 import logging
+import unittest
 
 from cvpysdk import commcell
 
