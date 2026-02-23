@@ -11,7 +11,7 @@ The following are the key enhancements from the original [CVPySDK](https://githu
 
 - **CI/CD**: GitHub Actions workflows for automated:
   - [![Lint](https://github.com/commvault-ps/cvpysdk/actions/workflows/lint.yml/badge.svg)](https://github.com/commvault-ps/cvpysdk/actions/workflows/lint.yml) with [ruff](https://docs.astral.sh/ruff/).
-  - [![Testing](https://github.com/commvault-ps/cvpysdk/actions/workflows/test.yml/badge.svg)](https://github.com/commvault-ps/cvpysdk/actions/workflows/test.yml) on Python 3.10, 3.12, and 3.14 on each [Pull Request](https://github.com/commvault-ps/cvpysdk/pulls) and [branch](https://github.com/commvault-ps/cvpysdk/branches).
+  - [![Testing](https://github.com/commvault-ps/cvpysdk/actions/workflows/test.yml/badge.svg)](https://github.com/commvault-ps/cvpysdk/actions/workflows/test.yml) on Python 3.10, 3.11, 3.12, 3.13, and 3.14 on each [Pull Request](https://github.com/commvault-ps/cvpysdk/pulls) and [branch](https://github.com/commvault-ps/cvpysdk/branches).
 - **Build**:
   - Switched from 'pip' → [uv](https://docs.astral.sh/uv/) (which is much faster and simplifies the management of Python virtual environments).
   - Dropped support for old Python versions that are End-Of-Life (EOL):
