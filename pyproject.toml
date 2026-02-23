@@ -18,17 +18,15 @@ dependencies = [
   "xmltodict",
   "pycryptodomex"
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 keywords = ["commvault", "python", "sdk", "cv", "simpana", "commcell", "cvlt", "webconsole"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.9; python_version>='3.7'",
-    "pre-commit>=3.0; python_version>='3.8'",
-    "pytest>=7.0; python_version>='3.7'",
-    "pytest>=4.6,<7; python_version<'3.7'",
-    "pytest-cov>=4.0; python_version>='3.7'",
-    "pytest-cov>=2.0,<4; python_version<'3.7'",
+    "ruff>=0.9",
+    "pre-commit>=3.0",
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
 ]
 
 [project.urls]
@@ -39,7 +37,7 @@ dev = [
 
 [tool.ruff]
 line-length = 99
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
@@ -58,6 +56,7 @@ ignore = [
   "B023",   # function-uses-loop-variable
   "B024",   # abstract-base-class-without-abstract-method
   "B035",   # static-key-dict-comprehension
+  "B905",   # zip-without-explicit-strict (new in py310+ target)
   "B904",   # raise-without-from-inside-except
   "F401",   # unused-import
   "F402",   # import-shadowed-by-loop-var
@@ -67,8 +66,12 @@ ignore = [
   "F811",   # redefined-unused-name
   "F821",   # undefined-name
   "F841",   # unused-variable
+  "UP006",  # non-pep585-annotation (legacy typing.Dict, typing.List usage)
+  "UP007",  # non-pep604-annotation (legacy Union[X, Y] usage)
   "UP030",  # format-literals (unsafe fix only)
   "UP031",  # printf-string-formatting (unsafe fix only)
+  "UP035",  # deprecated-import (legacy typing imports)
+  "UP045",  # non-pep604-annotation-optional (legacy Optional[X] usage)
 ]
 
 [tool.pytest.ini_options]

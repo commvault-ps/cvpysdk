@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CVPySDK is a Python SDK (v11.42) for Commvault Software that wraps Commvault REST APIs into a Pythonic object model. It supports Python 3.6+ and requires a Commvault CommCell with WebConsole installed.
+CVPySDK is a Python SDK (v11.42) for Commvault Software that wraps Commvault REST APIs into a Pythonic object model. It supports Python 3.10+ and requires a Commvault CommCell with WebConsole installed.
 
 ## Build and Install
 
