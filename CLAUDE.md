@@ -9,7 +9,7 @@ CVPySDK is a Python SDK (v11.42) for Commvault Software that wraps Commvault RES
 ## Build and Install
 
 ```bash
-uv sync --dev                      # Development install (with dev dependencies)
+uv sync --extra dev                # Development install (with dev dependencies)
 uv pip install cvpysdk             # From PyPI
 python setup.py install             # Legacy install
 ```
