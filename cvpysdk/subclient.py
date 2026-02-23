@@ -174,6 +174,8 @@ Subclient Instance Attributes:
 
 """
 
+from __future__ import annotations
+
 import copy
 import math
 import time
@@ -363,7 +365,7 @@ class Subclients:
         """
         return len(self.all_subclients)
 
-    def __getitem__(self, value: "Union[str, int]") -> "Union[str, dict]":
+    def __getitem__(self, value: str | int) -> str | dict:
         """Retrieve subclient information by name or ID.
 
         If a subclient ID (int) is provided, returns the name of the corresponding subclient.
@@ -559,7 +561,7 @@ class Subclients:
 
         return self._subclients and subclient_name.lower() in self._subclients
 
-    def _process_add_request(self, request_json: dict) -> "Subclient":
+    def _process_add_request(self, request_json: dict) -> Subclient:
         """Send a request to add a new subclient and return the resulting Subclient instance.
 
         Args:
@@ -619,12 +621,12 @@ class Subclients:
     def add(
         self,
         subclient_name: str,
-        storage_policy: Optional[str] = None,
-        subclient_type: Optional[str] = None,
+        storage_policy: str | None = None,
+        subclient_type: str | None = None,
         description: str = "",
-        advanced_options: Optional[Dict[str, Any]] = None,
-        pre_scan_cmd: Optional[str] = None,
-    ) -> "Subclient":
+        advanced_options: dict[str, Any] | None = None,
+        pre_scan_cmd: str | None = None,
+    ) -> Subclient:
         """Add a new subclient to the backupset.
 
         This method creates a new subclient with the specified name and optional properties,
@@ -739,8 +741,8 @@ class Subclients:
         domain_name: str,
         password: str,
         full_mode: bool,
-        schema_value: Optional[list] = None,
-    ) -> "Subclient":
+        schema_value: list | None = None,
+    ) -> Subclient:
         """Add a subclient for Oracle logical dump backup.
 
         This method creates a subclient for Oracle logical dump in either full mode or schema mode:
@@ -895,7 +897,7 @@ class Subclients:
         contents: list,
         no_of_streams: int = 1,
         collect_object_list: bool = False,
-    ) -> "Subclient":
+    ) -> Subclient:
         """Add a new PostgreSQL subclient to the backup set.
 
         This method creates a new PostgreSQL subclient with the specified name, associates it with a storage policy,
@@ -986,7 +988,7 @@ class Subclients:
 
     def add_mysql_subclient(
         self, subclient_name: str, storage_policy: str, contents: list, **kwargs: dict
-    ) -> "Subclient":
+    ) -> Subclient:
         """Add a new MySQL subclient to the instance.
 
         This method creates a new MySQL subclient with the specified name, associates it with a storage policy,
@@ -1079,7 +1081,7 @@ class Subclients:
 
     def add_virtual_server_subclient(
         self, subclient_name: str, subclient_content: list, **kwargs: dict
-    ) -> "Subclient":
+    ) -> Subclient:
         """Add a new virtual server subclient to the backupset.
 
         This method creates a new virtual server subclient with the specified name and content.
@@ -1236,7 +1238,7 @@ class Subclients:
 
         return self._process_add_request(request_json)
 
-    def add_onedrive_subclient(self, subclient_name: str, server_plan: str) -> "Subclient":
+    def add_onedrive_subclient(self, subclient_name: str, server_plan: str) -> Subclient:
         """Add a new OneDrive subclient to the backup set.
 
         Creates a new subclient with the specified name and associates it with the given server plan.
@@ -1313,7 +1315,7 @@ class Subclients:
 
         return self._process_add_request(request_json)
 
-    def get(self, subclient_name: str) -> "Subclient":
+    def get(self, subclient_name: str) -> Subclient:
         """Retrieve a Subclient object by its name.
 
         Args:
@@ -1483,7 +1485,7 @@ class Subclient:
 
     def __new__(
         cls, backupset_object: object, subclient_name: str, subclient_id: str = None
-    ) -> "Subclient":
+    ) -> Subclient:
         """Create a new instance of the Subclient class.
 
         This method is responsible for constructing a new Subclient object associated with a specific backupset.
@@ -1939,10 +1941,10 @@ class Subclient:
         backup_level: str,
         incremental_backup: bool,
         incremental_level: str,
-        advanced_options: Optional[Dict[str, Any]] = None,
-        schedule_pattern: Optional[Dict[str, Any]] = None,
-        common_backup_options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        advanced_options: dict[str, Any] | None = None,
+        schedule_pattern: dict[str, Any] | None = None,
+        common_backup_options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Construct the JSON request payload for a backup operation based on user-selected options.
 
         Args:
@@ -2068,7 +2070,7 @@ class Subclient:
         """
         return options
 
-    def _process_index_delete_response(self, flag: bool, response: object) -> "Job":
+    def _process_index_delete_response(self, flag: bool, response: object) -> Job:
         """Process the response for an index delete job and return the corresponding Job object.
 
         This method handles the response from an index delete request for a subclient. It validates the response,
@@ -2938,7 +2940,7 @@ class Subclient:
         self._set_subclient_properties("_commonProperties['excludeFromSLA']", True)
 
     def enable_intelli_snap(
-        self, snap_engine_name: str, proxy_options: Optional[dict] = None
+        self, snap_engine_name: str, proxy_options: dict | None = None
     ) -> None:
         """Enable IntelliSnap for the subclient using the specified snap engine.
 
@@ -3086,7 +3088,7 @@ class Subclient:
         incremental_backup: bool = False,
         incremental_level: str = "BEFORE_SYNTH",
         collect_metadata: bool = False,
-    ) -> "Job":
+    ) -> Job:
         """Run a backup job for the subclient at the specified backup level.
 
         This method initiates a backup operation for the subclient, allowing you to specify the backup level
@@ -3148,7 +3150,7 @@ class Subclient:
 
         return self._process_backup_response(flag, response)
 
-    def get_ma_associated_storagepolicy(self) -> List[str]:
+    def get_ma_associated_storagepolicy(self) -> list[str]:
         """Retrieve the list of Media Agents associated with the storage policy for this subclient.
 
         Returns:
@@ -3280,7 +3282,7 @@ class Subclient:
 
         return self._backupset_object.find(options)
 
-    def list_media(self, *args: Any, **kwargs: Any) -> Union[List[Any], Dict[str, Any]]:
+    def list_media(self, *args: Any, **kwargs: Any) -> list[Any] | dict[str, Any]:
         """List the media required to browse and restore backed up data from the subclient.
 
         This method retrieves a list of all media needed for browsing and restoring data,
@@ -3545,7 +3547,7 @@ class Subclient:
         include_finished: bool = True,
         lookup_time: int = 1,
         job_filter: str = "Backup,SYNTHFULL",
-    ) -> "Job":
+    ) -> Job:
         """Find the latest job for the subclient, including currently running jobs.
 
         This method retrieves the most recent job associated with the subclient,
@@ -3626,8 +3628,8 @@ class Subclient:
         pick_failed_items: bool = False,
         pick_only_failed_items: bool = False,
         streams: int = 4,
-        proxies: Optional[list] = None,
-    ) -> "Job":
+        proxies: list | None = None,
+    ) -> Job:
         """Run a content indexing job on the subclient.
 
         This method initiates a content indexing operation for the subclient, allowing you to specify
@@ -3940,7 +3942,7 @@ class Subclient:
             )
 
     @property
-    def plan(self) -> Optional[str]:
+    def plan(self) -> str | None:
         """Get the name of the plan associated with this subclient.
 
         Returns:
@@ -3968,7 +3970,7 @@ class Subclient:
             raise SDKException("Subclient", "112")
 
     @plan.setter
-    def plan(self, value: "Union[object, str, None]") -> None:
+    def plan(self, value: object | str | None) -> None:
         """Associate or remove a plan from the subclient.
 
         This setter allows you to associate a plan with the subclient by providing either a Plan object,
@@ -4014,7 +4016,7 @@ class Subclient:
         else:
             raise SDKException("Subclient", "101")
 
-    def _get_preview_metadata(self, file_path: str) -> Optional[dict]:
+    def _get_preview_metadata(self, file_path: str) -> dict | None:
         """Retrieve the preview metadata for a specified file in the subclient.
 
         Args:

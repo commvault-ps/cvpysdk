@@ -133,6 +133,8 @@ Backupset instance Attributes
 
 """
 
+from __future__ import annotations
+
 import copy
 import threading
 import time
@@ -286,7 +288,7 @@ class Backupsets:
         """
         return len(self.all_backupsets)
 
-    def __getitem__(self, value: "Union[str, int]") -> "Union[str, dict]":
+    def __getitem__(self, value: str | int) -> str | dict:
         """Retrieve backupset information by name or ID.
 
         If a backupset ID (int) is provided, returns the name of the corresponding backupset.
@@ -328,7 +330,7 @@ class Backupsets:
             except IndexError:
                 raise IndexError("No backupset exists with the given Name / Id")
 
-    def _get_backupsets(self) -> Dict[str, Dict[str, Any]]:
+    def _get_backupsets(self) -> dict[str, dict[str, Any]]:
         """Retrieve all backupsets associated with the specified agent.
 
         Returns:
@@ -406,7 +408,7 @@ class Backupsets:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
-    def all_backupsets(self) -> Dict[str, Dict[str, Any]]:
+    def all_backupsets(self) -> dict[str, dict[str, Any]]:
         """Get a dictionary of all backupsets for the Agent or Instance of the selected Client.
 
         The returned dictionary maps backupset names to their details, including the backupset ID and instance information.
@@ -513,7 +515,7 @@ class Backupsets:
 
     def add(
         self, backupset_name: str, on_demand_backupset: bool = False, **kwargs: dict
-    ) -> "Backupset":
+    ) -> Backupset:
         """Add a new backup set to the agent.
 
         Args:
@@ -637,7 +639,7 @@ request_json['backupSetInfo'].update({
 
     def add_archiveset(
         self, archiveset_name: str, is_nas_turbo_backupset: bool = False
-    ) -> "Backupset":
+    ) -> Backupset:
         """Add a new archiveset to the agent.
 
         An archiveset is a specialized backupset primarily used for archiving-only items.
@@ -988,7 +990,7 @@ request_json['backupSetInfo'].update({
 
         self._process_add_response(salesforce_options.get("salesforce_user_name"), request_json)
 
-    def get(self, backupset_name: str) -> "Backupset":
+    def get(self, backupset_name: str) -> Backupset:
         """Retrieve a Backupset object by its name.
 
         Args:
@@ -1161,7 +1163,7 @@ class Backupset:
 
     def __new__(
         cls, instance_object: object, backupset_name: str, backupset_id: str = None
-    ) -> "Backupset":
+    ) -> Backupset:
         """Create and return a new Backupset instance.
 
         This method is responsible for creating a new instance of the Backupset class,
@@ -1570,7 +1572,7 @@ class Backupset:
         return self._process_update_reponse(request_json)
 
     @staticmethod
-    def _get_epoch_time(timestamp: Union[int, str]) -> int:
+    def _get_epoch_time(timestamp: int | str) -> int:
         """Convert a timestamp to its corresponding epoch time.
 
         The input can be either an epoch time (int) or a string timestamp in the format '%Y-%m-%d %H:%M:%S'.
@@ -2105,8 +2107,8 @@ class Backupset:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _do_browse(
-        self, options: Optional[Dict[str, Any]] = None, retry: int = 10
-    ) -> Union[List[str], Dict[str, Any]]:
+        self, options: dict[str, Any] | None = None, retry: int = 10
+    ) -> list[str] | dict[str, Any]:
         """Perform a browse operation on the backupset with the specified options.
 
         This method initiates a browse request using the provided options and returns either a list of file/folder paths
@@ -2317,7 +2319,7 @@ class Backupset:
         return self._is_on_demand_backupset
 
     @property
-    def plan(self) -> "Plan":
+    def plan(self) -> Plan:
         """Get the plan associated with this Backupset as a property.
 
         Returns:
@@ -2431,7 +2433,7 @@ class Backupset:
         raise SDKException("Backupset", "102", "Description cannot be modified")
 
     @plan.setter
-    def plan(self, value: "Union[object, str, None]") -> None:
+    def plan(self, value: object | str | None) -> None:
         """Associate or remove a plan from the backupset.
 
         This setter allows you to associate a plan with the backupset by providing either a Plan object,
@@ -2708,7 +2710,7 @@ class Backupset:
 
         return self._do_browse(options)
 
-    def delete_data(self, paths: Union[str, List[str]]) -> None:
+    def delete_data(self, paths: str | list[str]) -> None:
         """Delete specified items from the backupset index, making them unavailable for browsing and recovery.
 
         Args:
@@ -2736,7 +2738,7 @@ class Backupset:
         if files:
             raise SDKException("Backupset", "102", "Delete data operation gave unexpected results")
 
-    def list_media(self, *args: Any, **kwargs: Any) -> Union[List[Any], Dict[str, Any]]:
+    def list_media(self, *args: Any, **kwargs: Any) -> list[Any] | dict[str, Any]:
         """List media required to browse and restore backed up data from the backupset.
 
         This method retrieves the list of media required for browsing and restoring data from the backupset,

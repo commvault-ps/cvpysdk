@@ -217,6 +217,8 @@ Plan Attributes
 
 """
 
+from __future__ import annotations
+
 import copy
 import math
 from enum import Enum
@@ -316,7 +318,7 @@ class _PayloadGeneratorPlanV4:
         payload_generator = _PayloadGeneratorPlanV4(commcell)
     """
 
-    def __init__(self, commcell: "Commcell") -> None:
+    def __init__(self, commcell: Commcell) -> None:
         """Initialize the _PayloadGeneratorPlanV4 class instance"""
         self.__commcell = commcell
 
@@ -414,7 +416,7 @@ class _PayloadGeneratorPlanV4:
 
         return payload
 
-    def get_backupdestinations_payload(self, destinations_config: List[dict]) -> list:
+    def get_backupdestinations_payload(self, destinations_config: list[dict]) -> list:
         """
         Method to get the payload for multiple copies based on the provided configuration.
 
@@ -566,8 +568,8 @@ class _PayloadGeneratorPlanV4:
     def get_create_server_plan_payload(
         self,
         plan_name: str,
-        backup_destinations: List[dict],
-        schedules: List[dict],
+        backup_destinations: list[dict],
+        schedules: list[dict],
         **additional_params,
     ) -> dict:
         """
@@ -672,7 +674,7 @@ class Plans:
         >>> plans = Plans(commcell_object)
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize object of Plans class.
 
         Args:
@@ -1235,7 +1237,7 @@ class Plans:
 
         return self._plans and plan_name.lower() in self._plans
 
-    def get(self, plan_name: str) -> "Plan":
+    def get(self, plan_name: str) -> Plan:
         """Returns a plan object of the specified plan name.
 
         Args:
@@ -1616,7 +1618,7 @@ class Plans:
 
     def add_exchange_plan(
         self, plan_name: str, plan_sub_type: str = "ExchangeUser", **kwargs
-    ) -> "Plan":
+    ) -> Plan:
         """Adds a new exchange plan to the commcell.
 
         Args:
@@ -1793,10 +1795,10 @@ class Plans:
     def create_server_plan(
         self,
         plan_name: str,
-        backup_destinations: Union[List[dict], dict],
-        schedules: Union[List[dict], dict] = None,
+        backup_destinations: list[dict] | dict,
+        schedules: list[dict] | dict = None,
         **additional_params: Any,
-    ) -> "Plan":
+    ) -> Plan:
         """Method to create a server plan using V4 API
 
         Args:
@@ -1986,7 +1988,7 @@ class Plans:
         storage_pool_name: str = None,
         sla_in_minutes: int = 1440,
         override_entities: dict = None,
-    ) -> "Plan":
+    ) -> Plan:
         """Adds a new Plan to the CommCell.
 
         Args:
@@ -2281,7 +2283,7 @@ class Plans:
         index_server: str,
         target_app: TargetApps = TargetApps.FSO,
         **kwargs: Any,
-    ) -> "Plan":
+    ) -> Plan:
         """Adds data classification plan to the commcell
 
         Args:
@@ -2467,10 +2469,10 @@ class Plans:
         self,
         plan_name: str,
         app_type: PlanConstants.RAPlanAppType = PlanConstants.RAPlanAppType.CLASSIFIED,
-        content_analyzer: Optional[List[str]] = None,
-        index_server: Optional[str] = None,
+        content_analyzer: list[str] | None = None,
+        index_server: str | None = None,
         **kwargs: Any,
-    ) -> "Plan":
+    ) -> Plan:
         """Adds Risk Analysis data classification plan to the commcell
         Args:
             plan_name         (str)             --  Name of plan
@@ -2881,7 +2883,7 @@ class Plan:
     """
 
     def __init__(
-        self, commcell_object: "Commcell", plan_name: str, plan_id: Optional[str] = None
+        self, commcell_object: Commcell, plan_name: str, plan_id: str | None = None
     ) -> None:
         """Initialize the Plan class instance.
 
@@ -2986,7 +2988,7 @@ class Plan:
         plans = Plans(self._commcell_object)
         return plans.get(self.plan_name).plan_id
 
-    def _get_v4_plan_properties(self) -> Dict:
+    def _get_v4_plan_properties(self) -> dict:
         """Gets the properties of this plan from V4 API.
 
         Returns:
@@ -3013,7 +3015,7 @@ class Plan:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def _get_plan_properties(self) -> Dict:
+    def _get_plan_properties(self) -> dict:
         """Gets the plan properties of this plan.
 
         Returns:
@@ -3222,10 +3224,10 @@ class Plan:
     def derive_and_add(
         self,
         plan_name: str,
-        storage_pool_name: Optional[str] = None,
-        sla_in_minutes: Optional[int] = None,
-        override_entities: Optional[dict] = None,
-    ) -> "Plan":
+        storage_pool_name: str | None = None,
+        sla_in_minutes: int | None = None,
+        override_entities: dict | None = None,
+    ) -> Plan:
         """Derives the base plan based on the the inheritance properties to created a derived plan
 
         Args:
@@ -3619,7 +3621,7 @@ class Plan:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_plan_properties(self) -> Dict:
+    def get_plan_properties(self) -> dict:
         """
         Method to get the properties of this plan fetched from v4 API.
 
@@ -3633,7 +3635,7 @@ class Plan:
         """
         return self._v4_plan_properties
 
-    def get_storage_copy_details(self, copy_name: str, region_name: Optional[str] = None) -> Dict:
+    def get_storage_copy_details(self, copy_name: str, region_name: str | None = None) -> dict:
         """Method to get the storage copy details of the given copy name and region name
 
         Args:
@@ -3720,7 +3722,7 @@ class Plan:
             copy_details
         )  # return a deep copy to avoid modifying the original properties
 
-    def get_storage_copy_id(self, copy_name: str, region_name: Optional[str] = None) -> int:
+    def get_storage_copy_id(self, copy_name: str, region_name: str | None = None) -> int:
         """Gets the storage copy id of the given copy name
 
         Args:
@@ -3949,7 +3951,7 @@ class Plan:
         new_copy_name: str,
         storage_pool_name: str,
         source_region: str = None,
-    ) -> "StoragePolicyCopy":
+    ) -> StoragePolicyCopy:
         """
         Method to clone an existing copy in the plan
 
@@ -4742,7 +4744,7 @@ class Plan:
             )
 
     @property
-    def storage_policy(self) -> "StoragePolicy":
+    def storage_policy(self) -> StoragePolicy:
         """Treats the plan storage policy as a read-only attribute
 
         Returns:
@@ -4812,7 +4814,7 @@ class Plan:
 
         return self._child_policies.get("schedulePolicy")
 
-    def __get_schedule_policy(self, policy_type: str) -> "SchedulePolicy":
+    def __get_schedule_policy(self, policy_type: str) -> SchedulePolicy:
         """
         Returns the schedule policy object of the given policy type
 
@@ -4864,7 +4866,7 @@ class Plan:
         return schedule_policies.get(policy_name)
 
     @property
-    def data_schedule_policy(self) -> "SchedulePolicy":
+    def data_schedule_policy(self) -> SchedulePolicy:
         """
         Treats the plan data scheduler policy as read-only attribute
 
@@ -4876,7 +4878,7 @@ class Plan:
         return self._data_schedule_policy
 
     @property
-    def log_schedule_policy(self) -> "SchedulePolicy":
+    def log_schedule_policy(self) -> SchedulePolicy:
         """
         Treats the plan log schedule policy as read-only attribute
 
@@ -4888,7 +4890,7 @@ class Plan:
         return self._log_schedule_policy
 
     @property
-    def snap_schedule_policy(self) -> "SchedulePolicy":
+    def snap_schedule_policy(self) -> SchedulePolicy:
         """
         Treats the plan snap schedule policy as read-only attribute
 
@@ -4940,7 +4942,7 @@ class Plan:
         return self._associated_entities
 
     @property
-    def parent_plan(self) -> "Plan":
+    def parent_plan(self) -> Plan:
         """getter for the parent plan of a derived plan"""
         return self._commcell_object.plans.get(self._parent_plan_name)
 
@@ -5091,7 +5093,7 @@ class Plan:
             "subclientPolicyIds": [],
         }  # reset to constructor state
 
-    def associate_user(self, userlist: List[str], send_invite: bool = True) -> None:
+    def associate_user(self, userlist: list[str], send_invite: bool = True) -> None:
         """Associates the users to the plan.
 
         Args:
@@ -5268,7 +5270,7 @@ class Plan:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def schedule(self, schedule_name: str, pattern_json: Dict, ops_type: int = 2) -> None:
+    def schedule(self, schedule_name: str, pattern_json: dict, ops_type: int = 2) -> None:
         """Creates or modifies the schedule associated with plan
 
         Args:
@@ -5308,7 +5310,7 @@ class Plan:
             request_json["schedule"]["subTasks"][0]["subTask"]["operationType"] = 5022
         self._update_plan_props(request_json)
 
-    def edit_plan(self, **kwargs: Dict) -> None:
+    def edit_plan(self, **kwargs: dict) -> None:
         """Edit plan options
 
         Args:
@@ -5414,7 +5416,7 @@ class Plan:
                 )
         self._update_plan_props(request_json)
 
-    def edit_risk_analysis_dc_plan(self, **kwargs: Union[bool, list, int, str]) -> None:
+    def edit_risk_analysis_dc_plan(self, **kwargs: bool | list | int | str) -> None:
         """Edit Risk Analysis Data Classification Plan options
 
         Args:
@@ -5548,7 +5550,7 @@ class Plan:
 
         self._update_plan_props(request_json)
 
-    def policy_subclient_ids(self) -> Dict:
+    def policy_subclient_ids(self) -> dict:
         """Returns Policy subclient IDs of the plan
 
         Returns:
@@ -5595,7 +5597,7 @@ class Plan:
 
         return result
 
-    def __update_content_policy(self, content: Dict) -> None:
+    def __update_content_policy(self, content: dict) -> None:
         """Updates the content policy of the plan.
 
         Args:
@@ -5638,7 +5640,7 @@ class Plan:
             flag, response, f"Failed to update backup content for Plan: {self.plan_name}"
         )
 
-    def __map_content_to_new_format(self, content: Dict) -> Dict:
+    def __map_content_to_new_format(self, content: dict) -> dict:
         """Method to map old content format to new format (if we need to update the content policy of plan)
 
         Args:
@@ -5702,7 +5704,7 @@ class Plan:
 
         return result
 
-    def update_backup_content(self, content: Dict, request_type: str = "OVERWRITE") -> None:
+    def update_backup_content(self, content: dict, request_type: str = "OVERWRITE") -> None:
         """Updates the backup content for the plan.
 
         Args:

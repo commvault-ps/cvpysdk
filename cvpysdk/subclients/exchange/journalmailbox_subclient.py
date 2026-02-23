@@ -29,6 +29,8 @@ JournalMailboxSubclient:
 
 """
 
+from __future__ import annotations
+
 import time
 from typing import List
 
@@ -145,7 +147,7 @@ class JournalMailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def _get_journal_user_assocaitions(self) -> List[str]:
+    def _get_journal_user_assocaitions(self) -> list[str]:
         """Retrieve the list of journal user associations for this Subclient.
 
         Returns:
@@ -269,7 +271,7 @@ class JournalMailboxSubclient(ExchangeSubclient):
         return self._discover_journal_users
 
     @property
-    def journal_users(self) -> List[str]:
+    def journal_users(self) -> list[str]:
         """Get the list of journal users associated with the JournalMailbox subclient.
 
         Returns:

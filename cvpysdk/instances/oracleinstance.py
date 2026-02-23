@@ -102,6 +102,8 @@ OracleInstance:
 
 """
 
+from __future__ import annotations
+
 import json
 from base64 import b64encode
 from typing import TYPE_CHECKING, Any
@@ -140,7 +142,7 @@ class OracleInstance(DatabaseInstance):
     #ai-gen-doc
     """
 
-    def __init__(self, agent_object: "Agent", instance_name: str, instance_id: int = None) -> None:
+    def __init__(self, agent_object: Agent, instance_name: str, instance_id: int = None) -> None:
         """Initialize an OracleInstance object.
 
         Args:
@@ -162,7 +164,7 @@ class OracleInstance(DatabaseInstance):
         backup_job_ids: list,
         user_name: str,
         password: str,
-    ) -> "Job":
+    ) -> Job:
         """Perform an application-free restore of Oracle data to disk.
 
         This method restores Oracle backup data to a specified path on a destination client
@@ -442,7 +444,7 @@ class OracleInstance(DatabaseInstance):
 
     def create_live_sync_schedule(
         self, dest_client: str, dest_instance: str, schedule_name: str, **kwargs
-    ) -> "Job":
+    ) -> Job:
         """Run a full backup on the source Oracle instance and create a live sync schedule
         for the specified destination Oracle instance.
 
@@ -1105,7 +1107,7 @@ class OracleInstance(DatabaseInstance):
         tag: str = None,
         destination_instance: str = None,
         streams: int = 2,
-    ) -> "Job":
+    ) -> Job:
         """Perform a full or partial Oracle database restore using the latest backup or a backup copy.
 
         This method initiates a restore operation for an Oracle database, allowing for both full and partial restores.
@@ -1420,7 +1422,7 @@ class OracleInstance(DatabaseInstance):
         start_lsn: str = None,
         end_lsn: str = None,
         log_dest: str = None,
-    ) -> "Job":
+    ) -> Job:
         """Restore Oracle logical dump data or log files to their original location.
 
         This method restores the specified Oracle database or log files, as provided in the `path` list,

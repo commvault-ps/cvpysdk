@@ -37,6 +37,8 @@ BackupNetworkPairs:
 
 """
 
+from __future__ import annotations
+
 from .exception import SDKException
 
 

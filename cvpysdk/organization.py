@@ -329,6 +329,8 @@ RemoteOrganization Attributes
 
 """
 
+from __future__ import annotations
+
 import json
 import re
 from base64 import b64encode
@@ -366,7 +368,7 @@ class Organizations:
         orgs = Organizations(commcell_object)
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initializes an instance of the Organizations class to perform operations on a company.
 
         Args:
@@ -887,18 +889,18 @@ class Organizations:
         email: str,
         contact_name: str,
         company_alias: str,
-        email_domain: Optional[List[str]] = None,
-        primary_domain: Optional[str] = None,
-        default_plans: Optional[List[str]] = None,
+        email_domain: list[str] | None = None,
+        primary_domain: str | None = None,
+        default_plans: list[str] | None = None,
         enable_auto_discover: bool = False,
-        service_commcells: Optional[List[str]] = None,
+        service_commcells: list[str] | None = None,
         send_email: bool = False,
-        address: Optional[str] = None,
-        city: Optional[str] = None,
-        country: Optional[str] = None,
-        state_or_region: Optional[str] = None,
-        postal_code: Optional[str] = None,
-    ) -> "Organization":
+        address: str | None = None,
+        city: str | None = None,
+        country: str | None = None,
+        state_or_region: str | None = None,
+        postal_code: str | None = None,
+    ) -> Organization:
         """Adds a new organization with the given name to the Commcell.
 
         Args:
@@ -1055,7 +1057,7 @@ class Organizations:
         else:
             raise SDKException("Response", "102")
 
-    def get(self, name: str) -> "Organization":
+    def get(self, name: str) -> Organization:
         """Returns an instance of the Organization class for the given organization name.
 
         Args:
@@ -1133,7 +1135,7 @@ class Organizations:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def refresh(self, **kwargs: Dict[str, Any]) -> None:
+    def refresh(self, **kwargs: dict[str, Any]) -> None:
         """Refresh the list of organization on this commcell.
 
         Args:
@@ -1181,7 +1183,7 @@ class Organization:
 
     def __init__(
         self,
-        commcell_object: "Commcell",
+        commcell_object: Commcell,
         organization_name: str = None,
         organization_id: int = None,
     ) -> None:
@@ -1234,7 +1236,7 @@ class Organization:
         self.refresh()
 
     @property
-    def tfa(self) -> "TwoFactorAuthentication":
+    def tfa(self) -> TwoFactorAuthentication:
         """Returns the TwoFactorAuthentication object for this organization.
 
         Returns:
@@ -2106,9 +2108,7 @@ class Organization:
             ]
         )
 
-    def _lookup_operator(
-        self, user_or_group: Union[str, "User", "UserGroup"], role: Union[str, "Role"]
-    ) -> dict:
+    def _lookup_operator(self, user_or_group: str | User | UserGroup, role: str | Role) -> dict:
         """
         Gets the user id role id full dictionary for given user/group and role
         from existing operators in the organization
@@ -2137,7 +2137,7 @@ class Organization:
         return {}
 
     def _prepare_operator_dict(
-        self, user_or_group: Union[str, "User", "UserGroup"], role: Union[str, "Role"]
+        self, user_or_group: str | User | UserGroup, role: str | Role
     ) -> dict:
         """
         Prepares the operator dictionary for given user/group and role
@@ -2189,7 +2189,7 @@ class Organization:
         return op_dict
 
     def _prepare_operators_payload(
-        self, operator_list: list[tuple[Union[str, "User", "UserGroup"], Union[str, "Role"]]]
+        self, operator_list: list[tuple[str | User | UserGroup, str | Role]]
     ) -> dict:
         """
         Prepares the operators payload for given operator list
@@ -2215,9 +2215,7 @@ class Organization:
         }
 
     @operators.setter
-    def operators(
-        self, operator_list: list[tuple[Union[str, "User", "UserGroup"], Union[str, "Role"]]]
-    ) -> None:
+    def operators(self, operator_list: list[tuple[str | User | UserGroup, str | Role]]) -> None:
         """
         Overwrites the operator:role associations of the organization
 
@@ -2253,7 +2251,7 @@ class Organization:
         self.refresh()
 
     def manage_operators(
-        self, operator_list: list[tuple[Union[str, "User", "UserGroup"], Union[str, "Role"]]]
+        self, operator_list: list[tuple[str | User | UserGroup, str | Role]]
     ) -> None:
         """
         Similar to operators setter, but uses manage operators API v4/Company/Operators,
@@ -2318,7 +2316,7 @@ class Organization:
         ]
 
     @default_plan.setter
-    def default_plan(self, value: Union[dict, str]) -> None:
+    def default_plan(self, value: dict | str) -> None:
         """
         Updates default plan for Organization
 
@@ -2492,7 +2490,7 @@ class Organization:
         self._update_properties()
 
     @property
-    def user_groups(self) -> List["UserGroup"]:
+    def user_groups(self) -> list[UserGroup]:
         """Returns the user group associated with a company
 
         Returns:
@@ -2519,7 +2517,7 @@ class Organization:
         )
 
     @property
-    def file_exceptions(self) -> Dict[str, list[str]]:
+    def file_exceptions(self) -> dict[str, list[str]]:
         """Returns the file exceptions for a company
 
         Returns:
@@ -2608,7 +2606,7 @@ class Organization:
         return self.organization_properties.get("useCompanyGlobalFilter")
 
     @plans.setter
-    def plans(self, value: list[Union[str, dict]]) -> None:
+    def plans(self, value: list[str | dict]) -> None:
         """Update the list of plans associated with the Organization.
 
             Args:
@@ -3340,7 +3338,7 @@ class Organization:
 
         return self._client_groups
 
-    def get_alerts(self) -> List[str]:
+    def get_alerts(self) -> list[str]:
         """
         Get all the alerts associated to organization
 
@@ -3446,7 +3444,7 @@ class Organization:
         """
         return self.organization_properties.get("autoRetireDevices", {})
 
-    def retire_offline_laptops(self, retire_days: int, delete_days: Optional[int] = None) -> None:
+    def retire_offline_laptops(self, retire_days: int, delete_days: int | None = None) -> None:
         """
         The number of days specified to retire laptops must be less than or equal to the number of days specified to delete laptops
         If delete_days is not specified, It will be set to 'Never'
@@ -3653,7 +3651,7 @@ class Organization:
         return self.organization_properties.get("advancedPrivacySettings", {}).get("authType") == 2
 
     @property
-    def isAuthrestoreEnabled(self) -> Optional[bool]:
+    def isAuthrestoreEnabled(self) -> bool | None:
         """Returns True if Authrestore is enabled on company
 
         Usage:
@@ -3666,7 +3664,7 @@ class Organization:
         )
 
     @property
-    def isAllowUsersToEnablePasskeyEnabled(self) -> Optional[bool]:
+    def isAllowUsersToEnablePasskeyEnabled(self) -> bool | None:
         """Returns True if it is enabled
 
         Usage:
@@ -3788,9 +3786,7 @@ class Organization:
 
         self.refresh()
 
-    def passkey(
-        self, current_password: str, action: str, new_password: Optional[str] = None
-    ) -> None:
+    def passkey(self, current_password: str, action: str, new_password: str | None = None) -> None:
         """
         Updates Passkey properties of an Organisation
 
@@ -3985,7 +3981,7 @@ class Organization:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def geo_info(self) -> Tuple[Optional[str], List[str]]:
+    def geo_info(self) -> tuple[str | None, list[str]]:
         """
         The regions this company is mapped to
 
@@ -4104,7 +4100,7 @@ class Organization:
         )
 
     @property
-    def additional_settings(self) -> "AdditionalSettings":
+    def additional_settings(self) -> AdditionalSettings:
         """
         Returns the AdditionalSettings object associated with this organization.
 

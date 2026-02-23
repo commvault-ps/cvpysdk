@@ -363,6 +363,8 @@ Commcell instance Attributes
 
 """
 
+from __future__ import annotations
+
 import getpass
 import socket
 from base64 import b64encode
@@ -796,7 +798,7 @@ class Commcell:
             rep += f" operating on Company: [{self.operating_company}]"
         return rep
 
-    def __enter__(self) -> "Commcell":
+    def __enter__(self) -> Commcell:
         """Enter the runtime context related to this Commcell instance.
 
         This method enables the use of the Commcell object as a context manager,
@@ -1211,9 +1213,7 @@ class Commcell:
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def get_gxglobalparam_value(
-        self, parameters: Union[str, List[str]]
-    ) -> Union[Optional[str], List[Any]]:
+    def get_gxglobalparam_value(self, parameters: str | list[str]) -> str | None | list[Any]:
         """Retrieve values from GXGlobalParam for the specified parameter(s).
 
         This method makes a REST API call to fetch the value(s) of one or more parameters from GXGlobalParam.
@@ -1275,7 +1275,7 @@ class Commcell:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
     def _set_gxglobalparam_value(
-        self, request_json: "Union[Dict[str, str], List[Dict[str, str]]]"
+        self, request_json: dict[str, str] | list[dict[str, str]]
     ) -> dict:
         """Update the GXGlobalParam table with Commcell-level configuration parameters.
 
@@ -1583,7 +1583,7 @@ class Commcell:
         return self._user_mappings
 
     @property
-    def user_role(self) -> "UserRole":
+    def user_role(self) -> UserRole:
         """Get the user role enum for the currently logged-in user.
 
         Returns:
@@ -1638,7 +1638,7 @@ class Commcell:
         return bool(self.is_tenant or self.operating_company)
 
     @property
-    def user_org(self) -> Optional["Organization"]:
+    def user_org(self) -> Organization | None:
         """Get the organization object that the currently logged-in user belongs to.
 
         Note:
@@ -1685,7 +1685,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def name_change(self) -> "NameChange":
+    def name_change(self) -> NameChange:
         """Get the NameChange instance associated with this Commcell.
 
         Returns:
@@ -1701,7 +1701,7 @@ class Commcell:
         return NameChange(self)
 
     @property
-    def clients(self) -> "Clients":
+    def clients(self) -> Clients:
         """Get the Clients instance associated with this Commcell.
 
         Returns:
@@ -1724,7 +1724,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def commserv_cache(self) -> "CommServeCache":
+    def commserv_cache(self) -> CommServeCache:
         """Get the CommServeCache instance associated with this Commcell.
 
         Returns:
@@ -1747,7 +1747,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def index_servers(self) -> "IndexServers":
+    def index_servers(self) -> IndexServers:
         """Get the IndexServers instance associated with this Commcell.
 
         Returns:
@@ -1770,7 +1770,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def hac_clusters(self) -> "HACClusters":
+    def hac_clusters(self) -> HACClusters:
         """Get the HACClusters instance associated with this Commcell.
 
         Returns:
@@ -1793,7 +1793,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def network_topologies(self) -> "NetworkTopologies":
+    def network_topologies(self) -> NetworkTopologies:
         """Get the NetworkTopologies instance associated with this Commcell.
 
         Returns:
@@ -1816,7 +1816,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def index_pools(self) -> "IndexPools":
+    def index_pools(self) -> IndexPools:
         """Get the IndexPools instance associated with this Commcell.
 
         Returns:
@@ -1839,7 +1839,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def media_agents(self) -> "MediaAgents":
+    def media_agents(self) -> MediaAgents:
         """Get the MediaAgents instance associated with this Commcell.
 
         Returns:
@@ -1862,7 +1862,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def workflows(self) -> "WorkFlows":
+    def workflows(self) -> WorkFlows:
         """Get the WorkFlows instance associated with this Commcell.
 
         Returns:
@@ -1885,7 +1885,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def alerts(self) -> "Alerts":
+    def alerts(self) -> Alerts:
         """Get the Alerts instance associated with this Commcell.
 
         Returns:
@@ -1908,7 +1908,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def disk_libraries(self) -> "DiskLibraries":
+    def disk_libraries(self) -> DiskLibraries:
         """Get the DiskLibraries instance associated with this Commcell.
 
         Returns:
@@ -1931,7 +1931,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def tape_libraries(self) -> "TapeLibraries":
+    def tape_libraries(self) -> TapeLibraries:
         """Get the TapeLibraries instance associated with this Commcell.
 
         Returns:
@@ -1950,7 +1950,7 @@ class Commcell:
         return self._tape_libraries
 
     @property
-    def storage_policies(self) -> "StoragePolicies":
+    def storage_policies(self) -> StoragePolicies:
         """Get the StoragePolicies instance associated with this Commcell.
 
         Returns:
@@ -1967,7 +1967,7 @@ class Commcell:
         return self.policies.storage_policies
 
     @property
-    def schedule_policies(self) -> "SchedulePolicies":
+    def schedule_policies(self) -> SchedulePolicies:
         """Get the SchedulePolicies instance associated with this Commcell.
 
         Returns:
@@ -1984,7 +1984,7 @@ class Commcell:
         return self.policies.schedule_policies
 
     @property
-    def schedules(self) -> "Schedules":
+    def schedules(self) -> Schedules:
         """Get the Schedules instance associated with this Commcell.
 
         Returns:
@@ -2007,7 +2007,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def policies(self) -> "Policies":
+    def policies(self) -> Policies:
         """Get the Policies instance associated with this Commcell.
 
         Returns:
@@ -2030,7 +2030,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def deduplication_engines(self) -> "DeduplicationEngines":
+    def deduplication_engines(self) -> DeduplicationEngines:
         """Get the DeduplicationEngines instance associated with this Commcell.
 
         Returns:
@@ -2052,7 +2052,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def user_groups(self) -> "UserGroups":
+    def user_groups(self) -> UserGroups:
         """Get the UserGroups instance associated with this Commcell.
 
         Returns:
@@ -2075,7 +2075,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def domains(self) -> "Domains":
+    def domains(self) -> Domains:
         """Get the Domains instance associated with this Commcell.
 
         Returns:
@@ -2098,7 +2098,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def client_groups(self) -> "ClientGroups":
+    def client_groups(self) -> ClientGroups:
         """Get the ClientGroups instance associated with this Commcell.
 
         Returns:
@@ -2121,7 +2121,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def global_filters(self) -> "GlobalFilters":
+    def global_filters(self) -> GlobalFilters:
         """Get the GlobalFilters instance associated with this Commcell.
 
         Returns:
@@ -2144,7 +2144,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def datacube(self) -> "Datacube":
+    def datacube(self) -> Datacube:
         """Get the Datacube instance associated with this Commcell.
 
         Returns:
@@ -2167,7 +2167,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def content_analyzers(self) -> "ContentAnalyzers":
+    def content_analyzers(self) -> ContentAnalyzers:
         """Get the ContentAnalyzers instance associated with this Commcell.
 
         Returns:
@@ -2190,7 +2190,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def resource_pool(self) -> "ResourcePools":
+    def resource_pool(self) -> ResourcePools:
         """Get the ResourcePools instance associated with this Commcell.
 
         Returns:
@@ -2212,7 +2212,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def activate(self) -> "Activate":
+    def activate(self) -> Activate:
         """Get the Activate instance associated with this Commcell.
 
         Returns:
@@ -2235,7 +2235,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def threat_indicators(self) -> "TAServers":
+    def threat_indicators(self) -> TAServers:
         """Get the TAServers instance associated with threat indicators for this Commcell.
 
         Returns:
@@ -2259,7 +2259,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def export_sets(self) -> "ExportSets":
+    def export_sets(self) -> ExportSets:
         """Get the ExportSets instance associated with this Commcell.
 
         Returns:
@@ -2281,7 +2281,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def plans(self) -> "Plans":
+    def plans(self) -> Plans:
         """Get the Plans instance associated with this Commcell object.
 
         Returns:
@@ -2304,7 +2304,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def job_controller(self) -> "JobController":
+    def job_controller(self) -> JobController:
         """Get the JobController instance associated with this Commcell.
 
         Returns:
@@ -2327,7 +2327,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def users(self) -> "Users":
+    def users(self) -> Users:
         """Get the Users instance associated with this Commcell.
 
         Returns:
@@ -2350,7 +2350,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def roles(self) -> "Roles":
+    def roles(self) -> Roles:
         """Get the Roles instance associated with this Commcell.
 
         Returns:
@@ -2373,7 +2373,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def credentials(self) -> "Credentials":
+    def credentials(self) -> Credentials:
         """Get the Credentials instance associated with this Commcell.
 
         Returns:
@@ -2396,7 +2396,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def download_center(self) -> "DownloadCenter":
+    def download_center(self) -> DownloadCenter:
         """Get the DownloadCenter instance associated with this Commcell.
 
         Returns:
@@ -2419,7 +2419,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def organizations(self) -> "Organizations":
+    def organizations(self) -> Organizations:
         """Get the Organizations instance associated with this Commcell.
 
         Returns:
@@ -2442,7 +2442,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def tags(self) -> "Tags":
+    def tags(self) -> Tags:
         """Get the Tags instance associated with this Commcell.
 
         Returns:
@@ -2465,7 +2465,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def storage_pools(self) -> "StoragePools":
+    def storage_pools(self) -> StoragePools:
         """Get the StoragePools instance associated with this Commcell.
 
         Returns:
@@ -2488,7 +2488,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def monitoring_policies(self) -> "MonitoringPolicies":
+    def monitoring_policies(self) -> MonitoringPolicies:
         """Get the MonitoringPolicies instance associated with this Commcell.
 
         Returns:
@@ -2511,7 +2511,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def operation_window(self) -> "OperationWindow":
+    def operation_window(self) -> OperationWindow:
         """Get the OperationWindow instance associated with this Commcell.
 
         Returns:
@@ -2533,7 +2533,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def activity_control(self) -> "ActivityControl":
+    def activity_control(self) -> ActivityControl:
         """Get the ActivityControl instance associated with this Commcell.
 
         Returns:
@@ -2556,7 +2556,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def event_viewer(self) -> "Events":
+    def event_viewer(self) -> Events:
         """Get the Events instance associated with this Commcell.
 
         Returns:
@@ -2579,7 +2579,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def array_management(self) -> "ArrayManagement":
+    def array_management(self) -> ArrayManagement:
         """Get the ArrayManagement instance associated with this Commcell.
 
         Returns:
@@ -2602,7 +2602,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def disasterrecovery(self) -> "DisasterRecovery":
+    def disasterrecovery(self) -> DisasterRecovery:
         """Get the DisasterRecovery instance associated with this Commcell.
 
         Returns:
@@ -2625,7 +2625,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def identity_management(self) -> "IdentityManagementApps":
+    def identity_management(self) -> IdentityManagementApps:
         """Get the IdentityManagementApps instance associated with this Commcell.
 
         Returns:
@@ -2648,7 +2648,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def system(self) -> "System":
+    def system(self) -> System:
         """Get the System instance associated with this Commcell.
 
         Returns:
@@ -2670,7 +2670,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def commserv_client(self) -> "Client":
+    def commserv_client(self) -> Client:
         """Get the Client instance representing the CommServ client.
 
         Returns:
@@ -2691,7 +2691,7 @@ class Commcell:
         return self._commserv_client
 
     @property
-    def commcell_migration(self) -> "CommCellMigration":
+    def commcell_migration(self) -> CommCellMigration:
         """Get the CommCellMigration instance associated with this Commcell.
 
         Returns:
@@ -2714,7 +2714,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def grc(self) -> "GlobalRepositoryCell":
+    def grc(self) -> GlobalRepositoryCell:
         """Get the GlobalRepositoryCell instance associated with this Commcell.
 
         Returns:
@@ -2737,7 +2737,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def registered_commcells(self) -> Dict[str, Dict[str, Any]]:
+    def registered_commcells(self) -> dict[str, dict[str, Any]]:
         """Get a dictionary of all registered Commcells and their associated information.
 
         Returns:
@@ -2768,7 +2768,7 @@ class Commcell:
         return self._registered_commcells
 
     @property
-    def replication_groups(self) -> "ReplicationGroups":
+    def replication_groups(self) -> ReplicationGroups:
         """Get the ReplicationGroups instance associated with this Commcell.
 
         Returns:
@@ -2791,7 +2791,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def failover_groups(self) -> "FailoverGroups":
+    def failover_groups(self) -> FailoverGroups:
         """Get the FailoverGroups instance associated with this Commcell.
 
         Returns:
@@ -2814,7 +2814,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def recovery_targets(self) -> "RecoveryTargets":
+    def recovery_targets(self) -> RecoveryTargets:
         """Get the RecoveryTargets instance associated with this Commcell.
 
         Returns:
@@ -2838,7 +2838,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def cleanroom_recovery_groups(self) -> "RecoveryGroups":
+    def cleanroom_recovery_groups(self) -> RecoveryGroups:
         """Get the RecoveryGroups instance associated with this Commcell.
 
         Returns:
@@ -2862,7 +2862,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def cleanroom_targets(self) -> "CleanroomTargets":
+    def cleanroom_targets(self) -> CleanroomTargets:
         """Get the CleanroomTargets instance associated with this Commcell.
 
         Returns:
@@ -2885,7 +2885,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def blr_pairs(self) -> "BLRPairs":
+    def blr_pairs(self) -> BLRPairs:
         """Get the BLRPairs instance associated with this Commcell.
 
         Returns:
@@ -2909,7 +2909,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def backup_network_pairs(self) -> "BackupNetworkPairs":
+    def backup_network_pairs(self) -> BackupNetworkPairs:
         """Get the BackupNetworkPairs instance associated with this Commcell.
 
         Returns:
@@ -2933,7 +2933,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def reports(self) -> "Report":
+    def reports(self) -> Report:
         """Get the Report instance associated with this Commcell.
 
         Returns:
@@ -2955,7 +2955,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def job_management(self) -> "JobManagement":
+    def job_management(self) -> JobManagement:
         """Get the JobManagement instance associated with this Commcell.
 
         Returns:
@@ -3018,7 +3018,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def metallic(self) -> "Metallic":
+    def metallic(self) -> Metallic:
         """Get the Metallic instance associated with this Commcell.
 
         Returns:
@@ -3064,7 +3064,7 @@ class Commcell:
         return self._privacy
 
     @property
-    def key_management_servers(self) -> "KeyManagementServers":
+    def key_management_servers(self) -> KeyManagementServers:
         """Get the KeyManagementServers instance associated with this Commcell.
 
         Returns:
@@ -3087,7 +3087,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def regions(self) -> "Regions":
+    def regions(self) -> Regions:
         """Get the Regions instance associated with this Commcell.
 
         Returns:
@@ -3110,7 +3110,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def snmp_configurations(self) -> "SNMPConfigurations":
+    def snmp_configurations(self) -> SNMPConfigurations:
         """Get the SNMPConfigurations instance associated with this Commcell.
 
         Returns:
@@ -3132,7 +3132,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def service_commcells(self) -> "ServiceCommcells":
+    def service_commcells(self) -> ServiceCommcells:
         """Get the ServiceCommcells instance associated with this Commcell.
 
         Returns:
@@ -3174,8 +3174,8 @@ class Commcell:
         return output
 
     def request(
-        self, request_type: str, request_url: str, request_body: Optional[dict] = None
-    ) -> "requests.Response":
+        self, request_type: str, request_url: str, request_body: dict | None = None
+    ) -> requests.Response:
         """Send an HTTP request of the specified type to the Commcell API.
 
         This method allows you to perform HTTP operations (such as GET, POST, PUT, DELETE)
@@ -3215,8 +3215,8 @@ class Commcell:
         self,
         method: str,
         service_key: str,
-        fill_params: Optional[tuple] = None,
-        req_kwargs: Optional[dict] = None,
+        fill_params: tuple | None = None,
+        req_kwargs: dict | None = None,
         **wrap_kwargs,
     ) -> Any:
         """Wrap a request to the Commcell in a standard format for most API calls.
@@ -3341,7 +3341,7 @@ class Commcell:
         self,
         method: str,
         service_key: str,
-        fill_params: Optional[tuple] = None,
+        fill_params: tuple | None = None,
         **wrap_kwargs: dict,
     ) -> Any:
         """Context manager for handling API requests and responses.
@@ -3512,7 +3512,7 @@ class Commcell:
         self._user_role = None
         self._user_org = None
 
-    def get_remote_cache(self, client_name: str) -> "RemoteCache":
+    def get_remote_cache(self, client_name: str) -> RemoteCache:
         """Retrieve the RemoteCache instance for a specified client.
 
         Args:
@@ -3545,7 +3545,7 @@ class Commcell:
         select_copies: bool = False,
         prune_selected_copies: bool = False,
         schedule_pattern: dict = None,
-    ) -> Union["Job", "Schedules"]:
+    ) -> Job | Schedules:
         """Run the Data Aging operation at the Commcell, Storage Policy, or Copy level.
 
         This method initiates the Data Aging process, which removes aged data based on retention rules.
@@ -3835,9 +3835,9 @@ class Commcell:
 
     def sync_remote_cache(
         self,
-        client_list: Optional[List[str]] = None,
-        schedule_pattern: Optional[Dict[str, Any]] = None,
-    ) -> "Job":
+        client_list: list[str] | None = None,
+        schedule_pattern: dict[str, Any] | None = None,
+    ) -> Job:
         """Synchronize the remote cache for specified clients.
 
         This method initiates a sync job for the remote cache on the provided list of clients.
@@ -3876,13 +3876,13 @@ class Commcell:
     def download_software(
         self,
         options: object = None,
-        os_list: Optional[list] = None,
-        service_pack: Optional[int] = None,
+        os_list: list | None = None,
+        service_pack: int | None = None,
         cu_number: int = 1,
         sync_cache: bool = True,
-        sync_cache_list: Optional[list] = None,
-        schedule_pattern: Optional[object] = None,
-    ) -> "Job":
+        sync_cache_list: list | None = None,
+        schedule_pattern: object | None = None,
+    ) -> Job:
         """Download operating system software packages to the Commcell.
 
         This method initiates a download job for OS packages (such as Windows or Unix) on the Commcell.
@@ -3950,12 +3950,12 @@ class Commcell:
     def copy_software(
         self,
         media_loc: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
         sync_cache: bool = True,
-        sync_cache_list: Optional[list] = None,
-        schedule_pattern: Optional[dict] = None,
-    ) -> "Job":
+        sync_cache_list: list | None = None,
+        schedule_pattern: dict | None = None,
+    ) -> Job:
         """Copy software media from the specified location to the Commcell.
 
         This method initiates a copy software job, allowing you to copy media from a local or remote location
@@ -4004,8 +4004,8 @@ class Commcell:
 
     def push_servicepack_and_hotfix(
         self,
-        client_computers: Optional[List[str]] = None,
-        client_computer_groups: Optional[List[str]] = None,
+        client_computers: list[str] | None = None,
+        client_computer_groups: list[str] | None = None,
         all_client_computers: bool = False,
         all_client_computer_groups: bool = False,
         reboot_client: bool = False,
@@ -4085,18 +4085,18 @@ class Commcell:
 
     def install_software(
         self,
-        client_computers: Optional[list] = None,
-        windows_features: Optional[list] = None,
-        unix_features: Optional[list] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        install_path: Optional[str] = None,
-        log_file_loc: Optional[str] = None,
-        client_group_name: Optional[list] = None,
-        storage_policy_name: Optional[str] = None,
-        sw_cache_client: Optional[str] = None,
+        client_computers: list | None = None,
+        windows_features: list | None = None,
+        unix_features: list | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        install_path: str | None = None,
+        log_file_loc: str | None = None,
+        client_group_name: list | None = None,
+        storage_policy_name: str | None = None,
+        sw_cache_client: str | None = None,
         **kwargs: dict,
-    ) -> "Job":
+    ) -> Job:
         """Install selected software features on specified client computers.
 
         This method deploys the specified Windows or Unix features to the provided list of client computers.
@@ -4427,7 +4427,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_commcell_properties(self) -> Dict[str, Any]:
+    def get_commcell_properties(self) -> dict[str, Any]:
         """Retrieve the properties of the Commcell.
 
         Returns:
@@ -4475,7 +4475,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_commcell_organization_properties(self) -> Dict[str, Any]:
+    def get_commcell_organization_properties(self) -> dict[str, Any]:
         """Retrieve the organization properties for the Commcell.
 
         Returns:
@@ -4505,7 +4505,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_email_settings(self) -> Dict[str, Any]:
+    def get_email_settings(self) -> dict[str, Any]:
         """Retrieve the Email Server (SMTP) settings configured for the Commcell.
 
         Returns:
@@ -4618,7 +4618,7 @@ class Commcell:
             raise SDKException("Response", "102")
         raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def get_password_encryption_config(self) -> Dict[str, Any]:
+    def get_password_encryption_config(self) -> dict[str, Any]:
         """Retrieve the password encryption configuration for the Commcell.
 
         Returns:
@@ -4653,7 +4653,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_security_associations(self) -> Dict[str, List[List[str]]]:
+    def get_security_associations(self) -> dict[str, list[list[str]]]:
         """Retrieve the security associations configured for the Commcell.
 
         Returns:
@@ -4725,7 +4725,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_default_plan(self) -> List[Dict[str, Any]]:
+    def get_default_plan(self) -> list[dict[str, Any]]:
         """Retrieve the default backup plan at the Commcell level.
 
         This method executes a request to the server to obtain the default plan configuration
@@ -4848,7 +4848,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def execute_qcommand(self, command: str, input_xml: Optional[str] = None) -> object:
+    def execute_qcommand(self, command: str, input_xml: str | None = None) -> object:
         """Execute a QCommand on the Commcell using the ExecuteQCommand API.
 
         Deprecated:
@@ -4895,9 +4895,7 @@ class Commcell:
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def execute_qcommand_v2(
-        self, command: str, input_data: Union[str, dict, None] = None
-    ) -> object:
+    def execute_qcommand_v2(self, command: str, input_data: str | dict | None = None) -> object:
         """Execute a QCommand API request on the Commcell.
 
         This method sends a QCommand to the Commcell server, optionally including input data
@@ -4989,7 +4987,7 @@ class Commcell:
         	"""
         self._qoperation_execute(xml_execute_command)
 
-    def _get_registered_commcells(self) -> Dict[str, Dict[str, Any]]:
+    def _get_registered_commcells(self) -> dict[str, dict[str, Any]]:
         """Retrieve all registered routing Commcell instances.
 
         This method fetches the registered Commcell objects associated with the current Commcell.
@@ -5088,7 +5086,7 @@ class Commcell:
         )
         self._registered_commcells = None
 
-    def get_redirect_list(self, login: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_redirect_list(self, login: str | None = None) -> list[dict[str, Any]]:
         """Retrieve the list of service Commcell redirects available for a user.
 
         This method returns a list of service Commcell redirects based on the provided login name or email.
@@ -5164,7 +5162,7 @@ class Commcell:
         return self._master_saml_token
 
     @property
-    def master_commcell(self) -> "Commcell":
+    def master_commcell(self) -> Commcell:
         """Get the master Commcell object associated with this Commcell instance.
 
         Returns:
@@ -5181,7 +5179,7 @@ class Commcell:
         return self._master_commcell
 
     @property
-    def two_factor_authentication(self) -> "TwoFactorAuthentication":
+    def two_factor_authentication(self) -> TwoFactorAuthentication:
         """Get the TwoFactorAuthentication instance associated with this Commcell.
 
         Returns:
@@ -5221,7 +5219,7 @@ class Commcell:
         return self.two_factor_authentication.is_tfa_enabled
 
     @property
-    def tfa_enabled_user_groups(self) -> List[Dict[str, Any]]:
+    def tfa_enabled_user_groups(self) -> list[dict[str, Any]]:
         """Get the list of user groups with two-factor authentication (TFA) enabled.
 
         This property returns a list of dictionaries, each containing the user group ID and name
@@ -5247,7 +5245,7 @@ class Commcell:
         return self.two_factor_authentication.tfa_enabled_user_groups
 
     @property
-    def is_linux_commserv(self) -> Optional[bool]:
+    def is_linux_commserv(self) -> bool | None:
         """Check if the CommServer is installed on a Linux machine.
 
         Returns:
@@ -5317,7 +5315,7 @@ class Commcell:
         )
 
     @property
-    def databases(self) -> List[Dict[str, Any]]:
+    def databases(self) -> list[dict[str, Any]]:
         """Get the list of databases associated with the Commcell.
 
         Returns:
@@ -5348,7 +5346,7 @@ class Commcell:
         return self._databases
 
     @property
-    def database_instances(self) -> List[str]:
+    def database_instances(self) -> list[str]:
         """Get the list of database instance names associated with the Commcell.
 
         Returns:
@@ -5382,7 +5380,7 @@ class Commcell:
         return self._db_instances
 
     @property
-    def database_instant_clones(self) -> List[Dict[str, Any]]:
+    def database_instant_clones(self) -> list[dict[str, Any]]:
         """Get the list of active database instant clone jobs on the Commcell.
 
         Returns:
@@ -5459,7 +5457,7 @@ class Commcell:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def job_logs_emails(self) -> List[str]:
+    def job_logs_emails(self) -> list[str]:
         """Get the list of email servers associated with the Commcell for job log notifications.
 
         Returns:
@@ -5476,7 +5474,7 @@ class Commcell:
         return self._job_logs_emails
 
     @job_logs_emails.setter
-    def job_logs_emails(self, email_servers: List[str]) -> None:
+    def job_logs_emails(self, email_servers: list[str]) -> None:
         """Set the list of email servers associated with the Commcell for job log notifications.
 
         Args:
@@ -5496,7 +5494,7 @@ class Commcell:
 
     def enable_tfa(
         self,
-        user_groups: Optional[List[str]] = None,
+        user_groups: list[str] | None = None,
         usernameless: bool = False,
         passwordless: bool = False,
         otp: str = None,
@@ -5543,7 +5541,7 @@ class Commcell:
         """
         self.two_factor_authentication.disable_tfa(otp=otp)
 
-    def _get_commserv_metadata(self) -> Dict[str, Any]:
+    def _get_commserv_metadata(self) -> dict[str, Any]:
         """Load and retrieve metadata for the CommServ associated with this Commcell instance.
 
         This method fetches metadata such as the CommServ redirect URL and certificate,
@@ -5613,7 +5611,7 @@ class Commcell:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
-    def operator_companies(self) -> Dict[str, int]:
+    def operator_companies(self) -> dict[str, int]:
         """Get a mapping of operator company names to their IDs for the current user.
 
         This property returns a dictionary where each key is the name of an operator company,
@@ -5673,7 +5671,7 @@ class Commcell:
                 self.switch_to_company(company_name)
 
     @property
-    def operating_company(self) -> Optional[str]:
+    def operating_company(self) -> str | None:
         """Get the name of the currently operating company, if available.
 
         Returns:
@@ -5742,7 +5740,7 @@ class Commcell:
             self._headers = old_headers
 
     def switch_to_global(
-        self, target_commcell: Optional[str] = None, comet_header: bool = False
+        self, target_commcell: str | None = None, comet_header: bool = False
     ) -> None:
         """Switch to the global scope in a multi-commcell configuration.
 
@@ -5803,9 +5801,7 @@ class Commcell:
                 del self._headers[header]
 
     @contextmanager
-    def global_scope(
-        self, target_commcell: Optional[str] = None, comet_header: bool = False
-    ) -> Any:
+    def global_scope(self, target_commcell: str | None = None, comet_header: bool = False) -> Any:
         """Context manager for temporarily switching the Commcell to Global scope.
 
         This context manager allows you to perform operations within the Global scope of the Commcell.
@@ -5861,9 +5857,7 @@ class Commcell:
         finally:
             self._headers = old_headers
 
-    def passkey(
-        self, current_password: str, action: str, new_password: Optional[str] = None
-    ) -> None:
+    def passkey(self, current_password: str, action: str, new_password: str | None = None) -> None:
         """Update the Passkey properties of the Commcell.
 
         This method allows you to enable, disable, change, authorize, or unauthorize the passkey for the Commcell.
@@ -5992,7 +5986,7 @@ class Commcell:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get_sla_configuration(self) -> Dict[str, Any]:
+    def get_sla_configuration(self) -> dict[str, Any]:
         """Retrieve the Service Level Agreement (SLA) configuration for the Commcell.
 
         This method makes a REST API call to obtain the current SLA settings at the Commcell level.
@@ -6041,7 +6035,7 @@ class Commcell:
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def get_workload_region(self) -> Optional[str]:
+    def get_workload_region(self) -> str | None:
         """Retrieve the workload region configured at the Commcell level.
 
         Returns:
@@ -6063,7 +6057,7 @@ class Commcell:
             if reg_id == region_id:
                 return reg_name
 
-    def set_workload_region(self, region_name: Optional[str]) -> None:
+    def set_workload_region(self, region_name: str | None) -> None:
         """Set the workload region for the Commcell.
 
         This method assigns a workload region at the Commcell level.
@@ -6089,8 +6083,8 @@ class Commcell:
         self.regions.set_region("COMMCELL", self.commcell_id, "WORKLOAD", region_id)
 
     def get_user_suggestions(
-        self, term: str, additional_params: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
+        self, term: str, additional_params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         """Retrieve user suggestions for entities matching the specified term.
 
         This method makes an API call to fetch suggestions for entities whose names match the provided term.
@@ -6257,7 +6251,7 @@ class Commcell:
             otp=otp,
         )
 
-    def get_navigation_settings(self, org_id: int = 0) -> Dict[str, Dict[str, List[str]]]:
+    def get_navigation_settings(self, org_id: int = 0) -> dict[str, dict[str, list[str]]]:
         """Retrieve the navigation preference list for all user roles in Command Center.
 
         This method makes a REST API call to obtain the navigation settings for each user role,
@@ -6328,7 +6322,7 @@ class Commcell:
             raise SDKException("Response", "101", response_string)
 
     def set_navigation_settings(
-        self, nav_settings: Dict[str, Dict[str, List[str]]], org_id: int = 0
+        self, nav_settings: dict[str, dict[str, list[str]]], org_id: int = 0
     ) -> None:
         """Set the navigation preference list for Command Center roles.
 
@@ -6407,7 +6401,7 @@ class Commcell:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def cost_assessment(self) -> "CostAssessment":
+    def cost_assessment(self) -> CostAssessment:
         """Get the CostAssessment instance associated with this Commcell.
 
         Returns:
@@ -6430,7 +6424,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def azure_discovery(self) -> "AzureDiscovery":
+    def azure_discovery(self) -> AzureDiscovery:
         """Get the AzureDiscovery instance associated with this Commcell.
 
         Returns:
@@ -6451,7 +6445,7 @@ class Commcell:
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def aws_discovery(self) -> "AWSDiscovery":
+    def aws_discovery(self) -> AWSDiscovery:
         """Get the AWSDiscovery instance associated with this Commcell.
 
         Returns:
@@ -6564,7 +6558,7 @@ class Commcell:
             self.reset_to_local()
         return environment_tile_dict
 
-    def get_logs_by_trace_id(self, trace_id: str) -> List[Dict[str, Any]]:
+    def get_logs_by_trace_id(self, trace_id: str) -> list[dict[str, Any]]:
         """Retrieve logs associated with a specific trace ID.
 
         Args:

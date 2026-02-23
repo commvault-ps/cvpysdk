@@ -183,6 +183,8 @@ ClientGroup Attributes
 
 """
 
+from __future__ import annotations
+
 import copy
 import time
 from typing import Dict, List, Optional, Union
@@ -299,7 +301,7 @@ class ClientGroups:
         """
         return len(self.all_clientgroups)
 
-    def __getitem__(self, value: Union[str, int]) -> Union[str, dict]:
+    def __getitem__(self, value: str | int) -> str | dict:
         """Retrieve client group information by name or ID.
 
         If a client group ID (int) is provided, returns the name of the client group.
@@ -455,7 +457,7 @@ class ClientGroups:
 
         return clients
 
-    def _get_fl_parameters(self, fl: Optional[list] = None) -> str:
+    def _get_fl_parameters(self, fl: list | None = None) -> str:
         """Generate the 'fl' parameter string for use in MongoDB caching API calls.
 
         Args:
@@ -494,7 +496,7 @@ class ClientGroups:
 
         return fl_parameters
 
-    def _get_sort_parameters(self, sort: Optional[list] = None) -> str:
+    def _get_sort_parameters(self, sort: list | None = None) -> str:
         """Generate the sort parameter string for use in MongoDB caching API calls.
 
         Args:
@@ -524,7 +526,7 @@ class ClientGroups:
             raise SDKException("ClientGroup", "102", "Invalid column name passed")
         return sort_parameter
 
-    def _get_fq_parameters(self, fq: Optional[list] = None) -> str:
+    def _get_fq_parameters(self, fq: list | None = None) -> str:
         """Generate the FQ (filter query) parameter string from the provided list.
 
         Args:
@@ -664,7 +666,7 @@ class ClientGroups:
             raise SDKException("Response", "102")
 
     @property
-    def all_clientgroups(self) -> Dict[str, int]:
+    def all_clientgroups(self) -> dict[str, int]:
         """Get a dictionary of all client groups associated with this Commcell.
 
         Returns:
@@ -1044,7 +1046,7 @@ class ClientGroups:
             scgscope["entity"] = {"userGroupName": value, "_type_": 15}
         return scgscope
 
-    def add(self, clientgroup_name: str, clients: list = [], **kwargs) -> "ClientGroup":
+    def add(self, clientgroup_name: str, clients: list = [], **kwargs) -> ClientGroup:
         """Add a new Client Group to the Commcell.
 
         Creates a new client group with the specified name and adds the provided clients to it.
@@ -1200,7 +1202,7 @@ class ClientGroups:
                 "ClientGroup", "102", f'Client Group "{clientgroup_name}" already exists.'
             )
 
-    def get(self, clientgroup_name: str) -> "ClientGroup":
+    def get(self, clientgroup_name: str) -> ClientGroup:
         """Retrieve a ClientGroup object by its name.
 
         Args:
@@ -1659,7 +1661,7 @@ class ClientGroup:
         self,
         clientgroup_name: str,
         clientgroup_description: str,
-        associated_clients: "Optional[Union[str, List[str]]]" = None,
+        associated_clients: str | list[str] | None = None,
         operation_type: str = "NONE",
     ) -> None:
         """Update the properties of this client group.
@@ -1735,7 +1737,7 @@ class ClientGroup:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def _add_or_remove_clients(self, clients: Union[str, list], operation_type: str) -> None:
+    def _add_or_remove_clients(self, clients: str | list, operation_type: str) -> None:
         """Add or remove clients to or from the ClientGroup.
 
         This method allows you to add, overwrite, or delete clients in the client group by specifying
@@ -1881,7 +1883,7 @@ class ClientGroup:
         return self._description
 
     @property
-    def associated_clients(self) -> List[str]:
+    def associated_clients(self) -> list[str]:
         """Get the list of clients associated with this ClientGroup as a read-only property.
 
         Returns:
@@ -1986,7 +1988,7 @@ class ClientGroup:
         return self._company_name
 
     @property
-    def network(self) -> "Network":
+    def network(self) -> Network:
         """Get the Network object associated with this ClientGroup.
 
         Returns:
@@ -2005,7 +2007,7 @@ class ClientGroup:
         return self._networkprop
 
     @property
-    def network_throttle(self) -> "NetworkThrottle":
+    def network_throttle(self) -> NetworkThrottle:
         """Get the NetworkThrottle object associated with this ClientGroup.
 
         Returns:
@@ -2490,7 +2492,7 @@ class ClientGroup:
                 "ClientGroup", "102", "Clientgroup description should be a string value"
             )
 
-    def add_clients(self, clients: Union[str, List[str]], overwrite: bool = False) -> None:
+    def add_clients(self, clients: str | list[str], overwrite: bool = False) -> None:
         """Add clients to the ClientGroup.
 
         This method adds one or more clients to the client group. The clients can be specified
@@ -2525,7 +2527,7 @@ class ClientGroup:
         else:
             return self._add_or_remove_clients(clients, "ADD")
 
-    def remove_clients(self, clients: Union[str, list]) -> None:
+    def remove_clients(self, clients: str | list) -> None:
         """Remove one or more clients from the ClientGroup.
 
         Args:
@@ -2630,7 +2632,7 @@ class ClientGroup:
 
     def push_servicepack_and_hotfix(
         self, reboot_client: bool = False, run_db_maintenance: bool = True
-    ) -> "Job":
+    ) -> Job:
         """Trigger the installation of service packs and hotfixes on all clients in the group.
 
         This method initiates a job to push the latest service pack and hotfix updates to all clients
@@ -2669,7 +2671,7 @@ class ClientGroup:
 
     def repair_software(
         self, username: str = None, password: str = None, reboot_client: bool = False
-    ) -> "Job":
+    ) -> Job:
         """Trigger a repair of the software on all clients in the client group.
 
         This method initiates a repair operation for the software installed on the client group.

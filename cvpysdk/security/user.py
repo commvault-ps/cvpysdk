@@ -145,6 +145,8 @@ User
     reset_tenant_password()             --  resets password of a tenant admin using token received in email
 """
 
+from __future__ import annotations
+
 from base64 import b64encode
 from typing import Any, Dict, List, Optional, Union
 
@@ -556,14 +558,14 @@ class Users:
         self,
         user_name: str,
         email: str,
-        full_name: Optional[str] = None,
-        domain: Optional[str] = None,
-        password: Optional[str] = None,
+        full_name: str | None = None,
+        domain: str | None = None,
+        password: str | None = None,
         system_generated_password: bool = False,
-        local_usergroups: Optional[List[str]] = None,
-        entity_dictionary: Optional[Dict[str, Any]] = None,
+        local_usergroups: list[str] | None = None,
+        entity_dictionary: dict[str, Any] | None = None,
         **kwargs,
-    ) -> "User":
+    ) -> User:
         """Adds a local/external user to this commcell.
 
         Args:
@@ -780,14 +782,14 @@ class Users:
         self,
         user_name: str,
         email: str,
-        full_name: Optional[str] = None,
-        domain: Optional[str] = None,
-        password: Optional[str] = None,
+        full_name: str | None = None,
+        domain: str | None = None,
+        password: str | None = None,
         system_generated_password: bool = False,
-        local_usergroups: Optional[List[str]] = None,
-        entity_dictionary: Optional[Dict[str, Any]] = None,
+        local_usergroups: list[str] | None = None,
+        entity_dictionary: dict[str, Any] | None = None,
         **kwargs,
-    ) -> "User":
+    ) -> User:
         """Adds a local/external user to this commcell.
 
         Args:
@@ -890,10 +892,10 @@ class Users:
     def add_service_account(
         self,
         user_name: str,
-        full_name: Optional[str] = None,
-        local_usergroups: Optional[List[str]] = None,
-        entity_dictionary: Optional[Dict[str, Any]] = None,
-    ) -> "User":
+        full_name: str | None = None,
+        local_usergroups: list[str] | None = None,
+        entity_dictionary: dict[str, Any] | None = None,
+    ) -> User:
         """Creates a service account in the commcell.
 
         Service accounts are special users designed for API access and automation purposes.
@@ -1003,7 +1005,7 @@ class Users:
 
         return self._users and user_name.lower() in self._users
 
-    def get(self, user_name: str) -> "User":
+    def get(self, user_name: str) -> User:
         """Returns the user object for the specified user name.
 
         Args:
@@ -1025,7 +1027,7 @@ class Users:
         return User(self._commcell_object, user_name, self._users[user_name.lower()])
 
     def delete(
-        self, user_name: str, new_user: Optional[str] = None, new_usergroup: Optional[str] = None
+        self, user_name: str, new_user: str | None = None, new_usergroup: str | None = None
     ) -> None:
         """Deletes the specified user from the existing commcell users.
 
@@ -1095,7 +1097,7 @@ class Users:
         self._users = self._get_v4_users()
 
     def v4_delete(
-        self, user_name: str, new_user: Optional[str] = None, new_usergroup: Optional[str] = None
+        self, user_name: str, new_user: str | None = None, new_usergroup: str | None = None
     ) -> None:
         """Deletes the specified user from the existing commcell users.
 
@@ -1172,7 +1174,7 @@ class Users:
 
         self._users = self._get_v4_users()
 
-    def _get_users_on_service_commcell(self) -> Dict[str, Any]:
+    def _get_users_on_service_commcell(self) -> dict[str, Any]:
         """gets the userspace from service commcell
 
         Returns:
@@ -1206,7 +1208,7 @@ class Users:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def service_commcell_users_space(self) -> Dict[str, Any]:
+    def service_commcell_users_space(self) -> dict[str, Any]:
         """Returns the user space from service commcell.
 
         Returns:
@@ -1245,7 +1247,7 @@ class Users:
             self._users_cache = self.get_users_cache(hard=hard)
 
     @property
-    def all_users(self) -> Dict[str, int]:
+    def all_users(self) -> dict[str, int]:
         """Returns the dict of all the users on the commcell.
 
         Returns:
@@ -1260,7 +1262,7 @@ class Users:
         return self._users
 
     @property
-    def all_users_prop(self) -> List[Dict[str, Any]]:
+    def all_users_prop(self) -> list[dict[str, Any]]:
         """Returns complete GET API response.
 
         Returns:
@@ -1299,7 +1301,7 @@ class User:
     """
 
     def __init__(
-        self, commcell_object: object, user_name: str, user_id: Optional[str] = None
+        self, commcell_object: object, user_name: str, user_id: str | None = None
     ) -> None:
         """Initialize the User class object for specified user
 
@@ -1457,7 +1459,7 @@ class User:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def _update_v4_user_props(self, properties_dict: Dict, **kwargs: Dict) -> None:
+    def _update_v4_user_props(self, properties_dict: dict, **kwargs: dict) -> None:
         """Updates the properties of this user
 
         Args:
@@ -1517,7 +1519,7 @@ class User:
             raise SDKException("Response", "101", response_string)
         self.refresh()
 
-    def _update_user_props(self, properties_dict: Dict, **kwargs: Dict) -> None:
+    def _update_user_props(self, properties_dict: dict, **kwargs: dict) -> None:
         """Updates the properties of this user
 
         Args:
@@ -1578,7 +1580,7 @@ class User:
         self.refresh()
 
     def _update_usergroup_request(
-        self, request_type: str, usergroups_list: Optional[List[str]] = None
+        self, request_type: str, usergroups_list: list[str] | None = None
     ) -> None:
         """Updates the usergroups this user is associated to
 
@@ -1634,7 +1636,7 @@ class User:
         self._update_user_props(update_usergroup_dict)
 
     def _update_v4_usergroup_request(
-        self, request_type: str, usergroups_list: Optional[List[str]] = None
+        self, request_type: str, usergroups_list: list[str] | None = None
     ) -> None:
         """Updates the usergroups this user is associated to
 
@@ -1726,7 +1728,7 @@ class User:
         return self._user_id
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Returns the description associated with this commcell user
 
         Returns:
@@ -1735,7 +1737,7 @@ class User:
         return self._description
 
     @property
-    def email(self) -> Optional[str]:
+    def email(self) -> str | None:
         """Returns the email associated with this commcell user
 
         Returns:
@@ -1811,7 +1813,7 @@ class User:
         self._update_v4_user_props(props_dict)
 
     @property
-    def associated_usergroups(self) -> List[str]:
+    def associated_usergroups(self) -> list[str]:
         """Returns the list of associated usergroups
 
         Returns:
@@ -1825,7 +1827,7 @@ class User:
         return usergroups
 
     @property
-    def associated_external_usergroups(self) -> List[str]:
+    def associated_external_usergroups(self) -> list[str]:
         """Returns the list of associated external usergroups
 
         Returns:
@@ -1840,7 +1842,7 @@ class User:
         return usergroups
 
     @property
-    def user_security_associations(self) -> List[Dict]:
+    def user_security_associations(self) -> list[dict]:
         """Returns security associations from properties of the User.
 
         Returns:
@@ -1849,7 +1851,7 @@ class User:
         return self._security_associations
 
     @property
-    def status(self) -> Optional[bool]:
+    def status(self) -> bool | None:
         """Returns the status of this commcell user
 
         Returns:
@@ -1882,14 +1884,14 @@ class User:
         self._update_v4_user_props(props_dict)
 
     @property
-    def user_guid(self) -> Optional[str]:
+    def user_guid(self) -> str | None:
         """
         returns user guid
         """
         return self._properties.get("GUID")
 
     @property
-    def age_password_days(self) -> Optional[int]:
+    def age_password_days(self) -> int | None:
         """
         returns age password days
         """
@@ -1972,7 +1974,7 @@ class User:
         props_dict = {"newPassword": password, "validationPassword": validation_password}
         self._update_v4_user_props(props_dict, otp=otp)
 
-    def add_usergroups(self, usergroups_list: List[str]) -> None:
+    def add_usergroups(self, usergroups_list: list[str]) -> None:
         """UPDATE the specified usergroups to this commcell user
 
         Args:
@@ -1986,7 +1988,7 @@ class User:
         """
         self._update_v4_usergroup_request("UPDATE", usergroups_list)
 
-    def remove_usergroups(self, usergroups_list: List[str]) -> None:
+    def remove_usergroups(self, usergroups_list: list[str]) -> None:
         """DELETE the specified usergroups to this commcell user
 
         Args:
@@ -2000,7 +2002,7 @@ class User:
         """
         self._update_v4_usergroup_request("DELETE", usergroups_list)
 
-    def overwrite_usergroups(self, usergroups_list: List[str]) -> None:
+    def overwrite_usergroups(self, usergroups_list: list[str]) -> None:
         """OVERWRITE the specified usergroups to this commcell user
 
         Args:
@@ -2019,7 +2021,7 @@ class User:
         self._additional_settings = None
         self._get_v4_user_properties()
 
-    def update_security_associations(self, entity_dictionary: Dict, request_type: str) -> None:
+    def update_security_associations(self, entity_dictionary: dict, request_type: str) -> None:
         """handles three way associations (role-user-entities)
 
         Args:
@@ -2165,7 +2167,7 @@ class User:
         return self._tfa_status
 
     @property
-    def get_account_lock_info(self) -> Dict[str, Union[bool, int]]:
+    def get_account_lock_info(self) -> dict[str, bool | int]:
         """
         Returns user account lock status
         dict     --  account lock info

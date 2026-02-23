@@ -70,6 +70,8 @@ MSDynamics365Subclient:
 
 """
 
+from __future__ import annotations
+
 import copy
 import json
 import time
@@ -392,7 +394,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             self._associated_tables = self._get_associated_content(is_environment=False)
         return self._associated_tables
 
-    def get_associated_environments(self, refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_associated_environments(self, refresh: bool = False) -> list[dict[str, Any]]:
         """Retrieve the environments associated with a Dynamics 365 CRM client.
 
         Args:
@@ -790,7 +792,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
     def _run_backup(
         self, backup_content: list, is_environment: bool = False, force_full_backup: bool = False
-    ) -> "Job":
+    ) -> Job:
         """Run a backup job for the specified content of a Dynamics 365 subclient.
 
         Args:
@@ -833,7 +835,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
     def backup_tables(
         self, tables_list: list[tuple[str, str]], force_full_backup: bool = False
-    ) -> "Job":
+    ) -> Job:
         """Run a backup job for the specified tables of a Dynamics 365 subclient.
 
         Args:
@@ -859,7 +861,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup
         )
 
-    def backup_environments(self, environments_list: List[str]) -> "Job":
+    def backup_environments(self, environments_list: list[str]) -> Job:
         """Run a backup operation for the specified Dynamics 365 environments in this subclient.
 
         Args:
@@ -880,7 +882,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
         return self._run_backup(backup_content=environments_list, is_environment=True)
 
-    def launch_client_level_full_backup(self) -> "Job":
+    def launch_client_level_full_backup(self) -> Job:
         """Run a full backup for the Dynamics 365 subclient.
 
         Initiates a client-level full backup operation for the Dynamics 365 subclient and returns
@@ -1118,12 +1120,12 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
     def restore_in_place(
         self,
-        restore_content: Optional[list] = None,
-        restore_path: Optional[list] = None,
+        restore_content: list | None = None,
+        restore_path: list | None = None,
         is_environment: bool = False,
         overwrite: bool = True,
-        job_id: Optional[int] = None,
-    ) -> "Job":
+        job_id: int | None = None,
+    ) -> Job:
         """Run an in-place restore for the specified Microsoft Dynamics 365 content.
 
         This method initiates an in-place restore operation for the provided content or paths.
@@ -1261,7 +1263,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         overwrite: bool = True,
         job_id: int = None,
         destination_environment: str = "",
-    ) -> "Job":
+    ) -> Job:
         """Run an out-of-place restore for the specified MSDynamics365 content.
 
         This method initiates an out-of-place restore operation for the provided content or paths.
@@ -1318,7 +1320,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
     def browse(
         self,
-        browse_path: Optional[list[str]] = None,
+        browse_path: list[str] | None = None,
         include_deleted_items: bool = False,
         till_time: int = -1,
     ) -> dict:

@@ -120,6 +120,8 @@ Workflow:
 
 """
 
+from __future__ import annotations
+
 import os
 from base64 import b64decode
 from typing import Any, Dict, List, Optional, Union
@@ -300,7 +302,7 @@ class WorkFlows:
         """
         return len(self.all_workflows)
 
-    def __getitem__(self, value: "Union[str, int]") -> "Union[str, dict]":
+    def __getitem__(self, value: str | int) -> str | dict:
         """Retrieve workflow information by name or ID.
 
         If a workflow ID (int) is provided, returns the name of the workflow.
@@ -703,7 +705,7 @@ class WorkFlows:
             response_string = self._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def get(self, workflow_name: str, **kwargs: dict) -> "Workflow":
+    def get(self, workflow_name: str, **kwargs: dict) -> Workflow:
         """Retrieve a Workflow object by its name.
 
         Searches for a workflow with the specified name and returns an instance of the Workflow class
@@ -973,7 +975,7 @@ class WorkFlows:
                 "Workflow", "102", "Failed to submit workflow interaction request. Error: " + o_str
             )
 
-    def all_interactions(self) -> List[Dict[str, Any]]:
+    def all_interactions(self) -> list[dict[str, Any]]:
         """Retrieve all interactive interactions for workflows on the Commcell.
 
         Returns:
@@ -1004,7 +1006,7 @@ class WorkFlows:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
     @property
-    def all_workflows(self) -> Dict[str, Any]:
+    def all_workflows(self) -> dict[str, Any]:
         """Get a dictionary containing all workflows and their associated information.
 
         Returns:
@@ -1023,7 +1025,7 @@ class WorkFlows:
         return self._workflows
 
     @property
-    def all_activities(self) -> List[dict]:
+    def all_activities(self) -> list[dict]:
         """Get a read-only list of all activities associated with the workflows.
 
         Returns:
@@ -1310,7 +1312,7 @@ class WorkFlow:
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def approve_workflow(self, auth_id: Optional[int] = None) -> None:
+    def approve_workflow(self, auth_id: int | None = None) -> None:
         """Approve a pending change to this workflow initiated by another admin user.
 
         If an authorization ID is provided, approves the specific workflow change associated with that ID.
@@ -1404,7 +1406,7 @@ class WorkFlow:
         self._set_workflow_properties("flags", "1", disabled="1")
 
     def deploy_workflow(
-        self, workflow_engine: Optional[str] = None, workflow_xml: Optional[str] = None
+        self, workflow_engine: str | None = None, workflow_xml: str | None = None
     ) -> None:
         """Deploy a workflow on the Commcell.
 
@@ -1481,7 +1483,7 @@ class WorkFlow:
             raise SDKException("Response", "101", response_string)
 
     def execute_workflow(
-        self, workflow_inputs: Optional[Dict[str, Any]] = None, hidden: bool = False
+        self, workflow_inputs: dict[str, Any] | None = None, hidden: bool = False
     ) -> tuple:
         """Execute the workflow with the specified inputs and return its job information.
 
@@ -1673,9 +1675,7 @@ class WorkFlow:
         else:
             raise SDKException("Response", "101", response.text)
 
-    def schedule_workflow(
-        self, schedule_pattern: dict, workflow_inputs: dict = None
-    ) -> "Schedule":
+    def schedule_workflow(self, schedule_pattern: dict, workflow_inputs: dict = None) -> Schedule:
         """Create a schedule for the workflow with the specified pattern and optional inputs.
 
         Args:

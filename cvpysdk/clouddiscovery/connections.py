@@ -117,6 +117,8 @@ Classes:
             all_connections         - Get all AWS connections managed by this instance.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -145,7 +147,7 @@ class Connection(ABC):
 
     @property
     @abstractmethod
-    def connection_id(self) -> Optional[int]:
+    def connection_id(self) -> int | None:
         """Get the connection ID for this connection."""
         pass
 
@@ -177,7 +179,7 @@ class Connection(ABC):
 class Connections(ABC):
     """Base class for a generic connection."""
 
-    def __init__(self, commcell: "Commcell", asset_provider: AssetProvider = None) -> None:
+    def __init__(self, commcell: Commcell, asset_provider: AssetProvider = None) -> None:
         """
         Initialize the Connections manager.
         Args:
@@ -195,7 +197,7 @@ class Connections(ABC):
         pass
 
     @abstractmethod
-    def get_connection(self, connection_name: str) -> Optional[Connection]:
+    def get_connection(self, connection_name: str) -> Connection | None:
         """Get a connection by name."""
         pass
 
@@ -211,7 +213,7 @@ class Connections(ABC):
 
     @property
     @abstractmethod
-    def all_connections(self) -> List[Connection]:
+    def all_connections(self) -> list[Connection]:
         """Get all connections managed by this instance."""
         pass
 
@@ -246,7 +248,7 @@ class AzureConnection(Connection):
             self._credential_id = self._commcell.credentials.get(connection_name).credential_id
 
     @property
-    def connection_id(self) -> Optional[int]:
+    def connection_id(self) -> int | None:
         """Get the Azure connection ID.
 
         Returns:
@@ -255,7 +257,7 @@ class AzureConnection(Connection):
         return self._connection_id
 
     @property
-    def config_type(self) -> Optional[int]:
+    def config_type(self) -> int | None:
         """Get the Azure config type.
 
         Returns:
@@ -303,7 +305,7 @@ class AzureConnection(Connection):
 class AzureConnections(Connections):
     """Manages multiple Azure connections."""
 
-    def __init__(self, commcell: "Commcell") -> None:
+    def __init__(self, commcell: Commcell) -> None:
         """Initialize the AzureConnections instance.
 
         Args:
@@ -311,7 +313,7 @@ class AzureConnections(Connections):
         """
         super().__init__(commcell, AssetProvider.AZURE)
         self._commcell = commcell
-        self._connections: List[Connection] = []
+        self._connections: list[Connection] = []
         self._is_loaded = False
         self._asset_provider = AssetProvider.AZURE
         self._cvpysdk_object = self._commcell._cvpysdk_object
@@ -502,7 +504,7 @@ class AzureConnections(Connections):
     def add_custom_connection(
         self,
         credential_name: str,
-        config_list: Optional[List[str]] = None,
+        config_list: list[str] | None = None,
         include_all_configs: bool = False,
     ) -> AzureConnection:
         """Add a new connection with the specified credential and configuration.
@@ -562,7 +564,7 @@ class AzureConnections(Connections):
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def _get_configs(self, credential_id) -> List[Dict[str, str]]:
+    def _get_configs(self, credential_id) -> list[dict[str, str]]:
         """Get all configuration name-value pairs (regions/subscriptions) for this connection.
 
         Returns:
@@ -618,7 +620,7 @@ class AWSConnection(Connection):
         self._update_response_ = self._commcell._update_response_
 
     @property
-    def connection_id(self) -> Optional[int]:
+    def connection_id(self) -> int | None:
         """Get the AWS account ID for this connection.
 
         Returns:
@@ -674,7 +676,7 @@ class AWSConnection(Connection):
         return self._accounts
 
     @property
-    def connection_details(self) -> Dict[str, str]:
+    def connection_details(self) -> dict[str, str]:
         """Get AWS-specific connection details.
 
         Returns:
@@ -691,7 +693,7 @@ class AWSConnection(Connection):
         """
         return self._get_aws_connection_details(self._connection_id)
 
-    def _get_aws_connection_details(self, connection_id) -> Dict[str, str]:
+    def _get_aws_connection_details(self, connection_id) -> dict[str, str]:
         """Get AWS-specific connection details.
 
         Args:
@@ -756,7 +758,7 @@ class AWSConnection(Connection):
 class AWSConnections(Connections):
     """Manages multiple AWS connections."""
 
-    def __init__(self, commcell: "Commcell") -> None:
+    def __init__(self, commcell: Commcell) -> None:
         """Initialize the AWSConnections instance.
 
         Args:
@@ -764,7 +766,7 @@ class AWSConnections(Connections):
         """
         super().__init__(commcell, AssetProvider.AWS)
         self._commcell = commcell
-        self._connections: List[Connection] = []
+        self._connections: list[Connection] = []
         self._is_loaded = False
         self._asset_provider = AssetProvider.AWS
         self._cvpysdk_object = self._commcell._cvpysdk_object
@@ -787,8 +789,8 @@ class AWSConnections(Connections):
         connection_name: str,
         account_id: str,
         connection_type: str,
-        regions: Optional[str] = None,
-        accounts: Optional[list] = None,
+        regions: str | None = None,
+        accounts: list | None = None,
         discoverAllAccounts: bool = True,
     ) -> AWSConnection:
         """
@@ -878,7 +880,7 @@ class AWSConnections(Connections):
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def get_connection(self, connection_name: str) -> Optional[AWSConnection]:
+    def get_connection(self, connection_name: str) -> AWSConnection | None:
         """Get an AWS connection by name.
 
         Args:
@@ -930,7 +932,7 @@ class AWSConnections(Connections):
         self._connections = self._get_all_connections()
         self._commcell.credentials.refresh()
 
-    def _get_aws_cloud_connections(self) -> List[Dict[str, str]]:
+    def _get_aws_cloud_connections(self) -> list[dict[str, str]]:
         """Get all AWS cloud connections as name-value pairs.
 
         This method retrieves all AWS cloud connections available in the system.
@@ -960,7 +962,7 @@ class AWSConnections(Connections):
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def _get_all_connections(self) -> List[AWSConnection]:
+    def _get_all_connections(self) -> list[AWSConnection]:
         """Retrieve all AWS connections from the backend.
 
         Returns:

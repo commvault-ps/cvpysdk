@@ -94,6 +94,8 @@ Network:
 
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict
 
 from .exception import SDKException
@@ -186,7 +188,7 @@ class Network:
 
         self._get_network_properties()
 
-    def _get_network_properties(self) -> Dict[str, Any]:
+    def _get_network_properties(self) -> dict[str, Any]:
         """Retrieve all existing network properties for a client or client group.
 
         This method gathers and returns the network properties associated with the current client or client group,

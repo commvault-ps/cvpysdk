@@ -40,6 +40,8 @@ NetworkThrottle:
 
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, List
 
 from .exception import SDKException
@@ -102,7 +104,7 @@ class NetworkThrottle:
         self._remote_clients = []
         self._get_throttle_properties()
 
-    def _get_throttle_properties(self) -> Dict[str, Any]:
+    def _get_throttle_properties(self) -> dict[str, Any]:
         """Retrieve and store all existing network throttle properties for a client or client group.
 
         This method fetches the current network throttle settings associated with the client or client group
@@ -213,7 +215,7 @@ class NetworkThrottle:
         self.enable_network_throttle = True
 
     @property
-    def remote_clients(self) -> List[str]:
+    def remote_clients(self) -> list[str]:
         """Get the list of remote clients for which network throttling is configured.
 
         Returns:
@@ -254,7 +256,7 @@ class NetworkThrottle:
         self.enable_network_throttle = True
 
     @property
-    def remote_client_groups(self) -> List[str]:
+    def remote_client_groups(self) -> list[str]:
         """Get the list of client groups associated with network throttling.
 
         Returns:

@@ -104,6 +104,8 @@ DataSource Attributes
 
 """
 
+from __future__ import annotations
+
 from ..exception import SDKException
 from .handler import Handlers
 from .sedstype import SEDS_TYPE_DICT
@@ -359,7 +361,7 @@ class Datasources:
 
         return self._datasources and datasource_name in self._datasources
 
-    def get(self, datasource_name: str) -> "Datasource":
+    def get(self, datasource_name: str) -> Datasource:
         """Retrieve a Datasource object by its name.
 
         Args:
@@ -1133,7 +1135,7 @@ class Datasource:
         self.handlers = Handlers(self)
 
     @property
-    def ds_handlers(self) -> "Handlers":
+    def ds_handlers(self) -> Handlers:
         """Get the Handlers instance associated with this Datasource.
 
         Returns:

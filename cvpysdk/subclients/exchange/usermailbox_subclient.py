@@ -89,6 +89,8 @@ User Mailbox Subclient Instance Attributes:
     o365groups                              --  Dictionary of discovered Office 365 Groups
 """
 
+from __future__ import annotations
+
 import datetime
 import time
 from typing import Any, Dict, List, Optional, Union
@@ -164,7 +166,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         self.refresh()
 
     def _policy_json(
-        self, configuration_policy: Union[str, object], policy_type: int
+        self, configuration_policy: str | object, policy_type: int
     ) -> dict[str, int | dict[str, int] | dict[str, dict[str, int]] | dict[str, int | Any]]:
         """Generate a policy JSON structure based on the configuration policy and type.
 
@@ -282,7 +284,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return associations_json
 
-    def _association_json_with_plan(self, plan_details: Dict[str, Any]) -> dict:
+    def _association_json_with_plan(self, plan_details: dict[str, Any]) -> dict:
         """Construct the association JSON payload with plan details for UserMailbox Subclient.
 
         This method prepares a dictionary representing the association request,
@@ -868,8 +870,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         return adgroups
 
     def _backup_generic_items_json(
-        self, subclient_content: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, subclient_content: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Generate the JSON payload for backing up generic items in an Exchange Online client.
 
         Args:
@@ -946,7 +948,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         return self._discover_users
 
     @property
-    def discover_databases(self) -> List[Dict[str, Any]]:
+    def discover_databases(self) -> list[dict[str, Any]]:
         """Get the list of discovered databases for the UserMailbox subclient.
 
         Returns:
@@ -1000,7 +1002,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         return self._users
 
     @property
-    def databases(self) -> List[str]:
+    def databases(self) -> list[str]:
         """Get the list of databases associated with the UserMailbox subclient.
 
         Returns:
@@ -1017,7 +1019,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         return self._databases
 
     @property
-    def adgroups(self) -> List[str]:
+    def adgroups(self) -> list[str]:
         """Get the list of Active Directory (AD) groups associated with the UserMailbox subclient.
 
         Returns:
@@ -1909,7 +1911,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._set_association_request(_association_json_)
 
     def disable_allusers_associations(
-        self, use_policies: bool = True, plan_details: Optional[Dict[str, Any]] = None
+        self, use_policies: bool = True, plan_details: dict[str, Any] | None = None
     ) -> None:
         """Disable all-user associations for the UserMailboxSubclient.
 
@@ -2181,9 +2183,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return self._process_backup_response(flag, response)
 
-    def backup_mailboxes(
-        self, mailbox_alias_names: Optional[list] = None, **kwargs: dict
-    ) -> "Job":
+    def backup_mailboxes(self, mailbox_alias_names: list | None = None, **kwargs: dict) -> Job:
         """Initiate a backup job for specific mailboxes by their alias names.
 
         Args:
@@ -2212,10 +2212,10 @@ class UsermailboxSubclient(ExchangeSubclient):
 
     def create_recovery_point(
         self,
-        mailbox_prop: Dict[str, Any],
-        job: Optional["Job"] = None,
-        job_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        mailbox_prop: dict[str, Any],
+        job: Job | None = None,
+        job_id: int | None = None,
+    ) -> dict[str, Any]:
         """Create a recovery point for a specified mailbox.
 
         This method initiates the creation of a recovery point for a mailbox using the provided mailbox properties.
@@ -2368,7 +2368,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._databases = self._get_database_associations()
         self._adgroups = self._get_adgroup_assocaitions()
 
-    def restore_in_place_syntex(self, **kwargs: dict) -> "Job":
+    def restore_in_place_syntex(self, **kwargs: dict) -> Job:
         """Run an in-place restore job on the specified Syntex Exchange pseudo client.
 
         This method initiates an in-place restore operation for the given mailboxes or folders
@@ -2450,7 +2450,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
     @staticmethod
     def _find_mailbox_query_params(
-        query_params: Optional[dict] = None,
+        query_params: dict | None = None,
     ) -> list[dict[str, Any] | dict[str, Any]]:
         """Generate the query parameters for a find mailbox request.
 
@@ -2481,7 +2481,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
     @staticmethod
     def _find_mailbox_facets(
-        facets: Optional[List[str]] = None,
+        facets: list[str] | None = None,
     ) -> list[dict[str, str | Any] | dict[str, Any]]:
         """Generate facet requests for a mailbox search query.
 

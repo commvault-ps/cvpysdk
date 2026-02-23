@@ -78,6 +78,8 @@ Server Attributes:
 
 """
 
+from __future__ import annotations
+
 import copy
 import datetime
 import enum
@@ -410,7 +412,7 @@ class TAServers:
             raise SDKException("ThreatIndicators", "109")
         self._response_not_success(response)
 
-    def get(self, server_name: str) -> "TAServer":
+    def get(self, server_name: str) -> TAServer:
         """Retrieve a Server object for the specified server name.
 
         Args:

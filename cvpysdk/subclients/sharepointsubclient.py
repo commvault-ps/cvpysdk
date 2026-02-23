@@ -82,6 +82,8 @@ SharepointV1Subclient:
 
 """
 
+from __future__ import annotations
+
 import datetime
 from base64 import b64encode
 

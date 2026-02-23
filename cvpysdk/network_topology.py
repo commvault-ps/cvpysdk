@@ -82,6 +82,8 @@ NetworkTopology:
 
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .exception import SDKException
@@ -118,7 +120,7 @@ class NetworkTopologies:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize a NetworkTopologies object with the given Commcell connection.
 
         Args:
@@ -209,7 +211,7 @@ class NetworkTopologies:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def all_network_topologies(self) -> Dict[str, int]:
+    def all_network_topologies(self) -> dict[str, int]:
         """Get a dictionary of all network topologies associated with the Commcell.
 
         Returns:
@@ -391,9 +393,9 @@ class NetworkTopologies:
     def add(
         self,
         network_topology_name: str,
-        client_groups: Optional[List[Dict[str, Any]]] = None,
+        client_groups: list[dict[str, Any]] | None = None,
         **kwargs: Any,
-    ) -> "NetworkTopology":
+    ) -> NetworkTopology:
         """Add a new Network Topology to the Commcell.
 
         This method creates a new network topology with the specified name and client groups.
@@ -529,7 +531,7 @@ class NetworkTopologies:
                 f'Network Topology "{network_topology_name}" already exists.',
             )
 
-    def get(self, network_topology_name: str) -> "NetworkTopology":
+    def get(self, network_topology_name: str) -> NetworkTopology:
         """Retrieve the network topology object for the specified network topology name.
 
         Args:
@@ -670,7 +672,7 @@ class NetworkTopology:
 
     def __init__(
         self,
-        commcell_object: "Commcell",
+        commcell_object: Commcell,
         network_topology_name: str,
         network_topology_id: str = None,
     ) -> None:
@@ -809,7 +811,7 @@ class NetworkTopology:
 
         self._firewall_groups = network_topology_props.get("firewallGroups")
 
-    def update(self, firewall_groups: Optional[list[dict]] = None, **kwargs: Any) -> None:
+    def update(self, firewall_groups: list[dict] | None = None, **kwargs: Any) -> None:
         """Update the network topology properties for this network topology.
 
         This method allows you to modify various properties of the network topology, such as client group associations,
@@ -1073,7 +1075,7 @@ class NetworkTopology:
         return self._extended_properties
 
     @property
-    def firewall_groups(self) -> List["ClientGroup"]:
+    def firewall_groups(self) -> list[ClientGroup]:
         """Get the list of firewall client groups associated with the network topology as a read-only attribute.
 
         Returns:

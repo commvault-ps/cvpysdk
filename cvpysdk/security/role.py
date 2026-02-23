@@ -100,6 +100,8 @@ Role
 
 """
 
+from __future__ import annotations
+
 from ..exception import SDKException
 
 
@@ -495,7 +497,7 @@ class Roles:
 
     def add(
         self, rolename: str, permission_list: list = None, categoryname_list: list = None
-    ) -> "Role":
+    ) -> Role:
         """creates new role
 
              Args:
@@ -579,7 +581,7 @@ class Roles:
 
     def v4_add(
         self, rolename: str, permission_list: list = None, categoryname_list: list = None
-    ) -> "Role":
+    ) -> Role:
         """creates new role
 
              Args:
@@ -648,7 +650,7 @@ class Roles:
         self.refresh()
         return self.get(rolename)
 
-    def get(self, role_name: str) -> "Role":
+    def get(self, role_name: str) -> Role:
         """Returns the role object for the specified role name
 
             Args:

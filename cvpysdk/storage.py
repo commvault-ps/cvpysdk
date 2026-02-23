@@ -224,6 +224,8 @@ TapeLibrary:
 
 """
 
+from __future__ import annotations
+
 import time
 from base64 import b64encode
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
@@ -257,7 +259,7 @@ class MediaAgents:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize a MediaAgents object with the given Commcell connection.
 
         Args:
@@ -377,7 +379,7 @@ class MediaAgents:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def all_media_agents(self) -> Dict[str, Dict[str, Any]]:
+    def all_media_agents(self) -> dict[str, dict[str, Any]]:
         """Get a dictionary of all media agents available on this Commcell.
 
         Returns:
@@ -431,7 +433,7 @@ class MediaAgents:
 
         return self._media_agents and media_agent_name.lower() in self._media_agents
 
-    def get(self, media_agent_name: str) -> "MediaAgent":
+    def get(self, media_agent_name: str) -> MediaAgent:
         """Retrieve a MediaAgent object by its name.
 
         Args:
@@ -568,7 +570,7 @@ class MediaAgent:
     """
 
     def __init__(
-        self, commcell_object: "Commcell", media_agent_name: str, media_agent_id: int = None
+        self, commcell_object: Commcell, media_agent_name: str, media_agent_id: int = None
     ) -> None:
         """Initialize a MediaAgent object.
 
@@ -926,8 +928,8 @@ class MediaAgent:
         old_index_cache_path: str,
         new_index_cache_path: str,
         logs_cache_enabled: bool = False,
-        logs_cache_path: Optional[str] = None,
-    ) -> "Job":
+        logs_cache_path: str | None = None,
+    ) -> Job:
         """Initiate a catalog migration job to move the index cache from one path to another.
 
         This method starts a catalog migration job using the CreateTask endpoint, migrating the index cache
@@ -1372,7 +1374,7 @@ class Libraries:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize an instance of the DiskLibraries class with a Commcell connection.
 
         Args:
@@ -1392,7 +1394,7 @@ class Libraries:
         self._libraries = None
         self.refresh()
 
-    def _get_libraries(self) -> Dict[str, int]:
+    def _get_libraries(self) -> dict[str, int]:
         """Retrieve all disk libraries associated with the Commcell.
 
         Returns:
@@ -1494,7 +1496,7 @@ class DiskLibraries(Libraries):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize the DiskLibraries class with a Commcell connection object.
 
         Args:
@@ -1552,7 +1554,7 @@ class DiskLibraries(Libraries):
         return "DiskLibraries class instance for Commcell"
 
     @property
-    def all_disk_libraries(self) -> Dict[str, int]:
+    def all_disk_libraries(self) -> dict[str, int]:
         """Get a dictionary of all disk libraries available on this Commcell.
 
         Returns:
@@ -1576,14 +1578,14 @@ class DiskLibraries(Libraries):
     def add(
         self,
         library_name: str,
-        media_agent: "Union[str, MediaAgent]",
+        media_agent: str | MediaAgent,
         mount_path: str,
         username: str = "",
         password: str = "",
         servertype: int = 0,
         saved_credential_name: str = "",
         **kwargs: Any,
-    ) -> "DiskLibrary":
+    ) -> DiskLibrary:
         """Add a new Disk Library to the Commcell.
 
         This method creates a new disk library on the specified media agent with the given mount path and credentials.
@@ -1756,7 +1758,7 @@ class DiskLibraries(Libraries):
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", _stdout.format(library_name, _stderr))
 
-    def get(self, library_name: str, library_details: Optional[dict] = None) -> "DiskLibrary":
+    def get(self, library_name: str, library_details: dict | None = None) -> DiskLibrary:
         """Retrieve a DiskLibrary object for the specified disk library name.
 
         Args:
@@ -1826,10 +1828,10 @@ class DiskLibrary:
 
     def __init__(
         self,
-        commcell_object: "Commcell",
+        commcell_object: Commcell,
         library_name: str,
-        library_id: Optional[int] = None,
-        library_details: Optional[dict] = None,
+        library_id: int | None = None,
+        library_details: dict | None = None,
     ) -> None:
         """Initialize a DiskLibrary object representing a disk library in the Commcell.
 
@@ -1890,7 +1892,7 @@ class DiskLibrary:
         target_device_path: str,
         target_mediaagent_id: int,
         target_device_id: int = 0,
-    ) -> "Job":
+    ) -> Job:
         """Perform the move mountpath operation for a disk library.
 
         This method moves a mountpath from a source device and media agent to a target device and media agent.
@@ -2014,7 +2016,7 @@ class DiskLibrary:
                 "Response", "101", self._commcell_object._update_response_(response.text)
             )
 
-    def validate_mountpath(self, mountpath_drive_id: int, media_agent: str) -> "Job":
+    def validate_mountpath(self, mountpath_drive_id: int, media_agent: str) -> Job:
         """Perform storage validation on a specified mountpath.
 
         This method initiates a storage validation job for the given mountpath drive ID
@@ -2807,7 +2809,7 @@ class DiskLibrary:
         return self._library_properties.get("magLibSummary", {}).get("totalFreeSpace").strip()
 
     @property
-    def mountpath_usage(self) -> Dict[str, Any]:
+    def mountpath_usage(self) -> dict[str, Any]:
         """Get the usage statistics for all mount paths in the disk library.
 
         Returns:
@@ -2889,7 +2891,7 @@ class DiskLibrary:
         self._commcell_object.qoperation_execute(request_json)
 
     @property
-    def media_agents_associated(self) -> List[str]:
+    def media_agents_associated(self) -> list[str]:
         """Get the list of media agents associated with the disk library.
 
         Returns:
@@ -2978,7 +2980,7 @@ class DiskLibrary:
         return self._library_properties
 
     @property
-    def advanced_library_properties(self) -> Dict[str, Any]:
+    def advanced_library_properties(self) -> dict[str, Any]:
         """Get the advanced properties of the disk library.
 
         Returns:
@@ -3231,7 +3233,7 @@ class RPStores:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell: "Commcell") -> None:
+    def __init__(self, commcell: Commcell) -> None:
         """Initialize an instance of the RPStores class.
 
         Args:
@@ -3284,7 +3286,7 @@ class RPStores:
             )
             raise SDKException("Storage", "102", f"{err_msg}")
 
-    def add(self, name: str, path: str, storage: int, media_agent_name: str) -> "RPStore":
+    def add(self, name: str, path: str, storage: int, media_agent_name: str) -> RPStore:
         """Add a new RPStore with the specified configuration.
 
         Args:
@@ -3359,7 +3361,7 @@ class RPStores:
 
         return rpstore_name.lower() in self._rp_stores
 
-    def get(self, rpstore_name: str) -> "RPStore":
+    def get(self, rpstore_name: str) -> RPStore:
         """Retrieve an instance of the specified RPStore by name.
 
         Args:
@@ -3415,7 +3417,7 @@ class RPStore:
     #ai-gen-doc
     """
 
-    def __init__(self, commcell: "Commcell", rpstore_name: str, rpstore_id: int) -> None:
+    def __init__(self, commcell: Commcell, rpstore_name: str, rpstore_id: int) -> None:
         """Initialize an instance of the RPStore class.
 
         Args:
@@ -3488,7 +3490,7 @@ class TapeLibraries(Libraries):
     #ai-gen-doc
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize a TapeLibraries object with the given Commcell connection.
 
         Args:
@@ -3548,7 +3550,7 @@ class TapeLibraries(Libraries):
         """
         return "TapeLibraries class instance for Commcell"
 
-    def get(self, tape_library_name: str) -> "TapeLibrary":
+    def get(self, tape_library_name: str) -> TapeLibrary:
         """Retrieve the TapeLibrary object for the specified library name.
 
         Args:
@@ -3749,7 +3751,7 @@ class TapeLibraries(Libraries):
             return response.json()
         raise SDKException("Storage", "102", "Failed to detect library")
 
-    def configure_tape_library(self, tape_library_name: str, mediaagents: list) -> "TapeLibrary":
+    def configure_tape_library(self, tape_library_name: str, mediaagents: list) -> TapeLibrary:
         """Configure a new tape library with the specified name and associated MediaAgents.
 
         Args:
@@ -3814,7 +3816,7 @@ class TapeLibrary:
     """
 
     def __init__(
-        self, commcell_object: "Commcell", tape_library_name: str, tape_library_id: int = None
+        self, commcell_object: Commcell, tape_library_name: str, tape_library_id: int = None
     ) -> None:
         """Initialize a TapeLibrary object representing a specific tape library.
 
@@ -3930,7 +3932,7 @@ class TapeLibrary:
 
         return drive_list
 
-    def _get_library_properties(self) -> Dict[str, Any]:
+    def _get_library_properties(self) -> dict[str, Any]:
         """Retrieve the properties of the tape library.
 
         Returns:

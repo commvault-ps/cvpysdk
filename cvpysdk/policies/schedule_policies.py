@@ -94,6 +94,8 @@ SchedulePolicy:
 
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from ..exception import SDKException
@@ -154,7 +156,7 @@ class SchedulePolicies:
         "Network Throttle": 8,
     }
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize object of the SchedulePolicies class.
 
         Args:
@@ -316,7 +318,7 @@ class SchedulePolicies:
         associations: list,
         schedules: list,
         agent_type: list = None,
-    ) -> "SchedulePolicy":
+    ) -> SchedulePolicy:
         """Adds a schedule policy.
 
         Args:
@@ -427,7 +429,7 @@ class SchedulePolicies:
         o_str = 'Failed to update properties of Schedule\nError: "{0}"'
         raise SDKException("Schedules", "102", o_str.format(output[2]))
 
-    def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -> "SchedulePolicy":
+    def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -> SchedulePolicy:
         """Returns a schedule policy object of the specified schedule policy name.
 
         Args:
@@ -581,7 +583,7 @@ class SchedulePolicy:
     """
 
     def __init__(
-        self, commcell_obj: "Commcell", schedule_policy_name: str, schedule_policy_id: int = None
+        self, commcell_obj: Commcell, schedule_policy_name: str, schedule_policy_id: int = None
     ) -> None:
         """Initialise the Schedule Policy class instance.
 
@@ -699,7 +701,7 @@ class SchedulePolicy:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def update_associations(self, associations: list, operation_type: "OperationType") -> None:
+    def update_associations(self, associations: list, operation_type: OperationType) -> None:
         """Updates the schedule policy associations
 
         Args:
@@ -986,7 +988,7 @@ class SchedulePolicy:
         self._subtasks[self._subtasks.index(sub_task)] = sub_task
         self._modify_schedule_policy_properties()
 
-    def update_app_groups(self, app_groups: list, operation_type: "OperationType") -> None:
+    def update_app_groups(self, app_groups: list, operation_type: OperationType) -> None:
         """Update the appgroups for the provided schedule policy
 
         Args:

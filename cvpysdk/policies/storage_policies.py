@@ -277,6 +277,8 @@ Attributes
     ***is_compliance_lock_enabled***            --  Checks whether compliance lock on copy is enabled or not
 """
 
+from __future__ import annotations
+
 import time
 from enum import IntEnum
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
@@ -352,7 +354,7 @@ class StoragePolicies:
         storage_policies = StoragePolicies(commcell_object)
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize object of the StoragePolicies class.
 
         Args:
@@ -457,7 +459,7 @@ class StoragePolicies:
 
         return self._policies and policy_name.lower() in self._policies
 
-    def get(self, storage_policy_name: str) -> "StoragePolicy":
+    def get(self, storage_policy_name: str) -> StoragePolicy:
         """Returns a StoragePolicy object of the specified storage policy name.
 
         Args:
@@ -497,7 +499,7 @@ class StoragePolicies:
         media_agent: str,
         dedup_path: str = None,
         dedup_path_media_agent: str = None,
-    ) -> "StoragePolicy":
+    ) -> StoragePolicy:
         """adds a global storage policy
 
         Args:
@@ -860,7 +862,7 @@ class StoragePolicies:
         scratch_pool: str,
         retention_period_days: int = 15,
         ocum_server: str = None,
-    ) -> "StoragePolicy":
+    ) -> StoragePolicy:
         """Adds storage policy with tape data path
 
         Args:
@@ -1044,7 +1046,7 @@ class StoragePolicy:
     """
 
     def __init__(
-        self, commcell_object: "Commcell", storage_policy_name: str, storage_policy_id: str = None
+        self, commcell_object: Commcell, storage_policy_name: str, storage_policy_id: str = None
     ) -> None:
         """Initialise the Storage Policy class instance.
 
@@ -1467,7 +1469,7 @@ class StoragePolicy:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def run_content_indexing(self) -> "Job":
+    def run_content_indexing(self) -> Job:
         """starts the offline CI job for this storage policy
 
         Args:
@@ -1927,7 +1929,7 @@ class StoragePolicy:
         sel_freq: str,
         first_or_last_full: str,
         backups_from: str,
-        daystartson: Optional[Dict[str, Union[str, int]]] = None,
+        daystartson: dict[str, str | int] | None = None,
     ) -> None:
         """Creates Selective copy for this storage policy
 
@@ -2102,7 +2104,7 @@ class StoragePolicy:
             raise SDKException("Response", "101", response_string)
 
     @property
-    def copies(self) -> Dict:
+    def copies(self) -> dict:
         """Treats the storage policy copies as a read-only attribute
 
         Returns:
@@ -2138,7 +2140,7 @@ class StoragePolicy:
         return self._storage_policy_name
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Returns the Storage Policy Description Field
 
         Returns:
@@ -2171,7 +2173,7 @@ class StoragePolicy:
                 return policy_copies[copy_name]["copyPrecedence"]
         raise SDKException("Storage", "102", "Failed to get copy precedence from policy")
 
-    def update_snapshot_options(self, **options: Dict[str, Union[str, int, bool, None]]) -> None:
+    def update_snapshot_options(self, **options: dict[str, str | int | bool | None]) -> None:
         """
         Method for Updating Storage Policy Snapshot Options like Backup Copy and Snapshot Catalog
 
@@ -2365,7 +2367,7 @@ class StoragePolicy:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def run_backup_copy(self) -> "Job":
+    def run_backup_copy(self) -> Job:
         """
         Runs the backup copy from Commcell for the given storage policy
 
@@ -2450,7 +2452,7 @@ class StoragePolicy:
                        """
         self._commcell_object.qoperation_execute(request_xml)
 
-    def run_snapshot_cataloging(self) -> "Job":
+    def run_snapshot_cataloging(self) -> Job:
         """
         Runs the deferred catalog job from Commcell for the given storage policy
 
@@ -2591,7 +2593,7 @@ class StoragePolicy:
         total_jobs_to_process: int = 1000,
         schedule_pattern: dict = None,
         **kwargs,
-    ) -> "Job":
+    ) -> Job:
         """Runs the aux copy job from the commcell.
         Args:
 
@@ -3154,7 +3156,7 @@ class StoragePolicy:
         dest_media_agent: str,
         src_media_agent: str,
         config_only: bool = False,
-    ) -> "Job":
+    ) -> Job:
         """
         Moves a deduplication store
 
@@ -3305,7 +3307,7 @@ class StoragePolicy:
         """
         self._commcell_object._qoperation_execute(request_xml)
 
-    def get_copy(self, copy_name: str) -> "StoragePolicyCopy":
+    def get_copy(self, copy_name: str) -> StoragePolicyCopy:
         """Returns a storage policy copy object if copy exists
 
         Args:
@@ -3331,7 +3333,7 @@ class StoragePolicy:
         else:
             raise SDKException("Storage", "102", f"No copy exists with name: {copy_name}")
 
-    def get_primary_copy(self) -> "StoragePolicyCopy":
+    def get_primary_copy(self) -> StoragePolicyCopy:
         """Returns the primary copy of the storage policy
 
         Returns:
@@ -3351,7 +3353,7 @@ class StoragePolicy:
 
         raise SDKException("Storage", "102", "Unable to find a primary copy in the storage policy")
 
-    def get_secondary_copies(self) -> List["StoragePolicyCopy"]:
+    def get_secondary_copies(self) -> list[StoragePolicyCopy]:
         """Returns all the secondary copies in the storage policy sorted by copy precedence
 
         Returns:
@@ -3701,8 +3703,8 @@ class StoragePolicyCopy:
 
     def __init__(
         self,
-        commcell_object: "Commcell",
-        storage_policy: Union[str, "StoragePolicy"],
+        commcell_object: Commcell,
+        storage_policy: str | StoragePolicy,
         copy_name: str,
         copy_id: str = None,
     ) -> None:
@@ -4524,8 +4526,8 @@ class StoragePolicyCopy:
         view: str = "last24Hours",
         aged_data: int = None,
         backup_level: int = None,
-        clients: Union[List[Client], List[str], Client, str] = None,
-        copy_state: Union[List[int], int] = None,
+        clients: list[Client] | list[str] | Client | str = None,
+        copy_state: list[int] | int = None,
         startTime: int = None,
         endTime: int = None,
     ) -> list:
@@ -4629,7 +4631,7 @@ class StoragePolicyCopy:
             raise SDKException("Response", "101", response_string)
 
     def _run_job_operations_on_storage_copy(
-        self, job_id: Union[int, str, list], operation: str
+        self, job_id: int | str | list, operation: str
     ) -> None:
         """Run different job operations for a Storage Copy
 
@@ -4697,7 +4699,7 @@ class StoragePolicyCopy:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException("Response", "101", response_string)
 
-    def _pick_job_for_backup_copy(self, job_id: Union[int, str, list], operation: str) -> None:
+    def _pick_job_for_backup_copy(self, job_id: int | str | list, operation: str) -> None:
         """Method to pick jobs for backup copy
 
         Args:
@@ -4786,7 +4788,7 @@ class StoragePolicyCopy:
         )
 
     def _mark_jobs_on_copy(
-        self, job_id: Union[int, str, list], operation: JobOperationsOnStorageCopy
+        self, job_id: int | str | list, operation: JobOperationsOnStorageCopy
     ) -> None:
         """Marks job(s) for given operation on a secondary copy
 
@@ -4838,7 +4840,7 @@ class StoragePolicyCopy:
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException("Response", "101", response_string)
 
-    def pick_for_copy(self, job_id: Union[int, str, list]) -> None:
+    def pick_for_copy(self, job_id: int | str | list) -> None:
         """Marks job(s) to be Picked for Copy to a secondary copy
 
         Args:
@@ -4851,7 +4853,7 @@ class StoragePolicyCopy:
             job_id=job_id, operation=JobOperationsOnStorageCopy.ALLOW_COPY
         )
 
-    def recopy_jobs(self, job_id: Union[int, str, list]) -> None:
+    def recopy_jobs(self, job_id: int | str | list) -> None:
         """Marks job(s) to be picked for ReCopying to a secondary copy
 
         Args:
@@ -4864,7 +4866,7 @@ class StoragePolicyCopy:
             job_id=job_id, operation=JobOperationsOnStorageCopy.RECOPY
         )
 
-    def do_not_copy_jobs(self, job_id: Union[int, str, list]) -> None:
+    def do_not_copy_jobs(self, job_id: int | str | list) -> None:
         """Marks job(s) as Do Not Copy to a secondary copy
 
         Args:
@@ -4877,7 +4879,7 @@ class StoragePolicyCopy:
             job_id=job_id, operation=JobOperationsOnStorageCopy.PREVENT_COPY
         )
 
-    def pick_jobs_for_data_verification(self, job_id: Union[int, str, list]) -> None:
+    def pick_jobs_for_data_verification(self, job_id: int | str | list) -> None:
         """Marks job(s) on a copy to be Picked for Data Verification
 
         Args:
@@ -4888,7 +4890,7 @@ class StoragePolicyCopy:
         """
         self._mark_jobs_on_copy(job_id, "pickForVerification")
 
-    def do_not_verify_data(self, job_id: Union[int, str, list]) -> None:
+    def do_not_verify_data(self, job_id: int | str | list) -> None:
         """Marks job(s) on a copy to not be Picked for Data Verification
 
         Args:
@@ -4899,7 +4901,7 @@ class StoragePolicyCopy:
         """
         self._mark_jobs_on_copy(job_id, "donotPickForVerification")
 
-    def mark_jobs_bad(self, job_id: Union[int, str, list]) -> None:
+    def mark_jobs_bad(self, job_id: int | str | list) -> None:
         """Marks job(s) on a copy as Bad
 
         Args:
@@ -4910,7 +4912,7 @@ class StoragePolicyCopy:
         """
         self._mark_jobs_on_copy(job_id, "markJobsBad")
 
-    def pick_jobs_for_backupcopy(self, job_id: Union[int, str, list]) -> None:
+    def pick_jobs_for_backupcopy(self, job_id: int | str | list) -> None:
         """This method is used to re-pick the job from backup which are unpick manually
 
         Args:

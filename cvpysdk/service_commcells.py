@@ -67,6 +67,8 @@ Associations:  Class for managing associations of service commcell(s)
         all_associations            --  returns all associations of service commcells
 """
 
+from __future__ import annotations
+
 from base64 import b64encode
 from typing import TYPE_CHECKING, Any
 
@@ -91,7 +93,7 @@ class ServiceCommcells:
         >>> service_commcells = ServiceCommcells(commcell_object)
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialise the Activity control class instance.
 
         Args:
@@ -113,7 +115,7 @@ class ServiceCommcells:
             f"ServiceCommcells class instance for commcell: {self._commcell.webconsole_hostname}"
         )
 
-    def __getitem__(self, item: str) -> "ServiceCommcell":
+    def __getitem__(self, item: str) -> ServiceCommcell:
         """
         Gets the service commcell object for the given service commcell.
 
@@ -338,7 +340,7 @@ class ServiceCommcells:
         )
         self.refresh()
 
-    def get(self, commcell_name: str) -> "ServiceCommcell":
+    def get(self, commcell_name: str) -> ServiceCommcell:
         """
         Gets the service commcell object for the given service commcell
 
@@ -461,7 +463,7 @@ class ServiceCommcell:
         >>> service_commcell = ServiceCommcell(commcell_object, "service_commcell_name")
     """
 
-    def __init__(self, commcell_object: "Commcell", commcell_name: str) -> None:
+    def __init__(self, commcell_object: Commcell, commcell_name: str) -> None:
         """
         Initialise the ServiceCommcell class instance.
 

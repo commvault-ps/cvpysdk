@@ -88,6 +88,8 @@ GoogleSubclient:
     browse_files()                      --  Browse files of the user in the browse
 """
 
+from __future__ import annotations
+
 import copy
 import time
 from typing import Any, Dict, List, Optional
@@ -337,7 +339,7 @@ class GoogleSubclient(CloudAppsSubclient):
         from_time: str = None,
         to_time: str = None,
         to_disk: bool = False,
-    ) -> "Job":
+    ) -> Job:
         """Restore specified files or folders to a different client and/or location.
 
         This method restores the files or folders listed in `paths` to the specified `destination_path`
@@ -647,7 +649,7 @@ class GoogleSubclient(CloudAppsSubclient):
         """
         return self._get_subclient_users()
 
-    def add_users(self, users: List[str], plan_name: str) -> None:
+    def add_users(self, users: list[str], plan_name: str) -> None:
         """Add specified OneDrive users to the v2 Google Workspace client.
 
         This method associates the provided list of users, identified by their SMTP addresses,
@@ -980,7 +982,7 @@ class GoogleSubclient(CloudAppsSubclient):
         else:
             raise SDKException("Response", "101", self._update_response_(response.text))
 
-    def _association_users_json(self, users_list: List[str]) -> List[Dict[str, Any]]:
+    def _association_users_json(self, users_list: list[str]) -> list[dict[str, Any]]:
         """Generate a JSON-compatible list of user details for backup association.
 
         Args:
@@ -1005,7 +1007,7 @@ class GoogleSubclient(CloudAppsSubclient):
         return users_json
 
     def _task_json_for_google_backup(
-        self, is_mailbox: bool, users_list: Optional[list] = None, **kwargs: dict
+        self, is_mailbox: bool, users_list: list | None = None, **kwargs: dict
     ) -> dict:
         """Generate the JSON payload for a Google backup task for selected users.
 
@@ -1074,7 +1076,7 @@ class GoogleSubclient(CloudAppsSubclient):
         )
         return task_json
 
-    def run_user_level_backup(self, users_list: list, is_mailbox: bool, **kwargs: dict) -> "Job":
+    def run_user_level_backup(self, users_list: list, is_mailbox: bool, **kwargs: dict) -> Job:
         """Run a user-level backup for the specified users.
 
         Initiates a backup job for the provided list of user SMTP addresses. The backup can be performed
@@ -1108,7 +1110,7 @@ class GoogleSubclient(CloudAppsSubclient):
         )
         return self._process_backup_response(flag, response)
 
-    def run_client_level_backup(self, is_mailbox: bool, **kwargs: dict) -> "Job":
+    def run_client_level_backup(self, is_mailbox: bool, **kwargs: dict) -> Job:
         """Run a client-level backup for the GoogleSubclient.
 
         Args:
@@ -1279,7 +1281,7 @@ class GoogleSubclient(CloudAppsSubclient):
         destination_client: str,
         destination_path: str,
         skip_file_permissions: bool = False,
-    ) -> "Job":
+    ) -> Job:
         """Run an out-of-place disk restore job for specified users to a destination client.
 
         This method initiates a restore operation for the provided list of users, restoring their data
@@ -1318,7 +1320,7 @@ class GoogleSubclient(CloudAppsSubclient):
         restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
 
-    def out_of_place_restore(self, users: list, destination_path: str, **kwargs) -> "Job":
+    def out_of_place_restore(self, users: list, destination_path: str, **kwargs) -> Job:
         """Run an out-of-place restore job for specified users on a OneDrive for Business client.
 
         This method restores data for the given list of users to a specified destination user (SMTP address).
@@ -1410,7 +1412,7 @@ class GoogleSubclient(CloudAppsSubclient):
             add_backup_time.append(adv_search_bkp_time_dict)
         return self._process_restore_response(restore_json)
 
-    def in_place_restore(self, users: list, **kwargs: dict) -> "Job":
+    def in_place_restore(self, users: list, **kwargs: dict) -> Job:
         """Run an in-place restore job for specified users on OneDrive for Business.
 
         This method initiates an in-place restore operation for the provided list of user SMTP addresses.
@@ -1480,7 +1482,7 @@ class GoogleSubclient(CloudAppsSubclient):
 
         return self._process_restore_response(restore_json)
 
-    def _get_user_guids(self, users: List[str]) -> List[str]:
+    def _get_user_guids(self, users: list[str]) -> list[str]:
         """Retrieve GUIDs for the specified users based on their SMTP addresses.
 
         Args:
@@ -1813,9 +1815,9 @@ class GoogleSubclient(CloudAppsSubclient):
 
     def browse_mails(
         self,
-        label_id: Optional[str] = None,
+        label_id: str | None = None,
         client_level_browse: bool = False,
-        facet_filters: Optional[dict] = None,
+        facet_filters: dict | None = None,
     ) -> dict:
         """Browse emails for a user, optionally filtered by label, client level, or facet filters.
 

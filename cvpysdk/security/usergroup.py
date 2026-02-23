@@ -139,6 +139,8 @@ UserGroup:
 
 """
 
+from __future__ import annotations
+
 from ..additional_settings import AdditionalSettings
 from ..exception import SDKException
 from .security_association import SecurityAssociation
@@ -160,7 +162,7 @@ class UserGroups:
         user_groups = UserGroups(commcell_object)
     """
 
-    def __init__(self, commcell_object: "Commcell") -> None:
+    def __init__(self, commcell_object: Commcell) -> None:
         """Initialize object of the UserGroups class.
 
         Args:
@@ -531,7 +533,7 @@ class UserGroups:
 
         return self._user_groups and user_group_name.lower() in self._user_groups
 
-    def get(self, user_group_name: str) -> "UserGroup":
+    def get(self, user_group_name: str) -> UserGroup:
         """Returns a user group object of the specified user group name.
 
         Args:
@@ -571,7 +573,7 @@ class UserGroups:
         entity_dictionary: dict = None,
         external_usergroup: list = None,
         local_usergroup: list = None,
-    ) -> "UserGroup":
+    ) -> UserGroup:
         """Adds local/external user group on this commcell based domain parameter provided
 
         Args:
@@ -700,7 +702,7 @@ class UserGroups:
         entity_dictionary: dict = None,
         external_usergroup: list = None,
         local_usergroup: list = None,
-    ) -> "UserGroup":
+    ) -> UserGroup:
         """Adds local/external user group on this commcell based domain parameter provided
 
         Args:
