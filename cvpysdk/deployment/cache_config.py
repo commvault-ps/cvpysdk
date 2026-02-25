@@ -72,6 +72,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from xml.etree import ElementTree as ET
 
 from ..exception import SDKException
+from .deploymentconstants import OSNameIDMapping, UnixDownloadFeatures, WindowsDownloadFeatures
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
@@ -428,16 +429,32 @@ class RemoteCache:
             >>> # from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping
             >>> # from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
         """
+
+        def _enum_values(enum_cls, members: List[str], input_name: str) -> List[int]:
+            invalid_members = [member for member in members if member not in enum_cls.__members__]
+            if invalid_members:
+                raise SDKException(
+                    "Response",
+                    "102",
+                    f"Incorrect input for {input_name}: {', '.join(invalid_members)}",
+                )
+            return [enum_cls[member].value for member in members]
+
+        win_os = win_os or []
+        win_package_list = win_package_list or []
+        unix_os = unix_os or []
+        unix_package_list = unix_package_list or []
+
         if win_os:
-            win_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in win_os]
-            win_packages = [
-                eval(f"WindowsDownloadFeatures.{packages}.value") for packages in win_package_list
-            ]
+            win_os_id = _enum_values(OSNameIDMapping, win_os, "win_os")
+            win_packages = _enum_values(
+                WindowsDownloadFeatures, win_package_list, "win_package_list"
+            )
         if unix_os:
-            unix_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in unix_os]
-            unix_packages = [
-                eval(f"UnixDownloadFeatures.{packages}.value") for packages in unix_package_list
-            ]
+            unix_os_id = _enum_values(OSNameIDMapping, unix_os, "unix_os")
+            unix_packages = _enum_values(
+                UnixDownloadFeatures, unix_package_list, "unix_package_list"
+            )
 
         if not win_os and not unix_os:
             qscript = f"""-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncAll"""

@@ -171,3 +171,28 @@ class TestRemoteCache:
         rc = self._create_remote_cache(mock_commcell)
         with pytest.raises(Exception, match="No clients or client groups"):
             rc.assoc_entity_to_remote_cache()
+
+    def test_configure_packages_to_sync_resolves_enum_values(self, mock_commcell):
+        rc = self._create_remote_cache(mock_commcell)
+        mock_commcell._qoperation_execscript.return_value = {}
+
+        rc.configure_packages_to_sync(
+            win_os=["WINDOWS_64"],
+            win_package_list=["FILE_SYSTEM", "MEDIA_AGENT"],
+            unix_os=["UNIX_LINUX64"],
+            unix_package_list=["FILE_SYSTEM"],
+        )
+
+        qscript = mock_commcell._qoperation_execscript.call_args[0][0]
+        assert "-si 3 -si 702,51" in qscript
+        assert "-si 16 -si 1101" in qscript
+
+    def test_configure_packages_to_sync_rejects_invalid_enum_name(self, mock_commcell):
+        rc = self._create_remote_cache(mock_commcell)
+        mock_commcell._qoperation_execscript.return_value = {}
+
+        with pytest.raises(SDKException, match="Incorrect input for win_os"):
+            rc.configure_packages_to_sync(
+                win_os=["WINDOWS_64", "NOT_A_REAL_OS"],
+                win_package_list=["FILE_SYSTEM"],
+            )
